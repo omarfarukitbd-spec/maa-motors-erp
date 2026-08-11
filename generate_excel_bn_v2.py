@@ -1,0 +1,106 @@
+import os
+import sys
+
+try:
+    import xlsxwriter
+except ImportError:
+    os.system(f'"{sys.executable}" -m pip install xlsxwriter')
+    import xlsxwriter
+
+filepath = r'd:\Office Excel\Business_Ledger_Bangla_V2.xlsx'
+os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+workbook = xlsxwriter.Workbook(filepath)
+
+# Formats
+header_format = workbook.add_format({
+    'bold': True, 'font_color': 'white', 'bg_color': '#4F81BD',
+    'border': 1, 'align': 'center', 'valign': 'vcenter'
+})
+cell_format = workbook.add_format({'border': 1, 'valign': 'vcenter'})
+currency_format = workbook.add_format({'border': 1, 'valign': 'vcenter', 'num_format': '#,##0.00'})
+date_format = workbook.add_format({'border': 1, 'valign': 'vcenter', 'num_format': 'dd/mm/yyyy'})
+highlight_format = workbook.add_format({'border': 1, 'valign': 'vcenter', 'bg_color': '#EBF1DE', 'bold': True})
+
+# --- Sheet 1: Customers ---
+ws_customers = workbook.add_worksheet('কাস্টমার তালিকা')
+headers_cust = ['কাস্টমার আইডি', 'কাস্টমারের নাম', 'মোবাইল নম্বর', 'ঠিকানা', 'মোট বকেয়া (অটো)']
+ws_customers.write_row(0, 0, headers_cust, header_format)
+ws_customers.set_column('A:A', 15)
+ws_customers.set_column('B:B', 35)
+ws_customers.set_column('C:C', 20)
+ws_customers.set_column('D:D', 40)
+ws_customers.set_column('E:E', 25)
+
+for row in range(1, 305):  
+    ws_customers.write_blank(row, 0, '', cell_format)
+    ws_customers.write_blank(row, 1, '', cell_format)
+    ws_customers.write_blank(row, 2, '', cell_format)
+    ws_customers.write_blank(row, 3, '', cell_format)
+    # SUMIF based on Customer ID which is now in column C of Ledger
+    formula = f'=SUMIF(\'খতিয়ান\'!C:C, A{row+1}, \'খতিয়ান\'!F:F) - SUMIF(\'খতিয়ান\'!C:C, A{row+1}, \'খতিয়ান\'!G:G)'
+    ws_customers.write_formula(row, 4, formula, highlight_format)
+
+# Add 2 sample customers
+ws_customers.write(1, 0, 'C-001', cell_format)
+ws_customers.write(1, 1, 'তপু ভাই, আল রাফি মোটরস', cell_format)
+ws_customers.write(1, 2, '01720-643322', cell_format)
+ws_customers.write(1, 3, 'ধোলাইখাল, ঢাকা', cell_format)
+
+ws_customers.write(2, 0, 'C-002', cell_format)
+ws_customers.write(2, 1, 'জামাল, রহমান টাওয়ার', cell_format)
+ws_customers.write(2, 2, '01676-218863', cell_format)
+ws_customers.write(2, 3, '', cell_format)
+
+# --- Sheet 2: Ledger ---
+ws_ledger = workbook.add_worksheet('খতিয়ান')
+# Swapped Column 2 and 3
+headers_ledger = ['তারিখ', 'কাস্টমারের নাম (সিলেক্ট করুন)', 'কাস্টমার আইডি (অটো)', 'বিবরণ', 'ভাউচার নং', 'খরচ / বাকি (Debit)', 'জমা (Credit)', 'বর্তমান ব্যালেন্স (অটো)']
+ws_ledger.write_row(0, 0, headers_ledger, header_format)
+ws_ledger.set_column('A:A', 15)
+ws_ledger.set_column('B:B', 35)
+ws_ledger.set_column('C:C', 20)
+ws_ledger.set_column('D:D', 30)
+ws_ledger.set_column('E:E', 15)
+ws_ledger.set_column('F:H', 25)
+
+for row in range(1, 1005): 
+    # Data validation now points to Customer Name (Column B of Customers sheet)
+    ws_ledger.data_validation(row, 1, row, 1, {
+        'validate': 'list',
+        'source': '=\'কাস্টমার তালিকা\'!$B$2:$B$305'
+    })
+    
+    # Auto-fetch Customer ID based on selected Name
+    formula_id = f'=IF(ISBLANK(B{row+1}), "", INDEX(\'কাস্টমার তালিকা\'!$A$2:$A$305, MATCH(B{row+1}, \'কাস্টমার তালিকা\'!$B$2:$B$305, 0)))'
+    ws_ledger.write_formula(row, 2, formula_id, highlight_format)
+    
+    ws_ledger.write_blank(row, 0, '', date_format) 
+    ws_ledger.write_blank(row, 3, '', cell_format) 
+    ws_ledger.write_blank(row, 4, '', cell_format) 
+    ws_ledger.write_blank(row, 5, '', currency_format) 
+    ws_ledger.write_blank(row, 6, '', currency_format) 
+    
+    # Balance formula based on ID (Column C)
+    formula_balance = f'=IF(ISBLANK(C{row+1}), "", SUMIFS(F$2:F{row+1}, C$2:C{row+1}, C{row+1}) - SUMIFS(G$2:G{row+1}, C$2:C{row+1}, C{row+1}))'
+    ws_ledger.write_formula(row, 7, formula_balance, highlight_format)
+
+# Add some sample transactions
+ws_ledger.write(1, 0, '19/09/2022', date_format)
+ws_ledger.write(1, 1, 'তপু ভাই, আল রাফি মোটরস', cell_format)
+ws_ledger.write(1, 3, 'পূর্বের জের', cell_format)
+ws_ledger.write(1, 4, '2203', cell_format)
+ws_ledger.write(1, 5, 118000, currency_format)
+
+ws_ledger.write(2, 0, '28/09/2022', date_format)
+ws_ledger.write(2, 1, 'তপু ভাই, আল রাফি মোটরস', cell_format)
+ws_ledger.write(2, 4, '2295', cell_format)
+ws_ledger.write(2, 5, 85000, currency_format)
+
+ws_ledger.write(3, 0, '02/11/2022', date_format)
+ws_ledger.write(3, 1, 'তপু ভাই, আল রাফি মোটরস', cell_format)
+ws_ledger.write(3, 3, 'Received এমদাদ', cell_format)
+ws_ledger.write(3, 6, 240600, currency_format)
+
+workbook.close()
+print("V2 Excel file generated successfully!")

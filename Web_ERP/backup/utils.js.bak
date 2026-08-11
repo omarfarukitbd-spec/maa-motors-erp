@@ -1,0 +1,681 @@
+// --- Utility Functions ---
+import Swal from 'sweetalert2';
+import { db, firebase } from './firebase-config.js';
+import { SettingsDAO, UserDAO, TransactionDAO, CustomerDAO } from './dao.js';
+
+// HTML Sanitization for XSS Prevention
+export function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+window.escapeHTML = escapeHTML;
+
+// Number formatting to Bangladeshi/Indian format (e.g. 1,00,000)
+export function formatAmountWithComma(amount) {
+    if(amount === null || amount === undefined || amount === '' || isNaN(amount)) return "";
+    return Number(amount).toLocaleString('en-IN');
+}
+
+// Convert string with commas back to raw number
+export function parseAmount(str) {
+    if(!str) return 0;
+    return parseFloat(str.toString().replace(/,/g, '')) || 0;
+}
+
+// Format input on the fly
+export function handleNumberInput(inputObj) {
+    // Save cursor position relative to the end of the string
+    let rawValue = inputObj.value.replace(/[^0-9.]/g, ''); // Remove non-numeric
+    if (rawValue) {
+        inputObj.value = formatAmountWithComma(rawValue);
+    } else {
+        inputObj.value = "";
+    }
+}
+
+// Get today's local YYYY-MM-DD date string (Strict Asia/Dhaka Timezone)
+export function getTodayLocalDateString() {
+    try {
+        const now = new Date();
+        const dtf = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Dhaka',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        return dtf.format(now); // Outputs YYYY-MM-DD exactly
+    } catch (e) {
+        // Fallback for older browsers
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+}
+
+// Format Firebase Timestamp or JS Date to DD/MM/YYYY
+export function formatTimestampToAppDate(ts) {
+    if (!ts) return '';
+    const d = (typeof ts.toDate === 'function') ? ts.toDate() : new Date(ts);
+    if (isNaN(d.getTime())) return '';
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
+// Number to Bengali Words Converter (Recursive - Supports Trillions)
+export function numberToBanglaWords(number) {
+    if (number === null || number === undefined || number === '' || isNaN(number)) return '';
+    
+    const banglaNumbers = {
+        0: 'শূন্য', 1: 'এক', 2: 'দুই', 3: 'তিন', 4: 'চার', 5: 'পাঁচ', 6: 'ছয়', 7: 'সাত', 8: 'আট', 9: 'নয়', 10: 'দশ',
+        11: 'এগারো', 12: 'বারো', 13: 'তেরো', 14: 'চৌদ্দ', 15: 'পনেরো', 16: 'ষোলো', 17: 'সতেরো', 18: 'আঠারো', 19: 'উনিশ',
+        20: 'বিশ', 21: 'একুশ', 22: 'বাইশ', 23: 'তেইশ', 24: 'চব্বিশ', 25: 'পঁচিশ', 26: 'ছাব্বিশ', 27: 'সাতাশ', 28: 'আঠাশ', 29: 'উনত্রিশ',
+        30: 'ত্রিশ', 31: 'একত্রিশ', 32: 'বত্রিশ', 33: 'তেত্রিশ', 34: 'চৌত্রিশ', 35: 'পঁয়ত্রিশ', 36: 'ছত্রিশ', 37: 'সাঁইত্রিশ', 38: 'আটত্রিশ', 39: 'উনচল্লিশ',
+        40: 'চল্লিশ', 41: 'একচল্লিশ', 42: 'বিয়াল্লিশ', 43: 'তেতাল্লিশ', 44: 'চুয়াল্লিশ', 45: 'পঁয়তাল্লিশ', 46: 'ছেচল্লিশ', 47: 'সাতচল্লিশ', 48: 'আটচল্লিশ', 49: 'উনপঞ্চাশ',
+        50: 'পঞ্চাশ', 51: 'একান্ন', 52: 'বায়ান্ন', 53: 'তিপ্পান্ন', 54: 'চুয়ান্ন', 55: 'পঞ্চান্ন', 56: 'ছাপ্পান্ন', 57: 'সাতান্ন', 58: 'আটান্ন', 59: 'উনষাট',
+        60: 'ষাট', 61: 'একষট্টি', 62: 'বাষট্টি', 63: 'তেষট্টি', 64: 'চৌষট্টি', 65: 'পঁয়ষট্টি', 66: 'ছেষট্টি', 67: 'সাতষট্টি', 68: 'আটষট্টি', 69: 'উনসত্তর',
+        70: 'সত্তর', 71: 'একাত্তর', 72: 'বাহাত্তর', 73: 'তিয়াত্তর', 74: 'চুয়াত্তর', 75: 'পঁচাত্তর', 76: 'ছিয়াত্তর', 77: 'সাতাত্তর', 78: 'আটাত্তর', 79: 'উনআশি',
+        80: 'আশি', 81: 'একাশি', 82: 'বিরাশি', 83: 'তিরাশি', 84: 'চুরাশি', 85: 'পঁচাশি', 86: 'ছিয়াশি', 87: 'সাতাশি', 88: 'অষ্টআশি', 89: 'উননব্বই',
+        90: 'নব্বই', 91: 'একানব্বই', 92: 'বিরানব্বই', 93: 'তিরানব্বই', 94: 'চুরানব্বই', 95: 'পঁচানব্বই', 96: 'ছিয়ানব্বই', 97: 'সাতানব্বই', 98: 'আটানব্বই', 99: 'নিরানব্বই'
+    };
+
+    function convertTwoDigit(n) {
+        if (n === 0) return '';
+        if (banglaNumbers[n]) return banglaNumbers[n];
+        return '';
+    }
+
+    function recursiveConvert(n) {
+        let parts = [];
+
+        if (n >= 10000000) { // Crore (কোটি)
+            parts.push(recursiveConvert(Math.floor(n / 10000000)) + " কোটি");
+            n %= 10000000;
+        }
+
+        if (n >= 100000) { // Lakh (লক্ষ)
+            parts.push(convertTwoDigit(Math.floor(n / 100000)) + " লক্ষ");
+            n %= 100000;
+        }
+
+        if (n >= 1000) { // Thousand (হাজার)
+            parts.push(convertTwoDigit(Math.floor(n / 1000)) + " হাজার");
+            n %= 1000;
+        }
+
+        if (n >= 100) { // Hundred (শত)
+            parts.push(convertTwoDigit(Math.floor(n / 100)) + " শত");
+            n %= 100;
+        }
+
+        if (n > 0) {
+            parts.push(convertTwoDigit(n));
+        }
+
+        return parts.join(' ').trim();
+    }
+
+    const amount = parseFloat(number);
+    if (isNaN(amount) || amount === 0) return "";
+
+    const integerPart = Math.floor(amount);
+    const decimalPart = Math.round((amount - integerPart) * 100);
+
+    let words = recursiveConvert(integerPart);
+    if (words) words += " টাকা";
+
+    if (decimalPart > 0) {
+        if (words) words += " ";
+        words += convertTwoDigit(decimalPart) + " পয়সা";
+    }
+
+    return words.trim() + " মাত্র";
+}
+
+// Live Words Update Helper (With Auto Font Resizer)
+export function updateLiveWords(inputObj, displayId) {
+    const displayEl = document.getElementById(displayId);
+    if (!displayEl) return;
+
+    const amount = parseAmount(inputObj.value);
+    const words = numberToBanglaWords(amount);
+
+    if (words) {
+        displayEl.innerText = `(${words})`;
+        displayEl.classList.remove('hidden');
+
+        // Auto-Resize Font based on length
+        const len = words.length;
+        if (len > 80) {
+            displayEl.style.fontSize = '8px';
+            displayEl.style.lineHeight = '1.1';
+        } else if (len > 50) {
+            displayEl.style.fontSize = '10px';
+            displayEl.style.lineHeight = '1.2';
+        } else {
+            displayEl.style.fontSize = ''; // Use CSS default
+            displayEl.style.lineHeight = '';
+        }
+    } else {
+        displayEl.innerText = '';
+        displayEl.classList.add('hidden');
+    }
+}
+window.updateLiveWords = updateLiveWords;
+
+// Ensure YYYY-MM-DD for Database and DD/MM/YYYY for Display
+export function toDBDate(dateString) {
+    if (!dateString) return getTodayLocalDateString();
+    const trimmed = String(dateString).trim();
+
+    // If already YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    // If DD/MM/YYYY
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+        const [d, m, y] = trimmed.split('/');
+        return `${y}-${m}-${d}`;
+    }
+
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return getTodayLocalDateString();
+    return d.toISOString().split('T')[0];
+}
+
+export function toDisplayDate(dateString) {
+    if (!dateString) return '';
+    const trimmed = String(dateString).trim();
+
+    // If already DD/MM/YYYY
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) return trimmed;
+
+    // If YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        const [y, m, d] = trimmed.split('-');
+        return `${d}/${m}/${y}`;
+    }
+
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return trimmed;
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
+// Ensure DD/MM/YYYY (Day/Month/Year) format everywhere (Enhanced)
+export function formatAppDate(dateString) {
+    return toDisplayDate(dateString);
+}
+
+window.toDBDate = toDBDate;
+window.toDisplayDate = toDisplayDate;
+window.formatAmountWithComma = formatAmountWithComma;
+window.parseAmount = parseAmount;
+window.handleNumberInput = handleNumberInput;
+window.getTodayLocalDateString = getTodayLocalDateString;
+window.numberToBanglaWords = numberToBanglaWords;
+window.formatTimestampToAppDate = formatTimestampToAppDate;
+window.formatAppDate = formatAppDate;
+
+/**
+ * Enhanced Precision Rounding for Accounting (Bulletproof)
+ * Avoids JS floating point errors like 0.1 + 0.2 = 0.30000000000000004
+ */
+export function safeRound(value, decimals = 2) {
+    if (value === null || value === undefined || isNaN(value)) return 0;
+    const factor = Math.pow(10, decimals);
+    return Math.round((value + Number.EPSILON) * factor) / factor;
+}
+window.safeRound = safeRound;
+
+// --- SMS Utility ---
+export async function sendSMS(phone, message, isAuto = false) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        console.warn("Device is offline. SMS skipped.");
+        return false;
+    }
+    if (!phone || phone === '-' || !message) {
+        if (!isAuto) {
+            Swal.fire({
+                title: 'মোবাইল নম্বর মিসিং!',
+                text: 'কাস্টমারের ফোন নম্বর পাওয়া যায়নি। কাস্টমার এডিট করে নম্বর যুক্ত করুন।',
+                icon: 'warning',
+                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+            });
+        }
+        return false;
+    }
+    
+    // Clean phone number (remove spaces, hyphens, ensure 8801XXXXXXXX format)
+    let cleanPhone = String(phone).replace(/[^0-9]/g, '');
+    if (cleanPhone.startsWith('01') && cleanPhone.length === 11) {
+        cleanPhone = '88' + cleanPhone;
+    }
+    if (!cleanPhone.startsWith('8801') || cleanPhone.length !== 13) {
+        console.warn("Invalid phone number format for SMS:", cleanPhone);
+        if (!isAuto) {
+            Swal.fire({
+                title: 'ভুল নম্বর!',
+                text: `মোবাইল নম্বরটি (${phone}) সঠিক নয়। ১১-ডিজিটের ভ্যালিড নম্বর দিন (যেমন: 018XXXXXXXX)।`,
+                icon: 'warning',
+                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+            });
+        }
+        return false;
+    }
+    
+    try {
+        const settings = await SettingsDAO.getAppSettings();
+        if (Object.keys(settings).length === 0) return false;
+        
+        if (!settings.smsApiKey) {
+            console.warn("SMS API Key missing in settings.");
+            if (!isAuto) {
+                Swal.fire({
+                    title: 'API Key পাওয়া যায়নি!',
+                    text: 'প্রথমে সেটিংস পেজে গিয়ে আপনার BulkSMSBD API Key দিন এবং সেভ করুন।',
+                    icon: 'warning',
+                    customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+                });
+            }
+            return false;
+        }
+
+        if (isAuto && !settings.smsAuto) {
+            console.log("Auto SMS is disabled in settings.");
+            return false;
+        }
+
+        const apiKey = settings.smsApiKey.trim();
+        const senderId = (settings.smsSenderId || '').trim();
+        const encodedMsg = encodeURIComponent(message);
+
+        // Auto-detect Unicode / Bangla text
+        const isUnicode = /[^\x00-\x7F]/.test(message);
+        const smsType = isUnicode ? 'unicode' : 'text';
+
+        const encodedSenderId = encodeURIComponent(senderId);
+
+        // ALWAYS use HTTPS to avoid Mixed Content blocking by the browser
+        const httpsTargetUrl = `https://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=${smsType}&number=${cleanPhone}&senderid=${encodedSenderId}&message=${encodedMsg}`;
+
+        console.log(`Dispatching BulkSMSBD SMS (${smsType}) to ${cleanPhone}...`);
+
+        try {
+            // Single reliable dispatch via fetch (no-cors prevents double triggering)
+            await fetch(httpsTargetUrl, { mode: 'no-cors' });
+            console.log("SMS Fetch request dispatched successfully to", cleanPhone);
+            return true;
+        } catch(dispatchErr) {
+            console.warn("SMS Fetch error, attempting single fallback dispatch:", dispatchErr);
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = httpsTargetUrl;
+            document.body.appendChild(iframe);
+            setTimeout(() => {
+                if (iframe && iframe.parentNode) {
+                    iframe.parentNode.removeChild(iframe);
+                }
+            }, 5000);
+            return true;
+        }
+
+    } catch (error) {
+        console.error("Failed to send SMS:", error);
+        return false;
+    }
+}
+window.sendSMS = sendSMS;
+
+export async function promptSecurityPin(actionName = "ডিলেট/এডিট") {
+    try {
+        let masterPin = null;
+        const settings = await SettingsDAO.getAppSettings();
+        if (settings.adminSecurityPin) {
+            masterPin = String(settings.adminSecurityPin).trim();
+        }
+
+        let userPin = null;
+        const currentUser = firebase.auth().currentUser;
+        if (currentUser) {
+            const userData = await UserDAO.getById(currentUser.uid);
+            if (userData && userData.pin) {
+                userPin = String(userData.pin).trim();
+            }
+        }
+
+        // If no master PIN or user PIN is configured yet, use '1060' as the ONLY emergency fallback
+        // if the database is literally empty or settings haven't been touched.
+        const validMasterPin = masterPin || '1060';
+
+        const { value: inputPin } = await Swal.fire({
+            title: '🔐 সিকিউরিটি পিন ভেরিফিকেশন',
+            html: `<p style="color:#ef4444;font-size:13px;margin-bottom:12px;">⚠️ এই <b>${actionName}</b> সম্পন্ন করতে সিকিউরিটি পিন দিন।</p>`,
+            input: 'password',
+            inputPlaceholder: 'Enter Security PIN',
+            inputAttributes: {
+                autocomplete: 'new-password',
+                autocapitalize: 'off',
+                spellcheck: 'false'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'কনফার্ম',
+            cancelButtonText: 'বাতিল',
+            confirmButtonColor: '#dc2626',
+            customClass: {
+                popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700',
+                title: '!text-white',
+                confirmButton: 'm3-btn-primary !bg-red-600',
+                cancelButton: 'm3-btn-tonal'
+            },
+            inputValidator: (val) => {
+                if (!val) return 'সিকিউরিটি পিন দেওয়া আবশ্যক!';
+            }
+        });
+
+        if (!inputPin) return false;
+
+        const cleanInput = String(inputPin).trim();
+
+        // 1. Check against User's own personal PIN
+        if (userPin && cleanInput === userPin) return true;
+
+        // 2. Check against Master Admin PIN from settings
+        if (cleanInput === validMasterPin) return true;
+
+        Swal.fire({
+            title: 'ভুল পিন! ❌',
+            text: 'আপনার সিকিউরিটি পিন সঠিক নয়।',
+            icon: 'error',
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl' }
+        });
+        return false;
+    } catch(err) {
+        console.error("Security PIN error:", err);
+        return false;
+    }
+}
+window.promptSecurityPin = promptSecurityPin;
+
+export async function printReceiptEngine(txnId, layoutType = 'a4') {
+    try {
+        const txn = await TransactionDAO.getById(txnId);
+        if (!txn) throw new Error("Transaction not found");
+        
+        const customerId = txn.customerId;
+        const cData = await CustomerDAO.getById(customerId) || {};
+
+        // Hardening: Dynamically calculate previous due by summing all transactions BEFORE this one
+        // This ensures that even if old entries were edited, the receipt shows correct historical data.
+        const allTxns = await TransactionDAO.getByCustomer(customerId);
+
+        // Sort by date and then by creation time to establish chronological order
+        allTxns.sort((a, b) => {
+            const dDiff = new Date(a.date) - new Date(b.date);
+            if (dDiff !== 0) return dDiff;
+            return (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0);
+        });
+
+        let calcPrevDue = Number(cData.initialDue || 0);
+        for (const t of allTxns) {
+            if (t.id === txnId) break; // Stop before current transaction
+            calcPrevDue += (Number(t.bill) || 0) - (Number(t.paid) || 0);
+        }
+
+        const effectivePrevDue = safeRound(calcPrevDue);
+        const effectiveCurrentDue = safeRound(effectivePrevDue + (Number(txn.bill) || 0) - (Number(txn.paid) || 0));
+        const netTotalBillDue = safeRound(effectivePrevDue + (Number(txn.bill) || 0));
+        
+        // Fetch Settings for Shop Info
+        const settings = await SettingsDAO.getAppSettings();
+        
+        const shopName = escapeHTML(settings.shopName || "MAA ERP");
+        const shopPhone = escapeHTML(settings.shopPhone || "০১৮১৯-৩৯৭৬৬৯");
+        const shopAddress = escapeHTML(settings.shopAddress || "চট্টগ্রাম।");
+        
+        let container = document.getElementById('print-receipt-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'print-receipt-container';
+            container.classList.add('hidden');
+            document.body.appendChild(container);
+        }
+        
+        // Items HTML
+        let itemsHtml = '';
+        if (txn.hasItems && txn.items && txn.items.length > 0) {
+            itemsHtml = `
+                <table class="print-items-table">
+                    <thead>
+                        <tr>
+                            <th style="width:8%">SL.</th>
+                            <th style="width:42%; text-align:left;">বিবরণ / আইটেমের নাম</th>
+                            <th style="width:15%">পরিমাণ</th>
+                            <th style="width:15%">দর</th>
+                            <th style="width:20%">মোট</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${txn.items.map((it, i) => `
+                            <tr>
+                                <td style="text-align:center;">${String(i + 1).padStart(2, '0')}</td>
+                                <td class="text-left" style="font-weight:700;">${escapeHTML(it.desc || '-')}</td>
+                                <td class="text-right">${it.qty || 0}</td>
+                                <td class="text-right">৳${formatAmountWithComma(it.rate || 0)}</td>
+                                <td class="text-right" style="font-weight:800;">৳${formatAmountWithComma(it.total || 0)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        // A4 Layout
+        if (layoutType === 'a4') {
+            container.className = 'print-a4';
+            container.innerHTML = `
+                <style>
+                    .a4-premium-header {
+                        background: #0369a1 !important;
+                        color: white !important;
+                        padding: 25px 30px;
+                        border-radius: 15px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 25px;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    .header-logo-box {
+                        width: 85px;
+                        height: 85px;
+                        background: white;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        overflow: hidden;
+                        border: 3px solid rgba(255,255,255,0.3);
+                    }
+                    .header-content h1 { font-size: 28px; font-weight: 900; margin: 0; line-height: 1.1; }
+                    .header-content p { font-size: 12px; margin: 3px 0 0; opacity: 0.9; font-weight: 600; }
+                    .invoice-badge {
+                        background: rgba(255,255,255,0.15);
+                        border: 1px solid rgba(255,255,255,0.3);
+                        padding: 10px 25px;
+                        border-radius: 12px;
+                        text-align: center;
+                    }
+                    .invoice-badge h2 { font-size: 24px; font-weight: 900; margin: 0; letter-spacing: 2px; }
+                    .invoice-badge p { font-size: 11px; margin-top: 2px; font-weight: 800; }
+
+                    .print-items-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 20px 0;
+                        font-size: 12px;
+                    }
+                    .print-items-table th {
+                        background: #f1f5f9 !important;
+                        border: 1px solid #cbd5e1;
+                        padding: 10px;
+                        text-align: center;
+                        font-weight: 900;
+                        color: #0f172a;
+                    }
+                    .print-items-table td {
+                        border: 1px solid #e2e8f0;
+                        padding: 8px 10px;
+                        color: #334155;
+                    }
+                    .print-items-table .text-left { text-align: left; }
+                    .print-items-table .text-right { text-align: right; }
+                </style>
+
+                <div class="print-footer-container" style="justify-content: center;">
+                    <div style="font-size:10px; font-weight:900; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">MAA MOTORS ERP • Professional Business Ledger</div>
+                </div>
+
+                <table class="print-layout-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr><td><div class="print-header-space" style="height: 10mm;"></div></td></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="a4-wrapper font-bn">
+                                    <!-- Premium Blue Header -->
+                                    <div class="a4-premium-header">
+                                        <div style="display: flex; align-items: center; gap: 20px;">
+                                            <div class="header-logo-box">
+                                                ${settings.shopLogo ? `<img src="${settings.shopLogo}" style="width:100%; height:100%; object-fit: cover;">` : '<div class="text-blue-600 font-black text-2xl">MM</div>'}
+                                            </div>
+                                            <div class="header-content">
+                                                <h1>${shopName}</h1>
+                                                <p>${shopAddress}</p>
+                                                <p>মোবাইল: ${shopPhone}</p>
+                                            </div>
+                                        </div>
+                                        <div class="invoice-badge">
+                                            <h2>INVOICE</h2>
+                                            <p>ভাউচার নং: #${escapeHTML(txn.voucherNo || txnId.slice(-6).toUpperCase())}</p>
+                                            <p>তারিখ: ${formatAppDate(txn.date)}</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Meta Grid -->
+                                    <div class="a4-meta-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+                                        <div class="meta-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; border-left: 5px solid #0369a1;">
+                                            <div class="meta-card-title" style="font-size: 11px; font-weight: 900; color: #64748b; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px;">CUSTOMER DETAILS</div>
+                                            <p style="font-size:15px; font-weight:900; margin-bottom:2px;">${escapeHTML(txn.customerName)}</p>
+                                            <p style="font-size:13px; color:#334155;"><strong>Mobile:</strong> ${escapeHTML(cData.phone || '-')}</p>
+                                            <p style="font-size:13px; color:#334155;"><strong>Address:</strong> ${escapeHTML(cData.address || '-')}</p>
+                                        </div>
+                                        <div class="meta-card" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px;">
+                                            <div class="meta-card-title" style="font-size: 11px; font-weight: 900; color: #0369a1; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px;">PAYMENT SUMMARY</div>
+                                            <p style="font-size:13px; margin-bottom:4px;"><strong>জমাকৃত টাকা:</strong> <span style="color:#059669; font-weight:900;">৳ ${formatAmountWithComma(txn.paid)}</span></p>
+                                            <p style="font-size:13px; margin-bottom:6px;"><strong>বর্তমান বকেয়া:</strong> <span style="color:#dc2626; font-weight:900;">৳ ${formatAmountWithComma(effectiveCurrentDue)}</span></p>
+                                            <div>
+                                                ${effectiveCurrentDue <= 0
+                                                    ? `<span style="background:#dcfce7; color:#15803d; font-weight:900; font-size:10px; padding:3px 8px; border-radius:4px; border:1px solid #86efac; text-transform:uppercase;">PAID / পরিশোধিত</span>`
+                                                    : `<span style="background:#fee2e2; color:#b91c1c; font-weight:900; font-size:10px; padding:3px 8px; border-radius:4px; border:1px solid #fca5a5; text-transform:uppercase;">DUE / বকেয়া</span>`}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Items Table -->
+                                    ${itemsHtml ? `<div class="a4-items" style="margin-bottom:24px;">${itemsHtml}</div>` : `<div style="height:10px;"></div>`}
+
+                                    <!-- Totals Container -->
+                                    <div class="a4-totals-container" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; margin-top: 20px;">
+                                        <div class="a4-notes">
+                                            <strong style="color:#0f172a; font-weight:800; font-size:13px; border-bottom:1px solid #cbd5e1; display:block; padding-bottom:4px; margin-bottom:8px;">নোট / শর্তাবলী (Notes & Terms):</strong>
+                                            <p style="font-size:12px; line-height:1.6; color:#475569;">${txn.notes ? escapeHTML(txn.notes).replace(/\\n/g, '<br/>') : 'পণ্য বিক্রয়ের সময় রিসিট দেখে বুঝে নিন। কোন ভুলত্রুটি থাকলে তাৎক্ষণিক অবহিত করুন। ধন্যবাদ!'}</p>
+                                        </div>
+                                        <div class="a4-totals" style="background:#f8fafc; padding:15px; border-radius:12px; border:1px solid #e2e8f0;">
+                                            ${txn.subtotal ? `<p style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span>সাব-টোটাল:</span> <strong>৳ ${formatAmountWithComma(txn.subtotal)}</strong></p>` : ''}
+                                            ${txn.discount ? `
+                                                <p style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+                                                    <span>ডিসকাউন্ট ${txn.discountMode === 'percent' ? `(${txn.discountInput}%)` : ''}:</span>
+                                                    <strong style="color:#ea580c;">- ৳ ${formatAmountWithComma(txn.discount)}</strong>
+                                                </p>` : ''}
+                                            <p style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px; border-bottom:1px solid #e2e8f0; padding-bottom:6px;"><span>মোট বিল:</span> <strong>৳ ${formatAmountWithComma(txn.bill)}</strong></p>
+                                            <p style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; color:#64748b;"><span>পূর্বের বকেয়া:</span> <strong>৳ ${formatAmountWithComma(effectivePrevDue)}</strong></p>
+                                            <p style="display:flex; justify-content:space-between; font-size:15px; font-weight:900; color:#0f172a; background:white; padding:6px; border-radius:6px; border:1px solid #e2e8f0;"><span>সর্বমোট দেওনা:</span> <span>৳ ${formatAmountWithComma(netTotalBillDue)}</span></p>
+                                            <p style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; font-weight:800; color:#059669;"><span>জমা (Credit):</span> <span>- ৳ ${formatAmountWithComma(txn.paid)}</span></p>
+                                            <div style="height:1px; background:#cbd5e1; margin:8px 0;"></div>
+                                            <p style="display:flex; justify-content:space-between; font-size:16px; font-weight:900; color:#b91c1c;"><span>বর্তমান বকেয়া:</span> <span>৳ ${formatAmountWithComma(effectiveCurrentDue)}</span></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Amount in words -->
+                                    <div class="a4-in-words" style="margin-top:24px; padding:12px; background:#f1f5f9; border-radius:8px; border:1px dashed #cbd5e1;">
+                                        ${txn.paid > 0 ? `<p style="margin-bottom:6px; font-size:12px;"><strong>কথায় (জমাকৃত টাকা):</strong> ${numberToBanglaWords(txn.paid)}</p>` : ''}
+                                        ${effectiveCurrentDue > 0 ? `<p style="font-size:12px;"><strong>কথায় (বর্তমান বকেয়া):</strong> ${numberToBanglaWords(effectiveCurrentDue)}</p>` : `<p style="font-size:12px;"><strong>কথায় (মোট বিল):</strong> ${numberToBanglaWords(txn.bill)}</p>`}
+                                    </div>
+
+                                    <!-- Signatures -->
+                                    <div class="a4-signatures" style="display: flex; justify-content: space-between; margin-top: 60px; padding: 0 20px;">
+                                        <div class="sig-box" style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 180px; text-align: center; font-size: 12px; font-weight: 700; color: #334155;">কাস্টমারের স্বাক্ষর<br/><span style="font-size:9px; font-weight:normal;">Customer Signature</span></div>
+                                        <div class="sig-box" style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 180px; text-align: center; font-size: 12px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর<br/><span style="font-size:9px; font-weight:normal;">Authorized Signature</span></div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr><td><div class="print-footer-space" style="height: 15mm;"></div></td></tr>
+                    </tfoot>
+                </table>
+            `;
+        }
+        // POS Layout
+        else {
+            container.className = 'print-pos';
+            container.innerHTML = `
+                <div class="pos-wrapper font-bn">
+                    <h1 class="pos-title">${shopName}</h1>
+                    <p class="pos-subtitle">${shopAddress}</p>
+                    <p class="pos-subtitle">মোবাইল: ${shopPhone}</p>
+                    <div class="pos-divider"></div>
+                    
+                    <p class="pos-info">ভাউচার নং: ${escapeHTML(txn.voucherNo || '-')}</p>
+                    <p class="pos-info">তারিখ: ${formatAppDate(txn.date)}</p>
+                    <p class="pos-info">গ্রাহক: ${escapeHTML(txn.customerName)}</p>
+                    
+                    <div class="pos-divider"></div>
+                    
+                    ${itemsHtml ? `<div class="pos-items">${itemsHtml}</div><div class="pos-divider"></div>` : ''}
+                    
+                    <div class="pos-totals">
+                        ${txn.subtotal ? `<p><span>সাব-টোটাল:</span><span>${formatAmountWithComma(txn.subtotal)}</span></p>` : ''}
+                        ${txn.discount ? `<p><span>ডিসকাউন্ট:</span><span>${formatAmountWithComma(txn.discount)}</span></p>` : ''}
+                        <p><span>মোট বিল:</span><span>${formatAmountWithComma(txn.bill)}</span></p>
+                        <p><span>পূর্ব বকেয়া:</span><span>${formatAmountWithComma(effectivePrevDue)}</span></p>
+                        <p class="pos-net"><span>সর্বমোট দেওনা:</span><span>${formatAmountWithComma(netTotalBillDue)}</span></p>
+                        <p class="pos-paid"><span>জমা:</span><span>${formatAmountWithComma(txn.paid)}</span></p>
+                        <p class="pos-due"><span>বর্তমান বকেয়া:</span><span>${formatAmountWithComma(effectiveCurrentDue)}</span></p>
+                    </div>
+                    
+                    <div class="pos-divider"></div>
+                    <p class="pos-words">কথায়: ${numberToBanglaWords(txn.paid > 0 ? txn.paid : txn.bill)}</p>
+                    <div class="pos-divider"></div>
+                    
+                    <p class="pos-footer">ধন্যবাদ, আবার আসবেন!</p>
+                </div>
+            `;
+        }
+
+        container.classList.remove('hidden');
+        window.print();
+        container.classList.add('hidden');
+        
+    } catch(e) {
+        console.error("Print receipt error:", e);
+        if(window.Swal) window.Swal.fire('Error', 'প্রিন্ট করতে সমস্যা হয়েছে: ' + (e.message || e), 'error');
+    }
+}
+window.printReceiptEngine = printReceiptEngine;

@@ -1,0 +1,548 @@
+// --- Bulk / Fast Entry Module ---
+import Swal from 'sweetalert2';
+import { db, firebase } from './firebase-config.js';
+import { CustomerDAO, TransactionDAO, SettingsDAO } from './dao.js';
+import { parseAmount, formatAmountWithComma, toDBDate } from './utils.js';
+import { getCustomerCache, initCustomerCache } from './customer/index.js';
+import { auditLog } from './audit.js';
+
+export function renderBulkEntry(container) {
+    if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.viewBulkEntry === false) {
+        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-black text-red-500">অ্যাক্সেস ডিনাইড! আপনার ফাস্ট এন্ট্রি (Bulk Entry) ব্যবহারের অনুমতি নেই।</h2></div>`;
+        return;
+    }
+
+    const isAdmin = window.AppState?.currentUserRole === 'Admin';
+    const adminTabBtn = isAdmin ? `
+        <button class="px-6 py-2 text-sm font-semibold rounded-lg transition-all text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20" id="tab-admin-excel" onclick="switchBulkTab('admin-excel')">
+            <i class="fa-solid fa-file-excel mr-1"></i> স্মার্ট এক্সেল (Admin Only)
+        </button>
+    ` : '';
+
+    container.innerHTML = `
+        <div class="flex flex-col gap-6">
+            <div class="px-2">
+                <h2 class="text-2xl font-bold flex items-center gap-4 tracking-tight text-white font-bn">
+                    <div class="w-1.5 h-8 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.4)]"></div>
+                    ফাস্ট এন্ট্রি (Bulk Entry)
+                </h2>
+            </div>
+
+            <div class="flex flex-wrap gap-2 p-1 bg-slate-800/50 border border-slate-700/50 rounded-xl self-start ml-2 font-bn">
+                <button class="px-6 py-2 text-sm font-semibold rounded-lg transition-all" id="tab-spreadsheet" onclick="switchBulkTab('spreadsheet')">স্প্রেডশিট গ্রিড</button>
+                <button class="px-6 py-2 text-sm font-semibold rounded-lg transition-all" id="tab-excel" onclick="switchBulkTab('excel')">এক্সেল আপলোড</button>
+                ${adminTabBtn}
+            </div>
+
+            <div id="bulk-content-area" class="m3-card">
+                <!-- Content changes based on tab -->
+            </div>
+        </div>
+    `;
+    loadCustomerDatalist();
+    switchBulkTab('spreadsheet');
+}
+
+async function loadCustomerDatalist() {
+    try {
+        let customers = getCustomerCache();
+        if (!customers || customers.length === 0) {
+            initCustomerCache();
+            customers = await CustomerDAO.getAll();
+        }
+        let listEl = document.getElementById('customer-datalist');
+        if (!listEl) {
+            listEl = document.createElement('datalist');
+            listEl.id = 'customer-datalist';
+            document.body.appendChild(listEl);
+        }
+        let optsHtml = '';
+        customers.forEach(c => {
+            const acc = c.accountNo ? `[${c.accountNo}] ` : '';
+            const phone = c.phone ? ` (${c.phone})` : '';
+            optsHtml += `<option value="${acc}${c.name}${phone}">${acc}${c.name}</option>`;
+        });
+        listEl.innerHTML = optsHtml;
+    } catch(e) { console.error("Error loading customer datalist:", e); }
+}
+
+function switchBulkTab(tab) {
+    const area = document.getElementById('bulk-content-area');
+    const tabSpreadsheet = document.getElementById('tab-spreadsheet');
+    const tabExcel = document.getElementById('tab-excel');
+    const tabAdminExcel = document.getElementById('tab-admin-excel');
+    
+    if(tabSpreadsheet) tabSpreadsheet.className = tab === 'spreadsheet' ? 'px-6 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white shadow-md' : 'px-6 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50';
+    if(tabExcel) tabExcel.className = tab === 'excel' ? 'px-6 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white shadow-md' : 'px-6 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50';
+    if(tabAdminExcel) tabAdminExcel.className = tab === 'admin-excel' ? 'px-6 py-2 text-sm font-semibold rounded-lg bg-emerald-600 text-white shadow-md' : 'px-6 py-2 text-sm font-semibold rounded-lg text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20';
+
+    if (tab === 'spreadsheet') {
+        area.innerHTML = `
+            <p class="text-[11px] text-slate-500 mb-4 flex items-center gap-2 px-2 uppercase tracking-widest font-bold">
+                <i class="fa-solid fa-info-circle text-blue-500"></i> কীবোর্ড দিয়ে দ্রুত টাইপ করুন। শেষ ঘরে 'Enter' বা 'Tab' চাপলে নতুন লাইন তৈরি হবে।
+            </p>
+            <div class="m3-table-container">
+                <table class="m3-table w-full table-fixed min-w-[960px]">
+                    <thead>
+                        <tr>
+                            <th class="w-[130px] !py-2.5 !px-2">তারিখ</th>
+                            <th class="w-[200px] !py-2.5 !px-2">কাস্টমারের নাম / অ্যাকাউন্ট নং</th>
+                            <th class="w-[120px] !py-2.5 !px-2">ভাউচার</th>
+                            <th class="w-[130px] !py-2.5 !px-2">বিল (Debit ৳)</th>
+                            <th class="w-[130px] !py-2.5 !px-2">জমা (Credit ৳)</th>
+                            <th class="w-[110px] !py-2.5 !px-2">জমা মাধ্যম</th>
+                            <th class="w-[140px] !py-2.5 !px-2">ব্যাংক / গ্রহণকারীর নাম</th>
+                        </tr>
+                    </thead>
+                    <tbody id="spreadsheet-body">
+                        <!-- Initial Row -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 flex justify-end px-2">
+                <button class="m3-btn-primary px-10 h-[42px] py-0 text-sm font-black uppercase tracking-widest" onclick="saveSpreadsheetData()" id="save-spreadsheet-btn">
+                    <i class="fa-solid fa-cloud-arrow-up mr-2"></i> সব সেভ করুন
+                </button>
+            </div>
+        `;
+        addSpreadsheetRow(); 
+    } else if (tab === 'admin-excel') {
+        area.innerHTML = `
+            <div class="max-w-3xl mx-auto space-y-6 py-6 font-bn">
+                <div class="text-center space-y-2">
+                    <i class="fa-solid fa-shield-halved text-5xl text-emerald-500 mb-2 block"></i>
+                    <h3 class="text-xl font-black text-white">স্মার্ট এক্সেল ডাটা ব্যাকআপ ও অটো-সিঙ্ক (Admin Only)</h3>
+                    <p class="text-xs text-slate-400">সিকিউরিটি পিন পাসওয়ার্ড ভেরিফিকেশন দিয়ে লাইভ ডাটা এক্সেল ডাউনলোড ও অটো-সিঙ্ক করুন।</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div class="bg-slate-900/80 p-6 rounded-3xl border border-slate-700/60 flex flex-col justify-between space-y-4 shadow-xl">
+                        <div>
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl mb-3 border border-emerald-500/20">
+                                <i class="fa-solid fa-file-excel"></i>
+                            </div>
+                            <h4 class="text-white font-bold text-lg">১. অ্যাপ ডাটা ডাউনলোড</h4>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">সব কাস্টমারের বর্তমান জের ও লেনদেন ফরম্যাটসহ লাইভ এক্সেল ডাউনলোড করুন।</p>
+                        </div>
+                        <button class="m3-btn-primary !bg-emerald-600 hover:!bg-emerald-500 py-3 text-sm font-black tracking-wide" onclick="downloadAdminExcelBackup()">
+                            <i class="fa-solid fa-download mr-2"></i> এক্সেল ফাইল ডাউনলোড করুন
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-6 rounded-3xl border border-slate-700/60 flex flex-col justify-between space-y-4 shadow-xl">
+                        <div>
+                            <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl mb-3 border border-blue-500/20">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                            </div>
+                            <h4 class="text-white font-bold text-lg">২. অফলাইন এক্সেল সিঙ্ক</h4>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">এক্সেলে এন্ট্রি করা ফাইল আপলোড দিলে পুরাতন কাস্টমার সিঙ্ক ও নতুন কাস্টমার অটো তৈরি হবে।</p>
+                        </div>
+                        <div>
+                            <input type="file" id="bulk-admin-excel-file" accept=".xlsx, .xls, .csv" class="hidden" onchange="uploadAdminExcelBackup(this)">
+                            <button class="m3-btn-primary !bg-blue-600 hover:!bg-blue-500 w-full py-3 text-sm font-black tracking-wide" onclick="document.getElementById('bulk-admin-excel-file').click()">
+                                <i class="fa-solid fa-file-import mr-2"></i> এক্সেল আপলোড ও সিঙ্ক করুন
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        area.innerHTML = `
+            <div class="max-w-2xl mx-auto space-y-6 py-10">
+                <div class="text-center space-y-2">
+                    <i class="fa-solid fa-file-excel text-6xl text-blue-600 opacity-10 mb-4 block"></i>
+                    <p class="text-slate-300 font-medium">এক্সেল (.xlsx) বা .csv ফাইল সিলেক্ট করুন।</p>
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">A: Date | B: Name | C: Phone | D: Voucher | E: Bill | F: Paid | G: Type (Bank/Cash) | H: Bank Name</p>
+                </div>
+
+                <div class="relative">
+                    <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" class="m3-field py-10 border-dashed border-2 border-slate-700 text-center hover:border-blue-500/50 transition-all">
+                </div>
+
+                <button class="m3-btn-primary w-full py-4 text-lg" onclick="processExcelUpload()" id="process-excel-btn">
+                    <i class="fa-solid fa-upload"></i> ফাইল আপলোড ও সেভ করুন
+                </button>
+            </div>
+        `;
+    }
+}
+
+function addSpreadsheetRow() {
+    const tbody = document.getElementById('spreadsheet-body');
+    if(!tbody) return;
+    const tr = document.createElement('tr');
+
+    // Ensure we have a valid internal YYYY-MM-DD date
+    let workingDate = localStorage.getItem('workingDate');
+    if (!workingDate || !/^\d{4}-\d{2}-\d{2}$/.test(workingDate)) {
+        workingDate = (window.getTodayLocalDateString ? window.getTodayLocalDateString() : new Date().toISOString().split('T')[0]);
+    }
+
+    const rowIndex = tbody.children.length + 1;
+
+    tr.innerHTML = `
+        <td class="!px-1 !py-1 border-b border-slate-800/50">
+            <input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs datepicker" value="${workingDate}" onchange="if(this.value) localStorage.setItem('workingDate', this.value)">
+        </td>
+        <td class="!px-1 !py-1 border-b border-slate-800/50"><input type="text" list="customer-datalist" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs" placeholder="নাম / অ্যাকাউন্ট নং / ফোন"></td>
+        <td class="!px-1 !py-1 border-b border-slate-800/50"><input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs" placeholder="ভাউচার"></td>
+        <td class="!px-1 !py-1 border-b border-slate-800/50">
+            <input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold text-red-400" placeholder="0" oninput="handleNumberInput(this); window.updateLiveWords(this, 'grid-b-words-${rowIndex}')">
+            <div id="grid-b-words-${rowIndex}" class="text-[10px] font-black text-red-400 mt-1 px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/20 truncate hidden italic"></div>
+        </td>
+        <td class="!px-1 !py-1 border-b border-slate-800/50">
+            <input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold text-emerald-400" placeholder="0" oninput="handleNumberInput(this); window.updateLiveWords(this, 'grid-p-words-${rowIndex}')">
+            <div id="grid-p-words-${rowIndex}" class="text-[10px] font-black text-emerald-400 mt-1 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 truncate hidden italic"></div>
+        </td>
+        <td class="!px-1 !py-1 border-b border-slate-800/50">
+            <select class="grid-input m3-field !bg-slate-900 !py-1.5 !px-1 text-xs text-blue-400 font-bold cursor-pointer">
+                <option value="Bank" class="!bg-slate-900 !text-white font-bold py-2">Bank</option>
+                <option value="Cash" class="!bg-slate-900 !text-white font-bold py-2">Cash</option>
+            </select>
+        </td>
+        <td class="!px-1 !py-1 border-b border-slate-800/50"><input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs" placeholder="ব্যাংকের নাম / নাম" onkeydown="handleGridKey(event, this)"></td>
+    `;
+    tbody.appendChild(tr);
+    
+    if(tbody.children.length > 1) {
+        tr.children[1].querySelector('input')?.focus();
+    }
+}
+
+function handleGridKey(event, element) {
+    if (event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault();
+        const dateInput = element.closest('tr')?.querySelector('input.datepicker')?.value;
+        if(dateInput) localStorage.setItem('workingDate', dateInput);
+        addSpreadsheetRow();
+    }
+}
+
+async function saveSpreadsheetData() {
+    const tbody = document.getElementById('spreadsheet-body');
+    const rows = tbody.querySelectorAll('tr');
+    const dataToSave = [];
+
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input, select');
+        const date = inputs[0].value;
+        let nameRaw = inputs[1].value.trim();
+        let name = nameRaw;
+        let phone = '';
+
+        // Extract clean name if selected from datalist e.g. "[0001] Rahim (017...)"
+        if (nameRaw.startsWith('[')) {
+            const matchName = nameRaw.match(/^\[.*?\]\s*([^(]+)/);
+            if (matchName) name = matchName[1].trim();
+            const matchPhone = nameRaw.match(/\(([^)]+)\)/);
+            if (matchPhone) phone = matchPhone[1].trim();
+        }
+
+        const voucher = inputs[2].value.trim();
+        const bill = parseAmount(inputs[3].value);
+        const paid = parseAmount(inputs[4].value);
+        const receivedType = inputs[5].value || 'Bank';
+        const receivedFrom = inputs[6].value.trim();
+
+        if (name && (bill > 0 || paid > 0)) {
+            dataToSave.push({ date, name, phone, voucher, bill, paid, receivedType, receivedFrom });
+        }
+    });
+
+    if (dataToSave.length === 0) {
+        Swal.fire('খালি ফর্ম', 'সেভ করার মতো কোনো ডাটা পাওয়া যায়নি।', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('save-spreadsheet-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>সেভ হচ্ছে... দয়া করে অপেক্ষা করুন';
+    }
+
+    try {
+        await executeBulkSave(dataToSave);
+    } catch(err) {
+        console.error("saveSpreadsheetData error:", err);
+    } finally {
+        // Always re-enable button regardless of success/fail
+        if (btn && document.getElementById('save-spreadsheet-btn')) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2"></i> সব সেভ করুন';
+        }
+    }
+}
+
+async function processExcelUpload() {
+    const fileInput = document.getElementById('excel-file');
+    if (!fileInput.files.length) {
+        Swal.fire('ফাইল নেই', 'দয়া করে একটি এক্সেল ফাইল সিলেক্ট করুন।', 'warning');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    const btn = document.getElementById('process-excel-btn');
+    btn.disabled = true;
+    btn.innerHTML = 'ফাইল পড়া হচ্ছে...';
+
+    reader.onload = async (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            if(json.length <= 1) {
+                throw new Error("ফাইলটি খালি বা ডাটা নেই!");
+            }
+
+            const defaultDate = window.getTodayLocalDateString ? window.getTodayLocalDateString() : new Date().toISOString().split('T')[0];
+            const dataToSave = [];
+            for (let i = 1; i < json.length; i++) {
+                const row = json[i];
+                if (row.length === 0) continue;
+
+                let dateVal = row[0];
+                let formattedDate = defaultDate;
+                if(dateVal) {
+                    if(typeof dateVal === 'number') {
+                        const jsDate = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+                        formattedDate = jsDate.toISOString().split('T')[0];
+                    } else {
+                        const parsed = new Date(dateVal);
+                        if(!isNaN(parsed)) formattedDate = parsed.toISOString().split('T')[0];
+                    }
+                }
+
+                const name = String(row[1] || '').trim();
+                const phone = String(row[2] || '').trim();
+                const voucher = String(row[3] || '').trim();
+                const bill = parseFloat(row[4]) || 0;
+                const paid = parseFloat(row[5]) || 0;
+                const receivedType = String(row[6] || 'Bank').trim();
+                const receivedFrom = String(row[7] || '').trim();
+
+                if (name && (bill > 0 || paid > 0)) {
+                    dataToSave.push({ date: formattedDate, name, phone, voucher, bill, paid, receivedType, receivedFrom });
+                }
+            }
+
+            if(dataToSave.length === 0) {
+                Swal.fire('ডাটা নেই', 'ভ্যালিড কোনো ডাটা পাওয়া যায়নি।', 'warning');
+                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> ফাইল আপলোড ও সেভ করুন';
+                return;
+            }
+
+            await executeBulkSave(dataToSave, true);
+        } catch(error) {
+            console.error(error);
+            Swal.fire('Error', 'ফাইল প্রসেস করতে সমস্যা হয়েছে।', 'error');
+            btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> ফাইল আপলোড ও সেভ করুন';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+async function executeBulkSave(rawDataToSave, isExcel = false) {
+    try {
+        // Sanitize and filter raw input rows
+        const dataToSave = rawDataToSave.filter(item => item && item.name && item.name.trim() !== '').map(item => ({
+            date: item.date || new Date().toISOString().split('T')[0],
+            name: item.name.trim(),
+            phone: item.phone ? String(item.phone).trim() : '',
+            voucher: item.voucher ? String(item.voucher).trim() : '',
+            bill: parseAmount(item.bill) || 0,
+            paid: parseAmount(item.paid) || 0,
+            receivedType: item.receivedType || 'Bank',
+            receivedFrom: item.receivedFrom || ''
+        })).filter(item => item.bill > 0 || item.paid > 0);
+
+        if (dataToSave.length === 0) {
+            return Swal.fire({
+                title: 'কোনো ভ্যালিড এন্ট্রি পাওয়া যায়নি!',
+                text: 'কাস্টমার নাম এবং সঠিক বিল বা জমা উল্লেখ করুন।',
+                icon: 'warning',
+                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+            });
+        }
+
+        Swal.fire({
+            title: 'সেভ হচ্ছে...',
+            text: `${dataToSave.length} টি এন্ট্রি প্রসেস করা হচ্ছে। দয়া করে অপেক্ষা করুন।`,
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); },
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+
+        // 1. Build customers map from in-memory cache (0 Firestore reads, works offline)
+        let cachedCustomers = getCustomerCache();
+        if (!cachedCustomers || cachedCustomers.length === 0) {
+            // Fallback: fetch from Firestore if cache not ready
+            cachedCustomers = await CustomerDAO.getAll();
+        }
+        const customersMap = {};
+        const customersMapByAccNo = {};
+        cachedCustomers.forEach(c => {
+            if (c.name) {
+                customersMap[c.name.trim().toLowerCase()] = { id: c.id, totalDue: Number(c.totalDue) || 0, accountNo: c.accountNo || '', isNew: false };
+            }
+            if (c.accountNo) {
+                customersMapByAccNo[String(c.accountNo).toLowerCase()] = { id: c.id, totalDue: Number(c.totalDue) || 0, accountNo: c.accountNo || '', isNew: false };
+            }
+        });
+
+        // Fetch counter for new customer Account Nos
+        const counterRef = SettingsDAO.collection.doc('counters');
+        const counterDoc = await counterRef.get();
+        let lastAccountNo = 0;
+        if (counterDoc.exists && counterDoc.data().customerAccountNo) {
+            lastAccountNo = parseInt(counterDoc.data().customerAccountNo) || 0;
+        }
+
+        let batch = db.batch();
+        let opCount = 0;
+        let counterUpdated = false;
+
+        for (const item of dataToSave) {
+            const nameKey = item.name.trim().toLowerCase();
+            let customerId = '';
+            let resolvedKey = nameKey;
+
+            // Match by accountNo first (extracted from datalist format "[0001] Name (phone)")
+            const accMatch = item.name.match(/^\[(\d+)\]/);
+            if (accMatch) {
+                const accNo = accMatch[1].toLowerCase();
+                if (customersMapByAccNo[accNo]) {
+                    const matched = customersMapByAccNo[accNo];
+                    customerId = matched.id;
+                    resolvedKey = Object.keys(customersMap).find(k => customersMap[k].id === customerId) || nameKey;
+                    if (!customersMap[resolvedKey]) customersMap[resolvedKey] = matched;
+                }
+            }
+
+            // Fallback to name match if accountNo not found
+            if (!customerId) {
+                // Strip datalist prefix "[XXXX] Name (phone)" down to just the bare name
+                const strippedName = item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim().toLowerCase();
+                if (customersMap[strippedName]) {
+                    customerId = customersMap[strippedName].id;
+                    resolvedKey = strippedName;
+                } else if (customersMap[nameKey]) {
+                    customerId = customersMap[nameKey].id;
+                } else {
+                    const newCustRef = CustomerDAO.getRef();
+                    customerId = newCustRef.id;
+                    lastAccountNo++;
+                    const accNoStr = String(lastAccountNo).padStart(4, '0');
+                    customersMap[nameKey] = { id: customerId, totalDue: 0, accountNo: accNoStr, isNew: true, phone: item.phone || '', name: item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim() };
+                    resolvedKey = nameKey;
+                    counterUpdated = true;
+                }
+            }
+
+            if (!customersMap[resolvedKey]) resolvedKey = nameKey;
+
+            const prevDue = customersMap[resolvedKey].totalDue;
+            const changeInDue = item.bill - item.paid;
+            const currentDue = prevDue + changeInDue;
+            customersMap[resolvedKey].totalDue = currentDue;
+
+            // Clean customer name for storage (strip datalist prefix)
+            const cleanName = customersMap[resolvedKey].name || item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim();
+
+            const txnRef = TransactionDAO.getRef();
+            batch.set(txnRef, {
+                customerId: customerId,
+                customerName: cleanName,
+                date: item.date,
+                voucherNo: item.voucher,
+                bill: item.bill,
+                paid: item.paid,
+                receivedType: item.paid > 0 ? (item.receivedType || 'Bank') : '',
+                receivedFrom: item.paid > 0 ? (item.receivedFrom || '') : '',
+                prevDue: prevDue,
+                currentDue: currentDue,
+                createdBy: window.AppState?.currentUserEmail || 'Unknown',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            opCount++;
+
+            const custRef = CustomerDAO.getRef(customerId);
+            if (customersMap[resolvedKey].isNew) {
+                batch.set(custRef, {
+                    name: cleanName,
+                    phone: customersMap[resolvedKey].phone || item.phone || '',
+                    address: 'Bulk Import',
+                    accountNo: customersMap[resolvedKey].accountNo,
+                    totalDue: currentDue,
+                    initialDue: 0, // Default to 0 for bulk created customers
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Audit Log for Bulk New Customer
+                auditLog('CREATE', 'Customers', customerId, cleanName, { phone: item.phone, source: 'Bulk Entry' });
+
+                customersMap[resolvedKey].isNew = false;
+                opCount++;
+            } else {
+                batch.update(custRef, { totalDue: firebase.firestore.FieldValue.increment(changeInDue) });
+                opCount++;
+            }
+
+            if (opCount >= 450) {
+                if (counterUpdated) {
+                    batch.set(counterRef, { customerAccountNo: lastAccountNo }, { merge: true });
+                    counterUpdated = false;
+                }
+                await batch.commit();
+                batch = db.batch();
+                opCount = 0;
+            }
+        }
+
+        if (counterUpdated) {
+            batch.set(counterRef, { customerAccountNo: lastAccountNo }, { merge: true });
+        }
+
+        if (opCount > 0) {
+            await batch.commit();
+        }
+
+        Swal.fire({
+            title: 'সফল! ✅',
+            text: `সফলভাবে ${dataToSave.length} টি ডাটা সেভ হয়েছে!`,
+            icon: 'success',
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+        
+        if(isExcel) {
+            document.getElementById('excel-file').value = '';
+            const btn = document.getElementById('process-excel-btn');
+            if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> ফাইল আপলোড ও সেভ করুন'; }
+        } else {
+            switchBulkTab('spreadsheet'); // Reset grid
+        }
+
+    } catch (error) {
+        console.error("Bulk Save Error:", error);
+        Swal.fire('Error!', 'ডাটা সেভ করতে সমস্যা হয়েছে: ' + (error.message || error), 'error');
+        if(!isExcel) {
+            const btn = document.getElementById('save-spreadsheet-btn');
+            if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> সব সেভ করুন'; }
+        }
+    }
+}
+
+// Bind to window
+window.switchBulkTab = switchBulkTab;
+window.addSpreadsheetRow = addSpreadsheetRow;
+window.handleGridKey = handleGridKey;
+window.saveSpreadsheetData = saveSpreadsheetData;
+window.processExcelUpload = processExcelUpload;
+window.executeBulkSave = saveSpreadsheetData;
+

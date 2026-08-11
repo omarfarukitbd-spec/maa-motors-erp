@@ -1,0 +1,6 @@
+node_modules/
+.env
+Web_ERP_BACKUP_SNAPSHOT/
+~$*
+*.tmp
+.idea/

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="bn" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MAA MOTORS - Client & Boss Portal</title>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Maa Motors">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#035485',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        bn: ['Hind Siliguri', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+  <script type="module" crossorigin src="/assets/index-98zv5kYM.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-cI9KubMo.css">
+</head>
+<body class="bg-slate-950 text-slate-100 font-bn min-h-screen antialiased selection:bg-sky-500 selection:text-white pb-20">
+
+    <!-- Print Receipts Container (Mobile-Safe A4 Output) -->
+    <div id="print-receipt-container" class="hidden"></div>
+
+    <!-- App Shell Header -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 py-3 shadow-xl">
+        <div class="max-w-xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-sky-500/20">
+                    MM
+                </div>
+                <div>
+                    <h1 class="font-black text-base text-white leading-tight tracking-tight">MAA MOTORS</h1>
+                    <p class="text-[10px] font-bold text-sky-400 uppercase tracking-widest">Client & Boss Portal</p>
+                </div>
+            </div>
+            <div id="user-badge" class="flex items-center gap-2">
+                <!-- Dynamically populated login status -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main id="app-root" class="max-w-xl mx-auto px-4 pt-4 space-y-4">
+        <!-- Views rendered here dynamically -->
+    </main>
+
+    <!-- Bottom Navigation Bar (Thumb Ergonomics) -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-30 py-2 hidden">
+        <div class="max-w-xl mx-auto flex justify-around items-center px-2">
+            <button onclick="window.navTo('search')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-sky-400 transition-colors py-1 px-3 rounded-xl" id="nav-search-btn">
+                <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                <span class="text-[10px] font-bold">সার্চ</span>
+            </button>
+            <button onclick="window.navTo('today')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors py-1 px-3 rounded-xl" id="nav-today-btn">
+                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <span class="text-[10px] font-bold">আজকের জমা</span>
+            </button>
+            <button onclick="window.navTo('directory')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-purple-400 transition-colors py-1 px-3 rounded-xl" id="nav-directory-btn">
+                <i class="fa-solid fa-users text-lg"></i>
+                <span class="text-[10px] font-bold">কাস্টমারসমূহ</span>
+            </button>
+            <button onclick="window.handleLogout()" class="nav-btn flex flex-col items-center gap-1 text-red-400/80 hover:text-red-400 transition-colors py-1 px-3 rounded-xl">
+                <i class="fa-solid fa-arrow-right-from-bracket text-lg"></i>
+                <span class="text-[10px] font-bold">লগআউট</span>
+            </button>
+        </div>
+    </nav>
+
+</body>
+</html>

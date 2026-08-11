@@ -1,0 +1,289 @@
+import './style.css';
+import { db, auth, googleProvider, firebase } from './firebase-config.js';
+import { CustomerDAO, TransactionDAO, UserDAO } from './dao.js';
+import { renderDashboard, unsubscribeDashboard } from './dashboard.js';
+import { renderCustomers, initCustomerCache, getCustomerCache } from './customer/index.js';
+import { renderLedger } from './ledger.js';
+import { renderExpenses } from './expense.js';
+import { renderSettings } from './settings.js';
+import { renderStatement } from './statement.js';
+import { renderBulkEntry } from './bulk_entry.js';
+import { renderAdmin } from './admin.js';
+import { renderInvoice } from './invoice.js';
+import { renderAuditLogs, auditLog, unsubscribeAuditLogs } from './audit.js';
+import { AppState } from './state.js';
+import Swal from 'sweetalert2';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+
+// -------------------------------------------------------------------------
+// 🛠️ EXPORTED FUNCTIONS (Hoisted)
+// -------------------------------------------------------------------------
+
+export async function login() {
+    const e = document.getElementById('email-input')?.value, p = document.getElementById('password-input')?.value, err = document.getElementById('login-error');
+    if(!e || !p) return err ? err.innerText = "ইমেইল ও পাসওয়ার্ড দিন!" : null;
+    try {
+        await auth.signInWithEmailAndPassword(e, p);
+    } catch (error) {
+        if(err) err.innerText = "লগইন ব্যর্থ! সঠিক তথ্য দিন।";
+        console.error("Login error:", error);
+    }
+}
+
+export async function loginWithGoogle() {
+    const errEl = document.getElementById('login-error');
+    if (errEl) errEl.innerText = "গুগল লগইন প্রসেস করা হচ্ছে...";
+    try {
+        await auth.signInWithPopup(googleProvider);
+    } catch (e) {
+        console.warn("Google Popup Auth failed, attempting redirect:", e);
+        try {
+            await auth.signInWithRedirect(googleProvider);
+        } catch(err) {
+            console.error("Google Auth error:", err);
+            if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ! ইমেইল/পাসওয়ার্ড দিয়ে চেষ্টা করুন।";
+        }
+    }
+}
+
+export function logout() {
+    const user = firebase.auth().currentUser;
+    if (user) auditLog('LOGOUT', 'Auth', user.uid, user.email);
+    auth.signOut();
+    const ls = document.getElementById('login-screen'), ac = document.getElementById('app-container');
+    if(ls) ls.style.display = 'flex';
+    if(ac) ac.classList.add('hidden');
+    ['nav-admin', 'nav-audit'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+}
+
+export function navigate(view, params = {}) {
+    if (AppState.currentView === 'dashboard' && view !== 'dashboard') unsubscribeDashboard();
+    if (AppState.currentView === 'audit' && view !== 'audit') unsubscribeAuditLogs();
+    
+    AppState.currentView = view;
+    const sidebar = document.getElementById('app-sidebar');
+    if(sidebar) sidebar.classList.remove('open');
+
+    document.querySelectorAll('.nav-links li, .nav-item').forEach(li => {
+        li.classList.remove('active');
+        if(li.getAttribute('onclick')?.includes(`'${view}'`)) li.classList.add('active');
+    });
+
+    const container = document.getElementById('view-container');
+    if(!container) return;
+
+    if(view === 'dashboard') renderDashboard(container, params);
+    else if(view === 'customers') renderCustomers(container);
+    else if(view === 'ledger') renderLedger(container, params);
+    else if(view === 'bulk') renderBulkEntry(container);
+    else if(view === 'invoice') renderInvoice(container, params);
+    else if(view === 'expenses') renderExpenses(container);
+    else if(view === 'settings') renderSettings(container);
+    else if(view === 'statement') renderStatement(container, params);
+    else if(view === 'admin') renderAdmin(container);
+    else if(view === 'audit') renderAuditLogs(container);
+
+    setTimeout(initDatePickers, 50);
+}
+
+function unlockApp() {
+    initCustomerCache();
+    const errEl = document.getElementById('login-error');
+    if (errEl) errEl.innerText = '';
+    const ls = document.getElementById('login-screen'), ac = document.getElementById('app-container');
+    if(ls) ls.style.display = 'none';
+    if(ac) ac.classList.remove('hidden');
+
+    const roleEl = document.getElementById('user-role');
+    if(roleEl) roleEl.innerText = AppState.currentUserRole || 'User';
+
+    const currentUser = firebase.auth().currentUser;
+    const avatarEl = document.getElementById('user-profile-avatar');
+    if (avatarEl && currentUser) {
+        if (currentUser.photoURL) {
+            avatarEl.innerHTML = `<img src="${currentUser.photoURL}" alt="${currentUser.displayName || 'User'}" class="w-full h-full object-cover rounded-full" referrerpolicy="no-referrer" />`;
+        } else {
+            avatarEl.innerHTML = `<i class="fa-solid fa-user-shield text-sm"></i>`;
+        }
+        avatarEl.title = `${currentUser.email} (${AppState.currentUserRole})`;
+    }
+
+    navigate(AppState.currentView || 'dashboard');
+}
+
+// -------------------------------------------------------------------------
+// 🚀 GLOBAL BINDINGS (EARLY)
+// -------------------------------------------------------------------------
+window.app = {
+    login,
+    loginWithGoogle,
+    logout,
+    toggleSidebar: () => document.getElementById('app-sidebar')?.classList.toggle('open'),
+    toggleSidebarCollapse: () => {
+        const sb = document.getElementById('app-sidebar');
+        if(sb) {
+            sb.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sb.classList.contains('collapsed'));
+        }
+    },
+    toggleCalculator: () => document.getElementById('calculator-widget')?.classList.toggle('hidden')
+};
+window.navigate = navigate;
+
+// -------------------------------------------------------------------------
+// 🔐 AUTH LISTENER
+// -------------------------------------------------------------------------
+let userStatusUnsubscribe = null;
+
+auth.onAuthStateChanged(async (user) => {
+    if (userStatusUnsubscribe) { userStatusUnsubscribe(); userStatusUnsubscribe = null; }
+
+    if (user) {
+        userStatusUnsubscribe = UserDAO.listenUser(user.uid, async (userData) => {
+            let finalUserData = userData;
+            if(!userData) {
+                const lowerEmail = user.email?.toLowerCase().trim() || '';
+                const isAdmin = lowerEmail === 'office.maamotors@gmail.com' || lowerEmail === 'maamotorsbd@gmail.com';
+                finalUserData = {
+                    email: user.email, name: user.displayName || user.email.split('@')[0],
+                    role: isAdmin ? 'Admin' : 'Staff', status: isAdmin ? 'active' : 'pending',
+                    pin: '', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await UserDAO.getRef(user.uid).set(finalUserData);
+                return;
+            }
+
+            AppState.currentUserRole = finalUserData.role || 'Staff';
+            AppState.currentUserEmail = finalUserData.email || user.email;
+            AppState.permissions = finalUserData.permissions || {};
+
+            if (finalUserData.status === 'active') {
+                hideWaitingRoom();
+                const ac = document.getElementById('app-container');
+                if (ac && ac.classList.contains('hidden')) {
+                    if (AppState.currentUserRole === 'Admin') {
+                        ['nav-admin', 'nav-audit'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+                        auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Admin' });
+                        unlockApp();
+                    } else {
+                        const { value: pin } = await Swal.fire({
+                            title: 'অ্যাক্সেস পিন দিন', input: 'password', allowOutsideClick: false,
+                            showCancelButton: true, cancelButtonText: 'লগআউট'
+                        });
+                        if(pin === finalUserData.pin && pin) {
+                            auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Staff' });
+                            unlockApp();
+                        } else { auth.signOut(); }
+                    }
+                }
+            } else if (finalUserData.status === 'pending') {
+                showWaitingRoom(user.email);
+            } else {
+                auth.signOut();
+                if(document.getElementById('login-error')) document.getElementById('login-error').innerText = "Account Blocked";
+            }
+        });
+    } else {
+        logout();
+        hideWaitingRoom();
+    }
+});
+
+function showWaitingRoom(email) {
+    if (document.getElementById('waiting-room')) return;
+    const wr = document.createElement('div');
+    wr.id = 'waiting-room';
+    wr.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 font-bn';
+    wr.innerHTML = `<div class="w-full max-w-[420px] p-8 m3-card text-center border-blue-500/30">
+        <div class="w-20 h-20 bg-amber-500/10 text-amber-500 text-4xl flex items-center justify-center rounded-3xl mx-auto mb-6 animate-pulse"><i class="fa-solid fa-hourglass-half"></i></div>
+        <h2 class="text-2xl font-black text-white mb-2">অনুমোদনের অপেক্ষায়...</h2>
+        <p class="text-slate-400 text-sm font-bold mb-6">${email} Pending অবস্থায় আছে।</p>
+        <button class="text-slate-500 hover:text-red-400 text-xs font-bold" onclick="app.logout()">লগআউট</button>
+    </div>`;
+    document.body.appendChild(wr);
+}
+function hideWaitingRoom() { document.getElementById('waiting-room')?.remove(); }
+
+// -------------------------------------------------------------------------
+// 🔍 SEARCH & UTILS
+// -------------------------------------------------------------------------
+// ... Keep Search and Flatpickr logic (Omitted for brevity in prompt, but I will write them) ...
+// Actually I MUST write the full file to avoid data loss.
+// I will copy the search and flatpickr logic from the previous read.
+
+let searchDebounce;
+function initSearch() {
+    const input = document.getElementById('global-search-input'), results = document.getElementById('global-search-results');
+    if(!input || !results) return;
+    input.oninput = (e) => {
+        const query = e.target.value.trim();
+        if(query.length < 1) return results.classList.add('hidden');
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(async () => {
+            results.classList.remove('hidden');
+            results.innerHTML = '<div class="p-4 text-xs text-slate-500 text-center">অনুসন্ধান করা হচ্ছে...</div>';
+            performSearch(query, results);
+        }, 150);
+    };
+}
+
+async function performSearch(query, container) {
+    try {
+        let html = '';
+        const q = query.toLowerCase();
+        const customers = getCustomerCache().filter(c => (c.name||'').toLowerCase().includes(q) || (c.phone||'').includes(q) || (c.accountNo||'').includes(q));
+        if(customers.length > 0) {
+            html += `<div class="px-3 py-1 bg-slate-800 text-[10px] text-blue-400">কাস্টমার (${customers.length})</div>`;
+            customers.forEach(c => {
+                html += `<div class="p-3 hover:bg-slate-800 cursor-pointer flex justify-between items-center border-b border-slate-800" onclick="handleSearchResultClick('customer', '${c.id}', '${c.name}', '${c.accountNo||''}')">
+                    <div><div class="font-bold text-white text-sm">${c.name}</div><div class="text-xs text-slate-400">${c.phone||''}</div></div>
+                    <div class="text-xs font-bold text-red-400">৳${formatAmountWithComma(c.totalDue||0)}</div>
+                </div>`;
+            });
+        }
+        container.innerHTML = html || '<div class="p-4 text-xs text-slate-500">কিছু পাওয়া যায়নি</div>';
+    } catch (e) { container.innerHTML = 'Error'; }
+}
+
+window.handleSearchResultClick = (type, id, name, accNo) => {
+    document.getElementById('global-search-results')?.classList.add('hidden');
+    if(type === 'customer') navigate('statement', { customerId: id, customerName: name, accountNo: accNo });
+};
+
+// ─── Global Flatpickr DD/MM/YYYY Enforcer ───────────────────────────────────
+export function initDatePickers() {
+    document.querySelectorAll('input.datepicker').forEach(input => {
+        if(input._flatpickr) return;
+        flatpickr(input, {
+            dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y', allowInput: true,
+            onChange: (selectedDates, dateStr) => {
+                input.value = dateStr;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    });
+}
+window.initDatePickers = initDatePickers;
+
+document.addEventListener('DOMContentLoaded', () => {
+    initSearch(); initDatePickers();
+    if (localStorage.getItem('sidebarCollapsed') === 'true') document.getElementById('app-sidebar')?.classList.add('collapsed');
+
+    const btns = ['7','8','9','/','4','5','6','*','1','2','3','-','C','0','.','+','='];
+    const container = document.getElementById('calc-buttons');
+    if(container) container.innerHTML = btns.map(b => `<button onclick="handleCalc('${b}')" class="p-4 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600">${b}</button>`).join('');
+});
+
+function safeEvalCalc(expression) {
+    try { return eval(expression.replace(/[^0-9+\-*/.]/g, '')); } catch { return 'Error'; }
+}
+window.handleCalc = (v) => {
+    const d = document.getElementById('calc-display'); if(!d) return;
+    if(v === 'C') d.value = '';
+    else if(v === '=') d.value = safeEvalCalc(d.value);
+    else d.value += v;
+};

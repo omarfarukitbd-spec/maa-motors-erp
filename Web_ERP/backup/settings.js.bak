@@ -1,0 +1,639 @@
+import Swal from 'sweetalert2';
+import { db, firebase } from './firebase-config.js';
+import { SettingsDAO } from './dao.js';
+import { promptSecurityPin, sendSMS } from './utils.js';
+import { auditLog } from './audit.js';
+
+let currentLogoBase64 = null;
+let isPinUnlocked = false;
+
+export function renderSettings(container) {
+    if(window.AppState.currentUserRole !== 'Admin') {
+        container.innerHTML = `<div class="m3-card text-center font-bn"><h2 class="text-xl font-bold text-red-500">অ্যাক্সেস ডিনাইড! শুধুমাত্র অ্যাডমিন এই পেজ দেখতে পারবেন।</h2></div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="flex flex-col gap-6 pb-28 font-bn max-w-7xl mx-auto">
+            <!-- Header Banner -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2 py-3 border-b border-slate-800/80">
+                <div>
+                    <h2 class="text-2xl font-black flex items-center gap-3 text-white tracking-tight">
+                        <div class="w-2.5 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full shadow-[0_0_18px_rgba(59,130,246,0.6)]"></div>
+                        সফটওয়্যার সেটিংস & কনফিগারেশন
+                    </h2>
+                    <p class="text-xs font-bold text-slate-300 mt-1 ml-5">দোকানের প্রোফাইল, প্রিন্টিং ফরম্যাট, SMS টেমপ্লেট এবং এডমিন সিকিউরিটি পিন ম্যানেজ করুন</p>
+                </div>
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ক্লাউড সিঙ্কড
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Shop Settings Card -->
+                <div class="m3-card space-y-5 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-xl">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <h3 class="font-black flex items-center gap-2.5 text-white text-base">
+                            <div class="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                                <i class="fa-solid fa-store text-sm"></i>
+                            </div>
+                            দোকানের সাধারণ তথ্য
+                        </h3>
+                        <button class="px-3.5 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-600 hover:text-white transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" onclick="unlockShopSettings()" title="আনলক করুন">
+                            <i class="fa-solid fa-lock-open text-xs"></i>
+                            <span>আনলক করুন</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-black text-blue-400 mb-1.5 uppercase tracking-widest ml-1">দোকানের নাম (Shop Name)</label>
+                            <input type="text" id="set-shop-name" disabled class="m3-field h-[42px] py-0 font-bold text-white opacity-80" placeholder="মেসার্স মা মোটরস্">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-blue-400 mb-1.5 uppercase tracking-widest ml-1">মোবাইল নম্বর (Phone)</label>
+                            <input type="text" id="set-shop-phone" disabled class="m3-field h-[42px] py-0 font-bold text-white opacity-80" placeholder="01819-397669">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-blue-400 mb-1.5 uppercase tracking-widest ml-1">ঠিকানা (Address)</label>
+                            <textarea id="set-shop-address" rows="2" disabled class="m3-field opacity-80 resize-none font-bold text-white p-3 text-xs" placeholder="দোকানের ঠিকানা"></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <label class="block text-[11px] font-black text-blue-400 mb-1.5 uppercase tracking-widest ml-1">দোকানের লোগো (Logo Upload)</label>
+                                <input type="file" id="set-shop-logo" accept="image/*" disabled class="m3-field opacity-80 text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" onchange="handleLogoSelect(event)">
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <img id="logo-preview" src="" class="h-16 w-auto object-contain rounded-xl border border-slate-700 p-1 bg-slate-900 hidden" alt="Logo Preview">
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-800 space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-black text-blue-400 mb-1.5 uppercase tracking-widest ml-1">ডিফল্ট প্রিন্ট পেপার সাইজ</label>
+                                <select id="set-print-size" disabled class="m3-field h-[42px] py-0 font-bold text-white opacity-80 cursor-pointer">
+                                    <option value="a4">A4 (রেগুলার ফুল পেপার)</option>
+                                    <option value="pos">POS (৮০ মিমি থার্মাল রসিদ)</option>
+                                </select>
+                            </div>
+                            <label class="flex items-center gap-3 cursor-pointer group pt-1">
+                                <input type="checkbox" id="set-show-watermark" disabled class="w-5 h-5 rounded border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500">
+                                <span class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">রসিদে 'সফটওয়্যার তৈরি করেছে: MAA ERP' দেখান</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SMS Settings Card -->
+                <div class="m3-card space-y-5 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-xl">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <h3 class="font-black flex items-center gap-2.5 text-white text-base">
+                            <div class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                                <i class="fa-solid fa-comment-sms text-sm"></i>
+                            </div>
+                            SMS টেমপ্লেট ও গেটওয়ে
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <button class="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" onclick="sendTestSMS()" title="টেস্ট SMS পাঠান">
+                                <i class="fa-solid fa-paper-plane text-xs"></i>
+                                <span>টেস্ট SMS</span>
+                            </button>
+                            <button class="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-600 hover:text-white transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" onclick="unlockSmsSettings()" title="আনলক করুন">
+                                <i class="fa-solid fa-lock-open text-xs"></i>
+                                <span>আনলক করুন</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-black text-purple-400 mb-1.5 uppercase tracking-widest ml-1">নতুন বিল টেমপ্লেট <span id="sms-new-count" class="text-purple-300 font-bold ml-1">0/155</span></label>
+                            <textarea id="set-sms-new-bill" rows="2" disabled class="m3-field opacity-80 resize-none text-xs p-3 font-medium" oninput="checkSmsLength(this, 'sms-new-count')"></textarea>
+                            <p class="text-[11px] text-slate-300 font-bold mt-1 ml-1">ম্যাজিক কোড: [Bill], [Due], [Shop]</p>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-purple-400 mb-1.5 uppercase tracking-widest ml-1">পেমেন্ট রিসিভ টেমপ্লেট <span id="sms-pay-count" class="text-purple-300 font-bold ml-1">0/155</span></label>
+                            <textarea id="set-sms-payment" rows="2" disabled class="m3-field opacity-80 resize-none text-xs p-3 font-medium" oninput="checkSmsLength(this, 'sms-pay-count')"></textarea>
+                            <p class="text-[11px] text-slate-300 font-bold mt-1 ml-1">ম্যাজিক কোড: [Paid], [Due], [Shop]</p>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-purple-400 mb-1.5 uppercase tracking-widest ml-1">বকেয়া রিমাইন্ডার টেমপ্লেট <span id="sms-rem-count" class="text-purple-300 font-bold ml-1">0/155</span></label>
+                            <textarea id="set-sms-reminder" rows="2" disabled class="m3-field opacity-80 resize-none text-xs p-3 font-medium" oninput="checkSmsLength(this, 'sms-rem-count')"></textarea>
+                            <p class="text-[11px] text-slate-300 font-bold mt-1 ml-1">ম্যাজিক কোড: [Due], [Shop]</p>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-800 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[11px] font-black text-purple-400 mb-1.5 uppercase tracking-widest ml-1">API Key / Token</label>
+                                    <input type="password" id="set-sms-api" disabled class="m3-field h-[42px] py-0 opacity-80 font-mono text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black text-purple-400 mb-1.5 uppercase tracking-widest ml-1">Sender ID</label>
+                                    <input type="text" id="set-sms-sender" disabled class="m3-field h-[42px] py-0 opacity-80 font-bold text-xs">
+                                </div>
+                            </div>
+                            <label class="flex items-center gap-3 cursor-pointer group pt-1">
+                                <input type="checkbox" id="set-sms-auto" disabled class="w-5 h-5 rounded border-slate-700 bg-slate-900 text-purple-500 focus:ring-purple-500">
+                                <span class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">অটোমেটিক SMS পাঠান (খতিয়ান ও ভাউচার এন্ট্রির পর)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Security PIN Card (Full-Width Modern Card) -->
+                <div class="m3-card space-y-4 lg:col-span-2 bg-gradient-to-br from-slate-900/90 via-slate-900/80 to-red-950/20 border border-red-500/30 rounded-3xl p-6 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-48 h-48 bg-red-600/5 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 shadow-inner shrink-0">
+                                <i class="fa-solid fa-shield-halved text-base"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-white text-base tracking-tight flex items-center gap-2 flex-wrap">
+                                    এডমিন সিকিউরিটি পিন (Master Security PIN)
+                                    <span id="pin-status-badge" class="px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                                        <i class="fa-solid fa-lock text-[9px]"></i> সংরক্ষিত
+                                    </span>
+                                </h3>
+                                <p class="text-xs font-bold text-slate-300 mt-0.5">খতিয়ান, কাস্টমার বা খরচের তথ্য এডিট/ডিলেট করার সময় এই সিকিউরিটি পিন আবশ্যক</p>
+                            </div>
+                        </div>
+
+                        <button class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white transition-all text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-600/30 active:scale-95 shrink-0" onclick="changeAdminSecurityPinFlow()">
+                            <i class="fa-solid fa-key text-xs"></i>
+                            <span>🔑 পিন আনলক & পরিবর্তন করুন</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
+                        <div>
+                            <label class="block text-[11px] font-black text-red-400 mb-1.5 uppercase tracking-widest ml-1">বর্তমান মাস্টার পিন (Current Master PIN)</label>
+                            <div class="relative">
+                                <input type="password" id="set-admin-pin" disabled class="m3-field h-[42px] opacity-90 text-xl font-black tracking-[0.3em] text-red-400 pr-12 bg-slate-950 border-slate-800" value="1060">
+                                <button type="button" id="toggle-pin-vis-btn" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors p-1" onclick="togglePinVisibility()" title="পিন দেখান/লুকান">
+                                    <i class="fa-solid fa-eye text-sm" id="pin-vis-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 text-xs text-slate-200 space-y-1.5">
+                            <div class="font-black text-white flex items-center gap-2">
+                                <i class="fa-solid fa-shield-check text-emerald-400"></i> পিন সুরক্ষার নির্দেশনা:
+                            </div>
+                            <p class="text-slate-300 leading-relaxed font-bold">
+                                আপনার মাস্টার সিকিউরিটি পিনটি অত্যন্ত সংবেদনশীল। ডাটাবেসের পূর্ণ সুরক্ষা নিশ্চিত করতে এই পিনটি কারো সাথে শেয়ার করবেন না। নিরাপত্তার স্বার্থে সময় সময় পিন পরিবর্তন করার পরামর্শ দেওয়া হলো।
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database Backup Card -->
+                <div class="m3-card space-y-4 lg:col-span-2 flex flex-col md:flex-row items-center justify-between bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-xl">
+                    <div>
+                        <h3 class="font-black flex items-center gap-2.5 text-white text-base mb-1">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                                <i class="fa-solid fa-database text-sm"></i>
+                            </div>
+                            ডাটাবেস ব্যাকআপ & লোকাল কপি
+                        </h3>
+                        <p class="text-xs font-bold text-slate-300">আপনার প্রতিষ্ঠানের সকল কাস্টমার, খতিয়ান ও খরচের ফাইল এক ক্লিকে ব্যাকআপ নিন</p>
+                    </div>
+                    <button class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/30 active:scale-95 mt-4 md:mt-0 w-full md:w-auto" onclick="appSettings.exportData()">
+                        <i class="fa-solid fa-download text-sm"></i> অফলাইন ব্যাকআপ ডাউনলোড নিন
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sleek Bottom Save Bar -->
+            <div class="bg-slate-900/90 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-center text-center sticky bottom-4 z-30 shadow-2xl backdrop-blur-2xl mt-6 w-full">
+                <button class="px-12 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-600/30 active:scale-95 w-full sm:w-[350px] mx-auto" onclick="saveSettings()" id="save-settings-btn">
+                    <i class="fa-solid fa-floppy-disk text-base"></i> সকল সেটিংস সেভ করুন
+                </button>
+            </div>
+        </div>
+    `;
+
+    loadSettings();
+}
+
+// Load Settings from Firestore
+async function loadSettings() {
+    try {
+        const data = await SettingsDAO.getAppSettings();
+        if (Object.keys(data).length > 0) {
+            if (data.shopLogo) {
+                currentLogoBase64 = data.shopLogo;
+                const preview = document.getElementById('logo-preview');
+                if (preview) {
+                    preview.src = currentLogoBase64;
+                    preview.classList.remove('hidden');
+                }
+            }
+            if(document.getElementById('set-shop-name')) document.getElementById('set-shop-name').value = data.shopName || '';
+            if(document.getElementById('set-shop-phone')) document.getElementById('set-shop-phone').value = data.shopPhone || '';
+            if(document.getElementById('set-shop-address')) document.getElementById('set-shop-address').value = data.shopAddress || '';
+            if(document.getElementById('set-print-size')) document.getElementById('set-print-size').value = data.printSize || 'a4';
+            
+            if(document.getElementById('set-sms-new-bill')) document.getElementById('set-sms-new-bill').value = data.smsTemplateNew || 'Thank you for your purchase of Tk [Bill]. Your current due is Tk [Due]. We appreciate your business! - [Shop]';
+            if(document.getElementById('set-sms-payment')) document.getElementById('set-sms-payment').value = data.smsTemplatePaid || 'We have received your payment of Tk [Paid]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]';
+            if(document.getElementById('set-sms-reminder')) document.getElementById('set-sms-reminder').value = data.smsTemplateReminder || 'Gentle Reminder: Your total due is Tk [Due]. Kindly clear the payment at your earliest convenience. Thank you! - [Shop]';
+            
+            checkSmsLength(document.getElementById('set-sms-new-bill'), 'sms-new-count');
+            checkSmsLength(document.getElementById('set-sms-payment'), 'sms-pay-count');
+            checkSmsLength(document.getElementById('set-sms-reminder'), 'sms-rem-count');
+
+            if(document.getElementById('set-sms-api')) document.getElementById('set-sms-api').value = data.smsApiKey || '';
+            if(document.getElementById('set-sms-sender')) document.getElementById('set-sms-sender').value = data.smsSenderId || '';
+            if(document.getElementById('set-sms-auto')) document.getElementById('set-sms-auto').checked = data.smsAuto === true;
+            if(document.getElementById('set-show-watermark')) document.getElementById('set-show-watermark').checked = data.showWatermark === true;
+            
+            const pinInp = document.getElementById('set-admin-pin');
+            if (pinInp) pinInp.value = data.adminSecurityPin || '1060';
+        } else {
+            // Default Values if no settings saved yet
+            if(document.getElementById('set-shop-name')) document.getElementById('set-shop-name').value = 'মেসার্স মা মোটরস্';
+            if(document.getElementById('set-shop-phone')) document.getElementById('set-shop-phone').value = '01819-397669, 01815-707934';
+            if(document.getElementById('set-shop-address')) document.getElementById('set-shop-address').value = 'রহমান টাওয়ার, দোকান নং-২২, ১নং রেল গেইট মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম।';
+            if(document.getElementById('set-print-size')) document.getElementById('set-print-size').value = 'a4';
+            if(document.getElementById('set-show-watermark')) document.getElementById('set-show-watermark').checked = false;
+            
+            const pinInp = document.getElementById('set-admin-pin');
+            if (pinInp) pinInp.value = '1060';
+
+            if(document.getElementById('set-sms-new-bill')) document.getElementById('set-sms-new-bill').value = 'Thank you for your purchase of Tk [Bill]. Your current due is Tk [Due]. We appreciate your business! - [Shop]';
+            if(document.getElementById('set-sms-payment')) document.getElementById('set-sms-payment').value = 'We have received your payment of Tk [Paid]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]';
+            if(document.getElementById('set-sms-reminder')) document.getElementById('set-sms-reminder').value = 'Gentle Reminder: Your total due is Tk [Due]. Kindly clear the payment at your earliest convenience. Thank you! - [Shop]';
+            
+            checkSmsLength(document.getElementById('set-sms-new-bill'), 'sms-new-count');
+            checkSmsLength(document.getElementById('set-sms-payment'), 'sms-pay-count');
+            checkSmsLength(document.getElementById('set-sms-reminder'), 'sms-rem-count');
+        }
+    } catch(error) {
+        console.error("Error loading settings:", error);
+    }
+}
+
+// Toggle PIN Visibility
+window.togglePinVisibility = function() {
+    const el = document.getElementById('set-admin-pin');
+    const icon = document.getElementById('pin-vis-icon');
+    if (!el || !icon) return;
+    if (el.type === 'password') {
+        el.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        el.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+};
+
+// Seamless 2-step Security PIN Change Workflow
+window.changeAdminSecurityPinFlow = async function() {
+    if (window.AppState.currentUserRole !== 'Admin') {
+        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন সিকিউরিটি পিন পরিবর্তন করতে পারবেন।', 'error');
+    }
+
+    // Step 1: Verify current PIN
+    const isPinValid = await promptSecurityPin("সিকিউরিটি পিন পরিবর্তন");
+    if (!isPinValid) return;
+
+    // Step 2: Prompt for new PIN
+    const { value: newPin } = await Swal.fire({
+        title: '🔑 নতুন এডমিন সিকিউরিটি পিন দিন',
+        html: `<p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">নতুন পিনটি কমপক্ষে ৪-ডিজিটের হতে হবে।</p>`,
+        input: 'text',
+        inputPlaceholder: 'e.g. 5678',
+        inputAttributes: {
+            autocomplete: 'new-password',
+            autocapitalize: 'off',
+            spellcheck: 'false'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'সেভ করুন',
+        cancelButtonText: 'বাতিল',
+        confirmButtonColor: '#2563eb',
+        customClass: {
+            popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700',
+            title: '!text-white',
+            confirmButton: 'm3-btn-primary !bg-blue-600',
+            cancelButton: 'm3-btn-tonal'
+        },
+        inputValidator: (val) => {
+            if (!val || val.trim().length < 4) {
+                return 'সিকিউরিটি পিন কমপক্ষে ৪ ডিজিট বা তার বেশি হতে হবে!';
+            }
+        }
+    });
+
+    if (newPin) {
+        const cleanPin = newPin.trim();
+        try {
+            await SettingsDAO.updateAppSettings({ adminSecurityPin: cleanPin });
+            
+            // Audit Log
+            auditLog('PIN_CHANGE', 'Settings', 'appSettings', 'Admin Master PIN');
+
+            // Update input field
+            const el = document.getElementById('set-admin-pin');
+            if (el) el.value = cleanPin;
+
+            Swal.fire({
+                title: '✅ সিকিউরিটি পিন সফলভাবে আপডেট হয়েছে!',
+                html: `<p style="color:#38bdf8;font-[Outfit];font-size:16px;font-weight:bold;margin-top:8px;">নতুন পিন: ${cleanPin}</p><p style="color:#94a3b8;font-size:12px;margin-top:4px;">এখন থেকে যেকোনো তথ্য এডিট/ডিলেট করতে এই নতুন পিনটি ব্যবহার করুন।</p>`,
+                icon: 'success',
+                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+            });
+        } catch(err) {
+            console.error("Failed to update security PIN:", err);
+            Swal.fire({
+                title: 'Error!',
+                text: 'সিকিউরিটি পিন সেভ করতে সমস্যা হয়েছে: ' + (err.message || err),
+                icon: 'error',
+                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+            });
+        }
+    }
+};
+
+// Check SMS Length & Unicode Threshold
+window.checkSmsLength = function(element, counterId) {
+    if(!element) return;
+    const val = element.value || '';
+    const len = val.length;
+    const isUnicode = /[^\x00-\x7F]/.test(val);
+    const limit = isUnicode ? 70 : 160;
+    const parts = Math.ceil(len / limit) || 1;
+
+    const counter = document.getElementById(counterId);
+    if(counter) {
+        counter.innerText = `${len}/${limit} (${parts} SMS${isUnicode ? ' - বাংলা' : ''})`;
+        if(parts > 1) {
+            counter.classList.add('text-amber-400');
+            counter.classList.remove('text-purple-300');
+        } else {
+            counter.classList.remove('text-amber-400');
+            counter.classList.add('text-purple-300');
+        }
+    }
+};
+
+// Handle Logo Selection
+window.handleLogoSelect = function(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 300;
+            let scaleSize = 1;
+            if(img.width > MAX_WIDTH) {
+                scaleSize = MAX_WIDTH / img.width;
+            }
+            canvas.width = img.width * scaleSize;
+            canvas.height = img.height * scaleSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            currentLogoBase64 = canvas.toDataURL('image/png', 0.8);
+            
+            const preview = document.getElementById('logo-preview');
+            if (preview) {
+                preview.src = currentLogoBase64;
+                preview.classList.remove('hidden');
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+};
+
+async function saveSettings() {
+    const btn = document.getElementById('save-settings-btn');
+    if(!btn) return;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> সেভ হচ্ছে...`;
+
+    const smsNew = document.getElementById('set-sms-new-bill')?.value.trim() || '';
+    const smsPaid = document.getElementById('set-sms-payment')?.value.trim() || '';
+    const smsRem = document.getElementById('set-sms-reminder')?.value.trim() || '';
+
+    if(smsNew.length > 155 || smsPaid.length > 155 || smsRem.length > 155) {
+        Swal.fire('Error', 'SMS টেমপ্লেট ১৫৫ ক্যারেক্টারের বেশি হতে পারবে না।', 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> সকল সেটিংস সেভ করুন`;
+        return;
+    }
+
+    const adminPinVal = document.getElementById('set-admin-pin')?.value.trim() || '1060';
+
+    const data = {
+        shopName: document.getElementById('set-shop-name')?.value.trim() || '',
+        shopPhone: document.getElementById('set-shop-phone')?.value.trim() || '',
+        shopAddress: document.getElementById('set-shop-address')?.value.trim() || '',
+        printSize: document.getElementById('set-print-size')?.value || 'a4',
+        shopLogo: currentLogoBase64,
+        smsTemplateNew: smsNew,
+        smsTemplatePaid: smsPaid,
+        smsTemplateReminder: smsRem,
+        smsApiKey: document.getElementById('set-sms-api')?.value.trim() || '',
+        smsSenderId: document.getElementById('set-sms-sender')?.value.trim() || '',
+        smsAuto: document.getElementById('set-sms-auto')?.checked || false,
+        showWatermark: document.getElementById('set-show-watermark')?.checked || false,
+        adminSecurityPin: adminPinVal,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        await SettingsDAO.updateAppSettings(data);
+        
+        // Audit Log
+        auditLog('UPDATE', 'Settings', 'appSettings', 'App Settings', {
+            shopName: data.shopName,
+            smsAuto: data.smsAuto
+        });
+
+        const fieldsToLock = [
+            'set-shop-name', 'set-shop-phone', 'set-shop-address', 'set-shop-logo', 'set-print-size', 'set-show-watermark',
+            'set-sms-new-bill', 'set-sms-payment', 'set-sms-reminder', 'set-sms-api', 'set-sms-sender', 'set-sms-auto'
+        ];
+        fieldsToLock.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                el.disabled = true;
+                el.style.opacity = '0.7';
+            }
+        });
+
+        Swal.fire({
+            title: 'সফল! ✅',
+            text: 'সকল সেটিংস সফলভাবে ফায়ারবেসে সেভ হয়েছে।',
+            icon: 'success',
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+    } catch(error) {
+        console.error("Error saving settings:", error);
+        Swal.fire({
+            title: 'Error! ❌',
+            html: `<p style="color:#ef4444">সেটিংস সেভ করতে সমস্যা হয়েছে।</p><p style="color:#94a3b8;font-size:12px;margin-top:8px">${error.message || error}</p>`,
+            icon: 'error',
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> সকল সেটিংস সেভ করুন`;
+    }
+}
+
+async function exportDatabase() {
+    if (window.AppState.currentUserRole !== 'Admin') return;
+
+    const isPinValid = await promptSecurityPin("ডেটাবেস ব্যাকআপ ডাউনলোড (Database Export)");
+    if (!isPinValid) return;
+
+    try {
+        Swal.fire({ title: 'ব্যাকআপ জেনারেট হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        // This logic should ideally call a utility from excel_sync.js or similar
+        // For now, redirecting to the standard backup function
+        if (window.downloadAdminExcelBackup) {
+            await window.downloadAdminExcelBackup();
+        } else {
+            throw new Error("Backup utility not found");
+        }
+    } catch(err) {
+        console.error(err);
+        Swal.fire('Error', 'ব্যাকআপ নিতে সমস্যা হয়েছে', 'error');
+    }
+}
+
+window.saveSettings = saveSettings;
+window.appSettings = { exportData: exportDatabase };
+
+window.unlockShopSettings = async function() {
+    if (window.AppState.currentUserRole !== 'Admin') {
+        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন সেটিংস পরিবর্তন করতে পারবেন।', 'error');
+    }
+
+    const isPinValid = await promptSecurityPin("দোকানের তথ্য পরিবর্তন (Settings Unlock)");
+    if (!isPinValid) return;
+
+    const fields = ['set-shop-name', 'set-shop-phone', 'set-shop-address', 'set-shop-logo', 'set-print-size', 'set-show-watermark'];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.disabled = false;
+            el.style.opacity = '1';
+        }
+    });
+
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'সেটিংস আনলক করা হয়েছে ✅',
+        text: 'এখন আপনি তথ্য পরিবর্তন করতে পারবেন।',
+        showConfirmButton: false,
+        timer: 3000,
+        customClass: { popup: '!bg-slate-900 !text-white border border-slate-700' }
+    });
+};
+
+window.unlockSmsSettings = async function() {
+    if (window.AppState.currentUserRole !== 'Admin') {
+        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন সেটিংস পরিবর্তন করতে পারবেন।', 'error');
+    }
+
+    const isPinValid = await promptSecurityPin("SMS সেটিংস পরিবর্তন (Settings Unlock)");
+    if (!isPinValid) return;
+
+    const fields = ['set-sms-new-bill', 'set-sms-payment', 'set-sms-reminder', 'set-sms-api', 'set-sms-sender', 'set-sms-auto'];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.disabled = false;
+            el.style.opacity = '1';
+        }
+    });
+
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'SMS সেটিংস আনলক করা হয়েছে ✅',
+        text: 'এখন আপনি তথ্য পরিবর্তন করতে পারবেন।',
+        showConfirmButton: false,
+        timer: 3000,
+        customClass: { popup: '!bg-slate-900 !text-white border border-slate-700' }
+    });
+};
+
+window.sendTestSMS = async function() {
+    const apiKey = document.getElementById('set-sms-api')?.value.trim();
+    const senderId = document.getElementById('set-sms-sender')?.value.trim();
+    
+    if (!apiKey) {
+        return Swal.fire({
+            title: 'API Key প্রয়োজন!',
+            text: 'প্রথমে SMS Settings-এ আপনার BulkSMSBD API Key দিন এবং সেভ করুন।',
+            icon: 'warning',
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+    }
+
+    const { value: testPhone } = await Swal.fire({
+        title: '📱 টেস্ট SMS পাঠান (BulkSMSBD)',
+        html: `<p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">টেস্ট করার জন্য আপনার একটি 11-ডিজিটের মোবাইল নম্বর দিন (যেমন: 01819397669)</p>`,
+        input: 'text',
+        inputPlaceholder: '018XXXXXXXX',
+        showCancelButton: true,
+        confirmButtonText: 'SMS পাঠান',
+        cancelButtonText: 'বাতিল',
+        confirmButtonColor: '#9333ea',
+        customClass: {
+            popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700',
+            title: '!text-white',
+            confirmButton: 'm3-btn-primary !bg-purple-600',
+            cancelButton: 'm3-btn-tonal'
+        },
+        inputValidator: (val) => {
+            if (!val || val.trim().length < 11) {
+                return 'সঠিক ১১-ডিজিটের মোবাইল নম্বর দিন!';
+            }
+        }
+    });
+
+    if (testPhone) {
+        Swal.fire({
+            title: 'SMS পাঠানো হচ্ছে...',
+            text: 'অনুগ্রহ করে অপেক্ষা করুন',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); },
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+
+        const testMsg = `MAA ERP Test SMS: Your BulkSMSBD SMS Gateway is working perfectly! - Maa Motors`;
+        const res = await sendSMS(testPhone.trim(), testMsg, false);
+
+        if (res) {
+            Swal.fire({
+                title: '✅ টেস্ট SMS পাঠানো হয়েছে!',
+                text: `${testPhone} নম্বরে টেস্ট মেসেজ ডিসপ্যাচ করা হয়েছে। আপনার মোবাইল মেসেজ বক্সে চেক করুন।`,
+                icon: 'success',
+                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+            });
+        } else {
+            Swal.fire({
+                title: '❌ SMS পাঠাতে সমস্যা হয়েছে!',
+                text: 'API Key বা Sender ID সঠিক রয়েছে কিনা এবং বাল্ক এসএমএস অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স আছে কিনা চেক করুন।',
+                icon: 'error',
+                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+            });
+        }
+    }
+};

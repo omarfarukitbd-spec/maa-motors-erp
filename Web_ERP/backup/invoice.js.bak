@@ -1,0 +1,366 @@
+// --- Invoice Module (Complete & Stabilized) ---
+import { db, firebase } from './firebase-config.js';
+import { CustomerDAO, TransactionDAO, SettingsDAO } from './dao.js';
+import Swal from 'sweetalert2';
+import { parseAmount, formatAmountWithComma, printReceiptEngine, numberToBanglaWords, toDBDate, safeRound, updateLiveWords, getTodayLocalDateString } from './utils.js';
+import { getCustomerCache, initCustomerCache, quickAddCustomer } from './customer/index.js';
+import { auditLog } from './audit.js';
+
+let invoiceItems = [];
+let _priceHintDebounce;
+
+// -------------------------------------------------------------------------
+// 🛠️ FUNCTIONS
+// -------------------------------------------------------------------------
+
+export function addInvoiceItemRow() {
+    invoiceItems.push({ desc: '', qty: 1, rate: 0, total: 0 });
+    renderInvoiceItems();
+}
+
+export function removeInvoiceItem(index) {
+    invoiceItems.splice(index, 1);
+    renderInvoiceItems();
+    calcItemTotals();
+}
+
+export function updateInvoiceItem(index, field, element) {
+    const value = element.value;
+    if(field === 'desc') {
+        invoiceItems[index].desc = value;
+        if (value.length >= 3) checkItemPriceHistory(index, value);
+    } else {
+        const numVal = Math.max(0, parseFloat(value) || 0);
+        invoiceItems[index][field] = numVal;
+        if (field === 'qty' || field === 'rate') {
+            invoiceItems[index].total = invoiceItems[index].qty * invoiceItems[index].rate;
+            const totalInput = document.getElementById(`inv-item-total-${index}`);
+            if (totalInput) totalInput.value = invoiceItems[index].total;
+        }
+    }
+    calcItemTotals();
+}
+
+export function checkItemPriceHistory(index, itemName) {
+    const sel = document.getElementById('inv-customer-select');
+    if (!sel || sel.selectedIndex <= 0) return;
+    const customerId = sel.value;
+    clearTimeout(_priceHintDebounce);
+    _priceHintDebounce = setTimeout(async () => {
+        try {
+            const txns = await TransactionDAO.getByCustomer(customerId);
+            let lastPrice = null;
+            for (const t of txns) {
+                if (t.hasItems && t.items) {
+                    const match = t.items.find(it => (it.desc || '').toLowerCase().trim() === itemName.toLowerCase().trim());
+                    if (match) { lastPrice = match.rate; break; }
+                }
+            }
+            const hintEl = document.getElementById(`price-hint-${index}`);
+            if (hintEl) {
+                if (lastPrice) {
+                    hintEl.innerHTML = `<button type="button" onclick="window.applyHistoryPrice(${index}, ${lastPrice})" class="text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-lg">Last: ৳${formatAmountWithComma(lastPrice)}</button>`;
+                    hintEl.classList.remove('hidden');
+                } else hintEl.classList.add('hidden');
+            }
+        } catch (e) {}
+    }, 500);
+}
+
+export function applyHistoryPrice(index, price) {
+    invoiceItems[index].rate = price;
+    invoiceItems[index].total = invoiceItems[index].qty * price;
+    renderInvoiceItems();
+    calcItemTotals();
+}
+
+export function renderInvoiceItems() {
+    const tbody = document.getElementById('inv-items-tbody');
+    if(!tbody) return;
+    if (invoiceItems.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400 italic">আইটেম নেই</td></tr>'; return; }
+    let html = '';
+    invoiceItems.forEach((item, i) => {
+        html += `
+            <tr>
+                <td class="text-center text-slate-300 font-bold text-xs">${i + 1}</td>
+                <td><input type="text" class="w-full bg-transparent border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-white" placeholder="আইটেমের নাম..." value="${item.desc}" oninput="window.updateInvoiceItem(${i}, 'desc', this)"><div id="price-hint-${i}" class="hidden mt-1"></div></td>
+                <td><input type="number" class="w-full text-center bg-transparent border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-white" value="${item.qty || ''}" oninput="window.updateInvoiceItem(${i}, 'qty', this)"></td>
+                <td><input type="number" id="inv-item-rate-${i}" class="w-full text-center bg-transparent border border-slate-700/50 rounded-xl px-3 py-2 text-sm text-white" value="${item.rate || ''}" oninput="window.updateInvoiceItem(${i}, 'rate', this)"></td>
+                <td><input type="number" id="inv-item-total-${i}" class="w-full text-center font-bold text-blue-400 bg-transparent border border-slate-700/50 rounded-xl px-3 py-2 text-sm" value="${item.total || ''}" readonly></td>
+                <td class="text-center"><button type="button" class="text-red-400/60 p-1 hover:text-red-400" onclick="window.removeInvoiceItem(${i})"><i class="fa-solid fa-xmark"></i></button></td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+export function calcItemTotals() {
+    let subtotal = 0;
+    invoiceItems.forEach(item => { subtotal += (item.total || 0); });
+    const subInp = document.getElementById('inv-subtotal');
+    if (subInp) {
+        subInp.value = subtotal;
+        window.calcInvoiceTotals();
+    }
+}
+
+export function calcInvoiceTotals() {
+    const sub = parseAmount(document.getElementById('inv-subtotal')?.value || '0');
+    const discInput = parseAmount(document.getElementById('inv-discount')?.value || '0');
+    const prev = parseAmount(document.getElementById('inv-prev-due')?.value || '0');
+    const paid = parseAmount(document.getElementById('inv-paid')?.value || '0');
+    const mode = document.getElementById('inv-disc-mode-btn')?.dataset.mode || 'fixed';
+
+    let discAmt = mode === 'percent' ? safeRound((sub * discInput) / 100) : discInput;
+
+    // Words display with jump protection
+    const subWords = document.getElementById('inv-sub-words');
+    if(subWords) {
+        if(sub > 0) { subWords.innerText = numberToBanglaWords(sub); subWords.classList.remove('hidden'); }
+        else subWords.classList.add('hidden');
+    }
+
+    const discWords = document.getElementById('inv-disc-words');
+    if(discWords) {
+        if(discAmt > 0) { discWords.innerText = `৳ ${formatAmountWithComma(discAmt)} ছাড়`; discWords.classList.remove('hidden'); }
+        else discWords.classList.add('hidden');
+    }
+
+    const netTotal = safeRound(Math.max(0, sub - discAmt) + prev);
+    const currentDue = safeRound(netTotal - paid);
+
+    const netDisplay = document.getElementById('inv-net-total-display');
+    if(netDisplay) netDisplay.innerText = '৳ ' + formatAmountWithComma(netTotal);
+
+    const netWords = document.getElementById('inv-net-words');
+    if(netWords) netWords.innerText = netTotal > 0 ? `(${numberToBanglaWords(netTotal)})` : '';
+
+    const paidWords = document.getElementById('inv-paid-words');
+    if(paidWords) paidWords.innerText = paid > 0 ? `(${numberToBanglaWords(paid)})` : '';
+
+    const cd = document.getElementById('inv-current-due-display');
+    if(cd) {
+        cd.innerText = '৳ ' + formatAmountWithComma(Math.abs(currentDue)) + (currentDue < 0 ? ' (Adv)' : '');
+        cd.className = currentDue > 0 ? 'text-xl font-black text-red-400' : (currentDue < 0 ? 'text-xl font-black text-emerald-400' : 'text-xl font-black text-slate-300');
+    }
+
+    const dueWords = document.getElementById('inv-due-words');
+    if(dueWords) dueWords.innerText = currentDue !== 0 ? `(${numberToBanglaWords(Math.abs(currentDue))})` : '';
+}
+
+export async function saveAndPrintInvoice(layoutType) {
+    const mainBtns = document.querySelectorAll('button[onclick*="saveAndPrintInvoice"]');
+    try {
+        const sel = document.getElementById('inv-customer-select');
+        if (!sel || sel.selectedIndex <= 0) return Swal.fire('ত্রুটি!', 'কাস্টমার সিলেক্ট করুন', 'error');
+
+        mainBtns.forEach(b => b.disabled = true);
+        const customerId = sel.value;
+        const opt = sel.options[sel.selectedIndex];
+        const customerName = opt.dataset.name;
+        const date = toDBDate(document.getElementById('inv-date').value);
+        const voucherNo = document.getElementById('inv-voucher').value;
+        const notes = document.getElementById('inv-notes').value;
+        const subtotal = parseAmount(document.getElementById('inv-subtotal').value);
+        const discInput = parseAmount(document.getElementById('inv-discount').value);
+        const mode = document.getElementById('inv-disc-mode-btn')?.dataset.mode || 'fixed';
+        const paid = parseAmount(document.getElementById('inv-paid').value);
+
+        let discAmt = mode === 'percent' ? safeRound((subtotal * discInput) / 100) : discInput;
+        const bill = safeRound(Math.max(0, subtotal - discAmt));
+        if (bill === 0 && paid === 0) throw new Error("বিল বা জমা দিন");
+
+        const confirmPreview = await Swal.fire({
+            title: 'ইনভয়েস যাচাই করুন',
+            html: `<div class="text-left font-bn p-2"><b>কাস্টমার:</b> ${customerName}<br><b>বিল:</b> ৳${formatAmountWithComma(bill)}<br><b>জমা:</b> ৳${formatAmountWithComma(paid)}</div>`,
+            showCancelButton: true
+        });
+        if (!confirmPreview.isConfirmed) return;
+
+        Swal.fire({ title: 'সেভ হচ্ছে...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+        const batch = db.batch();
+        const txnRef = TransactionDAO.getRef();
+        const validItems = invoiceItems.filter(i => (i.desc && i.desc.trim() !== '') || i.total > 0);
+
+        const txnData = {
+            customerId, customerName, date, voucherNo, notes,
+            bill, paid, subtotal, discount: discAmt,
+            hasItems: validItems.length > 0,
+            createdBy: window.AppState?.currentUserEmail || 'Unknown',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (validItems.length > 0) txnData.items = validItems.map(it => ({ ...it }));
+
+        batch.set(txnRef, txnData);
+        batch.update(CustomerDAO.getRef(customerId), { totalDue: firebase.firestore.FieldValue.increment(safeRound(bill - paid)) });
+        await batch.commit();
+
+        auditLog('CREATE', 'Invoice', txnRef.id, customerName, { bill, paid });
+
+        if(window.printReceiptEngine) await window.printReceiptEngine(txnRef.id, layoutType);
+
+        Swal.fire('সফল!', 'ইনভয়েস সেভ হয়েছে', 'success');
+        renderInvoice(document.getElementById('view-container'));
+    } catch (e) {
+        Swal.fire('Error', e.message || 'সেভ করতে সমস্যা হয়েছে', 'error');
+    } finally {
+        mainBtns.forEach(b => b.disabled = false);
+    }
+}
+
+// -------------------------------------------------------------------------
+// 🚀 RENDERER
+// -------------------------------------------------------------------------
+export function renderInvoice(container, params = null) {
+    if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.viewInvoice === false) {
+        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-black text-red-500">অ্যাক্সেস ডিনাইড!</h2></div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="max-w-6xl mx-auto space-y-6 pb-20 font-bn">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 backdrop-blur-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-lg flex-shrink-0"><i class="fa-solid fa-file-invoice"></i></div>
+                    <div><h1 class="text-lg font-black text-white tracking-tight">ভাউচার / ইনভয়েস তৈরি করুন</h1><p class="text-slate-400 text-xs font-bold">প্রফেশনাল ইনভয়েস জেনারেট এবং ডাটাবেস এন্ট্রি</p></div>
+                </div>
+                <div class="flex items-center gap-2.5 w-full md:w-auto">
+                    <button type="button" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2" onclick="window.saveAndPrintInvoice('pos')"><i class="fa-solid fa-print"></i> <span>POS প্রিন্ট</span></button>
+                    <button type="button" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2" onclick="window.saveAndPrintInvoice('a4')"><i class="fa-solid fa-file-pdf"></i> <span>A4 প্রিন্ট</span></button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="m3-card md:col-span-2 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-700/50 pb-2 mb-4"><h2 class="text-blue-400 font-black text-sm uppercase tracking-widest">কাস্টমার তথ্য</h2><button type="button" class="px-3 py-1 bg-blue-600/20 text-blue-400 text-xs font-bold rounded-lg" onclick="window.quickAddCustomerFromInvoice()"><i class="fa-solid fa-plus text-xs"></i> নতুন কাস্টমার</button></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-xs font-bold text-slate-300 mb-2">কাস্টমার সিলেক্ট করুন *</label><select id="inv-customer-select" class="m3-field" onchange="window.invoiceCustomerChanged()"></select></div>
+                        <div><label class="block text-xs font-bold text-slate-300 mb-2">কাস্টমার বিস্তারিত</label><div id="inv-cust-display" class="m3-field bg-slate-900/80 text-slate-400 opacity-70 flex flex-col justify-center min-h-[46px]">সিলেক্ট করা হয়নি</div></div>
+                    </div>
+                </div>
+                <div class="m3-card space-y-4">
+                    <h2 class="text-blue-400 font-black text-sm uppercase tracking-widest border-b border-slate-700/50 pb-2 mb-4">ভাউচার তথ্য</h2>
+                    <div><label class="block text-xs font-bold text-slate-300 mb-2">তারিখ *</label><input type="text" id="inv-date" class="m3-field datepicker"></div>
+                    <div><label class="block text-xs font-bold text-slate-300 mb-2">রশিদ/ভাউচার নম্বর (ঐচ্ছিক)</label><input type="text" id="inv-voucher" class="m3-field" placeholder="রশিদ নং..."></div>
+                </div>
+            </div>
+
+            <div class="m3-card space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/50 pb-2"><h2 class="text-blue-400 font-black text-sm uppercase tracking-widest">আইটেম লিস্ট</h2><button type="button" class="text-xs bg-slate-800 text-emerald-400 px-3 py-1.5 rounded-lg" onclick="window.addInvoiceItemRow()"><i class="fa-solid fa-plus"></i> লাইন যোগ করুন</button></div>
+                <div class="m3-table-container"><table class="m3-table min-w-[700px] w-full"><thead><tr><th class="w-10">#</th><th>আইটেমের নাম</th><th class="w-[15%]">পরিমাণ</th><th class="w-[20%]">দর</th><th class="w-[20%]">মোট</th><th class="w-10"></th></tr></thead><tbody id="inv-items-tbody"></tbody></table></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div class="m3-card space-y-4"><h2 class="text-blue-400 font-black text-sm uppercase tracking-widest border-b border-slate-700/50 pb-2">নোট</h2><textarea id="inv-notes" class="m3-field h-24 resize-none" placeholder="নোট লিখুন..."></textarea></div>
+
+                <div class="m3-card !bg-slate-900/60 border-slate-700/80 space-y-4 font-bn">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-300 font-bold">সাব-টোটাল:</span>
+                        <div class="relative w-44 flex flex-col items-end">
+                            <input type="text" id="inv-subtotal" inputmode="decimal" class="m3-field !py-1.5 text-right font-black" onkeyup="window.handleNumberInput(this); window.calcInvoiceTotals(); window.updateLiveWords(this, 'inv-sub-words')">
+                            <div class="h-5"><div id="inv-sub-words" class="text-[9px] font-black text-blue-400 mt-0.5 hidden italic"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-300 font-bold">ডিসকাউন্ট:</span>
+                        <div class="relative w-44 flex flex-col items-end">
+                            <div class="flex w-full bg-slate-900 rounded-xl border border-orange-500/20 overflow-hidden">
+                                <input type="text" id="inv-discount" class="flex-grow bg-transparent !border-none !py-1.5 text-right text-orange-400 font-black outline-none px-3" onkeyup="window.handleNumberInput(this); window.calcInvoiceTotals(); window.updateLiveWords(this, 'inv-disc-words')">
+                                <button type="button" id="inv-disc-mode-btn" class="px-2.5 py-1.5 bg-orange-500/10 text-orange-400 border-l border-orange-500/20 text-xs font-black" onclick="window.toggleInvoiceDiscMode()" data-mode="fixed">৳</button>
+                            </div>
+                            <div class="h-5"><div id="inv-disc-words" class="text-[9px] font-black text-orange-400 mt-0.5 hidden italic"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between border-b border-slate-700/50 pb-4"><span class="text-slate-300 font-bold">পূর্বের বকেয়া:</span><input type="text" id="inv-prev-due" class="m3-field w-44 !py-1.5 text-right text-red-400 font-black bg-slate-900 opacity-80" readonly></div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-white font-black text-lg">সর্বমোট পাওনা:</span>
+                        <div class="text-2xl font-black text-white" id="inv-net-total-display">৳ 0</div>
+                    </div>
+                    <div class="h-5"><div id="inv-net-words" class="text-right text-[10px] font-bold text-blue-400 italic"></div></div>
+
+                    <div class="bg-emerald-500/10 p-3.5 rounded-2xl border border-emerald-500/20 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-emerald-400 font-black">জমা (Paid):</span>
+                            <div class="relative w-44 flex flex-col items-end">
+                                <input type="text" id="inv-paid" class="m3-field !py-1.5 !bg-slate-900 text-right text-emerald-400 font-black border-emerald-500" onkeyup="window.handleNumberInput(this); window.calcInvoiceTotals(); window.toggleInvoiceRecvSection(); window.updateLiveWords(this, 'inv-paid-input-words')">
+                                <div class="h-5"><div id="inv-paid-input-words" class="text-[9px] font-black text-emerald-400 mt-0.5 hidden italic"></div></div>
+                            </div>
+                        </div>
+                        <div class="h-5"><div id="inv-paid-words" class="text-right text-[10px] font-bold text-emerald-400 italic"></div></div>
+                        <div id="inv-recv-section" class="hidden space-y-2.5 pt-2 border-t border-emerald-500/20">
+                            <div class="flex items-center justify-between gap-2"><span class="text-xs text-slate-300 font-bold">মাধ্যম:</span><div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700"><button type="button" id="inv-recv-bank-btn" class="px-3 py-1 text-xs font-bold rounded-lg bg-blue-600 text-white" onclick="window.setInvoiceRecvType('Bank')">Bank</button><button type="button" id="inv-recv-cash-btn" class="px-3 py-1 text-xs font-bold text-slate-400" onclick="window.setInvoiceRecvType('Cash')">Cash</button></div></div>
+                            <input id="inv-received-from" class="m3-field text-xs !py-2" placeholder="ব্যাংকের নাম...">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between"><span class="text-slate-300 font-bold">বর্তমান বকেয়া:</span><div class="text-xl font-black text-red-400" id="inv-current-due-display">৳ 0</div></div>
+                    <div class="h-5"><div id="inv-due-words" class="text-right text-[10px] font-bold text-red-400 italic"></div></div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/95 border border-blue-500/30 rounded-2xl p-3 px-5 flex flex-col sm:flex-row items-center justify-between gap-3 sticky bottom-4 z-30 shadow-2xl backdrop-blur-xl font-bn">
+                <div class="text-xs font-bold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-400"></i><span>তথ্য সেভ ও প্রিন্ট করতে ক্লিক করুন:</span></div>
+                <div class="flex gap-2.5 w-full sm:w-auto">
+                    <button type="button" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs" onclick="window.saveAndPrintInvoice('pos')"><i class="fa-solid fa-print"></i> <span>POS প্রিন্ট ও সেভ</span></button>
+                    <button type="button" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs" onclick="window.saveAndPrintInvoice('a4')"><i class="fa-solid fa-file-pdf"></i> <span>A4 প্রিন্ট ও সেভ</span></button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('inv-date').value = getTodayLocalDateString();
+    invoiceItems = [{ desc: '', qty: 1, rate: 0, total: 0 }];
+    loadInvoiceCustomers(params?.customerId);
+    renderInvoiceItems();
+}
+
+// -------------------------------------------------------------------------
+// 🚀 GLOBAL API BINDINGS (At Top for Safety)
+// -------------------------------------------------------------------------
+window.invoiceCustomerChanged = () => {
+    const sel = document.getElementById('inv-customer-select');
+    const display = document.getElementById('inv-cust-display');
+    const prevDueInput = document.getElementById('inv-prev-due');
+    if (sel && sel.selectedIndex > 0) {
+        const opt = sel.options[sel.selectedIndex];
+        display.innerHTML = `<div>${opt.dataset.name} • ${opt.dataset.phone || 'No Phone'}</div><div class="text-[11px] text-slate-300 mt-1">${opt.dataset.address || ''}</div>`;
+        display.classList.remove('opacity-70'); display.classList.add('text-white');
+        prevDueInput.value = opt.dataset.due;
+    } else {
+        display.innerText = 'সিলেক্ট করা হয়নি'; display.classList.add('opacity-70'); if (prevDueInput) prevDueInput.value = '';
+    }
+    calcInvoiceTotals();
+};
+
+window.calcInvoiceTotals = calcInvoiceTotals;
+window.saveAndPrintInvoice = saveAndPrintInvoice;
+window.addInvoiceItemRow = addInvoiceItemRow;
+window.updateInvoiceItem = updateInvoiceItem;
+window.removeInvoiceItem = removeInvoiceItem;
+window.applyHistoryPrice = applyHistoryPrice;
+
+window.toggleInvoiceDiscMode = () => {
+    const b = document.getElementById('inv-disc-mode-btn'); if(!b) return;
+    b.dataset.mode = b.dataset.mode === 'fixed' ? 'percent' : 'fixed';
+    b.innerText = b.dataset.mode === 'fixed' ? '৳' : '%';
+    calcInvoiceTotals();
+};
+
+window.toggleInvoiceRecvSection = () => {
+    const p = parseAmount(document.getElementById('inv-paid')?.value || '0');
+    document.getElementById('inv-recv-section')?.classList.toggle('hidden', p <= 0);
+};
+
+window.setInvoiceRecvType = (type) => {
+    const b = document.getElementById('inv-recv-bank-btn'); const c = document.getElementById('inv-recv-cash-btn');
+    if(b && c) {
+        if(type==='Bank'){ b.classList.add('bg-blue-600','text-white'); c.classList.remove('bg-blue-600','text-white'); b.dataset.selected='true'; c.dataset.selected='false'; }
+        else { c.classList.add('bg-blue-600','text-white'); b.classList.remove('bg-blue-600','text-white'); c.dataset.selected='true'; b.dataset.selected='false'; }
+    }
+};
+
+window.quickAddCustomerFromInvoice = async () => { if(window.quickAddCustomer) { await window.quickAddCustomer(); loadInvoiceCustomers(); } };

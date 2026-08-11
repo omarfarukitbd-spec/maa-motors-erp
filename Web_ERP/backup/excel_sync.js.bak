@@ -1,0 +1,467 @@
+// ─── Admin Excel Backup & Smart Sync Module ──────────────────────────────────
+import * as XLSX from 'xlsx';
+import Swal from 'sweetalert2';
+import { db, firebase } from './firebase-config.js';
+import { CustomerDAO, TransactionDAO, SettingsDAO } from './dao.js';
+import { promptSecurityPin, parseAmount, formatAmountWithComma } from './utils.js';
+import { getCustomerCache, initCustomerCache } from './customer/index.js';
+
+export async function downloadAdminExcelBackup() {
+    if (window.AppState?.currentUserRole !== 'Admin') {
+        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন এক্সেল ডাটা ব্যাকআপ ব্যাকআপ করতে পারবেন।', 'error');
+    }
+
+    const isPinValid = await promptSecurityPin("এক্সেল ডাটা ব্যাকআপ ও টেমপ্লেট ডাউনলোড");
+    if (!isPinValid) return;
+
+    try {
+        Swal.fire({
+            title: 'স্মার্ট এক্সেল জেনারেট হচ্ছে...',
+            text: 'ডাটাবেসের সকল কাস্টমার, অটো-ক্যালকুলেশন ফর্মুলা ও ডিজাইন প্রসেস করা হচ্ছে',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+
+        initCustomerCache();
+        const customers = getCustomerCache();
+
+        // 1. Fetch real transactions from Firebase Firestore `transactions` collection
+        const realTxns = await TransactionDAO.getAll();
+
+        // Sort real transactions by date
+        realTxns.sort((a, b) => {
+            const d1 = new Date(a.date || 0);
+            const d2 = new Date(b.date || 0);
+            if (d1 - d2 !== 0) return d1 - d2;
+            const t1 = a.createdAt && typeof a.createdAt.toMillis === 'function' ? a.createdAt.toMillis() : 0;
+            const t2 = b.createdAt && typeof b.createdAt.toMillis === 'function' ? b.createdAt.toMillis() : 0;
+            return t1 - t2;
+        });
+
+        const todayStr = window.getTodayLocalDateString ? window.getTodayLocalDateString() : new Date().toISOString().split('T')[0];
+        const [y, m, d] = todayStr.split('-');
+        const formattedToday = `${d}/${m}/${y}`;
+
+        // ─── Sheet 1: Customer List & Current Due ──────────────────────────────
+        const wsCustData = [
+            ["মা মোটরস ইআরপি — কাস্টমার হিসেব ও বর্তমান মোট জের", "", "", "", `তারিখ: ${formattedToday}`],
+            ["অ্যাকাউন্ট নং", "কাস্টমারের নাম", "মোবাইল নম্বর", "ঠিকানা", "বর্তমান মোট বকেয়া (৳)"]
+        ];
+
+        customers.forEach(c => {
+            wsCustData.push([
+                c.accountNo || '',
+                c.name || '',
+                c.phone || '',
+                c.address || '',
+                Number(c.totalDue) || 0
+            ]);
+        });
+
+        const lastCustRow = wsCustData.length;
+        // Total formula row at bottom of Sheet 1
+        wsCustData.push([
+            "মোট হিসাব",
+            `মোট কাস্টমার: ${customers.length} জন`,
+            "",
+            "মার্কেটে মোট বকেয়া (৳):",
+            { f: `SUM(E3:E${lastCustRow})` } // Excel Auto-SUM Formula
+        ]);
+
+        const wsCustomers = XLSX.utils.aoa_to_sheet(wsCustData);
+
+        // ─── Sheet 2: Real Transactions & Rashid Book Entry Sheet ─────────────────
+        const wsTemplateData = [
+            ["মা মোটরস ইআরপি — সকল লেনদেন ও রশিদ বই এন্ট্রি শিট", "", "", "", "", "", "", "", `ডাউনলোড: ${formattedToday}`],
+            ["তারিখ (DD/MM/YYYY)", "কাস্টমারের নাম / অ্যাকাউন্ট নং", "মোবাইল নম্বর", "ভাউচার নং", "বিল (Debit ৳)", "জমা (Credit ৳)", "রানিং ব্যালেন্স (৳)", "জমা মাধ্যম (Bank/Cash)", "ব্যাংক বা বিবরণ"]
+        ];
+
+        // Populate REAL Firebase Transactions
+        realTxns.forEach((t, idx) => {
+            const rowNum = idx + 3; // 1-indexed row starting at 3
+            let fDate = '';
+            if (t.date) {
+                if (/^\d{4}-\d{2}-\d{2}$/.test(t.date)) {
+                    const [yStr, mStr, dStr] = t.date.split('-');
+                    fDate = `${dStr}/${mStr}/${yStr}`;
+                } else {
+                    fDate = t.date;
+                }
+            }
+            
+            let custDisp = t.customerName || '';
+            const matchedCust = customers.find(c => c.id === t.customerId || c.name === t.customerName);
+            if (matchedCust && matchedCust.accountNo) {
+                custDisp = `[${matchedCust.accountNo}] ${matchedCust.name}`;
+            }
+
+            const phoneStr = matchedCust ? (matchedCust.phone || '') : '';
+            const bVal = Number(t.bill) || 0;
+            const pVal = Number(t.paid) || 0;
+
+            wsTemplateData.push([
+                fDate,
+                custDisp,
+                phoneStr,
+                t.voucherNo || '',
+                bVal,
+                pVal,
+                { f: `E${rowNum}-F${rowNum}` }, // Formula for running balance
+                t.receivedType || (pVal > 0 ? 'Bank' : ''),
+                t.receivedFrom || ''
+            ]);
+        });
+
+        // Add 30 blank rows below real data for adding new Rashid Book vouchers offline!
+        const startBlankRowIndex = wsTemplateData.length + 1;
+        for (let r = 0; r < 30; r++) {
+            const rNum = startBlankRowIndex + r;
+            wsTemplateData.push([
+                "", "", "", "", "", "",
+                { f: `IF(AND(E${rNum}="",F${rNum}=""),"",E${rNum}-F${rNum})` }, // Auto-calculates running balance
+                "Bank", ""
+            ]);
+        }
+
+        const totalRowIndex = wsTemplateData.length + 1;
+        const lastDataRow = totalRowIndex - 1;
+
+        // Total Summary Row at bottom
+        wsTemplateData.push([
+            "সর্বমোট হিসাব", "", "", `মোট লেনদেন: ${realTxns.length} টি`,
+            { f: `SUM(E3:E${lastDataRow})` }, // Total Debit
+            { f: `SUM(F3:F${lastDataRow})` }, // Total Credit
+            { f: `E${totalRowIndex}-F${totalRowIndex}` }, // Net Total Balance
+            "", ""
+        ]);
+
+        const wsTemplate = XLSX.utils.aoa_to_sheet(wsTemplateData);
+
+        // Data validation (Dropdowns) for Column H (Bank/Cash) and Column B (Customer Names)
+        const maxCustRow = Math.max(lastCustRow, 3);
+        wsTemplate['!dataValidation'] = [
+            {
+                sqref: `H3:H${lastDataRow}`,
+                type: "list",
+                operator: "equal",
+                formula1: '"Bank,Cash"',
+                allowBlank: true,
+                showErrorMessage: true,
+                errorTitle: "ভুল ইনপুট",
+                error: "অনুগ্রহ করে Bank বা Cash ড্রপডাউন থেকে সিলেক্ট করুন।"
+            },
+            {
+                sqref: `B3:B${lastDataRow}`,
+                type: "list",
+                operator: "equal",
+                formula1: `'কাস্টমার তালিকা ও বর্তমান জের'!$B$3:$B$${maxCustRow}`,
+                allowBlank: true
+            }
+        ];
+
+        // Adjust column widths for clean readability
+        wsCustomers['!cols'] = [{ wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 30 }, { wch: 24 }];
+        wsTemplate['!cols'] = [{ wch: 18 }, { wch: 32 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 35 }];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, wsCustomers, "কাস্টমার তালিকা ও বর্তমান জের");
+        XLSX.utils.book_append_sheet(wb, wsTemplate, "খতিয়ান ও নতুন লেনদেন এন্ট্রি");
+
+        const filename = `Maa_Motors_ERP_Smart_Backup_${d}-${m}-${y}.xlsx`;
+        XLSX.writeFile(wb, filename);
+
+        Swal.fire({
+            title: 'সফল! ✅',
+            text: `অটো-ক্যালকুলেশন ফর্মুলা সহ "${filename}" ফাইলটি ডাউনলোড হয়েছে।`,
+            icon: 'success',
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+    } catch (err) {
+        console.error("Excel Backup Download Error:", err);
+        Swal.fire('এরর!', 'এক্সেল তৈরি করতে সমস্যা হয়েছে: ' + (err.message || err), 'error');
+    }
+}
+
+export async function uploadAdminExcelBackup(fileInput) {
+    if (window.AppState?.currentUserRole !== 'Admin') {
+        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন এক্সেল ফাইল আপলোড ও সিঙ্ক করতে পারবেন।', 'error');
+    }
+
+    const file = fileInput?.files?.[0];
+    if (!file) return Swal.fire('ফাইল সিলেক্ট করুন', 'আপলোড করার জন্য একটি এক্সেল (.xlsx) ফাইল বা সিলেক্ট করুন।', 'warning');
+
+    const isPinValid = await promptSecurityPin("এক্সেল ডাটা ইমপোর্ট ও স্মার্ট সিঙ্ক");
+    if (!isPinValid) {
+        fileInput.value = '';
+        return;
+    }
+
+    try {
+        Swal.fire({
+            title: 'এক্সেল রিড করা হচ্ছে...',
+            text: 'ফাইলের ডাটা বিশ্লেষণ করা হচ্ছে',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+
+        const arrayBuffer = await file.arrayBuffer();
+        const wb = XLSX.read(arrayBuffer, { type: 'array' });
+
+        // Prefer Sheet 2 "নতুন এন্ট্রি ফরম্যাট" or fall back to Sheet 1
+        let sheetName = wb.SheetNames.find(n => n.includes('এন্ট্রি') || n.includes('Template')) || wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const rawJson = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+        if (!rawJson || rawJson.length === 0) {
+            fileInput.value = '';
+            return Swal.fire('খালি ফাইল', 'এক্সেল ফাইলে কোনো ডাটা পাওয়া যায়নি।', 'warning');
+        }
+
+        initCustomerCache();
+        const existingCustomers = getCustomerCache();
+
+        const transactionsToSave = [];
+        const newCustomerNamesSet = new Set();
+        let totalBillSum = 0;
+        let totalPaidSum = 0;
+        let matchedCount = 0;
+
+        rawJson.forEach(row => {
+            // Find keys dynamically regardless of small header text differences
+            const keys = Object.keys(row);
+            const dateKey = keys.find(k => k.toLowerCase().includes('তারিখ') || k.toLowerCase().includes('date')) || keys[0];
+            const nameKey = keys.find(k => k.toLowerCase().includes('কাস্টমার') || k.toLowerCase().includes('name')) || keys[1];
+            const phoneKey = keys.find(k => k.toLowerCase().includes('মোবাইল') || k.toLowerCase().includes('phone')) || keys[2];
+            const voucherKey = keys.find(k => k.toLowerCase().includes('ভাউচার') || k.toLowerCase().includes('voucher')) || keys[3];
+            const billKey = keys.find(k => k.toLowerCase().includes('বিল') || k.toLowerCase().includes('debit') || k.toLowerCase().includes('bill')) || keys[4];
+            const paidKey = keys.find(k => k.toLowerCase().includes('জমা') || k.toLowerCase().includes('credit') || k.toLowerCase().includes('paid')) || keys[5];
+            const typeKey = keys.find(k => k.toLowerCase().includes('মাধ্যম') || k.toLowerCase().includes('type')) || keys[6];
+            const fromKey = keys.find(k => k.toLowerCase().includes('ব্যাংক') || k.toLowerCase().includes('মন্তব্য') || k.toLowerCase().includes('details')) || keys[7];
+
+            let dateRaw = String(row[dateKey] || '').trim();
+            let nameRaw = String(row[nameKey] || '').trim();
+            let phoneRaw = String(row[phoneKey] || '').trim();
+            let voucher = String(row[voucherKey] || '').trim();
+            let bill = parseAmount(row[billKey]);
+            let paid = parseAmount(row[paidKey]);
+            let receivedType = String(row[typeKey] || '').trim() || 'Bank';
+            let receivedFrom = String(row[fromKey] || '').trim();
+
+            // Skip sample instruction row or empty rows
+            if (!nameRaw || nameRaw.includes('নমুনা') || (bill === 0 && paid === 0)) return;
+
+            // Clean date format (e.g. 04/08/2026 -> 2026-08-04)
+            let isoDate = (window.getTodayLocalDateString ? window.getTodayLocalDateString() : new Date().toISOString().split('T')[0]);
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateRaw)) {
+                const [d, m, y] = dateRaw.split('/');
+                isoDate = `${y}-${m}-${d}`;
+            } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) {
+                isoDate = dateRaw;
+            }
+
+            // Extract clean name & account no if formatted as "[0001] Rahim"
+            let cleanName = nameRaw;
+            let accountNoMatch = null;
+
+            if (nameRaw.startsWith('[')) {
+                const matchAcc = nameRaw.match(/^\[(.*?)\]/);
+                if (matchAcc) accountNoMatch = matchAcc[1].trim();
+                cleanName = nameRaw.replace(/^\[.*?\]\s*/, '').trim();
+            }
+
+            // Clean name from phone suffix e.g. "Rahim (017...)"
+            cleanName = cleanName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+
+            // Match against existing customers
+            let matchedCust = null;
+            if (accountNoMatch) {
+                matchedCust = existingCustomers.find(c => String(c.accountNo || '').trim() === accountNoMatch);
+            }
+            if (!matchedCust && phoneRaw) {
+                const cleanP = phoneRaw.replace(/\D/g, '');
+                if (cleanP) matchedCust = existingCustomers.find(c => String(c.phone || '').replace(/\D/g, '') === cleanP);
+            }
+            if (!matchedCust && cleanName) {
+                const cleanN = cleanName.toLowerCase();
+                matchedCust = existingCustomers.find(c => (c.name || '').toLowerCase().trim() === cleanN);
+            }
+
+            if (matchedCust) {
+                matchedCount++;
+            } else {
+                newCustomerNamesSet.add(cleanName);
+            }
+
+            totalBillSum += bill;
+            totalPaidSum += paid;
+
+            transactionsToSave.push({
+                date: isoDate,
+                customerName: cleanName,
+                matchedCustId: matchedCust ? matchedCust.id : null,
+                phone: phoneRaw,
+                voucher,
+                bill,
+                paid,
+                receivedType: receivedType.toLowerCase().includes('cash') ? 'Cash' : 'Bank',
+                receivedFrom
+            });
+        });
+
+        if (transactionsToSave.length === 0) {
+            fileInput.value = '';
+            return Swal.fire('কোনো বৈধ ডাটা পাওয়া যায়নি', 'এক্সেলে কোনো সঠিক কাস্টমার বা লেনদেনের তথ্য পাওয়া যায়নি।', 'warning');
+        }
+
+        // Show Swal Preview Modal before committing to Firestore
+        const confirmResult = await Swal.fire({
+            title: '📊 এক্সেল সিঙ্ক প্রিভিউ',
+            html: `
+                <div class="text-left font-bn space-y-3 bg-slate-900/80 p-4 rounded-2xl border border-slate-700/60 text-sm">
+                    <div class="flex justify-between border-b border-slate-800 pb-2">
+                        <span class="text-slate-400">মোট লেনদেন লাইন:</span>
+                        <strong class="text-white font-bold">${transactionsToSave.length} টি</strong>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800 pb-2">
+                        <span class="text-slate-400">পুরাতন কাস্টমার ম্যাচড:</span>
+                        <strong class="text-emerald-400 font-bold">${matchedCount} জন</strong>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800 pb-2">
+                        <span class="text-slate-400">নতুন কাস্টমার তৈরি হবে:</span>
+                        <strong class="text-blue-400 font-bold">${newCustomerNamesSet.size} জন</strong>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800 pb-2">
+                        <span class="text-slate-400">মোট নতুন বিল (Debit):</span>
+                        <strong class="text-red-400 font-bold">৳ ${formatAmountWithComma(totalBillSum)}</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">মোট নতুন জমা (Credit):</span>
+                        <strong class="text-emerald-400 font-bold">৳ ${formatAmountWithComma(totalPaidSum)}</strong>
+                    </div>
+                </div>
+                <p class="text-xs text-amber-400 mt-3 font-bold">⚠️ আপনি কি এই ডাটাগুলো ডাটাবেসে সেভ করতে নিশ্চিত?</p>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'হ্যাঁ, ডাটা সিঙ্ক করুন',
+            cancelButtonText: 'বাতিল',
+            confirmButtonColor: '#2563eb',
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+
+        if (!confirmResult.isConfirmed) {
+            fileInput.value = '';
+            return;
+        }
+
+        // Execute Smart Batch Sync
+        Swal.fire({
+            title: 'ডাটা সেভ হচ্ছে...',
+            text: 'কাস্টমার ও খতিয়ান ডাটাবেসে আপডেট করা হচ্ছে',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+
+        // 1. Fetch current zones to match or create
+        const zones = await ZoneDAO.getAllZones();
+        const zoneMap = {}; // name -> {code, name}
+        zones.forEach(z => zoneMap[z.name] = z);
+
+        // 2. Create missing new customers first via runTransaction
+        const createdCustomerMap = {}; // name -> { id, accountNo }
+
+        if (newCustomerNamesSet.size > 0) {
+            const newNamesArr = Array.from(newCustomerNamesSet);
+            await db.runTransaction(async t => {
+                const counterDoc = await t.get(SettingsDAO.collection.doc('counters'));
+                let zoneCounters = (counterDoc.exists && counterDoc.data().zoneCounters) ? counterDoc.data().zoneCounters : {};
+
+                for (let i = 0; i < newNamesArr.length; i++) {
+                    const cName = newNamesArr[i];
+
+                    // Default to a generic zone or handle if needed
+                    const defaultZone = "General";
+                    if (!zoneMap[defaultZone]) {
+                        // Create General zone if not exists
+                        const zRef = ZoneDAO.getRef();
+                        t.set(zRef, { name: defaultZone, code: "10", createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                        zoneMap[defaultZone] = { name: defaultZone, code: "10" };
+                    }
+
+                    const zInfo = zoneMap[defaultZone];
+                    let nextNo = (zoneCounters[defaultZone] || 0) + 1;
+                    zoneCounters[defaultZone] = nextNo;
+
+                    const serial = String(nextNo).padStart(4, '0');
+                    const accNo = zInfo.code + serial;
+
+                    const cRef = CustomerDAO.getRef();
+                    t.set(cRef, {
+                        name: cName,
+                        phone: '',
+                        address: '',
+                        zone: defaultZone,
+                        accountNo: accNo,
+                        totalDue: 0,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    createdCustomerMap[cName] = { id: cRef.id, accountNo: accNo };
+                }
+                t.set(SettingsDAO.collection.doc('counters'), { zoneCounters }, { merge: true });
+            });
+        }
+
+        // 2. Save all transactions and update customer balances
+        for (let i = 0; i < transactionsToSave.length; i++) {
+            const item = transactionsToSave[i];
+            let custId = item.matchedCustId;
+            if (!custId && createdCustomerMap[item.customerName]) {
+                custId = createdCustomerMap[item.customerName].id;
+            }
+            if (!custId) continue;
+
+            const custRef = CustomerDAO.getRef(custId);
+            await db.runTransaction(async t => {
+                const cDoc = await t.get(custRef);
+                const prevDue = cDoc.exists ? (cDoc.data().totalDue || 0) : 0;
+                const currentDue = prevDue + item.bill - item.paid;
+
+                const txnRef = TransactionDAO.getRef();
+                t.set(txnRef, {
+                    customerId: custId,
+                    customerName: item.customerName,
+                    date: item.date,
+                    voucherNo: item.voucher,
+                    bill: item.bill,
+                    paid: item.paid,
+                    receivedType: item.receivedType,
+                    receivedFrom: item.receivedFrom,
+                    prevDue: prevDue,
+                    currentDue: currentDue,
+                    createdBy: (firebase.auth().currentUser?.email || 'Admin Excel Import'),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                t.update(custRef, { totalDue: currentDue });
+            });
+        }
+
+        fileInput.value = '';
+        Swal.fire({
+            title: 'স্মার্ট সিঙ্ক সফল! 🎉',
+            text: `${transactionsToSave.length} টি লেনদেন সফলভাবে ডাটাবেসে সেভ করা হয়েছে।`,
+            icon: 'success',
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        });
+    } catch (err) {
+        console.error("Upload Admin Excel Error:", err);
+        fileInput.value = '';
+        Swal.fire('এরর!', 'ডাটা সিঙ্ক করতে সমস্যা হয়েছে: ' + (err.message || err), 'error');
+    }
+}
+
+window.downloadAdminExcelBackup = downloadAdminExcelBackup;
+window.uploadAdminExcelBackup = uploadAdminExcelBackup;

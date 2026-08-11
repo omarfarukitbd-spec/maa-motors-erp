@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "maa-motors-erp"
+  },
+  "targets": {
+    "maa-motors-erp": {
+      "hosting": {
+        "client": [
+          "maa-motors-client"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

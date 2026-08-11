@@ -1,0 +1,156 @@
+/**
+ * ==============================================================================
+ * MAA MOTORS ERP - GOOGLE DRIVE AUTO BACKUP SCRIPT (100% FREE)
+ * ==============================================================================
+ * 
+ * [কীভাবে সেটআপ করবেন?]
+ * ১. আপনার ব্রাউজার থেকে যান: https://script.google.com/
+ * ২. বাম পাশ থেকে "New Project" (নতুন প্রজেক্ট) এ ক্লিক করুন।
+ * ৩. সেখানে থাকা সব পুরানো কোড মুছে ফেলে নিচের এই সম্পূর্ণ কোডটি পেস্ট করুন।
+ * ৪. লাইন নাম্বার ১৬, ১৭, এবং ১৮-তে আপনার ইমেইল, পাসওয়ার্ড এবং API Key বসিয়ে দিন।
+ * ৫. উপরের "Save" (ফ্লপি ডিস্ক) আইকনে ক্লিক করুন।
+ * ৬. এবার বাম পাশের ঘড়ির আইকনে (Triggers) ক্লিক করুন > "Add Trigger" এ ক্লিক করুন।
+ * ৭. ফাংশন হিসেবে "runDailyBackup" সিলেক্ট করুন। Event source হবে "Time-driven" এবং 
+ *    টাইম হিসেবে "Day timer" এবং "Midnight to 1am" সিলেক্ট করে সেভ করুন।
+ * ৮. গুগল পারমিশন চাইলে "Advanced" এ গিয়ে "Go to Untitled project (unsafe)" এ ক্লিক করে Allow দিন।
+ * ব্যস! আপনার গুগল ড্রাইভে প্রতিদিন রাতে একা একা ব্যাকআপ সেভ হবে।
+ * ==============================================================================
+ */
+
+// আপনার ফায়ারবেসের প্রজেক্ট ডিটেইলস (আমি অটোমেটিক বসিয়ে দিয়েছি):
+const ADMIN_EMAIL = "omarfarukitbd@gmail.com";  // অ্যাডমিন ইমেইল
+const ADMIN_PASSWORD = "018311650271999";       // অ্যাডমিন পাসওয়ার্ড
+const PROJECT_ID = "maa-motors-erp";            // ফায়ারবেস প্রজেক্ট আইডি
+const API_KEY = "AIzaSyD2KJqHyT84ErCFpWKUSLEFXdvnQ1s9SfQ"; // Firebase API Key
+
+// যে কালেকশনগুলোর ব্যাকআপ নিতে হবে:
+const COLLECTIONS = ['customers', 'transactions', 'expenses', 'zones', 'users', 'settings'];
+
+function runDailyBackup() {
+  try {
+    Logger.log("Starting Backup Process...");
+    
+    // ১. ফায়ারবেসে লগ-ইন করে Token নেওয়া
+    const idToken = getAuthToken();
+    if (!idToken) {
+      Logger.log("Authentication Failed! Please check email/password/API Key.");
+      return;
+    }
+    Logger.log("Login Successful!");
+
+    // ২. ডাটাবেস থেকে সব ডাটা ডাউনলোড করা
+    const fullData = {};
+    for (let i = 0; i < COLLECTIONS.length; i++) {
+      const colName = COLLECTIONS[i];
+      Logger.log("Fetching: " + colName);
+      fullData[colName] = fetchCollection(colName, idToken);
+    }
+
+    // ৩. JSON ফরম্যাটে ডেটা প্রস্তুত করা
+    const backupJson = JSON.stringify(fullData, null, 2);
+    const dateStr = Utilities.formatDate(new Date(), "Asia/Dhaka", "yyyy-MM-dd");
+    const fileName = "Maa_Motors_ERP_Backup_" + dateStr + ".json";
+
+    // ৪. গুগল ড্রাইভে 'ERP_Auto_Backups' ফোল্ডার তৈরি বা খোঁজা
+    const folderName = "ERP_Auto_Backups";
+    let folder;
+    const folders = DriveApp.getFoldersByName(folderName);
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(folderName);
+    }
+
+    // ৫. ড্রাইভে ফাইল সেভ করা
+    folder.createFile(fileName, backupJson, MimeType.PLAIN_TEXT);
+    Logger.log("Backup Successfully Saved to Google Drive!");
+    
+  } catch (e) {
+    Logger.log("Error during backup: " + e.toString());
+  }
+}
+
+// ফায়ারবেস অথেন্টিকেশন (Login)
+function getAuthToken() {
+  const url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + API_KEY;
+  const payload = {
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
+    returnSecureToken: true
+  };
+  
+  const options = {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+  
+  const response = UrlFetchApp.fetch(url, options);
+  const data = JSON.parse(response.getContentText());
+  
+  return data.idToken || null;
+}
+
+// ফায়ারবেস ক্লাউড ফায়ারস্টোর থেকে ডাটা পড়া (REST API)
+function fetchCollection(collectionName, token) {
+  const baseUrl = "https://firestore.googleapis.com/v1/projects/" + PROJECT_ID + "/databases/(default)/documents/" + collectionName + "?pageSize=1000";
+  const options = {
+    method: "get",
+    headers: {
+      "Authorization": "Bearer " + token
+    },
+    muteHttpExceptions: true
+  };
+  
+  let allDocuments = [];
+  let nextPageToken = null;
+  
+  do {
+    let url = baseUrl;
+    if (nextPageToken) {
+      url += "&pageToken=" + encodeURIComponent(nextPageToken);
+    }
+    
+    const response = UrlFetchApp.fetch(url, options);
+    const data = JSON.parse(response.getContentText());
+    
+    if (data.documents && data.documents.length > 0) {
+      // Clean up Firestore REST format to simple JSON
+      data.documents.forEach(doc => {
+        let id = doc.name.split('/').pop();
+        let cleanedData = parseFirestoreFormat(doc.fields || {});
+        allDocuments.push({ id: id, ...cleanedData });
+      });
+    }
+    
+    nextPageToken = data.nextPageToken;
+    
+  } while (nextPageToken);
+  
+  return allDocuments;
+}
+
+// Firestore REST API ফরম্যাট থেকে সাধারণ JSON এ রূপান্তর
+function parseFirestoreFormat(fields) {
+  const result = {};
+  for (let key in fields) {
+    let type = Object.keys(fields[key])[0];
+    let value = fields[key][type];
+    
+    if (type === 'integerValue') result[key] = parseInt(value, 10);
+    else if (type === 'doubleValue') result[key] = parseFloat(value);
+    else if (type === 'booleanValue') result[key] = value;
+    else if (type === 'stringValue') result[key] = value;
+    else if (type === 'timestampValue') result[key] = value;
+    else if (type === 'arrayValue') {
+      result[key] = (value.values || []).map(v => parseFirestoreFormat({ temp: v }).temp);
+    }
+    else if (type === 'mapValue') {
+      result[key] = parseFirestoreFormat(value.fields || {});
+    }
+    else if (type === 'nullValue') result[key] = null;
+    else result[key] = value; // Default fallback
+  }
+  return result;
+}
