@@ -37,6 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
         })();
         return;
     }
+    if (urlParams.get('view') === 'public-memo' && urlParams.get('id')) {
+        (async () => {
+            const m = await import('./utils/receipt-engine.js');
+            m.renderPublicMemoView(urlParams.get('id'));
+        })();
+        return;
+    }
 
     // 1. Initialize Auth System
     initAuthListener();

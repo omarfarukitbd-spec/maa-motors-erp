@@ -4,8 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
     plugins: [
         VitePWA({
-            registerType: 'autoUpdate',
-            injectRegister: 'auto',
+            selfDestroying: true,
             manifest: {
                 name: 'Maa Motors ERP',
                 short_name: 'Maa ERP',
@@ -25,9 +24,6 @@ export default defineConfig({
                         type: 'image/png'
                     }
                 ]
-            },
-            workbox: {
-                globPatterns: ['**/*.{js,css,html,ico,png,svg}']
             }
         })
     ],

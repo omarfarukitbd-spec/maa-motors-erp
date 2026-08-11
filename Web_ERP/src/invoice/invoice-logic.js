@@ -232,7 +232,8 @@ export async function saveAndPrintInvoice(layoutType) {
         const shareOnWhatsApp = () => {
             const formattedDue = formatAmountWithComma(Math.abs(currentDue));
             const dueText = currentDue < 0 ? `অ্যাডভান্স জমা: ৳ ${formattedDue}` : `বর্তমান মোট বকেয়া: ৳ ${formattedDue}`;
-            const msg = `আসসালামু আলাইকুম ${customerName},\nমেসার্স মা মোটরস্ থেকে আপনার মেমো সেভ হয়েছে।\n\nআজকের বিল: ৳ ${formatAmountWithComma(bill)}\nআজকের জমা: ৳ ${formatAmountWithComma(paid)}\n---------------------------------\n${dueText}\n\nধন্যবাদ! — মেসার্স মা মোটরস্`;
+            const directMemoLink = `${window.location.origin}${window.location.pathname}?view=public-memo&id=${txnRef.id}`;
+            const msg = `আসসালামু আলাইকুম ${customerName},\nমেসার্স মা মোটরস্ থেকে আপনার মেমো সেভ হয়েছে।\n\nআজকের বিল: ৳ ${formatAmountWithComma(bill)}\nআজকের জমা: ৳ ${formatAmountWithComma(paid)}\n---------------------------------\n${dueText}\n\nআপনার ডিজিটাল মেমোর PDF দেখতে নিচের লিংকে ক্লিক করুন:\n${directMemoLink}\n\nধন্যবাদ! — মেসার্স মা মোটরস্`;
             window.sendWhatsApp(customerPhone, msg);
         };
 

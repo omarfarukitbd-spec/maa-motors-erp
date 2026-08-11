@@ -100,6 +100,17 @@ export function renderRows(transactions, container, stateRefs = {}) {
         </div>`;
     });
 
+    if (container.id === 'recent-txn-list') {
+        if (rows.length > 0) {
+            container.innerHTML = rows.join('');
+        } else {
+            container.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-600 italic">কোনো লেনদেন পাওয়া যায়নি</td></tr>';
+        }
+        const dashMobile = document.getElementById('recent-txn-list-mobile');
+        if (dashMobile) dashMobile.innerHTML = mobileHtml || '<div class="text-center py-8 text-slate-500 font-bold italic">কোনো লেনদেন পাওয়া যায়নি</div>';
+        return;
+    }
+
     if (window.ledgerClusterize) {
         window.ledgerClusterize.destroy();
     }

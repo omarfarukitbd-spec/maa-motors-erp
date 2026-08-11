@@ -238,6 +238,15 @@ export function getDashboardHTML() {
                         </div>
                     </div>
 
+                    <!-- Collection Breakdown Widget -->
+                    <div id="dash-collection-breakdown-card" class="hidden m3-card bg-slate-900/60 border border-slate-800/80 p-4 rounded-2xl shadow-xl flex-col gap-3">
+                        <h3 class="text-sm font-black text-white uppercase tracking-widest border-b border-slate-800/60 pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul text-blue-400"></i> জমার বিস্তারিত বিবরণ
+                        </h3>
+                        <div id="dash-collection-breakdown-list" class="flex flex-col gap-2 font-bn mt-1 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                        </div>
+                    </div>
+
                     <!-- Top 5 Due Customers Widget -->
                     <div class="m3-card bg-slate-900/60 border border-slate-800/80 p-4 rounded-2xl shadow-xl flex flex-col gap-3">
                         <div class="flex items-center justify-between border-b border-slate-800/60 pb-2">

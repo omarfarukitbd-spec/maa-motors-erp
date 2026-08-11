@@ -147,8 +147,11 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
     const formattedDue = formatAmountWithComma(Math.abs(targetDue));
     const memoStr = targetVoucher ? `মেমো #${targetVoucher}` : '';
 
+    const directMemoLink = targetTxnId ? `${window.location.origin}${window.location.pathname}?view=public-memo&id=${targetTxnId}` : '';
     const shareLink = targetCustId ? `${window.location.origin}${window.location.pathname}?view=public-stmt&id=${targetCustId}` : '';
-    const pdfLinkStr = shareLink ? `আপনার সম্পূর্ণ মেমো ও হিসাবের PDF বিবরণী দেখতে নিচের লিংকে ক্লিক করুন:\n${shareLink}\n\n` : '';
+    const pdfLinkStr = directMemoLink 
+        ? `আপনার এই মেমোর ডাইরেক্ট PDF দেখতে লিংকে ক্লিক করুন:\n${directMemoLink}\n\n` 
+        : (shareLink ? `আপনার সম্পূর্ণ মেমো ও হিসাবের PDF বিবরণী দেখতে নিচের লিংকে ক্লিক করুন:\n${shareLink}\n\n` : '');
 
     let msg = '';
     const isOpening = (targetVoucher === 'OPENING' || targetVoucher === 'OPEN' || targetVoucher === 'প্রারম্ভিক জের' || (targetDate && String(targetVoucher).toUpperCase() === 'OPENING'));

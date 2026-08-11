@@ -132,6 +132,11 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
             `;
         }
 
+        let paymentMethodStr = '';
+        if (txn.paid > 0 && txn.receivedType) {
+            paymentMethodStr = ` <span style="font-size: 9px; opacity: 0.8;">(${escapeHTML(txn.receivedType)}${txn.receivedFrom ? ' - ' + escapeHTML(txn.receivedFrom) : ''})</span>`;
+        }
+
         if (layoutType === 'a4') {
             const printHeader = renderPrintHeader({
                 title: 'INVOICE',
@@ -182,7 +187,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
                             ${txn.discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#d97706; position: relative; z-index: 20;"><span>Discount (-):</span><strong>- ৳ ${formatAmountWithComma(txn.discount)}</strong></div>` : ''}
                             <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#0f172a; font-weight:700; position: relative; z-index: 20;"><span>আজকের বিল:</span><strong>৳ ${formatAmountWithComma(txn.bill)}</strong></div>
                             <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>পূর্বের জের:</span><strong>৳ ${formatAmountWithComma(effectivePrevDue)}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#059669; font-weight:700; position: relative; z-index: 20;"><span>আজকের জমা:</span><strong>- ৳ ${formatAmountWithComma(txn.paid)}</strong></div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#059669; font-weight:700; position: relative; z-index: 20;"><span>আজকের জমা${paymentMethodStr}:</span><strong>- ৳ ${formatAmountWithComma(txn.paid)}</strong></div>
                             <div style="display:flex; justify-content:space-between; padding:5px 8px; border-top:2px solid #cbd5e1; font-size:12.5px; font-weight:900; color:${effectiveCurrentDue > 0 ? '#dc2626' : '#059669'}; background: ${effectiveCurrentDue > 0 ? '#fef2f2' : '#ecfdf5'}; border-radius: 6px; margin-top: 4px; border-left: 4px solid ${effectiveCurrentDue > 0 ? '#dc2626' : '#059669'}; position: relative; z-index: 20;"><span>মোট জের:</span><strong>৳ ${formatAmountWithComma(Math.abs(effectiveCurrentDue))} ${effectiveCurrentDue < 0 ? '(Adv)' : ''}</strong></div>
                         </div>
                     </div>
@@ -210,7 +215,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
                     <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের জের:</span><span>৳ ${formatAmountWithComma(effectivePrevDue)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${formatAmountWithComma(txn.bill)}</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা (-):</span><span>- ৳ ${formatAmountWithComma(txn.paid)}</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা${paymentMethodStr}:</span><span>- ৳ ${formatAmountWithComma(txn.paid)}</span></div>
                     <div style="border-bottom: 1.5px solid #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 900;">
                         <span>মোট বকেয়া:</span>
@@ -236,3 +241,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
 if (typeof window !== 'undefined') {
     window.printReceiptEngine = printReceiptEngine;
 }
+
+export { renderPublicMemoView } from './public-memo-ui.js';
+
+

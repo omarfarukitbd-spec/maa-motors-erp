@@ -50,7 +50,29 @@ export function renderLedger(container, params, callbacks = {}) {
             </div>
             <div id="received-section" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-800/60">
                 <div><label class="m3-label text-emerald-400">পেমেন্ট মাধ্যম</label><div class="flex bg-slate-950 rounded-xl border border-slate-700 h-9 p-1 gap-1"><button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-blue-600 text-white rounded-lg">Bank</button><button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Cash</button><button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Less</button></div></div>
-                <div><label class="m3-label text-emerald-400">বিবরণ / ব্যাংক নাম</label><input type="text" id="ledger-received-from" class="m3-field py-1 text-xs bg-slate-950/80 h-9"></div>
+                <div>
+                    <label id="lbl-recv-from" class="m3-label text-emerald-400">ব্যাংক অ্যাকাউন্ট (Bank Name)</label>
+                    <input type="text" id="ledger-received-from" list="dl-bank-names" placeholder="যেমন: DBBL, bKash..." class="m3-field py-1 text-xs bg-slate-950/80 h-9">
+                    <datalist id="dl-bank-names">
+                        <option value="OneBank (IFRAT)"></option>
+                        <option value="IBBL (IFRAT)"></option>
+                        <option value="bKash"></option>
+                        <option value="Nagad"></option>
+                        <option value="Rocket"></option>
+                        <option value="Upay"></option>
+                        <option value="Islami Bank"></option>
+                        <option value="Dutch-Bangla Bank (DBBL)"></option>
+                        <option value="BRAC Bank"></option>
+                        <option value="City Bank"></option>
+                        <option value="Sonali Bank"></option>
+                        <option value="Agrani Bank"></option>
+                        <option value="Pubali Bank"></option>
+                    </datalist>
+                    <datalist id="dl-cash-receivers">
+                        <option value="শোরুম ক্যাশ"></option>
+                        <option value="নিজস্ব"></option>
+                    </datalist>
+                </div>
             </div>
             <div class="flex justify-end pt-2"><button class="m3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20" id="save-txn-btn" onclick="window.saveTransaction()">এন্ট্রি সেভ করুন</button></div>
         </div>

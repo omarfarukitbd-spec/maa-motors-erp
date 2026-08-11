@@ -61,12 +61,28 @@ function startDashboardRealtimeUpdates() {
     // Listen for today's transactions
     const unsubTxns = TransactionDAO.listenByDate(today, transactions => {
         let todayCol = 0, cashCol = 0, bankCol = 0, todaySales = 0;
+        let bankBreakdown = {};
+        let cashBreakdown = {};
+
         transactions.forEach(data => {
             const p = (Number(data.paid) || 0);
             const b = (Number(data.bill) || 0);
             todayCol += p; todaySales += b;
-            if (data.receivedType === 'Cash') cashCol += p;
-            else if (data.receivedType === 'Bank' || !data.receivedType) bankCol += p;
+            
+            if (p > 0) {
+                const rt = data.receivedType || 'Bank';
+                let rf = (data.receivedFrom || '').trim();
+                
+                if (rt === 'Cash') {
+                    cashCol += p;
+                    if (!rf) rf = 'শোরুম ক্যাশ';
+                    cashBreakdown[rf] = (cashBreakdown[rf] || 0) + p;
+                } else if (rt === 'Bank' || !data.receivedType) {
+                    bankCol += p;
+                    if (!rf) rf = 'অন্যান্য ব্যাংক';
+                    bankBreakdown[rf] = (bankBreakdown[rf] || 0) + p;
+                }
+            }
         });
 
         const colEl = document.getElementById('dash-today-col');
@@ -76,6 +92,10 @@ function startDashboardRealtimeUpdates() {
         const bankEl = document.getElementById('dash-col-bank');
         if(cashEl) cashEl.innerText = "৳ " + formatAmountWithComma(cashCol);
         if(bankEl) bankEl.innerText = "৳ " + formatAmountWithComma(bankCol);
+
+        if (typeof window.renderCollectionBreakdown === 'function') {
+            window.renderCollectionBreakdown(bankBreakdown, cashBreakdown);
+        }
 
         renderPaymentDonutChart('payment-donut-chart', cashCol, bankCol);
         renderSalesVsCollectionChart('sales-vs-col-chart');
@@ -110,3 +130,43 @@ window.switchDashTimeframe = (tf) => {
     });
 };
 window.printExecutiveSummary = printExecutiveSummary;
+
+window.renderCollectionBreakdown = (bankData, cashData) => {
+    const card = document.getElementById('dash-collection-breakdown-card');
+    const list = document.getElementById('dash-collection-breakdown-list');
+    if (!card || !list) return;
+    
+    let html = '';
+    
+    // Check if there is any data
+    if (Object.keys(bankData).length === 0 && Object.keys(cashData).length === 0) {
+        card.classList.remove('flex');
+        card.classList.add('hidden');
+        return;
+    }
+    
+    card.classList.remove('hidden');
+    card.classList.add('flex');
+
+    if (Object.keys(bankData).length > 0) {
+        html += `<div class="text-[11px] text-blue-400 font-black uppercase mt-1 mb-1"><i class="fa-solid fa-building-columns mr-1"></i> ব্যাংক জমা</div>`;
+        for (const [bank, amount] of Object.entries(bankData)) {
+            html += `<div class="flex items-center justify-between bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                        <span class="text-xs text-slate-300 font-bold truncate max-w-[60%]">${bank}</span>
+                        <span class="text-xs font-black text-blue-400">৳ ${window.formatAmountWithComma ? window.formatAmountWithComma(amount) : amount}</span>
+                     </div>`;
+        }
+    }
+    
+    if (Object.keys(cashData).length > 0) {
+        html += `<div class="text-[11px] text-emerald-400 font-black uppercase mt-2 mb-1"><i class="fa-solid fa-money-bill-wave mr-1"></i> ক্যাশ জমা</div>`;
+        for (const [receiver, amount] of Object.entries(cashData)) {
+            html += `<div class="flex items-center justify-between bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                        <span class="text-xs text-slate-300 font-bold truncate max-w-[60%]">${receiver}</span>
+                        <span class="text-xs font-black text-emerald-400">৳ ${window.formatAmountWithComma ? window.formatAmountWithComma(amount) : amount}</span>
+                     </div>`;
+        }
+    }
+    
+    list.innerHTML = html;
+};

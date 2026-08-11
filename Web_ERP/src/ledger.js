@@ -218,6 +218,23 @@ if (typeof window !== 'undefined') {
                 else { el.classList.remove('bg-blue-600', 'text-white'); el.classList.add('text-slate-400'); } 
             } 
         }); 
+        const lbl = document.getElementById('lbl-recv-from');
+        const input = document.getElementById('ledger-received-from');
+        if (lbl && input) {
+            if (type === 'Bank') {
+                lbl.innerText = 'ব্যাংক অ্যাকাউন্ট (Bank Name)';
+                input.setAttribute('list', 'dl-bank-names');
+                input.placeholder = 'যেমন: DBBL, bKash...';
+            } else if (type === 'Cash') {
+                lbl.innerText = 'কার মাধ্যমে জমা (Received By)';
+                input.setAttribute('list', 'dl-cash-receivers');
+                input.placeholder = 'যেমন: রহিম, শোরুম ক্যাশ...';
+            } else {
+                lbl.innerText = 'ছাড়ের কারণ (Reason)';
+                input.removeAttribute('list');
+                input.placeholder = 'যেমন: সম্মানিতে ছাড়...';
+            }
+        }
     };
     window.Swal = Swal;
 }
