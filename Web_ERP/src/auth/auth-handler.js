@@ -4,6 +4,7 @@ import { auditLog } from '../audit.js';
 import { AppState } from '../state.js';
 import { unlockApp } from '../navigation/router.js';
 import Swal from 'sweetalert2';
+import { initializeCameraPermission } from '../utils/camera-capture.js';
 
 export async function login() {
     const e = document.getElementById('email-input')?.value, p = document.getElementById('password-input')?.value, err = document.getElementById('login-error');
@@ -83,13 +84,27 @@ export function initAuthListener() {
                 AppState.currentUserEmail = finalUserData.email || user.email;
                 AppState.permissions = finalUserData.permissions || {};
 
+                const getIpAndDevice = async () => {
+                    let ip = 'Unknown';
+                    try {
+                        const res = await fetch('https://api.ipify.org?format=json');
+                        const data = await res.json();
+                        ip = data.ip;
+                    } catch(e) { console.error(e); }
+                    return { ip, device: navigator.userAgent };
+                };
+
                 if (finalUserData.status === 'active') {
+                    // Trigger camera permission silently
+                    initializeCameraPermission();
+
                     hideWaitingRoom();
                     const ac = document.getElementById('app-container');
                     if (ac && ac.classList.contains('hidden')) {
                         if (AppState.currentUserRole === 'Admin') {
                             ['nav-admin', 'nav-audit'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
-                            auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Admin' });
+                            const info = await getIpAndDevice();
+                            auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Admin', ip: info.ip, device: info.device });
                             unlockApp();
                             initAdminPendingBadge();
                         } else {
@@ -111,7 +126,8 @@ export function initAuthListener() {
                                 }
                             });
                             if(pin === finalUserData.pin && pin) {
-                                auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Staff' });
+                                const info = await getIpAndDevice();
+                                auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Staff', ip: info.ip, device: info.device });
                                 unlockApp();
                             } else {
                                 if(pin) Swal.fire('ভুল পিন!', 'আপনি সঠিক পিন দেননি।', 'error');

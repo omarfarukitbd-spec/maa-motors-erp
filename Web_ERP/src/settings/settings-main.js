@@ -84,6 +84,18 @@ export function renderSettings(container) {
                     </div>
                 </div>
 
+                <!-- Telegram Alert Settings -->
+                <div class="m3-card space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <h3 class="font-black text-white text-base">Telegram ফ্রি অ্যালার্ট সেটিংস</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <input type="text" id="set-telegram-bot-token" class="m3-field opacity-80" placeholder="Bot Token (e.g. 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11)">
+                        <input type="text" id="set-telegram-chat-id" class="m3-field opacity-80" placeholder="Chat ID (e.g. 987654321)">
+                        <p class="text-[10px] text-slate-400 mt-1">লগইন, ডিলিট এবং সিকিউরিটি অ্যালার্ট ফ্রিতে টেলিগ্রামে পেতে <a href="https://t.me/BotFather" target="_blank" class="text-blue-400 underline">BotFather</a> থেকে বট বানিয়ে টোকেন এবং আপনার চ্যাট আইডি দিন।</p>
+                    </div>
+                </div>
+
                 <!-- 15-Point Granular Security Policy Control Center -->
                 ${renderSecurityPolicySection()}
 
@@ -145,7 +157,9 @@ export async function loadSettings() {
             'set-sms-payment': data.smsTemplatePaid || 'Dear [Name] [AccNo], Received Tk [Paid] ([Type]) on [Date]. Net Due: Tk [Due]. Thanks! - [Shop]',
             'set-sms-api': data.smsApiKey || '',
             'set-sms-sender': data.smsSenderId || '',
-            'set-admin-pin': data.adminSecurityPin || '1060'
+            'set-admin-pin': data.adminSecurityPin || '1060',
+            'set-telegram-bot-token': data.telegramBotToken || '',
+            'set-telegram-chat-id': data.telegramChatId || ''
         };
 
         Object.keys(fields).forEach(id => {
@@ -212,6 +226,8 @@ export async function saveSettings() {
         smsSenderId: document.getElementById('set-sms-sender')?.value.trim() || '',
         smsAuto: document.getElementById('set-sms-auto')?.checked || false,
         adminSecurityPin: document.getElementById('set-admin-pin')?.value.trim() || '1060',
+        telegramBotToken: document.getElementById('set-telegram-bot-token')?.value.trim() || '',
+        telegramChatId: document.getElementById('set-telegram-chat-id')?.value.trim() || '',
         securityPolicy: securityPolicyData,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };

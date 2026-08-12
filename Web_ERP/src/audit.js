@@ -1,6 +1,7 @@
 // --- Audit Module (DAO & UI) ---
 import { db, firebase } from './firebase-config.js';
-import { AuditDAO, UserDAO } from './dao.js';
+import { UserDAO, SettingsDAO, AuditDAO } from './dao.js';
+import { capturePhoto } from './utils/camera-capture.js';
 import { renderVisualDiff } from './audit/audit-diff-viewer.js';
 import { filterAuditLogs } from './audit/audit-filters.js';
 import { exportAuditLogsToExcel } from './audit/audit-export.js';
@@ -45,6 +46,64 @@ export async function auditLog(action, module, entityId, entityName, details = {
 
         await AuditDAO.add(logEntry);
         console.log(`[Audit] ${action} on ${module} (${entityName}) logged successfully.`);
+
+        // Telegram Alert Logic (Free plan alternative)
+        if (['DELETE', 'UPDATE', 'SECURITY_ALERT', 'LOGIN'].includes(action)) {
+            try {
+                const daoModule = await import('./dao.js');
+                const settings = await daoModule.SettingsDAO.getAppSettings();
+                const botToken = settings.telegramBotToken;
+                const chatId = settings.telegramChatId;
+                
+                if (botToken && chatId) {
+                    let alertType = '[INFO]';
+                    if (action === 'DELETE' || action === 'SECURITY_ALERT') alertType = '[ALERT]';
+                    else if (action === 'UPDATE') alertType = '[WARN]';
+                    else if (action === 'LOGIN') alertType = '[SUCCESS]';
+
+                    let detailsStr = '';
+                    if (details && typeof details === 'object' && Object.keys(details).length > 0) {
+                        detailsStr = `\n*Details:* \`${JSON.stringify(details).substring(0, 100)}\``;
+                    }
+
+                    const text = `
+${alertType} *Maa Motors ERP Alert*
+*Action:* ${action}
+*Module:* ${module || 'Unknown'}
+*Target:* ${entityName || entityId || 'Unknown'}
+*User:* ${logEntry.userEmail}
+*Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' })}${detailsStr}
+                    `.trim();
+
+                    let photoBlob = null;
+                    if (action === 'SECURITY_ALERT') {
+                        photoBlob = await capturePhoto();
+                    }
+
+                    if (photoBlob) {
+                        const formData = new FormData();
+                        formData.append('chat_id', chatId);
+                        formData.append('photo', photoBlob, 'intruder.jpg');
+                        formData.append('caption', text);
+                        formData.append('parse_mode', 'Markdown');
+
+                        await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                    } else {
+                        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
+                        });
+                    }
+                }
+            } catch(e) {
+                console.error('Failed to send Telegram alert:', e);
+            }
+        }
+
     } catch (error) {
         console.error("Failed to write audit log:", error);
     }

@@ -147,7 +147,7 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
     const formattedDue = formatAmountWithComma(Math.abs(targetDue));
     const memoStr = targetVoucher ? `মেমো #${targetVoucher}` : '';
 
-    const directMemoLink = targetTxnId ? `${window.location.origin}${window.location.pathname}?view=public-memo&id=${targetTxnId}` : '';
+    const directMemoLink = id ? `${window.location.origin}${window.location.pathname}?view=public-memo&id=${id}` : '';
     const shareLink = targetCustId ? `${window.location.origin}${window.location.pathname}?view=public-stmt&id=${targetCustId}` : '';
     const pdfLinkStr = directMemoLink 
         ? `আপনার এই মেমোর ডাইরেক্ট PDF দেখতে লিংকে ক্লিক করুন:\n${directMemoLink}\n\n` 

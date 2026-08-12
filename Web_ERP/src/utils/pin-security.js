@@ -2,6 +2,9 @@ import Swal from 'sweetalert2';
 import { firebase } from '../firebase-config.js';
 import { SettingsDAO, UserDAO } from '../dao.js';
 import { shouldRequirePin } from '../settings/security-policy.js';
+import { auditLog } from '../audit.js';
+
+let consecutiveFailures = 0;
 
 /**
  * Security PIN Verification with Granular Policy Check
@@ -76,7 +79,16 @@ export async function promptSecurityPin(actionName = "ডিলেট/এডি�
         if (!inputPin) return false;
 
         const cleanInput = String(inputPin).trim();
-        if (cleanInput === String(userPin) || cleanInput === String(validMasterPin)) return true;
+        if (cleanInput === String(userPin) || cleanInput === String(validMasterPin)) {
+            consecutiveFailures = 0; // Reset on success
+            return true;
+        }
+
+        consecutiveFailures++;
+        if (consecutiveFailures >= 3) {
+            auditLog('SECURITY_ALERT', 'Auth', currentUser?.uid || 'Unknown', '3 consecutive Master PIN failures detected', { targetKey });
+            consecutiveFailures = 0; // Reset after logging
+        }
 
         await Swal.fire({ title: 'ভুল পিন!', text: 'আপনার সিকিউরিটি পিন সঠিক নয়।', icon: 'error' });
         return false;

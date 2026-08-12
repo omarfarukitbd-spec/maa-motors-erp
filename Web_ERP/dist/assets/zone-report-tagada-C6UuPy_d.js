@@ -1,4 +1,4 @@
-import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t}from"./dao-CJcWJLH8.js";import{c as n,d as r,o as i,u as a}from"./ui-helpers-BkH1xB3j.js";import{n as o}from"./vendor-ui-n4g2UPZQ.js";import{n as s,r as c}from"./index-D_OIED_d.js";var l=e(o());async function u(e){let{customers:o}=e,u=e.selectedZone,d=o.filter(e=>(!u||(e.zone||``).trim()===u)&&(Number(e.totalDue)||0)>0);if(d.length===0)return l.default.fire(`তালিকায় কোনো বকেয়া কাস্টমার নেই`,`সিলেক্ট করা জোনে কোনো বকেয়াওয়ালা কাস্টমার পাওয়া যায়নি।`,`warning`);d.sort((e,t)=>(Number(t.totalDue)||0)-(Number(e.totalDue)||0));let f=await t.getAppSettings(),p=u?`${u} জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`:`সকল জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`,m=0;d.forEach(e=>m+=Number(e.totalDue)||0);let[h,g,_]=n().split(`-`),v=`${_}/${g}/${h}`,y=i(f,{title:u?`${u} TAGADA SHEET`:`FIELD TAGADA SHEET`,subtitle:`${p} • ${v}`}),b=`
+import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t}from"./dao-CJcWJLH8.js";import"./customer-state-BhmdEVXH.js";import{c as n,d as r,o as i,u as a}from"./ui-helpers-BkH1xB3j.js";import{n as o}from"./vendor-ui-n4g2UPZQ.js";import{n as s,t as c}from"./smart-print-engine-B0360BA8.js";var l=e(o());async function u(e){let{customers:o}=e,u=e.selectedZone,d=o.filter(e=>(!u||(e.zone||``).trim()===u)&&(Number(e.totalDue)||0)>0);if(d.length===0)return l.default.fire(`তালিকায় কোনো বকেয়া কাস্টমার নেই`,`সিলেক্ট করা জোনে কোনো বকেয়াওয়ালা কাস্টমার পাওয়া যায়নি।`,`warning`);d.sort((e,t)=>(Number(t.totalDue)||0)-(Number(e.totalDue)||0));let f=await t.getAppSettings(),p=u?`${u} জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`:`সকল জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`,m=0;d.forEach(e=>m+=Number(e.totalDue)||0);let[h,g,_]=n().split(`-`),v=`${_}/${g}/${h}`,y=i(f,{title:u?`${u} TAGADA SHEET`:`FIELD TAGADA SHEET`,subtitle:`${p} • ${v}`}),b=`
         <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
             <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">FIELD TAGADA SHEET <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
             <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${p}</div>
@@ -29,7 +29,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t}from"./dao-CJcW
                 </div>
             </div>
         </div>
-    `,C=await c({rowsArray:x,page1HeaderHtml:y,repeatHeaderHtml:b,tableColHeaderHtml:`
+    `,C=await s({rowsArray:x,page1HeaderHtml:y,repeatHeaderHtml:b,tableColHeaderHtml:`
         <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
                 <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10.5px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">SL</th>
@@ -52,4 +52,4 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t}from"./dao-CJcW
                 </div>
             </div>
         </div>
-    `,formattedDate:v});s(C)}export{u as printZoneTagadaReport};
+    `,formattedDate:v});c(C)}export{u as printZoneTagadaReport};
