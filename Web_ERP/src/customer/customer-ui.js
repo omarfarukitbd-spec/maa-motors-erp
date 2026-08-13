@@ -200,82 +200,93 @@ export function renderCustomerRows(customers) {
 
     customers.forEach(d => {
         let openingDate = d.openingDate || '';
-        if (!openingDate && d.createdAt) {
-            try { openingDate = d.createdAt.toDate().toISOString().split('T')[0]; } catch(e) { openingDate = getTodayLocalDateString(); }
+        let entryTime = '';
+        if (d.createdAt) {
+            try {
+                const dt = d.createdAt.toDate ? d.createdAt.toDate() : (d.createdAt.toMillis ? new Date(d.createdAt.toMillis()) : new Date(d.createdAt));
+                if (!isNaN(dt.getTime())) {
+                    if (!openingDate) openingDate = dt.toISOString().split('T')[0];
+                    entryTime = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                }
+            } catch(e) {
+                if (!openingDate) openingDate = getTodayLocalDateString();
+            }
         }
+        if (!openingDate) openingDate = getTodayLocalDateString();
 
         const due = Number(d.totalDue) || 0;
         const dueColorClass = due > 0 ? 'text-red-400' : (due < 0 ? 'text-emerald-400' : 'text-slate-400');
-
         const sId = String(d.id || '');
         const sName = String(d.name || 'N/A').replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const sPhone = String(d.phone || '-').replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const sAddr = String(d.address || '-').replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const sZone = String(d.zone || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
-        rows.push(`
-            <tr class="hover:bg-white/[0.04] transition-colors border-b border-slate-800/60">
-                <td class="py-2.5 px-3 text-xs font-bold text-slate-300 whitespace-nowrap">${formatAppDate(openingDate)}</td>
-                <td class="py-2.5 px-3 font-bold text-slate-200 whitespace-nowrap">
+        rows.push(`<tr class="hover:bg-white/[0.04] transition-colors border-b border-slate-800/60">
+            <td class="py-2.5 px-3 text-xs font-bold text-slate-300 whitespace-nowrap align-top">
+                <div>${formatAppDate(openingDate)}</div>
+                ${entryTime ? `<div class="text-[9px] text-slate-500 font-normal mt-0.5 flex items-center gap-1"><i class="fa-regular fa-clock text-[8px] text-slate-400"></i><span>${entryTime}</span></div>` : ''}
+            </td>
+            <td class="py-2.5 px-3 font-bold text-slate-200 whitespace-nowrap align-top">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(d.name || 'K').charAt(0)}</div>
                     <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(d.name || 'K').charAt(0)}</div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-white font-bold cursor-pointer hover:text-blue-400 transition-colors" onclick="window.openCustomerLedger('${sId}')">${d.name || 'N/A'}</span>
-                            <span class="text-[10px] text-blue-400 font-black bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono">${d.accountNo || '-'}</span>
-                        </div>
-                    </div>
-                </td>
-                <td class="py-2.5 px-3 text-xs text-slate-300 font-medium max-w-[220px]" title="${d.address || '-'}">
-                    <div class="flex items-center gap-1 truncate">
-                        ${d.zone ? `<span class="inline-block text-[9px] text-purple-400 font-bold bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded shrink-0"><i class="fa-solid fa-location-dot mr-0.5"></i>${d.zone}</span>` : ''}
-                        <span class="truncate text-slate-400">${d.address || '-'}</span>
-                    </div>
-                </td>
-                <td class="py-2.5 px-3 text-xs text-slate-300 font-bold whitespace-nowrap">${d.phone || '-'}</td>
-                <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                    <div class="flex items-center justify-end gap-1.5">
-                        <span class="font-black text-sm ${dueColorClass}">৳ ${formatAmountWithComma(Math.abs(due))}</span>
-                        <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${due > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : (due < 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400')}">${due > 0 ? 'বকেয়া' : (due < 0 ? 'অ্যাডভান্স' : 'পরিশোধিত')}</span>
-                    </div>
-                </td>
-                <td class="py-2.5 px-3 text-center whitespace-nowrap sticky-action-col">
-                    <div class="flex items-center justify-center gap-1">
-                        <button class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান দেখুন"><i class="fa-solid fa-book text-blue-400"></i></button>
-                        <button class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
-                        <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
-                        ${due > 0 ? `<button class="m3-btn-icon" onclick="window.sendReminderSMS('${sPhone}', ${due}, '${sName}', '${d.accountNo || ''}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>` : ''}
-                        ${canEditCust ? `<button class="m3-btn-icon" onclick="window.editCustomer('${sId}', '${sName}', '${sPhone}', '${sAddr}', '${sZone}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
-                        ${canDeleteCust ? `<button class="m3-btn-icon" onclick="window.deleteCustomer('${sId}', '${sName}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
-                    </div>
-                </td>
-            </tr>`);
-
-        mobileHtml += `
-            <div class="mobile-card">
-                <div class="mobile-card-header">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(d.name || 'K').charAt(0)}</div>
-                        <div>
-                            <div class="mobile-card-title cursor-pointer hover:text-blue-400" onclick="window.openCustomerLedger('${sId}')">${d.name || 'N/A'}</div>
-                            <div class="mobile-card-sub text-blue-400 font-bold">${d.accountNo || '-'} ${d.zone ? '• ' + d.zone : ''}</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-base font-black ${dueColorClass}">৳ ${formatAmountWithComma(Math.abs(due))}</div>
-                        <span class="inline-block text-[9px] uppercase font-bold ${due > 0 ? 'text-red-400' : 'text-emerald-400'}">${due > 0 ? 'বকেয়া' : 'পরিশোধিত'}</span>
+                        <span class="text-xs text-white font-bold cursor-pointer hover:text-blue-400 transition-colors" onclick="window.openCustomerLedger('${sId}')">${d.name || 'N/A'}</span>
+                        <span class="text-[10px] text-blue-400 font-black bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono">${d.accountNo || '-'}</span>
                     </div>
                 </div>
-                <div class="mobile-card-row"><span class="mobile-card-label">মোবাইল:</span><span class="mobile-card-value">${d.phone || '-'}</span></div>
-                <div class="mobile-card-row"><span class="mobile-card-label">ঠিকানা:</span><span class="mobile-card-value">${d.address || '-'}</span></div>
-                <div class="mobile-card-actions">
-                    <button class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান"><i class="fa-solid fa-book text-blue-400"></i></button>
+            </td>
+            <td class="py-2.5 px-3 text-xs text-slate-300 font-medium max-w-[220px] align-top" title="${d.address || '-'}">
+                <div class="flex items-center gap-1 truncate">
+                    ${d.zone ? `<span class="inline-block text-[9px] text-purple-400 font-bold bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded shrink-0"><i class="fa-solid fa-location-dot mr-0.5"></i>${d.zone}</span>` : ''}
+                    <span class="truncate text-slate-400">${d.address || '-'}</span>
+                </div>
+            </td>
+            <td class="py-2.5 px-3 text-xs text-slate-300 font-bold whitespace-nowrap align-top">${d.phone || '-'}</td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap align-top">
+                <div class="flex items-center justify-end gap-1.5">
+                    <span class="font-black text-sm ${dueColorClass}">৳ ${formatAmountWithComma(Math.abs(due))}</span>
+                    <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${due > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : (due < 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400')}">${due > 0 ? 'বকেয়া' : (due < 0 ? 'অ্যাডভান্স' : 'পরিশোধিত')}</span>
+                </div>
+            </td>
+            <td class="py-2.5 px-3 text-center whitespace-nowrap sticky-action-col align-top">
+                <div class="flex items-center justify-center gap-1">
+                    <button class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান দেখুন"><i class="fa-solid fa-book text-blue-400"></i></button>
                     <button class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
                     <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
                     ${due > 0 ? `<button class="m3-btn-icon" onclick="window.sendReminderSMS('${sPhone}', ${due}, '${sName}', '${d.accountNo || ''}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>` : ''}
                     ${canEditCust ? `<button class="m3-btn-icon" onclick="window.editCustomer('${sId}', '${sName}', '${sPhone}', '${sAddr}', '${sZone}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
                     ${canDeleteCust ? `<button class="m3-btn-icon" onclick="window.deleteCustomer('${sId}', '${sName}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
                 </div>
-            </div>`;
+            </td>
+        </tr>`);
+
+        mobileHtml += `<div class="mobile-card">
+            <div class="mobile-card-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(d.name || 'K').charAt(0)}</div>
+                    <div>
+                        <div class="mobile-card-title cursor-pointer hover:text-blue-400" onclick="window.openCustomerLedger('${sId}')">${d.name || 'N/A'}</div>
+                        <div class="mobile-card-sub text-blue-400 font-bold">${d.accountNo || '-'} ${d.zone ? '• ' + d.zone : ''}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-base font-black ${dueColorClass}">৳ ${formatAmountWithComma(Math.abs(due))}</div>
+                    <span class="inline-block text-[9px] uppercase font-bold ${due > 0 ? 'text-red-400' : 'text-emerald-400'}">${due > 0 ? 'বকেয়া' : 'পরিশোধিত'}</span>
+                </div>
+            </div>
+            <div class="mobile-card-row"><span class="mobile-card-label">তারিখ:</span><span class="mobile-card-value">${formatAppDate(openingDate)}${entryTime ? ` (${entryTime})` : ''}</span></div>
+            <div class="mobile-card-row"><span class="mobile-card-label">মোবাইল:</span><span class="mobile-card-value">${d.phone || '-'}</span></div>
+            <div class="mobile-card-row"><span class="mobile-card-label">ঠিকানা:</span><span class="mobile-card-value">${d.address || '-'}</span></div>
+            <div class="mobile-card-actions">
+                <button class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান"><i class="fa-solid fa-book text-blue-400"></i></button>
+                <button class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
+                <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
+                ${due > 0 ? `<button class="m3-btn-icon" onclick="window.sendReminderSMS('${sPhone}', ${due}, '${sName}', '${d.accountNo || ''}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>` : ''}
+                ${canEditCust ? `<button class="m3-btn-icon" onclick="window.editCustomer('${sId}', '${sName}', '${sPhone}', '${sAddr}', '${sZone}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
+                ${canDeleteCust ? `<button class="m3-btn-icon" onclick="window.deleteCustomer('${sId}', '${sName}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
+            </div>
+        </div>`;
     });
 
     if (window.customerClusterize) {

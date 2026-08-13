@@ -162,67 +162,69 @@ import{i as e,n as t}from"./rolldown-runtime-Dd_uD5pT.js";import{t as n}from"./v
                     পরবর্তী <i class="fa-solid fa-chevron-right ml-2"></i>
                 </button>
             </div>
-        </div>`,window.loadCustomers&&window.loadCustomers(),document.getElementById(`cust-date`)&&(document.getElementById(`cust-date`).value=window.getTodayLocalDateString?window.getTodayLocalDateString():new Date().toISOString().split(`T`)[0]),t&&t.openForm&&setTimeout(()=>{let e=document.getElementById(`add-customer-form`);e&&e.classList.remove(`hidden`)},150)}function Te(e){let t=document.getElementById(`customer-list`),n=document.getElementById(`customer-list-mobile`);if(!t)return;let r=String(window.AppState?.currentUserRole||``).toLowerCase()===`admin`,i=r||window.AppState?.permissions?.editCustomers!==!1&&window.AppState?.permissions?.manageCustomers!==!1,a=r||window.AppState?.permissions?.deleteCustomers===!0,o=[],s=``;e.forEach(e=>{let t=e.openingDate||``;if(!t&&e.createdAt)try{t=e.createdAt.toDate().toISOString().split(`T`)[0]}catch{t=F()}let n=Number(e.totalDue)||0,r=n>0?`text-red-400`:n<0?`text-emerald-400`:`text-slate-400`,c=String(e.id||``),l=String(e.name||`N/A`).replace(/'/g,`\\'`).replace(/"/g,`&quot;`),u=String(e.phone||`-`).replace(/'/g,`\\'`).replace(/"/g,`&quot;`),d=String(e.address||`-`).replace(/'/g,`\\'`).replace(/"/g,`&quot;`),f=String(e.zone||``).replace(/'/g,`\\'`).replace(/"/g,`&quot;`);o.push(`
-            <tr class="hover:bg-white/[0.04] transition-colors border-b border-slate-800/60">
-                <td class="py-2.5 px-3 text-xs font-bold text-slate-300 whitespace-nowrap">${V(t)}</td>
-                <td class="py-2.5 px-3 font-bold text-slate-200 whitespace-nowrap">
+        </div>`,window.loadCustomers&&window.loadCustomers(),document.getElementById(`cust-date`)&&(document.getElementById(`cust-date`).value=window.getTodayLocalDateString?window.getTodayLocalDateString():new Date().toISOString().split(`T`)[0]),t&&t.openForm&&setTimeout(()=>{let e=document.getElementById(`add-customer-form`);e&&e.classList.remove(`hidden`)},150)}function Te(e){let t=document.getElementById(`customer-list`),n=document.getElementById(`customer-list-mobile`);if(!t)return;let r=String(window.AppState?.currentUserRole||``).toLowerCase()===`admin`,i=r||window.AppState?.permissions?.editCustomers!==!1&&window.AppState?.permissions?.manageCustomers!==!1,a=r||window.AppState?.permissions?.deleteCustomers===!0,o=[],s=``;e.forEach(e=>{let t=e.openingDate||``,n=``;if(e.createdAt)try{let r=e.createdAt.toDate?e.createdAt.toDate():e.createdAt.toMillis?new Date(e.createdAt.toMillis()):new Date(e.createdAt);isNaN(r.getTime())||(t||=r.toISOString().split(`T`)[0],n=r.toLocaleTimeString(`en-US`,{hour:`numeric`,minute:`2-digit`,hour12:!0}))}catch{t||=F()}t||=F();let r=Number(e.totalDue)||0,c=r>0?`text-red-400`:r<0?`text-emerald-400`:`text-slate-400`,l=String(e.id||``),u=String(e.name||`N/A`).replace(/'/g,`\\'`).replace(/"/g,`&quot;`),d=String(e.phone||`-`).replace(/'/g,`\\'`).replace(/"/g,`&quot;`),f=String(e.address||`-`).replace(/'/g,`\\'`).replace(/"/g,`&quot;`),p=String(e.zone||``).replace(/'/g,`\\'`).replace(/"/g,`&quot;`);o.push(`<tr class="hover:bg-white/[0.04] transition-colors border-b border-slate-800/60">
+            <td class="py-2.5 px-3 text-xs font-bold text-slate-300 whitespace-nowrap align-top">
+                <div>${V(t)}</div>
+                ${n?`<div class="text-[9px] text-slate-500 font-normal mt-0.5 flex items-center gap-1"><i class="fa-regular fa-clock text-[8px] text-slate-400"></i><span>${n}</span></div>`:``}
+            </td>
+            <td class="py-2.5 px-3 font-bold text-slate-200 whitespace-nowrap align-top">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(e.name||`K`).charAt(0)}</div>
                     <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(e.name||`K`).charAt(0)}</div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-white font-bold cursor-pointer hover:text-blue-400 transition-colors" onclick="window.openCustomerLedger('${c}')">${e.name||`N/A`}</span>
-                            <span class="text-[10px] text-blue-400 font-black bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono">${e.accountNo||`-`}</span>
-                        </div>
-                    </div>
-                </td>
-                <td class="py-2.5 px-3 text-xs text-slate-300 font-medium max-w-[220px]" title="${e.address||`-`}">
-                    <div class="flex items-center gap-1 truncate">
-                        ${e.zone?`<span class="inline-block text-[9px] text-purple-400 font-bold bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded shrink-0"><i class="fa-solid fa-location-dot mr-0.5"></i>${e.zone}</span>`:``}
-                        <span class="truncate text-slate-400">${e.address||`-`}</span>
-                    </div>
-                </td>
-                <td class="py-2.5 px-3 text-xs text-slate-300 font-bold whitespace-nowrap">${e.phone||`-`}</td>
-                <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                    <div class="flex items-center justify-end gap-1.5">
-                        <span class="font-black text-sm ${r}">৳ ${I(Math.abs(n))}</span>
-                        <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${n>0?`bg-red-500/10 text-red-400 border border-red-500/20`:n<0?`bg-emerald-500/10 text-emerald-400 border border-emerald-500/20`:`bg-slate-800 text-slate-400`}">${n>0?`বকেয়া`:n<0?`অ্যাডভান্স`:`পরিশোধিত`}</span>
-                    </div>
-                </td>
-                <td class="py-2.5 px-3 text-center whitespace-nowrap sticky-action-col">
-                    <div class="flex items-center justify-center gap-1">
-                        <button class="m3-btn-icon" onclick="window.openCustomerLedger('${c}')" title="খতিয়ান দেখুন"><i class="fa-solid fa-book text-blue-400"></i></button>
-                        <button class="m3-btn-icon" onclick="window.openCustomerStatement('${c}', '${l}', '${e.accountNo||``}', '${u}', '${d}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
-                        <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${u}', ${n}, '${l}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
-                        ${n>0?`<button class="m3-btn-icon" onclick="window.sendReminderSMS('${u}', ${n}, '${l}', '${e.accountNo||``}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>`:``}
-                        ${i?`<button class="m3-btn-icon" onclick="window.editCustomer('${c}', '${l}', '${u}', '${d}', '${f}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>`:``}
-                        ${a?`<button class="m3-btn-icon" onclick="window.deleteCustomer('${c}', '${l}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>`:``}
-                    </div>
-                </td>
-            </tr>`),s+=`
-            <div class="mobile-card">
-                <div class="mobile-card-header">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(e.name||`K`).charAt(0)}</div>
-                        <div>
-                            <div class="mobile-card-title cursor-pointer hover:text-blue-400" onclick="window.openCustomerLedger('${c}')">${e.name||`N/A`}</div>
-                            <div class="mobile-card-sub text-blue-400 font-bold">${e.accountNo||`-`} ${e.zone?`• `+e.zone:``}</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-base font-black ${r}">৳ ${I(Math.abs(n))}</div>
-                        <span class="inline-block text-[9px] uppercase font-bold ${n>0?`text-red-400`:`text-emerald-400`}">${n>0?`বকেয়া`:`পরিশোধিত`}</span>
+                        <span class="text-xs text-white font-bold cursor-pointer hover:text-blue-400 transition-colors" onclick="window.openCustomerLedger('${l}')">${e.name||`N/A`}</span>
+                        <span class="text-[10px] text-blue-400 font-black bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono">${e.accountNo||`-`}</span>
                     </div>
                 </div>
-                <div class="mobile-card-row"><span class="mobile-card-label">মোবাইল:</span><span class="mobile-card-value">${e.phone||`-`}</span></div>
-                <div class="mobile-card-row"><span class="mobile-card-label">ঠিকানা:</span><span class="mobile-card-value">${e.address||`-`}</span></div>
-                <div class="mobile-card-actions">
-                    <button class="m3-btn-icon" onclick="window.openCustomerLedger('${c}')" title="খতিয়ান"><i class="fa-solid fa-book text-blue-400"></i></button>
-                    <button class="m3-btn-icon" onclick="window.openCustomerStatement('${c}', '${l}', '${e.accountNo||``}', '${u}', '${d}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
-                    <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${u}', ${n}, '${l}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
-                    ${n>0?`<button class="m3-btn-icon" onclick="window.sendReminderSMS('${u}', ${n}, '${l}', '${e.accountNo||``}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>`:``}
-                    ${i?`<button class="m3-btn-icon" onclick="window.editCustomer('${c}', '${l}', '${u}', '${d}', '${f}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>`:``}
-                    ${a?`<button class="m3-btn-icon" onclick="window.deleteCustomer('${c}', '${l}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>`:``}
+            </td>
+            <td class="py-2.5 px-3 text-xs text-slate-300 font-medium max-w-[220px] align-top" title="${e.address||`-`}">
+                <div class="flex items-center gap-1 truncate">
+                    ${e.zone?`<span class="inline-block text-[9px] text-purple-400 font-bold bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded shrink-0"><i class="fa-solid fa-location-dot mr-0.5"></i>${e.zone}</span>`:``}
+                    <span class="truncate text-slate-400">${e.address||`-`}</span>
                 </div>
-            </div>`}),window.customerClusterize&&window.customerClusterize.destroy(),o.length>0?window.customerClusterize=new Ce.default({rows:o,scrollId:`cust-scroll-area`,contentId:`customer-list`}):t.innerHTML=`<tr><td colspan="6" class="text-center py-20 text-slate-500 italic font-bold">কোনো কাস্টমার পাওয়া যায়নি</td></tr>`,n&&(n.innerHTML=s||`<div class="text-center py-10 text-slate-500 font-bold italic">কোনো কাস্টমার পাওয়া যায়নি</div>`)}var W=e(ge());function Ee(){[`cust-name`,`cust-phone`,`cust-address`,`cust-initial-balance`].forEach(e=>{let t=document.getElementById(e);t&&(t.value=``)}),ce(`cust-initial-words`);let e=document.getElementById(`cust-date`);if(e){let t=F();e.value=t,e._flatpickr&&e._flatpickr.setDate(t,!1)}let t=document.getElementById(`cust-zone-select`);t&&(t.selectedIndex=0)}async function De(){if(!navigator.onLine)return W.default.fire({title:`<i class="fa-solid fa-wifi text-red-400 mr-2"></i>অফলাইন!`,html:`<p class="font-bn text-slate-300 text-sm">ইন্টারনেট সংযোগ নেই।<br><strong class="text-red-400">অফলাইনে নতুন কাস্টমার যোগ করা যাবে না।</strong><br><span class="text-xs text-slate-400 mt-1 block">অনুগ্রহ করে ইন্টারনেট চালু করে আবার চেষ্টা করুন।</span></p>`,icon:`error`,confirmButtonText:`ঠিক আছে`,customClass:{popup:`!bg-slate-950 !text-white !rounded-3xl border border-red-500/30 font-bn`,confirmButton:`m3-btn-primary !bg-red-600 hover:!bg-red-500 !px-6 !py-2 !rounded-xl font-bold`}});let e=z(document.getElementById(`cust-date`).value),t=document.getElementById(`cust-name`).value.trim(),r=document.getElementById(`cust-phone`).value.trim(),i=document.getElementById(`cust-address`).value.trim(),a=document.getElementById(`cust-zone-select`).value,o=document.getElementById(`cust-initial-balance`).value.trim();if(!t||!r||!a)return W.default.fire(`এরর`,`নাম, মোবাইল নম্বর ও জোন আবশ্যক!`,`error`);let s=safeRound(L(o)),u=document.getElementById(`cust-generated-acc`)?.value||`Auto`,d=_(s);if(!(await W.default.fire({title:`<div class="flex items-center justify-center gap-2 font-bn font-black text-xl text-white"><i class="fa-solid fa-file-shield text-blue-400"></i><span>তথ্য যাচাই করুন</span></div>`,html:`<div class="text-left space-y-3 font-bn p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner">
+            </td>
+            <td class="py-2.5 px-3 text-xs text-slate-300 font-bold whitespace-nowrap align-top">${e.phone||`-`}</td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap align-top">
+                <div class="flex items-center justify-end gap-1.5">
+                    <span class="font-black text-sm ${c}">৳ ${I(Math.abs(r))}</span>
+                    <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${r>0?`bg-red-500/10 text-red-400 border border-red-500/20`:r<0?`bg-emerald-500/10 text-emerald-400 border border-emerald-500/20`:`bg-slate-800 text-slate-400`}">${r>0?`বকেয়া`:r<0?`অ্যাডভান্স`:`পরিশোধিত`}</span>
+                </div>
+            </td>
+            <td class="py-2.5 px-3 text-center whitespace-nowrap sticky-action-col align-top">
+                <div class="flex items-center justify-center gap-1">
+                    <button class="m3-btn-icon" onclick="window.openCustomerLedger('${l}')" title="খতিয়ান দেখুন"><i class="fa-solid fa-book text-blue-400"></i></button>
+                    <button class="m3-btn-icon" onclick="window.openCustomerStatement('${l}', '${u}', '${e.accountNo||``}', '${d}', '${f}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
+                    <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${d}', ${r}, '${u}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
+                    ${r>0?`<button class="m3-btn-icon" onclick="window.sendReminderSMS('${d}', ${r}, '${u}', '${e.accountNo||``}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>`:``}
+                    ${i?`<button class="m3-btn-icon" onclick="window.editCustomer('${l}', '${u}', '${d}', '${f}', '${p}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>`:``}
+                    ${a?`<button class="m3-btn-icon" onclick="window.deleteCustomer('${l}', '${u}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>`:``}
+                </div>
+            </td>
+        </tr>`),s+=`<div class="mobile-card">
+            <div class="mobile-card-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(e.name||`K`).charAt(0)}</div>
+                    <div>
+                        <div class="mobile-card-title cursor-pointer hover:text-blue-400" onclick="window.openCustomerLedger('${l}')">${e.name||`N/A`}</div>
+                        <div class="mobile-card-sub text-blue-400 font-bold">${e.accountNo||`-`} ${e.zone?`• `+e.zone:``}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-base font-black ${c}">৳ ${I(Math.abs(r))}</div>
+                    <span class="inline-block text-[9px] uppercase font-bold ${r>0?`text-red-400`:`text-emerald-400`}">${r>0?`বকেয়া`:`পরিশোধিত`}</span>
+                </div>
+            </div>
+            <div class="mobile-card-row"><span class="mobile-card-label">তারিখ:</span><span class="mobile-card-value">${V(t)}${n?` (${n})`:``}</span></div>
+            <div class="mobile-card-row"><span class="mobile-card-label">মোবাইল:</span><span class="mobile-card-value">${e.phone||`-`}</span></div>
+            <div class="mobile-card-row"><span class="mobile-card-label">ঠিকানা:</span><span class="mobile-card-value">${e.address||`-`}</span></div>
+            <div class="mobile-card-actions">
+                <button class="m3-btn-icon" onclick="window.openCustomerLedger('${l}')" title="খতিয়ান"><i class="fa-solid fa-book text-blue-400"></i></button>
+                <button class="m3-btn-icon" onclick="window.openCustomerStatement('${l}', '${u}', '${e.accountNo||``}', '${d}', '${f}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
+                <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${d}', ${r}, '${u}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
+                ${r>0?`<button class="m3-btn-icon" onclick="window.sendReminderSMS('${d}', ${r}, '${u}', '${e.accountNo||``}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>`:``}
+                ${i?`<button class="m3-btn-icon" onclick="window.editCustomer('${l}', '${u}', '${d}', '${f}', '${p}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>`:``}
+                ${a?`<button class="m3-btn-icon" onclick="window.deleteCustomer('${l}', '${u}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>`:``}
+            </div>
+        </div>`}),window.customerClusterize&&window.customerClusterize.destroy(),o.length>0?window.customerClusterize=new Ce.default({rows:o,scrollId:`cust-scroll-area`,contentId:`customer-list`}):t.innerHTML=`<tr><td colspan="6" class="text-center py-20 text-slate-500 italic font-bold">কোনো কাস্টমার পাওয়া যায়নি</td></tr>`,n&&(n.innerHTML=s||`<div class="text-center py-10 text-slate-500 font-bold italic">কোনো কাস্টমার পাওয়া যায়নি</div>`)}var W=e(ge());function Ee(){[`cust-name`,`cust-phone`,`cust-address`,`cust-initial-balance`].forEach(e=>{let t=document.getElementById(e);t&&(t.value=``)}),ce(`cust-initial-words`);let e=document.getElementById(`cust-date`);if(e){let t=F();e.value=t,e._flatpickr&&e._flatpickr.setDate(t,!1)}let t=document.getElementById(`cust-zone-select`);t&&(t.selectedIndex=0)}async function De(){if(!navigator.onLine)return W.default.fire({title:`<i class="fa-solid fa-wifi text-red-400 mr-2"></i>অফলাইন!`,html:`<p class="font-bn text-slate-300 text-sm">ইন্টারনেট সংযোগ নেই।<br><strong class="text-red-400">অফলাইনে নতুন কাস্টমার যোগ করা যাবে না।</strong><br><span class="text-xs text-slate-400 mt-1 block">অনুগ্রহ করে ইন্টারনেট চালু করে আবার চেষ্টা করুন।</span></p>`,icon:`error`,confirmButtonText:`ঠিক আছে`,customClass:{popup:`!bg-slate-950 !text-white !rounded-3xl border border-red-500/30 font-bn`,confirmButton:`m3-btn-primary !bg-red-600 hover:!bg-red-500 !px-6 !py-2 !rounded-xl font-bold`}});let e=z(document.getElementById(`cust-date`).value),t=document.getElementById(`cust-name`).value.trim(),r=document.getElementById(`cust-phone`).value.trim(),i=document.getElementById(`cust-address`).value.trim(),a=document.getElementById(`cust-zone-select`).value,o=document.getElementById(`cust-initial-balance`).value.trim();if(!t||!r||!a)return W.default.fire(`এরর`,`নাম, মোবাইল নম্বর ও জোন আবশ্যক!`,`error`);let s=safeRound(L(o)),u=document.getElementById(`cust-generated-acc`)?.value||`Auto`,d=_(s);if(!(await W.default.fire({title:`<div class="flex items-center justify-center gap-2 font-bn font-black text-xl text-white"><i class="fa-solid fa-file-shield text-blue-400"></i><span>তথ্য যাচাই করুন</span></div>`,html:`<div class="text-left space-y-3 font-bn p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner">
                 <div class="grid grid-cols-2 gap-4 border-b border-slate-800/80 pb-2.5">
                     <div class="flex flex-col gap-1"><span class="text-[10px] text-blue-400 font-black uppercase tracking-wider">কাস্টমারের নাম</span><span class="text-base text-white font-black">${t}</span></div>
                     <div class="flex flex-col gap-1"><span class="text-[10px] text-amber-400 font-black uppercase tracking-wider">অ্যাকাউন্ট নং</span><span class="text-base text-amber-400 font-black font-mono">${u}</span></div>
