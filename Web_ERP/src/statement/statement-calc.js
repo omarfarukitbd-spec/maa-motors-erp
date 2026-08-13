@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, parseAmount, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, parseAmount, safeRound, showToast } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 
 export async function loadStatementData(stateRef = {}) {
@@ -184,7 +184,23 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
     if (formValues) {
         try {
             const batch = db.batch(); const txnRef = TransactionDAO.getRef();
-            batch.set(txnRef, { customerId: currentCustomerInfo.id, customerName: currentCustomerInfo.name, date: getTodayLocalDateString(), voucherNo: '', bill: 0, paid: formValues.amount, receivedType: formValues.type, receivedFrom: formValues.ref, createdBy: window.AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            const cachedCust = getCustomerCache().find(c => c.id === currentCustomerInfo.id);
+            const prevDue = safeRound(Number(cachedCust?.totalDue || 0));
+            const newDue = safeRound(prevDue - formValues.amount);
+            batch.set(txnRef, {
+                customerId: currentCustomerInfo.id,
+                customerName: currentCustomerInfo.name,
+                date: getTodayLocalDateString(),
+                voucherNo: '',
+                bill: 0,
+                paid: formValues.amount,
+                receivedType: formValues.type,
+                receivedFrom: formValues.ref,
+                prevDue: prevDue,
+                currentDue: newDue,
+                createdBy: window.AppState?.currentUserEmail || 'Unknown',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
             batch.update(CustomerDAO.getRef(currentCustomerInfo.id), { totalDue: firebase.firestore.FieldValue.increment(-formValues.amount) });
             await batch.commit();
             showToast('জমা সফলভাবে সেভ হয়েছে!', 'success');

@@ -1,6 +1,5 @@
 import { CustomerDAO, SettingsDAO } from '../dao.js';
-import { promptSecurityPin, formatAmountWithComma, showToast, formatAppDate, getTodayLocalDateString } from '../utils.js';
-import { sendTxnSMS } from '../ledger/ledger-messaging.js';
+import { promptSecurityPin, formatAmountWithComma, showToast, formatAppDate, getTodayLocalDateString, sendSMS } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 
@@ -212,7 +211,7 @@ async function startBulkSmsProcess(customers, shopName, dateStr) {
                 try {
                     const accStr = c.accountNo ? ` (${c.accountNo})` : '';
                     const msg = `Reminder: Dear ${c.name}${accStr}, your due is Tk ${formatAmountWithComma(c.totalDue)} on ${dateStr}. Kindly clear payment soon. Thanks! - ${shopName}`;
-                    const res = await sendTxnSMS(c.phone, msg);
+                    const res = await sendSMS(c.phone, msg, false);
                     if (res) successCount++; else failCount++;
                 } catch (err) { console.error("Bulk SMS error:", err); failCount++; }
                 setTimeout(() => Swal.clickConfirm(), 400);

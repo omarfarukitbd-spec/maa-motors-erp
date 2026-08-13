@@ -113,7 +113,7 @@ export async function saveNewCustomer() {
                     .replace(/\[AccNo\]/g, `(A/C: ${accountNo})`)
                     .replace(/\[Shop\]/g, shopName)
                     .replace(/\[Date\]/g, todayDate)
-                    .replace(/\[Due\]/g, formatAmountWithComma(initialBalance));
+                    .replace(/\[Due\]/g, formatAmountWithComma(Math.abs(initialBalance)));
 
                 msg = msg.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
 

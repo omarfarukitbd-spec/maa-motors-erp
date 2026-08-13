@@ -125,7 +125,11 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
     let currentCust = getCustomerCache().find(c => c.id === targetCustId);
     if (!currentCust && targetCustId) { try { currentCust = await CustomerDAO.getById(targetCustId); } catch(e) { console.error("Error fetching cust:", e); } }
     let phone = currentCust?.phone || '';
-    let targetDue = due !== undefined ? Number(due) : (currentCust ? Number(currentCust.totalDue || 0) : Number(txn?.currentDue || 0));
+    // ✅ BUG #1 FIX: prefer calculatedDue (running per-transaction balance) over stale totalDue
+    let txnFromMap = (stateRefs?.currentLedgerTxnsMap && stateRefs.currentLedgerTxnsMap[id]) ? stateRefs.currentLedgerTxnsMap[id] : null;
+    let targetDue = (txnFromMap?.calculatedDue !== undefined) ? txnFromMap.calculatedDue
+        : (due !== undefined ? Number(due)
+        : (currentCust ? Number(currentCust.totalDue || 0) : Number(txn?.currentDue || 0)));
 
     if (!phone) {
         const { value: inputPhone } = await Swal.fire({
