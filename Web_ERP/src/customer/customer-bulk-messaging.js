@@ -46,7 +46,7 @@ export async function triggerBulkReminderFlow() {
                     </td>
                     <td class="p-2 font-bold text-white text-xs">${c.name} <span class="text-amber-400 font-mono text-[11px]">${acc}</span></td>
                     <td class="p-2 text-slate-300 text-xs font-mono">${c.phone}</td>
-                    <td class="p-2 text-right font-black text-red-400 text-xs font-mono">৳ ${formatAmountWithComma(c.totalDue)}</td>
+                    <td class="p-2 text-right font-black ${c.totalDue < 0 ? 'text-emerald-400' : 'text-red-400'} text-xs font-mono">৳ ${formatAmountWithComma(Math.abs(c.totalDue))} ${c.totalDue < 0 ? '(Adv)' : ''}</td>
                 </tr>
             `;
         });
