@@ -1,13 +1,13 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, safeRound, toDBDate } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 
 /**
  * Core Bulk Save Engine
- * Handles mapping, ID generation, and transactional batch commits.
+ * Handles mapping, ID generation, and transactional batch commits with 100% Khatiyan parity.
  */
 export async function executeBulkSave(rawDataToSave, isExcel = false) {
     try {
@@ -28,8 +28,8 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
 
         let totalBill = 0, totalPaid = 0;
         const rowsHtml = dataToSave.map(item => {
-            totalBill += item.bill;
-            totalPaid += item.paid;
+            totalBill = safeRound(totalBill + item.bill);
+            totalPaid = safeRound(totalPaid + item.paid);
             return `
                 <div class="p-2.5 bg-slate-950/50 border border-slate-800/80 rounded-xl text-left">
                     <div class="flex justify-between items-center mb-1">
@@ -115,6 +115,9 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
         let currentAllocatedAccountNo = 0;
 
         if (newCustCount > 0) {
+            if (!navigator.onLine) {
+                return Swal.fire({ title: 'অফলাইন সতর্কবার্তা', text: 'নতুন কাস্টমার তৈরিতে অ্যাকাউন্ট নম্বর নিশ্চিত করতে ইন্টারনেট সংযোগ প্রয়োজন।', icon: 'error' });
+            }
             await db.runTransaction(async (t) => {
                 const counterDoc = await t.get(counterRef);
                 const currentCounter = (counterDoc.exists && counterDoc.data().customerAccountNo) ? parseInt(counterDoc.data().customerAccountNo) : 0;
@@ -125,6 +128,8 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
 
         let batch = db.batch();
         let opCount = 0;
+        const customerDeltas = {};
+        const newCustomerDocs = {};
 
         for (const item of dataToSave) {
             const nameKey = item.name.trim().toLowerCase();
@@ -157,17 +162,17 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
                 }
             }
 
-            const prevDue = customersMap[resolvedKey]?.totalDue || 0;
-            const changeInDue = item.bill - item.paid;
-            const currentDue = prevDue + changeInDue;
-            if(customersMap[resolvedKey]) customersMap[resolvedKey].totalDue = currentDue;
+            const prevDue = safeRound(customersMap[resolvedKey]?.totalDue || 0);
+            const changeInDue = safeRound(item.bill - item.paid);
+            const currentDue = safeRound(prevDue + changeInDue);
+            if (customersMap[resolvedKey]) customersMap[resolvedKey].totalDue = currentDue;
 
             const cleanName = customersMap[resolvedKey]?.name || item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim();
 
             const txnRef = TransactionDAO.getRef();
             batch.set(txnRef, {
-                customerId, customerName: cleanName, date: item.date, voucherNo: item.voucher,
-                bill: item.bill, paid: item.paid,
+                customerId, customerName: cleanName, date: toDBDate(item.date), voucherNo: item.voucher || '',
+                bill: safeRound(item.bill), paid: safeRound(item.paid),
                 receivedType: item.paid > 0 ? (item.receivedType || 'Bank') : '',
                 receivedFrom: item.paid > 0 ? (item.receivedFrom || '') : '',
                 prevDue, currentDue,
@@ -176,26 +181,44 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             });
             opCount++;
 
-            const custRef = CustomerDAO.getRef(customerId);
             if (customersMap[resolvedKey]?.isNew) {
-                batch.set(custRef, {
+                newCustomerDocs[customerId] = {
                     name: cleanName, phone: customersMap[resolvedKey].phone || '',
                     address: 'Bulk Import', accountNo: customersMap[resolvedKey].accountNo,
                     totalDue: currentDue, initialDue: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                auditLog('CREATE', 'Customers', customerId, cleanName, { source: 'Bulk Entry' });
+                };
                 customersMap[resolvedKey].isNew = false;
-                opCount++;
             } else {
-                batch.update(custRef, { totalDue: firebase.firestore.FieldValue.increment(changeInDue) });
-                opCount++;
+                customerDeltas[customerId] = safeRound((customerDeltas[customerId] || 0) + changeInDue);
             }
 
-            if (opCount >= 400) {
+            if (opCount >= 300) {
+                for (const [cId, delta] of Object.entries(customerDeltas)) {
+                    if (delta !== 0) {
+                        batch.update(CustomerDAO.getRef(cId), { totalDue: firebase.firestore.FieldValue.increment(delta) });
+                    }
+                }
+                for (const [cId, docData] of Object.entries(newCustomerDocs)) {
+                    batch.set(CustomerDAO.getRef(cId), docData);
+                }
                 await batch.commit();
-                batch = db.batch(); opCount = 0;
+                batch = db.batch();
+                opCount = 0;
+                for (const k in customerDeltas) delete customerDeltas[k];
+                for (const k in newCustomerDocs) delete newCustomerDocs[k];
             }
+        }
+
+        for (const [cId, delta] of Object.entries(customerDeltas)) {
+            if (delta !== 0) {
+                batch.update(CustomerDAO.getRef(cId), { totalDue: firebase.firestore.FieldValue.increment(delta) });
+                opCount++;
+            }
+        }
+        for (const [cId, docData] of Object.entries(newCustomerDocs)) {
+            batch.set(CustomerDAO.getRef(cId), docData);
+            opCount++;
         }
 
         if (opCount > 0) await batch.commit();
