@@ -189,7 +189,14 @@
     </button>
 
     <div id="print-receipt-container" class="hidden"></div>
-    <script type="module" src="/src/main.js"></script>
 
+    <!-- Global Amount-in-Words Tooltip -->
+    <div id="global-amount-tooltip" class="fixed z-[100] pointer-events-none opacity-0 scale-95 transition-all duration-200 transform translate-x-[-50%] bg-slate-900 border border-blue-500/50 shadow-2xl shadow-blue-900/20 rounded-xl px-4 py-2 flex items-center justify-center min-w-[150px] max-w-[400px] text-center" style="display: none;">
+        <!-- Tail/Arrow -->
+        <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 border-b border-r border-blue-500/50 rotate-45"></div>
+        <span id="global-amount-tooltip-text" class="text-emerald-400 font-bold text-sm leading-tight drop-shadow-md"></span>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
 </body>
 </html>

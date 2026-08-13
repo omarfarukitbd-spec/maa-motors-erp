@@ -48,7 +48,7 @@ export function numberToBanglaWords(number) {
 }
 
 /**
- * Live Words Update Helper (With Auto Font Resizer)
+ * Live Words Update Helper (With Auto Font Resizer and Global Tooltip)
  */
 export function updateLiveWords(inputObj, displayId) {
     const displayEl = typeof displayId === 'string' ? document.getElementById(displayId) : displayId;
@@ -58,6 +58,9 @@ export function updateLiveWords(inputObj, displayId) {
     const amount = parseAmount(val);
     const words = numberToBanglaWords(amount);
 
+    const tooltip = document.getElementById('global-amount-tooltip');
+    const tooltipText = document.getElementById('global-amount-tooltip-text');
+
     if (words) {
         displayEl.innerText = `(${words})`;
         displayEl.classList.remove('hidden');
@@ -66,20 +69,61 @@ export function updateLiveWords(inputObj, displayId) {
         if (len > 80) { displayEl.style.fontSize = '8px'; displayEl.style.lineHeight = '1.1'; }
         else if (len > 50) { displayEl.style.fontSize = '10px'; displayEl.style.lineHeight = '1.2'; }
         else { displayEl.style.fontSize = ''; displayEl.style.lineHeight = ''; }
+
+        // Update and show Global Tooltip
+        if (tooltip && tooltipText && inputObj) {
+            tooltipText.innerText = words;
+            const rect = inputObj.getBoundingClientRect();
+            
+            // Absolute position center top
+            tooltip.style.left = `${rect.left + (rect.width / 2)}px`;
+            tooltip.style.top = `${rect.top - 48}px`; 
+            
+            tooltip.style.display = 'flex';
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                tooltip.classList.remove('opacity-0', 'scale-95');
+                tooltip.classList.add('opacity-100', 'scale-100');
+            });
+            
+            // Attach blur listener to auto-hide
+            if (!inputObj._tooltipBlurListener) {
+                inputObj._tooltipBlurListener = () => {
+                    tooltip.classList.remove('opacity-100', 'scale-100');
+                    tooltip.classList.add('opacity-0', 'scale-95');
+                    setTimeout(() => { if (tooltip.classList.contains('opacity-0')) tooltip.style.display = 'none'; }, 200);
+                };
+                inputObj.addEventListener('blur', inputObj._tooltipBlurListener);
+            }
+        }
     } else {
         displayEl.innerText = '';
         displayEl.classList.add('hidden');
+        
+        // Hide tooltip
+        if (tooltip) {
+            tooltip.classList.remove('opacity-100', 'scale-100');
+            tooltip.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => { if (tooltip.classList.contains('opacity-0')) tooltip.style.display = 'none'; }, 200);
+        }
     }
 }
 
 /**
- * Resets/clears live words display element
+ * Resets/clears live words display element and tooltip
  */
 export function resetLiveWords(displayId) {
     const displayEl = typeof displayId === 'string' ? document.getElementById(displayId) : displayId;
     if (displayEl) {
         displayEl.innerText = '';
         displayEl.classList.add('hidden');
+    }
+    const tooltip = document.getElementById('global-amount-tooltip');
+    if (tooltip) {
+        tooltip.classList.remove('opacity-100', 'scale-100');
+        tooltip.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => { if (tooltip.classList.contains('opacity-0')) tooltip.style.display = 'none'; }, 200);
     }
 }
 
