@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2';
-import { db } from '../firebase-config.js';
+import { db, firebase } from '../firebase-config.js';
 import { BankDAO, CashCollectorDAO, TransactionDAO } from '../dao.js';
 import { promptSecurityPin, showToast } from '../utils.js';
 import { auditLog } from '../audit.js';
