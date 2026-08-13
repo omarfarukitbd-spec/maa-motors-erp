@@ -9,7 +9,11 @@ export function renderLedger(container, params, callbacks = {}) {
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div class="flex items-center gap-3">
                     <div class="w-2 h-7 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)]"></div>
-                    <h2 class="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">খতিয়ান <span class="text-xs text-slate-400 uppercase font-bold">(Ledger)</span><button class="w-7 h-7 rounded-lg hover:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-blue-400 transition-all" onclick="window.loadRecentTransactions()"><i class="fa-solid fa-rotate text-xs"></i></button></h2>
+                    <h2 class="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                        <span>খতিয়ান</span> <span class="text-xs text-slate-400 uppercase font-bold">(Ledger)</span>
+                        <button type="button" class="w-7 h-7 rounded-lg hover:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-blue-400 transition-all cursor-pointer" onclick="window.loadRecentTransactions()" title="রিফ্রেশ"><i class="fa-solid fa-rotate text-xs"></i></button>
+                        <button type="button" class="w-7 h-7 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center transition-all cursor-pointer" onclick="window.showLedgerKeyboardGuide && window.showLedgerKeyboardGuide()" title="কীবোর্ড শর্টকাট গাইড (Alt+H)"><i class="fa-solid fa-keyboard text-xs"></i></button>
+                    </h2>
                 </div>
                 <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <div id="live-due-calc" class="bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700 text-xs font-black text-blue-400">৳ ০</div>
@@ -101,6 +105,7 @@ export function renderLedger(container, params, callbacks = {}) {
     // Load dynamic bank & cash collector datalists
     loadBankOptions();
     loadCashCollectorOptions();
+    if (window.initLedgerHotkeys) window.initLedgerHotkeys();
 
     if (params && params.customerId) {
         setTimeout(() => {

@@ -9,6 +9,7 @@ import { renderLedger as renderLedgerUI } from './ledger/ledger-ui.js';
 import { renderRows as renderRowsUI, updateLedgerLiveText as updateLiveTextUI } from './ledger/ledger-render-rows.js';
 import { saveTransaction as saveTransactionAction, editTransaction as editTransactionAction, deleteTransaction as deleteTransactionAction } from './ledger/ledger-actions.js';
 import { sendTxnSMS as sendTxnSMSAction, sendTxnWhatsApp as sendTxnWhatsAppAction, choosePrintType as choosePrintTypeAction, executePrint as executePrintAction } from './ledger/ledger-messaging.js';
+import { initLedgerHotkeys } from './ledger/ledger-hotkeys.js';
 
 let editingRef = { id: null, oldBill: 0, oldPaid: 0 };
 let recentTxnsListener = null, currentLedgerTxns = [], currentLedgerTxnsMap = {};
@@ -267,21 +268,10 @@ if (typeof window !== 'undefined') {
         document.getElementById('ledger-paid')?.focus();
         showToast(`[${type}] ${accountName} সিলেক্ট করা হয়েছে`, 'info');
     };
+    initLedgerHotkeys();
 }
 
-if (typeof window !== 'undefined' && !window._ledgerHotkeysBound) {
-    window._ledgerHotkeysBound = true;
-    window.addEventListener('keydown', (e) => {
-        if (e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
-            const isSpreadsheet = Boolean(document.getElementById('spreadsheet-body'));
-            const fn = isSpreadsheet ? window.quickSelectSpreadsheetAccount : window.quickSelectPaymentAccount;
-            if (!fn) return;
-            if (e.key === '1') { e.preventDefault(); fn('Bank', 'OneBank (IFRAT)'); }
-            else if (e.key === '2') { e.preventDefault(); fn('Bank', 'IBBL (IFRAT)'); }
-            else if (e.key === '3') { e.preventDefault(); fn('Cash', 'শোরুম ক্যাশ'); }
-        }
-    });
-}
+initLedgerHotkeys();
 
 document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('ledger-cust-dropdown');

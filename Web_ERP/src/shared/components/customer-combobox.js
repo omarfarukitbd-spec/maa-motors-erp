@@ -73,11 +73,64 @@ export function filterCustomerCombobox(query = '', { inputId, selectId, dropdown
 
     dropdown.classList.remove('hidden');
 
+    // Auto highlight first item for instant Enter selection
+    const firstItem = dropdown.querySelector('.combobox-item');
+    if (firstItem) {
+        firstItem.classList.add('active-combobox-item', '!bg-blue-600/30', '!border-blue-500/50');
+    }
+
     dropdown.querySelectorAll('.combobox-item').forEach(item => {
         item.addEventListener('click', () => {
             const id = item.dataset.id;
             selectCustomerComboboxItem(id, { inputId, selectId, dropdownId, onSelect });
         });
+    });
+
+    attachCustomerComboboxKeyboard({ inputId, selectId, dropdownId, onSelect });
+}
+
+export function attachCustomerComboboxKeyboard({ inputId, selectId, dropdownId, onSelect, nextFocusId } = {}) {
+    const input = document.getElementById(inputId);
+    if (!input || input._comboboxKeyBound) return;
+    input._comboboxKeyBound = true;
+
+    input.addEventListener('keydown', (e) => {
+        const dropdown = document.getElementById(dropdownId);
+        if (!dropdown || dropdown.classList.contains('hidden')) {
+            if (e.key === 'ArrowDown') {
+                filterCustomerCombobox(input.value, { inputId, selectId, dropdownId, onSelect });
+            }
+            return;
+        }
+
+        const items = Array.from(dropdown.querySelectorAll('.combobox-item'));
+        if (items.length === 0) return;
+
+        let activeIdx = items.findIndex(el => el.classList.contains('active-combobox-item'));
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (activeIdx >= 0) items[activeIdx].classList.remove('active-combobox-item', '!bg-blue-600/30', '!border-blue-500/50');
+            activeIdx = (activeIdx + 1) % items.length;
+            items[activeIdx].classList.add('active-combobox-item', '!bg-blue-600/30', '!border-blue-500/50');
+            items[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (activeIdx >= 0) items[activeIdx].classList.remove('active-combobox-item', '!bg-blue-600/30', '!border-blue-500/50');
+            activeIdx = (activeIdx - 1 + items.length) % items.length;
+            items[activeIdx].classList.add('active-combobox-item', '!bg-blue-600/30', '!border-blue-500/50');
+            items[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const targetItem = activeIdx >= 0 ? items[activeIdx] : items[0];
+            if (targetItem && targetItem.dataset.id) {
+                selectCustomerComboboxItem(targetItem.dataset.id, { inputId, selectId, dropdownId, onSelect });
+                const nextEl = document.getElementById(nextFocusId || 'ledger-date');
+                if (nextEl) nextEl.focus();
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.classList.add('hidden');
+        }
     });
 }
 
