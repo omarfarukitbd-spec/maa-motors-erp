@@ -10,7 +10,7 @@ import Swal from 'sweetalert2';
  * Initial Balance, Opening Date, and Confirmation Preview Modal.
  */
 export async function quickAddCustomer() {
-    // ✅ Offline Guard — account number generation requires server transaction
+    // <i class="fa-solid fa-check text-emerald-400"></i> Offline Guard — account number generation requires server transaction
     if (!navigator.onLine) {
         return Swal.fire({
             title: '<i class="fa-solid fa-wifi text-red-400 mr-2"></i>অফলাইন!',

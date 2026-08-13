@@ -10,7 +10,7 @@ export async function editCustomer(id, name, phone, address, currentZone) {
         return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন কাস্টমার তথ্য এডিট করতে পারবেন।', 'error');
     }
 
-    // ✅ Offline Guard — editing requires server transaction
+    // <i class="fa-solid fa-check text-emerald-400"></i> Offline Guard — editing requires server transaction
     if (!navigator.onLine) {
         return Swal.fire({
             title: '<i class="fa-solid fa-wifi text-red-400 mr-2"></i>অফলাইন!',
