@@ -55,6 +55,9 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
     });
     if (!confirmPreview.isConfirmed) { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; } return; }
     try {
+        const preCommitCust = getCustomerCache().find(c => c.id === id);
+        const preCommitDue = preCommitCust ? (Number(preCommitCust.totalDue) || 0) : 0;
+
         const batch = db.batch(); const balanceDiff = safeRound(b - p);
         let actualDelta = balanceDiff;
         if(editingRef.id) {
@@ -64,10 +67,12 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
             batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
             editingRef.id = null;
         } else {
-            const txnRef = TransactionDAO.getRef(); const currentCustomer = getCustomerCache().find(c => c.id === id); const prevDue = currentCustomer ? (Number(currentCustomer.totalDue) || 0) : 0;
-            batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, prevDue: safeRound(prevDue), currentDue: safeRound(prevDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            const txnRef = TransactionDAO.getRef();
+            batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
         }
+        
+        const finalSmsDue = safeRound(preCommitDue + actualDelta);
         await batch.commit();
         showToast('লেনদেন সফলভাবে সেভ হয়েছে!', 'success');
 
@@ -80,7 +85,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                 const formattedDate = formatAppDate(date);
                 const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(name) : name) || 'Customer';
                 const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
-                const netDue = safeRound((currentCust ? (Number(currentCust.totalDue) || 0) : 0) + actualDelta);
+                const netDue = finalSmsDue;
                 const formattedDue = formatAmountWithComma(Math.abs(netDue));
 
                 let autoMsg = '';
