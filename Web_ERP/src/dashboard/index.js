@@ -254,11 +254,11 @@ export async function loadCollectionList(startDate, endDate) {
             let cardsHtml = '';
             if (txns.length > 0 && Object.keys(methodGroups).length > 0) {
                 cardsHtml += `
-                    <div class="method-card-btn bg-emerald-600/90 backdrop-blur-md border border-emerald-500/50 rounded-xl p-3 cursor-pointer hover:bg-emerald-500 transition-all flex flex-col gap-1.5 min-w-[110px] shadow-[0_5px_15px_-5px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400" onclick="window.filterCollectionByMethod('All')" data-method="All">
-                        <span class="text-[10px] font-black text-emerald-100 uppercase drop-shadow-sm"><i class="fa-solid fa-layer-group mr-1"></i>সব (All)</span>
-                        <div class="flex items-end justify-between gap-3">
-                            <span class="text-sm font-black text-white tracking-tight">৳ ${formatAmountWithComma(total)}</span>
-                            <span class="text-[9px] bg-emerald-900/40 text-emerald-100 px-1.5 py-0.5 rounded-md font-bold">${txns.filter(t => t.receivedType !== 'Less').length} জন</span>
+                    <div class="method-card-btn bg-emerald-600/90 backdrop-blur-md border border-emerald-500/50 rounded-2xl p-3 sm:p-3.5 cursor-pointer hover:bg-emerald-500 transition-all flex flex-col justify-between gap-1.5 w-full min-w-0 shadow-[0_5px_15px_-5px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400" onclick="window.filterCollectionByMethod('All')" data-method="All">
+                        <span class="text-[10.5px] font-black text-emerald-100 uppercase drop-shadow-sm truncate"><i class="fa-solid fa-layer-group mr-1"></i>সব (All)</span>
+                        <div class="flex items-end justify-between gap-2">
+                            <span class="text-sm sm:text-base font-black text-white tracking-tight truncate font-inter">৳ ${formatAmountWithComma(total)}</span>
+                            <span class="text-[9px] bg-emerald-900/60 text-emerald-100 px-1.5 py-0.5 rounded-md font-bold shrink-0">${txns.filter(t => t.receivedType !== 'Less').length} জন</span>
                         </div>
                     </div>
                 `;
@@ -273,11 +273,11 @@ export async function loadCollectionList(startDate, endDate) {
                     const ringColor = isCash ? 'ring-emerald-400' : 'ring-blue-400';
 
                     cardsHtml += `
-                        <div class="method-card-btn ${themeBg} backdrop-blur-sm border ${themeBorder} ${themeHover} rounded-xl p-3 cursor-pointer transition-all flex flex-col gap-1.5 min-w-[120px] opacity-70 hover:opacity-100 shadow-sm" onclick="window.filterCollectionByMethod('${mName}')" data-method="${mName}" data-ring="${ringColor}">
-                            <span class="text-[10px] font-bold ${themeText} uppercase truncate max-w-[100px]">${icon}${mName}</span>
-                            <div class="flex items-end justify-between gap-3">
-                                <span class="text-sm font-black ${themeText} tracking-tight">৳ ${formatAmountWithComma(stats.total)}</span>
-                                <span class="text-[9px] bg-slate-900/60 ${themeText} px-1.5 py-0.5 rounded-md font-bold">${stats.count} জন</span>
+                        <div class="method-card-btn ${themeBg} backdrop-blur-sm border ${themeBorder} ${themeHover} rounded-2xl p-3 sm:p-3.5 cursor-pointer transition-all flex flex-col justify-between gap-1.5 w-full min-w-0 opacity-70 hover:opacity-100 shadow-sm" onclick="window.filterCollectionByMethod('${mName}')" data-method="${mName}" data-ring="${ringColor}">
+                            <span class="text-[10.5px] font-bold ${themeText} uppercase truncate">${icon}${mName}</span>
+                            <div class="flex items-end justify-between gap-2">
+                                <span class="text-sm sm:text-base font-black ${themeText} tracking-tight truncate font-inter">৳ ${formatAmountWithComma(stats.total)}</span>
+                                <span class="text-[9px] bg-slate-900/80 ${themeText} px-1.5 py-0.5 rounded-md font-bold shrink-0">${stats.count} জন</span>
                             </div>
                         </div>
                     `;

@@ -256,8 +256,8 @@ export function getDashboardHTML() {
                             <p id="dash-collection-card-words" class="text-xs md:text-sm text-emerald-300 font-bold italic mt-2 z-10 bg-black/20 px-4 py-1.5 rounded-full border border-emerald-500/20">শূন্য টাকা মাত্র</p>
                         </div>
 
-                        <!-- Dynamic Payment Method Summary Cards -->
-                        <div id="dash-collection-method-cards" class="flex flex-wrap items-center gap-3">
+                        <!-- Dynamic Payment Method Summary Cards (Auto Responsive Grid) -->
+                        <div id="dash-collection-method-cards" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 w-full">
                         </div>
 
                         <!-- Collection List Table -->
