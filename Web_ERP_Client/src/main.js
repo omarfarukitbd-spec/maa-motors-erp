@@ -101,4 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
     initOmnisearch();
     initCalculator();
     checkAutoAuth();
+
+    const pinInput = document.getElementById('pin-input');
+    if (pinInput) {
+        pinInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loginWithPin();
+            }
+        });
+    }
 });
