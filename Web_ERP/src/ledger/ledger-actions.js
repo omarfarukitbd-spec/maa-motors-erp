@@ -80,7 +80,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                 const formattedDate = formatAppDate(date);
                 const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(name) : name) || 'Customer';
                 const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
-                const netDue = (currentCust ? (Number(currentCust.totalDue) || 0) : 0) + actualDelta;
+                const netDue = safeRound((currentCust ? (Number(currentCust.totalDue) || 0) : 0) + actualDelta);
                 const formattedDue = formatAmountWithComma(Math.abs(netDue));
 
                 let autoMsg = '';

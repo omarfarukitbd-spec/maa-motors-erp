@@ -81,7 +81,7 @@ export async function editCustomer(id, name, phone, address, currentZone) {
             const a = document.getElementById('ed-a').value.trim();
             const z = document.getElementById('ed-z').value;
             const accNo = document.getElementById('ed-acc').value.trim();
-            const ib = parseAmount(document.getElementById('ed-ib').value);
+            const ib = safeRound(parseAmount(document.getElementById('ed-ib').value));
             if (!n || !p) return Swal.showValidationMessage('নাম ও মোবাইল নম্বর আবশ্যক!');
             return { d, n, p, a, z, accNo, ib };
         }
@@ -120,7 +120,7 @@ export async function editCustomer(id, name, phone, address, currentZone) {
         try {
             Swal.fire({ title: 'আপডেট হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const balanceDiff = f.ib - currentInitialDue;
+            const balanceDiff = safeRound(f.ib - currentInitialDue);
             const custRef = CustomerDAO.getRef(id);
             const txns = await TransactionDAO.getByCustomer(id);
 

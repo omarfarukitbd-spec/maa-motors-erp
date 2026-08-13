@@ -41,7 +41,7 @@ export async function saveNewCustomer() {
 
     if(!n || !p || !z) return Swal.fire('এরর', 'নাম, মোবাইল নম্বর ও জোন আবশ্যক!', 'error');
 
-    let initialBalance = parseAmount(balInput);
+    let initialBalance = safeRound(parseAmount(balInput));
     const accNo = document.getElementById('cust-generated-acc')?.value || 'Auto';
     const words = numberToBanglaWords(initialBalance);
 

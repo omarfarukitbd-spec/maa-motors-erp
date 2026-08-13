@@ -200,7 +200,7 @@ export async function renderPublicStatementView(customerId) {
             else paidSum += Number(txn.paid) || 0;
             billSum += Number(txn.bill) || 0;
         });
-        const running = initialDue + billSum - paidSum - lessSum;
+        const running = safeRound(initialDue + billSum - paidSum - lessSum);
 
         const { rowsArray } = generateRowsArray(initialDue, docs);
         currentPublicPrintData = { customer, docs, settings, initialDue, billSum, paidSum, lessSum, running };

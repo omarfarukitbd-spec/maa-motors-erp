@@ -168,7 +168,7 @@ export async function quickAddCustomer() {
                 return false;
             }
 
-            const initialBalance = parseAmount(balRaw);
+            const initialBalance = safeRound(parseAmount(balRaw));
             const d = toDBDate(dVal);
 
             return { n, p, z, a, initialBalance, d, accNo };

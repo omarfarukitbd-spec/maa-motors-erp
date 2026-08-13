@@ -41,7 +41,7 @@ export async function loadStatementData(stateRef = {}) {
             const startDateObj = new Date(start);
             docs.forEach(d => {
                 if (new Date(d.date) < startDateObj) {
-                    openingBalance += ((Number(d.bill) || 0) - (Number(d.paid) || 0));
+                    openingBalance = safeRound(openingBalance + ((Number(d.bill) || 0) - (Number(d.paid) || 0)));
                 }
             });
             docs = docs.filter(d => new Date(d.date) >= startDateObj);
@@ -79,7 +79,7 @@ export function renderTable(openingBalance = 0, stateRef = {}) {
         billSum += b;
         if (type === 'Less') lessSum += p;
         else paidSum += p;
-        running += (b - p);
+        running = safeRound(running + (b - p));
 
         let methodBadge = '<span class="text-slate-500 text-xs">-</span>';
         if (p > 0) {

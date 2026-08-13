@@ -12,7 +12,7 @@ export function updateLedgerLiveText() {
 
     if(sel && sel.selectedIndex > 0) {
         const currentDue = (parseFloat(sel.options[sel.selectedIndex].dataset.due) || 0);
-        const nextDue = currentDue + b - p;
+        const nextDue = safeRound(currentDue + b - p);
         calc.innerText = `বকেয়া: ৳ ${formatAmountWithComma(Math.abs(nextDue))} ${nextDue < 0 ? '(অ্যাড)' : ''}`;
         calc.className = nextDue > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-1.5 rounded-xl text-xs font-black' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-1.5 rounded-xl text-xs font-black';
     } else {
@@ -41,7 +41,7 @@ export function renderRows(transactions, container, stateRefs = {}) {
         const custId = sel.value;
         const currentCustomer = allCustomers.find(c => c.id === custId);
         let running = Number(currentCustomer?.totalDue || 0);
-        transactions.forEach((d, index) => { runningBalances[index] = running; running -= (Number(d.bill) || 0) - (Number(d.paid) || 0); });
+        transactions.forEach((d, index) => { runningBalances[index] = running; running = safeRound(running - ((Number(d.bill) || 0) - (Number(d.paid) || 0))); });
     }
 
     (transactions || []).forEach((d, index) => {

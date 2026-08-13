@@ -64,7 +64,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
         let calcPrevDue = Number(cData.initialDue || 0);
         for (const t of allTxns) {
             if (t.id === txnId) break;
-            calcPrevDue += (Number(t.bill) || 0) - (Number(t.paid) || 0);
+            calcPrevDue = safeRound(calcPrevDue + (Number(t.bill) || 0) - (Number(t.paid) || 0));
         }
 
         const effectivePrevDue = safeRound(calcPrevDue);
