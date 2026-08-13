@@ -69,27 +69,34 @@ export function loadAdminUsers() {
                         : '<span class="text-[9px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-black uppercase">Active</span>';
 
                 // Role badge
-                const roleBadge = data.role === 'Admin'
-                    ? '<span class="text-[9px] bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-2 py-0.5 rounded-full font-black uppercase">Admin</span>'
-                    : '<span class="text-[9px] bg-slate-600/30 border border-slate-500/30 text-slate-300 px-2 py-0.5 rounded-full font-black uppercase">Staff</span>';
+                let roleBadge = '<span class="text-[9px] bg-slate-600/30 border border-slate-500/30 text-slate-300 px-2 py-0.5 rounded-full font-black uppercase">Staff</span>';
+                if (data.role === 'Admin') {
+                    roleBadge = '<span class="text-[9px] bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-2 py-0.5 rounded-full font-black uppercase">Admin</span>';
+                } else if (data.role === 'Boss') {
+                    roleBadge = '<span class="text-[9px] bg-amber-500/20 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded-full font-black uppercase"><i class="fa-solid fa-crown mr-1"></i>Boss</span>';
+                }
 
                 // Card border style
                 const cardBorder = isPending
                     ? 'border-amber-500/30 bg-amber-500/[0.03]'
                     : isBlocked
                         ? 'border-red-500/20 bg-red-500/[0.02]'
-                        : 'border-slate-800/60 hover:border-indigo-500/20';
+                        : (data.role === 'Boss' ? 'border-amber-500/30 hover:border-amber-500/50' : 'border-slate-800/60 hover:border-indigo-500/20');
+
+                const suggestedRole = data.requestedPortal === 'boss' || data.role === 'Boss' ? 'Boss' : 'Staff';
 
                 // Action buttons
                 let actions = '';
                 if (!isMe) {
                     if (isPending) {
                         actions = `
-                            <button class="h-8 px-3 rounded-lg bg-emerald-600/15 border border-emerald-500/25 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[11px] font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1" onclick="appAdmin.approveStaff('${docId}', '${email}')"><i class="fa-solid fa-check text-[10px]"></i>অনুমোদন</button>
+                            <button class="h-8 px-3 rounded-lg bg-emerald-600/15 border border-emerald-500/25 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[11px] font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1" onclick="appAdmin.approveStaff('${docId}', '${email}', '${suggestedRole}')"><i class="fa-solid fa-check text-[10px]"></i>অনুমোদন</button>
                             <button class="h-8 px-3 rounded-lg bg-red-500/10 border border-red-500/25 hover:bg-red-600 text-red-400 hover:text-white text-[11px] font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1" onclick="appAdmin.deleteUserAccount('${docId}', '${email}')"><i class="fa-solid fa-trash text-[10px]"></i>বাতিল</button>`;
-                    } else if (data.role === 'Staff') {
+                    } else if (data.role === 'Staff' || data.role === 'Boss') {
+                        const permBtn = data.role === 'Staff' ? `
+                            <button class="h-8 w-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-600 text-indigo-400 hover:text-white text-xs transition-all cursor-pointer active:scale-95 flex items-center justify-center" onclick="appAdmin.managePermissions('${docId}', '${email}')" title="পারমিশন"><i class="fa-solid fa-shield-halved"></i></button>` : '';
                         actions = `
-                            <button class="h-8 w-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-600 text-indigo-400 hover:text-white text-xs transition-all cursor-pointer active:scale-95 flex items-center justify-center" onclick="appAdmin.managePermissions('${docId}', '${email}')" title="পারমিশন"><i class="fa-solid fa-shield-halved"></i></button>
+                            ${permBtn}
                             <button class="h-8 w-8 rounded-lg bg-slate-700/50 border border-slate-600/30 hover:bg-blue-600 text-slate-300 hover:text-white text-xs transition-all cursor-pointer active:scale-95 flex items-center justify-center" onclick="appAdmin.changeStaffPin('${docId}', '${data.pin || ''}')" title="Change PIN"><i class="fa-solid fa-key"></i></button>
                             <button class="h-8 w-8 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-600 text-amber-400 hover:text-white text-xs transition-all cursor-pointer active:scale-95 flex items-center justify-center" onclick="appAdmin.revokeStaff('${docId}')" title="Block"><i class="fa-solid fa-ban"></i></button>
                             <button class="h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-600 text-red-400 hover:text-white text-xs transition-all cursor-pointer active:scale-95 flex items-center justify-center" onclick="appAdmin.deleteUserAccount('${docId}', '${email}')" title="ডিলেট"><i class="fa-solid fa-trash"></i></button>`;
@@ -104,6 +111,7 @@ export function loadAdminUsers() {
                     ? `<select id="role-${docId}" class="h-7 px-2 rounded-lg bg-slate-950/80 border border-slate-700/60 text-xs text-white font-bold outline-none cursor-pointer" onchange="appAdmin.updateUserRole('${docId}')">
                         <option value="Admin" ${data.role === 'Admin' ? 'selected' : ''}>Admin</option>
                         <option value="Staff" ${data.role === 'Staff' ? 'selected' : ''}>Staff</option>
+                        <option value="Boss" ${data.role === 'Boss' ? 'selected' : ''}>Boss (Executive)</option>
                     </select>`
                     : '';
 

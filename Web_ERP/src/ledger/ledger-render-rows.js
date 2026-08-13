@@ -45,9 +45,10 @@ export function renderRows(transactions, container, stateRefs = {}) {
     }
 
     (transactions || []).forEach((d, index) => {
+        const isBoss = String(AppState?.currentUserRole || '').toLowerCase() === 'boss';
         const isAdmin = String(AppState?.currentUserRole || '').toLowerCase() === 'admin';
-        const canEdit = isAdmin || (AppState?.permissions?.editLedger !== false && AppState?.permissions?.manageLedger !== false);
-        const canDelete = isAdmin || (AppState?.permissions?.deleteLedger === true);
+        const canEdit = !isBoss && (isAdmin || (AppState?.permissions?.editLedger !== false && AppState?.permissions?.manageLedger !== false));
+        const canDelete = !isBoss && (isAdmin || (AppState?.permissions?.deleteLedger === true));
         const balanceVal = isFilteredCustomer ? runningBalances[index] : (Number(d.currentDue) || 0);
         const b = Number(d.bill) || 0, p = Number(d.paid) || 0;
         totBill += b; totPaid += p;

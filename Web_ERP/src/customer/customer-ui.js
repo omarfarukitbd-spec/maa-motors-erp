@@ -10,7 +10,8 @@ export function renderCustomers(container, params) {
         return;
     }
 
-    const canManageCust = window.AppState?.currentUserRole === 'Admin' || window.AppState?.permissions?.manageCustomers !== false;
+    const isBoss = window.AppState?.currentUserRole === 'Boss';
+    const canManageCust = !isBoss && (window.AppState?.currentUserRole === 'Admin' || window.AppState?.permissions?.manageCustomers !== false);
 
     container.innerHTML = `
         <div class="flex flex-col gap-6">
@@ -183,9 +184,10 @@ export function renderCustomerRows(customers) {
     const mobileContainer = document.getElementById('customer-list-mobile');
     if(!tbody) return;
 
+    const isBoss = String(window.AppState?.currentUserRole || '').toLowerCase() === 'boss';
     const isAdmin = String(window.AppState?.currentUserRole || '').toLowerCase() === 'admin';
-    const canEditCust = isAdmin || (window.AppState?.permissions?.editCustomers !== false && window.AppState?.permissions?.manageCustomers !== false);
-    const canDeleteCust = isAdmin || (window.AppState?.permissions?.deleteCustomers === true);
+    const canEditCust = !isBoss && (isAdmin || (window.AppState?.permissions?.editCustomers !== false && window.AppState?.permissions?.manageCustomers !== false));
+    const canDeleteCust = !isBoss && (isAdmin || (window.AppState?.permissions?.deleteCustomers === true));
 
     let rows = [];
     let mobileHtml = '';

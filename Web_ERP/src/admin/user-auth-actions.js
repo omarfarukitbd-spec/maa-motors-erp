@@ -10,36 +10,56 @@ import { unlockApp } from '../navigation/router.js';
  * Fully Restored logic for secondary Firebase App instance.
  */
 
-export async function approveStaff(userId, email) {
+export async function approveStaff(userId, email, suggestedRole = 'Staff') {
     if (window.AppState.currentUserRole !== 'Admin') return;
 
-    const isPinValid = await promptSecurityPin("স্টাফ অনুমোদন (Staff Approval)");
+    const isPinValid = await promptSecurityPin("ইউজার অনুমোদন (User Approval)");
     if (!isPinValid) return;
 
-    const { value: pin } = await Swal.fire({
-        title: 'অ্যাপ্রুভ ও পিন সেটআপ',
-        input: 'text',
-        inputLabel: `${email} এর জন্য একটি 4-ডিজিট পিন সেট করুন`,
-        inputPlaceholder: 'e.g. 1234',
-        inputAttributes: {
-            autocomplete: 'new-password',
-            autocapitalize: 'off',
-            spellcheck: 'false'
-        },
+    const { value: formValues } = await Swal.fire({
+        title: '<div class="flex items-center justify-center gap-2 text-white font-bn"><i class="fa-solid fa-user-check text-emerald-400"></i><span>অ্যাকাউন্ট অনুমোদন ও পিন সেট</span></div>',
+        html: `
+            <div class="space-y-4 text-left font-bn mt-2">
+                <div>
+                    <label class="text-xs text-slate-400 font-bold block mb-1">ইমেইল অ্যাকাউন্ট</label>
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-700 text-xs font-mono text-emerald-400">${email}</div>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 font-bold block mb-1">ব্যবহারকারীর রোল (Role) নির্ধারণ করুন</label>
+                    <select id="swal-user-role" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <option value="Boss" ${suggestedRole === 'Boss' ? 'selected' : ''}>Boss / Executive (ভিউ-অনলি)</option>
+                        <option value="Staff" ${suggestedRole !== 'Boss' ? 'selected' : ''}>Staff (দৈনন্দিন এন্ট্রি ও বিলিং)</option>
+                        <option value="Admin">Admin (পূর্ণ ক্ষমতা)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 font-bold block mb-1">৪-ডিজিট সিকিউরিটি পিন দিন</label>
+                    <input id="swal-user-pin" type="text" maxlength="4" placeholder="${suggestedRole === 'Boss' ? '5027' : '1234'}" value="${suggestedRole === 'Boss' ? '5027' : '1234'}" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-center text-base font-mono font-bold tracking-widest text-white outline-none">
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
         showCancelButton: true,
-        inputValidator: (value) => {
-            if (!value || value.length !== 4 || isNaN(value)) {
-                return 'আপনাকে অবশ্যই 4-ডিজিটের সংখ্যার পিন দিতে হবে!';
+        confirmButtonText: 'অনুমোদন দিন',
+        cancelButtonText: 'বাতিল',
+        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700 font-bn', confirmButton: 'm3-btn-primary !py-2.5', cancelButton: 'm3-btn-tonal !py-2.5' },
+        preConfirm: () => {
+            const role = document.getElementById('swal-user-role').value;
+            const pin = document.getElementById('swal-user-pin').value.trim();
+            if (!pin || pin.length !== 4 || isNaN(pin)) {
+                Swal.showValidationMessage('আপনাকে অবশ্যই ৪-ডিজিটের সংখ্যার পিন দিতে হবে!');
+                return false;
             }
+            return { role, pin };
         }
     });
 
-    if (pin) {
+    if (formValues) {
         try {
-            await UserDAO.update(userId, { status: 'active', pin: pin });
-            auditLog('APPROVE', 'Admin', userId, email, { pinSet: true });
-            Swal.fire('অ্যাপ্রুভড!', 'স্টাফ অ্যাপ্রুভ হয়েছে এবং পিন সেট করা হয়েছে।', 'success');
-        } catch(e) { Swal.fire('Error', 'ব্যর্থ হয়েছেন', 'error'); }
+            await UserDAO.update(userId, { status: 'active', role: formValues.role, pin: formValues.pin });
+            auditLog('APPROVE', 'Admin', userId, email, { role: formValues.role, pinSet: true });
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${email} সফলভাবে অনুমোদিত হয়েছে!`, showConfirmButton: false, timer: 3000 });
+        } catch(e) { console.error(e); Swal.fire('Error', 'অনুমোদন ব্যর্থ হয়েছে', 'error'); }
     }
 }
 
@@ -235,4 +255,35 @@ export async function createNewUser() {
             }
         }
     }
+}
+
+export async function copyPortalLink(type) {
+    const origin = window.location.origin;
+    const url = `${origin}/?portal=${type}`;
+    try {
+        await navigator.clipboard.writeText(url);
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `${type === 'boss' ? 'বস' : 'স্টাফ'} পোর্টাল লিংক কপি হয়েছে!`,
+            showConfirmButton: false,
+            timer: 2500,
+            background: '#0F172A',
+            color: '#F8FAFC'
+        });
+    } catch (err) {
+        console.error(err);
+        Swal.fire('কপি ব্যর্থ', url, 'info');
+    }
+}
+
+export function sharePortalWhatsApp(type) {
+    const origin = window.location.origin;
+    const url = `${origin}/?portal=${type}`;
+    const text = type === 'boss'
+        ? `আসসালামু আলাইকুম স্যার, মা মোটরসের লাইভ হিসাব ও ড্যাশবোর্ড দেখার লিংক:\n${url}\n(আপনার সিকিউরিটি পিন: 5027)`
+        : `আসসালামু আলাইকুম, মা মোটরস ERP স্টাফ পোর্টাল লিংক:\n${url}`;
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
 }
