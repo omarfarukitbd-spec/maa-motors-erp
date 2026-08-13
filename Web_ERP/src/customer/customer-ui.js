@@ -1,8 +1,10 @@
 import { formatAppDate, getTodayLocalDateString, formatAmountWithComma } from '../utils.js';
+import { initCustomerHotkeys } from './customer-hotkeys.js';
 import Clusterize from 'clusterize.js';
 import 'clusterize.js/clusterize.css';
 
 export function renderCustomers(container, params) {
+    if (initCustomerHotkeys) initCustomerHotkeys();
     if(window.AppState.currentUserRole === 'Staff' && window.AppState.permissions.viewCustomers === false) {
         container.innerHTML = `<div class="m3-card text-center"><h2 class="text-xl font-bold text-red-500 font-bn">অ্যাক্সেস ডিনাইড! আপনার কাস্টমার লিস্ট দেখার অনুমতি নেই।</h2></div>`;
         return;
@@ -17,30 +19,20 @@ export function renderCustomers(container, params) {
                     <div class="flex items-center gap-3">
                         <div class="w-2 h-7 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
                         <h2 class="text-xl md:text-2xl font-black text-white tracking-tight font-bn flex items-center gap-2">
-                            কাস্টমার ম্যানেজমেন্ট
-                            <button class="w-7 h-7 rounded-lg hover:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-blue-400 transition-all active:rotate-180" onclick="window.loadCustomers()" title="রিফ্রেশ">
-                                <i class="fa-solid fa-rotate text-xs"></i>
-                            </button>
+                            <span>কাস্টমার ম্যানেজমেন্ট</span>
+                            <button type="button" class="w-7 h-7 rounded-lg hover:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-blue-400 transition-all active:rotate-180 cursor-pointer" onclick="window.loadCustomers()" title="রিফ্রেশ"><i class="fa-solid fa-rotate text-xs"></i></button>
+                            <button type="button" class="w-7 h-7 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center transition-all cursor-pointer" onclick="window.showCustomerKeyboardGuide && window.showCustomerKeyboardGuide()" title="কীবোর্ড শর্টকাট গাইডলাইন (Alt+H)"><i class="fa-solid fa-keyboard text-xs"></i></button>
                         </h2>
                     </div>
 
                     <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end font-bn">
-                        <button class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-md shadow-amber-500/10" onclick="window.triggerBulkReminderFlow()" title="১-ক্লিকে টপ ১০ বকেয়া তাগাদা">
-                            <i class="fa-solid fa-paper-plane text-amber-400"></i>
-                            <span>বাল্ক তাগাদা (Top 10)</span>
-                        </button>
-                        <button class="h-9 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition-all flex items-center gap-2 shrink-0" onclick="window.exportTableToExcel('customer-export-table', 'customer-list.xlsx')" title="এক্সেল ডাউনলোড">
-                            <i class="fa-solid fa-file-excel text-emerald-400"></i>
-                            <span>এক্সেল</span>
-                        </button>
-                        <button class="h-9 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition-all flex items-center gap-2 shrink-0" onclick="window.printFilteredCustomerList()" title="লিস্ট প্রিন্ট">
-                            <i class="fa-solid fa-print text-blue-400"></i>
-                            <span>প্রিন্ট লিস্ট</span>
-                        </button>
+                        <button class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-md shadow-amber-500/10" onclick="window.triggerBulkReminderFlow()" title="১-ক্লিকে টপ ১০ বকেয়া তাগাদা"><i class="fa-solid fa-paper-plane text-amber-400"></i><span>বাল্ক তাগাদা (Top 10)</span></button>
+                        <button class="h-9 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.exportTableToExcel('customer-export-table', 'customer-list.xlsx')" title="এক্সেল ডাউনলোড"><i class="fa-solid fa-file-excel text-emerald-400"></i><span>এক্সেল</span></button>
+                        <button class="h-9 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.printFilteredCustomerList()" title="লিস্ট প্রিন্ট"><i class="fa-solid fa-print text-blue-400"></i><span>প্রিন্ট লিস্ট</span></button>
                         ${canManageCust ? `
                         <button class="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.toggleAddCustomerForm()">
                             <i class="fa-solid fa-user-plus text-xs"></i>
-                            <span>নতুন কাস্টমার</span>
+                            <span>নতুন কাস্টমার (Alt+N)</span>
                         </button>` : ''}
                     </div>
                 </div>

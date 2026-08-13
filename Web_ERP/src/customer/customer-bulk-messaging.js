@@ -293,10 +293,6 @@ async function startBulkWhatsAppProcess(customers, shopName, dateStr) {
             break;
         }
     }
-
-    if (!cancelRequested) {
-        showToast('হোয়াটসঅ্যাপ ব্যাচ প্রসেস সম্পন্ন হয়েছে', 'success');
-    }
+    if (!cancelRequested) showToast('হোয়াটসঅ্যাপ ব্যাচ প্রসেস সম্পন্ন হয়েছে', 'success');
 }
-
 window.triggerBulkReminderFlow = triggerBulkReminderFlow;

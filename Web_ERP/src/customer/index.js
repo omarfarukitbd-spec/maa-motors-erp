@@ -8,8 +8,9 @@ import Swal from 'sweetalert2';
 import { formatAmountWithComma } from '../utils.js';
 
 import { triggerBulkReminderFlow } from './customer-bulk-messaging.js';
+import { initCustomerHotkeys, showCustomerKeyboardGuide } from './customer-hotkeys.js';
 
-export { renderCustomers, initCustomerCache, getCustomerCache, quickAddCustomer, triggerBulkReminderFlow };
+export { renderCustomers, initCustomerCache, getCustomerCache, quickAddCustomer, triggerBulkReminderFlow, initCustomerHotkeys, showCustomerKeyboardGuide };
 
 export async function loadCustomers() {
     initCustomerCache();
