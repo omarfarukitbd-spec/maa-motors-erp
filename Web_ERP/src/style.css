@@ -44,6 +44,13 @@
 
 /* Professional Corporate Blue Theme */
 
+:root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -56,9 +63,45 @@ html, body {
     color: #F8FAFC;
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
+    min-height: 100dvh;
     width: 100vw;
     font-family: 'Hind Siliguri', 'Inter', sans-serif;
     color-scheme: dark !important;
+}
+
+/* ─── Edge-to-Edge Mobile Scrolling & Safe-Area Cushions ─── */
+@media (max-width: 1023px) {
+    #view-container {
+        padding-bottom: calc(6rem + var(--sab)) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    #view-container > * {
+        padding-bottom: 2.5rem !important;
+    }
+    .mobile-bottom-nav {
+        padding-bottom: calc(0.5rem + var(--sab)) !important;
+    }
+}
+
+/* ─── Mobile Bottom Nav Active Tab Indicators ─── */
+.mobile-nav-item {
+    position: relative;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mobile-nav-item.active {
+    color: #60a5fa !important;
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+.mobile-nav-item.active i {
+    color: #60a5fa !important;
+    transform: scale(1.15);
+}
+.mobile-nav-item.active span {
+    color: #93c5fd !important;
+    font-weight: 900 !important;
 }
 
 .font-inter, .en-font, .font-en {

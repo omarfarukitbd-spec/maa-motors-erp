@@ -2,7 +2,7 @@
 <html lang="en-GB" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>MAA MOTORS ERP - Business Ledger</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +39,7 @@
     <link href="https://fonts.maateen.me/kalpurush/font.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-  <script type="module" crossorigin src="/assets/index-xmgIMgRd.js"></script>
+  <script type="module" crossorigin src="/assets/index-BIAISIBK.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-Dd_uD5pT.js">
   <link rel="modulepreload" crossorigin href="/assets/vendor-CJahiyzm.js">
   <link rel="modulepreload" crossorigin href="/assets/vendor-firebase-YQIUDKRL.js">
@@ -51,7 +51,7 @@
   <link rel="modulepreload" crossorigin href="/assets/vendor-excel-Cd8Spm_A.js">
   <link rel="stylesheet" crossorigin href="/assets/vendor-CwbMEznW.css">
   <link rel="stylesheet" crossorigin href="/assets/vendor-ui-CveviJq_.css">
-  <link rel="stylesheet" crossorigin href="/assets/index-nCslhdRp.css">
+  <link rel="stylesheet" crossorigin href="/assets/index-DKJSufX8.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body class="dark font-bn">
 
@@ -83,7 +83,7 @@
     </div>
 
     <!-- App Main Container -->
-    <div id="app-container" class="hidden flex h-screen w-screen overflow-hidden">
+    <div id="app-container" class="hidden flex h-[100dvh] min-h-[100dvh] w-screen overflow-hidden">
 
         <!-- Sidebar Navigation -->
         <nav id="app-sidebar" class="flex flex-col py-6 h-full max-h-screen overflow-hidden flex-shrink-0 w-[280px] min-w-[280px]">
@@ -147,31 +147,31 @@
 
                 <div id="user-profile-avatar" class="w-10 h-10 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center text-blue-400 shadow-inner flex-shrink-0 overflow-hidden cursor-pointer" title="ইউজার প্রোফাইল"><i class="fa-solid fa-user-shield text-sm"></i></div>
             </header>
-            <div id="view-container" class="flex-grow overflow-y-auto pr-2 custom-scrollbar pb-24 lg:pb-0"></div>
+            <div id="view-container" class="flex-grow overflow-y-auto pr-2 custom-scrollbar pb-32 lg:pb-0"></div>
         </main>
     </div>
 
-    <!-- Mobile Bottom Navigation Bar -->
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 border-t border-slate-800 flex justify-around items-center py-2 px-1 backdrop-blur-xl shadow-[0_-5px_20px_rgba(0,0,0,0.5)] font-bn">
-        <button onclick="navigate('dashboard')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 focus:text-blue-500 py-1 px-3 rounded-xl transition-all">
+    <!-- Mobile Bottom Navigation Bar (Edge-to-Edge with Safe-Area & Active Tab Indicators) -->
+    <nav id="mobile-bottom-bar" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 border-t border-slate-800/80 flex justify-around items-center pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] px-2 backdrop-blur-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.7)] font-bn mobile-bottom-nav">
+        <button onclick="navigate('dashboard')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
             <i class="fa-solid fa-chart-pie text-base"></i>
-            <span class="text-[10px] font-bold">হোম</span>
+            <span class="text-[10.5px] font-bold">হোম</span>
         </button>
-        <button onclick="navigate('customers')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 focus:text-blue-500 py-1 px-3 rounded-xl transition-all">
+        <button onclick="navigate('customers')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
             <i class="fa-solid fa-users text-base"></i>
-            <span class="text-[10px] font-bold">কাস্টমার</span>
+            <span class="text-[10.5px] font-bold">কাস্টমার</span>
         </button>
-        <button onclick="navigate('ledger')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 focus:text-blue-500 py-1 px-3 rounded-xl transition-all">
+        <button onclick="navigate('ledger')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
             <i class="fa-solid fa-book text-base"></i>
-            <span class="text-[10px] font-bold">খতিয়ান</span>
+            <span class="text-[10.5px] font-bold">খতিয়ান</span>
         </button>
-        <button onclick="navigate('invoice')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 focus:text-blue-500 py-1 px-3 rounded-xl transition-all">
+        <button onclick="navigate('invoice')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
             <i class="fa-solid fa-file-invoice text-base"></i>
-            <span class="text-[10px] font-bold">ইনভয়েস</span>
+            <span class="text-[10.5px] font-bold">ইনভয়েস</span>
         </button>
-        <button onclick="navigate('expenses')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 focus:text-blue-500 py-1 px-3 rounded-xl transition-all">
+        <button onclick="navigate('expenses')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
             <i class="fa-solid fa-wallet text-base"></i>
-            <span class="text-[10px] font-bold">খরচ</span>
+            <span class="text-[10.5px] font-bold">খরচ</span>
         </button>
     </nav>
 
@@ -197,7 +197,7 @@
         </div>
         <div class="flex-1 grid grid-cols-4 gap-2 min-h-[220px]" id="calc-buttons"></div>
     </div>
-    <button class="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white text-lg lg:text-xl shadow-xl shadow-blue-600/30 hover:scale-105 active:scale-95 transition-all z-[45] flex items-center justify-center border border-blue-400/30 cursor-pointer" onclick="app.toggleCalculator()" title="ক্যালকুলেটর">
+    <button class="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 right-4 lg:right-6 w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white text-lg lg:text-xl shadow-xl shadow-blue-600/30 hover:scale-105 active:scale-95 transition-all z-[45] flex items-center justify-center border border-blue-400/30 cursor-pointer" onclick="app.toggleCalculator()" title="ক্যালকুলেটর">
         <i class="fa-solid fa-calculator"></i>
     </button>
 

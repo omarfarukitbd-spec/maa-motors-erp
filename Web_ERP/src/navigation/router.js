@@ -109,11 +109,11 @@ export function navigate(view, params = {}) {
     const sidebar = document.getElementById('app-sidebar');
     if(sidebar) sidebar.classList.remove('open');
 
-    // Update Nav UI
-    document.querySelectorAll('.nav-links li, .nav-item').forEach(li => {
-        li.classList.remove('active');
-        const onclick = li.getAttribute('onclick');
-        if(onclick && onclick.includes(`'${view}'`)) li.classList.add('active');
+    // Update Nav UI (Desktop Sidebar + Mobile Bottom Nav)
+    document.querySelectorAll('.nav-links li, .nav-item, .mobile-nav-item').forEach(el => {
+        el.classList.remove('active');
+        const onclick = el.getAttribute('onclick');
+        if(onclick && onclick.includes(`'${view}'`)) el.classList.add('active');
     });
 
     const container = document.getElementById('view-container');
