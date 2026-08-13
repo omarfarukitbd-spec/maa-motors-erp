@@ -77,7 +77,7 @@ export function updateLiveWords(inputObj, displayId) {
             
             // Absolute position center top
             tooltip.style.left = `${rect.left + (rect.width / 2)}px`;
-            tooltip.style.top = `${rect.top - 48}px`; 
+            tooltip.style.top = `${rect.top - 10}px`; 
             
             tooltip.style.display = 'flex';
             
