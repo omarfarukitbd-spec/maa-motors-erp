@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
-import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
+import { CustomerDAO, TransactionDAO, SettingsDAO, ZoneDAO } from '../dao.js';
 import { parseAmount, formatAmountWithComma, formatAppDate, safeRound, toDBDate } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
@@ -74,7 +74,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
         });
 
         if (!confirmPreview.isConfirmed) {
-            return; // Cancelled
+            return;
         }
 
         Swal.fire({
@@ -91,11 +91,20 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
         const customersMap = {};
         const customersMapByAccNo = {};
         cachedCustomers.forEach(c => {
-            if (c.name) customersMap[c.name.trim().toLowerCase()] = { id: c.id, totalDue: Number(c.totalDue) || 0, accountNo: c.accountNo || '', isNew: false };
-            if (c.accountNo) customersMapByAccNo[String(c.accountNo).toLowerCase()] = { id: c.id, totalDue: Number(c.totalDue) || 0, accountNo: c.accountNo || '', isNew: false };
+            if (c.name) customersMap[c.name.trim().toLowerCase()] = { id: c.id, totalDue: Number(c.totalDue) || 0, accountNo: c.accountNo || '', isNew: false, zone: c.zone || '' };
+            if (c.accountNo) customersMapByAccNo[String(c.accountNo).toLowerCase()] = { id: c.id, totalDue: Number(c.totalDue) || 0, accountNo: c.accountNo || '', isNew: false, zone: c.zone || '' };
         });
 
-        // Calculate how many new customers will be created to allocate account numbers atomically
+        let defaultZone = 'General';
+        let defaultZoneCode = 'GEN';
+        try {
+            const allZones = await ZoneDAO.getAllZones();
+            if (allZones && allZones.length > 0) {
+                defaultZone = allZones[0].name;
+                defaultZoneCode = allZones[0].code || '';
+            }
+        } catch (e) { console.warn(e); }
+
         let newCustCount = 0;
         const tempMap = { ...customersMap };
         dataToSave.forEach(item => {
@@ -120,9 +129,11 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             }
             await db.runTransaction(async (t) => {
                 const counterDoc = await t.get(counterRef);
-                const currentCounter = (counterDoc.exists && counterDoc.data().customerAccountNo) ? parseInt(counterDoc.data().customerAccountNo) : 0;
+                let zoneCounters = (counterDoc.exists && counterDoc.data().zoneCounters) ? counterDoc.data().zoneCounters : {};
+                let currentCounter = parseInt(zoneCounters[defaultZone] || 0);
                 currentAllocatedAccountNo = currentCounter;
-                t.set(counterRef, { customerAccountNo: currentCounter + newCustCount }, { merge: true });
+                zoneCounters[defaultZone] = currentCounter + newCustCount;
+                t.set(counterRef, { zoneCounters }, { merge: true });
             });
         }
 
@@ -156,8 +167,8 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
                     const newCustRef = CustomerDAO.getRef();
                     customerId = newCustRef.id;
                     currentAllocatedAccountNo++;
-                    const accNoStr = String(currentAllocatedAccountNo).padStart(4, '0');
-                    customersMap[nameKey] = { id: customerId, totalDue: 0, accountNo: accNoStr, isNew: true, phone: item.phone || '', name: item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim() };
+                    const accNoStr = defaultZoneCode + String(currentAllocatedAccountNo).padStart(4, '0');
+                    customersMap[nameKey] = { id: customerId, totalDue: 0, accountNo: accNoStr, zone: defaultZone, isNew: true, phone: item.phone || '', name: item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim() };
                     resolvedKey = nameKey;
                 }
             }
@@ -184,7 +195,8 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             if (customersMap[resolvedKey]?.isNew) {
                 newCustomerDocs[customerId] = {
                     name: cleanName, phone: customersMap[resolvedKey].phone || '',
-                    address: 'Bulk Import', accountNo: customersMap[resolvedKey].accountNo,
+                    address: 'Bulk Import', zone: customersMap[resolvedKey].zone || defaultZone,
+                    accountNo: customersMap[resolvedKey].accountNo,
                     totalDue: currentDue, initialDue: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
@@ -222,6 +234,8 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
         }
 
         if (opCount > 0) await batch.commit();
+
+        auditLog('BULK_ENTRY', 'BulkSave', 'bulk_save', `Bulk saved ${dataToSave.length} transactions`, { totalBill, totalPaid });
 
         Swal.fire({ title: 'সফল!', text: `সফলভাবে ${dataToSave.length} টি ডাটা সেভ হয়েছে!`, icon: 'success' });
 

@@ -212,7 +212,8 @@ async function startBulkSmsProcess(customers, shopName, dateStr) {
                     const accStr = c.accountNo ? ` (${c.accountNo})` : '';
                     const absAmount = formatAmountWithComma(Math.abs(c.totalDue || 0));
                     const balanceText = (c.totalDue < 0) ? `Advance is Tk ${absAmount}` : `due is Tk ${absAmount}`;
-                    const msg = `Reminder: Dear ${c.name}${accStr}, your ${balanceText} on ${dateStr}. Kindly clear payment soon. Thanks! - ${shopName}`;
+                    const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(c.name) : c.name) || 'Customer';
+                    const msg = `Reminder: Dear ${englishName}${accStr}, your ${balanceText} on ${dateStr}. Kindly clear payment soon. Thanks! - ${shopName}`.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
                     const res = await sendSMS(c.phone, msg, false);
                     if (res) successCount++; else failCount++;
                 } catch (err) { console.error("Bulk SMS error:", err); failCount++; }

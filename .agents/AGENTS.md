@@ -20,3 +20,10 @@
    - **No Promise Chains (`.then`)**: NEVER use `.then()`. Always use modern `async/await` syntax.
    - **No Swallowed Errors**: NEVER leave a `catch(e) {}` block empty. Always handle or log the error (e.g. `console.error(e)`).
    - **Note**: The build will automatically fail (`integrity_check.js`) if any of these rules are violated.
+10. **Strict Accounting Color Code**: ALWAYS maintain consistent colors for accounting inputs and displays across the entire system. Debit (খরচ/বিল) MUST ALWAYS be Red (e.g., `text-red-400`, `border-red-500`). Credit (জমা/পেমেন্ট) MUST ALWAYS be Emerald/Green (e.g., `text-emerald-400`, `border-emerald-500`). NEVER use blue or other colors for Credit.
+11. **Strict Prohibition of Archaic Term 'জের' (No 'জের')**: NEVER use the archaic and confusing word "জের" in UI, print templates, receipts, statement memos, SMS/WhatsApp messages, notes, or Excel exports. ALWAYS use modern professional accounting terms:
+    - Use **"ব্যালেন্স" (Balance)** or **"অবশিষ্ট বকেয়া" (Net Due)**
+    - Use **"পূর্বের বকেয়া" / "পূর্বের ব্যালেন্স" (Previous Balance)** instead of "পূর্বের জের"
+    - Use **"বর্তমান বকেয়া" / "মোট ব্যালেন্স" (Current Due / Total Balance)** instead of "মোট জের"
+    - Use **"প্রারম্ভিক ব্যালেন্স" (Opening Balance)** instead of "প্রারম্ভিক জের"
+

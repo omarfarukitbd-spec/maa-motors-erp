@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO, ZoneDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, getTodayLocalDateString, toDBDate, numberToBanglaWords, resetLiveWords, handleError } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, getTodayLocalDateString, toDBDate, numberToBanglaWords, resetLiveWords, handleError, safeRound, sendSMS, showToast } from '../utils.js';
 import { populateAddressSuggestions } from '../utils/address-suggestions.js';
 import { loadAllZones } from '../customer/customer-handlers.js';
 import { auditLog } from '../audit.js';
@@ -47,6 +47,16 @@ export function toggleDashCustomerForm() {
 }
 
 export async function saveDashCustomer() {
+    if (!navigator.onLine) {
+        return Swal.fire({
+            title: '<i class="fa-solid fa-wifi text-red-400 mr-2"></i>অফলাইন!',
+            html: '<p class="font-bn text-slate-300 text-sm">ইন্টারনেট সংযোগ নেই।<br><strong class="text-red-400">অফলাইনে নতুন কাস্টমার যোগ করা যাবে না।</strong><br><span class="text-xs text-slate-400 mt-1 block">অনুগ্রহ করে ইন্টারনেট চালু করে আবার চেষ্টা করুন।</span></p>',
+            icon: 'error',
+            confirmButtonText: 'ঠিক আছে',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-red-500/30 font-bn', confirmButton: 'm3-btn-primary !bg-red-600 hover:!bg-red-500 !px-6 !py-2 !rounded-xl font-bold' }
+        });
+    }
+
     const dVal = document.getElementById('dash-cust-date')?.value;
     const d = toDBDate(dVal || getTodayLocalDateString()),
         n = document.getElementById('dash-cust-name')?.value?.trim(),
@@ -57,7 +67,7 @@ export async function saveDashCustomer() {
 
     if (!n || !p || !z) return Swal.fire('এরর', 'নাম, মোবাইল নম্বর ও জোন আবশ্যক!', 'error');
 
-    let initialBalance = parseAmount(balInput);
+    let initialBalance = safeRound(parseAmount(balInput));
     const accNo = document.getElementById('dash-cust-generated-acc')?.value || 'Auto';
     const words = numberToBanglaWords(initialBalance);
 
@@ -105,34 +115,72 @@ export async function saveDashCustomer() {
     if (btn) { btn.disabled = true; btn.innerText = "সেভ হচ্ছে..."; }
 
     try {
-        const zones = await ZoneDAO.getAllZones();
-        const zoneObj = zones.find(cz => cz.name === z);
-        const zoneCode = zoneObj ? zoneObj.code : "";
-        const serial = await SettingsDAO.getNextAccountNo(z);
-        const accountNo = zoneCode + serial;
+        let customerId = '', accountNo = '';
+        await db.runTransaction(async (t) => {
+            const zones = await ZoneDAO.getAllZones();
+            const zoneObj = zones.find(cz => cz.name === z);
+            const zoneCode = zoneObj ? zoneObj.code : "";
+            const serial = await SettingsDAO.getNextAccountNo(z, t);
+            accountNo = zoneCode + serial;
 
-        const batch = db.batch();
-        const custRef = CustomerDAO.getRef();
-        const customerId = custRef.id;
-        const txnRef = TransactionDAO.getRef();
+            const custRef = CustomerDAO.getRef();
+            customerId = custRef.id;
+            const txnRef = TransactionDAO.getRef();
 
-        batch.set(custRef, {
-            name: n, phone: p, address: a || '', zone: z || '',
-            accountNo: accountNo, openingDate: d, initialDue: initialBalance, totalDue: initialBalance,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            t.set(custRef, {
+                name: n, phone: p, address: a || '', zone: z || '',
+                accountNo: accountNo, openingDate: d, initialDue: initialBalance, totalDue: initialBalance,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            t.set(txnRef, {
+                customerId: customerId, customerName: n, date: d, voucherNo: 'OPENING',
+                bill: initialBalance > 0 ? initialBalance : 0, paid: initialBalance < 0 ? Math.abs(initialBalance) : 0,
+                prevDue: 0, currentDue: initialBalance, notes: 'প্রারম্ভিক ব্যালেন্স (Opening Balance)',
+                createdBy: window.AppState?.currentUserEmail || 'System', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
         });
 
-        batch.set(txnRef, {
-            customerId: customerId, customerName: n, date: d, voucherNo: 'OPENING',
-            bill: initialBalance > 0 ? initialBalance : 0, paid: initialBalance < 0 ? Math.abs(initialBalance) : 0,
-            prevDue: 0, currentDue: initialBalance, notes: 'প্রারম্ভিক ব্যালেন্স (Opening Balance)',
-            createdBy: window.AppState?.currentUserEmail || 'System', createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        await batch.commit();
         auditLog('CREATE', 'Customers', customerId, n, { phone: p, zone: z, initialBalance });
 
         Swal.fire({ title: 'সফল!', text: `কাস্টমার "${n}" যোগ করা হয়েছে। জোন: ${z || 'N/A'}`, icon: 'success', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
+
+        // --- WELCOME SMS DISPATCH ---
+        if (p && p.trim() !== '' && p !== '-') {
+            try {
+                const settings = await SettingsDAO.getAppSettings();
+                const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(n) : n) || 'Customer';
+                const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
+                const todayDate = (window.formatAppDate && window.getTodayLocalDateString) ? window.formatAppDate(window.getTodayLocalDateString()) : 'Today';
+
+                let tpl = settings.smsTemplateOpening || 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!';
+                let msg = tpl.replace(/\[Name\]/g, englishName)
+                    .replace(/\[AccNo\]/g, `(A/C: ${accountNo})`)
+                    .replace(/\[Shop\]/g, shopName)
+                    .replace(/\[Date\]/g, todayDate)
+                    .replace(/\[Due\]/g, formatAmountWithComma(Math.abs(initialBalance)));
+
+                msg = msg.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
+
+                const { value: text, isConfirmed } = await Swal.fire({
+                    title: '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-comment-sms text-emerald-400 text-3xl mb-1"></i><span class="font-bn font-black text-xl text-white">Welcome SMS</span></div>',
+                    html: `<div class="text-left space-y-2 mb-2 font-bn">
+                            <p class="text-[13px] text-slate-300">কাস্টমারকে কি অ্যাকাউন্ট খোলার মেসেজ পাঠাতে চান?</p>
+                            <div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${p}</strong></div></div>
+                           </div>`,
+                    input: 'textarea', inputValue: msg, inputAttributes: { rows: 4, class: 'm3-field text-xs font-mono !mt-0' },
+                    showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> পাঠিয়ে দিন', cancelButtonText: 'স্কিপ করুন',
+                    customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-700 shadow-2xl', confirmButton: 'm3-btn-primary !bg-emerald-600 hover:!bg-emerald-500 !px-7 !py-2.5 !rounded-xl font-bold shadow-lg shadow-emerald-600/30', cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700' }
+                });
+
+                if (isConfirmed && text) {
+                    const success = await sendSMS(p, text, false);
+                    if (success) showToast('Welcome SMS পাঠানো হয়েছে', 'success');
+                }
+            } catch (autoErr) {
+                console.warn('Dashboard welcome SMS dispatch error:', autoErr);
+            }
+        }
 
         resetDashCustomerForm();
         const form = document.getElementById('dash-add-customer-form');

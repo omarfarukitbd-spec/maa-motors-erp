@@ -22,7 +22,7 @@ function generateRowsArray(initialDue, docs) {
     docs.forEach(txn => {
         const b = Number(txn.bill) || 0, p = Number(txn.paid) || 0;
         const type = txn.receivedType || '';
-        running += (b - p);
+        running = safeRound(running + (b - p));
 
         let entryTime = '';
         if (txn.createdAt) {
@@ -249,7 +249,7 @@ export async function renderPublicStatementView(customerId) {
                     ${page1ExtraHtml}
                     <table style="width:100%; border-collapse:collapse; margin-bottom:12px; border: 1px solid #cbd5e1;">
                         <thead><tr style="background:#f1f5f9; border-bottom:1.5px solid #0f172a;"><th style="width:12%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Date</th><th style="width:40%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Description</th><th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Debit</th><th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Credit</th><th style="width:18%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Balance</th></tr></thead>
-                        <tbody style="font-size: 10px;">${rowsArray.join('')}</tbody>
+                        <tbody style="font-size: 10px;">${rowsArray.map(r => r.html || r).join('')}</tbody>
                     </table>
                     <div style="margin-top: 40px; display: flex; justify-content: space-between; padding: 0 30px;">
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">গ্রাহকের স্বাক্ষর</div>

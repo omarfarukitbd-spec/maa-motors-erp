@@ -3,7 +3,7 @@
  * Connects UI, Charts, Real-time Listeners, Dynamic Date Filtering & Breakdown Drill-Down.
  */
 import { TransactionDAO, ExpenseDAO } from '../dao.js';
-import { formatAmountWithComma, getTodayLocalDateString, toDBDate, formatAppDate } from '../utils.js';
+import { formatAmountWithComma, getTodayLocalDateString, toDBDate, formatAppDate, safeRound } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
 import { getDashboardHTML } from './dashboard-ui.js';
@@ -105,24 +105,24 @@ export function startDashboardRealtimeUpdates(targetDate = null) {
             let rf = (data.receivedFrom || '').trim();
 
             if (rt === 'Cash') {
-                cashCol += p;
+                cashCol = safeRound(cashCol + p);
                 if (!rf) rf = 'শোরুম ক্যাশ';
                 if (!currentCashBreakdown[rf]) currentCashBreakdown[rf] = { total: 0, txns: [] };
-                currentCashBreakdown[rf].total += p;
+                currentCashBreakdown[rf].total = safeRound(currentCashBreakdown[rf].total + p);
                 currentCashBreakdown[rf].txns.push(data);
             } else if (rt === 'Less') {
-                lessCol += p;
+                lessCol = safeRound(lessCol + p);
             } else {
                 // Bank or default
-                bankCol += p;
+                bankCol = safeRound(bankCol + p);
                 if (!rf) rf = 'অন্যান্য ব্যাংক';
                 if (!currentBankBreakdown[rf]) currentBankBreakdown[rf] = { total: 0, txns: [] };
-                currentBankBreakdown[rf].total += p;
+                currentBankBreakdown[rf].total = safeRound(currentBankBreakdown[rf].total + p);
                 currentBankBreakdown[rf].txns.push(data);
             }
         });
 
-        const periodCol = cashCol + bankCol;
+        const periodCol = safeRound(cashCol + bankCol);
 
         const colEl = document.getElementById('dash-today-col');
         if (colEl) colEl.innerText = "৳ " + formatAmountWithComma(periodCol);
@@ -140,13 +140,13 @@ export function startDashboardRealtimeUpdates(targetDate = null) {
     // Listen for expenses of target date
     const unsubExp = ExpenseDAO.listenByDate(queryDate, expenses => {
         let totExp = 0;
-        expenses.forEach(e => totExp += (Number(e.amount) || 0));
+        expenses.forEach(e => totExp = safeRound(totExp + (Number(e.amount) || 0)));
         const expEl = document.getElementById('dash-today-exp');
         if (expEl) expEl.innerText = "৳ " + formatAmountWithComma(totExp);
 
         const colText = document.getElementById('dash-today-col')?.innerText?.replace(/[^0-9]/g, '') || '0';
         const colVal = Number(colText);
-        const netCash = colVal - totExp;
+        const netCash = safeRound(colVal - totExp);
         const netEl = document.getElementById('dash-net-cash');
         if (netEl) netEl.innerText = `নিট জমা: ৳ ${formatAmountWithComma(Math.max(0, netCash))}`;
     });
@@ -205,7 +205,7 @@ export async function loadCollectionList(startDate, endDate) {
             const customerCache = getCustomerCache();
             txns.forEach(t => {
                 const p = Number(t.paid) || 0;
-                total += p;
+                total = safeRound(total + p);
                 
                 let cName = 'Unknown';
                 const cust = customerCache.find(c => c.id === t.customerId);
@@ -216,7 +216,7 @@ export async function loadCollectionList(startDate, endDate) {
                 
                 if (actualMethod !== 'Less') {
                     if (!methodGroups[actualMethod]) methodGroups[actualMethod] = { total: 0, count: 0 };
-                    methodGroups[actualMethod].total += p;
+                    methodGroups[actualMethod].total = safeRound(methodGroups[actualMethod].total + p);
                     methodGroups[actualMethod].count++;
                 }
 
@@ -302,7 +302,7 @@ export function filterCollectionByMethod(methodName) {
         if (methodName === 'All' || rowMethod === methodName) {
             row.style.display = '';
             const amt = Number(row.getAttribute('data-amount')) || 0;
-            visibleTotal += amt;
+            visibleTotal = safeRound(visibleTotal + amt);
         } else {
             row.style.display = 'none';
         }

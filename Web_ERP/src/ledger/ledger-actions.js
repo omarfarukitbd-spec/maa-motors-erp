@@ -62,11 +62,21 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
         const batch = db.batch(); const balanceDiff = safeRound(b - p);
         let actualDelta = balanceDiff;
         if(editingRef.id) {
-            const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0)); const netIncrement = safeRound(balanceDiff - oldDiff);
-            actualDelta = netIncrement;
-            batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: b, paid: p, receivedType, receivedFrom, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
-            batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
+            const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0));
+            const oldCid = editingRef.oldCid || id;
+            if (oldCid !== id) {
+                batch.update(TransactionDAO.getRef(editingRef.id), { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, currentDue: safeRound(preCommitDue + balanceDiff) });
+                batch.update(CustomerDAO.getRef(oldCid), { totalDue: firebase.firestore.FieldValue.increment(-oldDiff) });
+                batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
+                actualDelta = balanceDiff;
+            } else {
+                const netIncrement = safeRound(balanceDiff - oldDiff);
+                actualDelta = netIncrement;
+                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
+                batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
+            }
             editingRef.id = null;
+            editingRef.oldCid = null;
         } else {
             const txnRef = TransactionDAO.getRef();
             batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
@@ -157,7 +167,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
 
 export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}) {
     if (!(await promptSecurityPin("খতিয়ান এডিট (Authorization)"))) return;
-    editingRef.id = id; editingRef.oldBill = b; editingRef.oldPaid = p;
+    editingRef.id = id; editingRef.oldCid = cid; editingRef.oldBill = b; editingRef.oldPaid = p;
     if (document.getElementById('ledger-customer-select')) document.getElementById('ledger-customer-select').value = cid;
     if (document.getElementById('ledger-date')) document.getElementById('ledger-date').value = date;
     if (document.getElementById('ledger-voucher')) document.getElementById('ledger-voucher').value = v;
