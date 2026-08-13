@@ -57,38 +57,56 @@ function handleCustomerGlobalHotkeys(e) {
         switch (e.key.toLowerCase()) {
             case 'n': // Alt + N: Toggle / Open New Customer Form
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 toggleCustomerFormHotkey();
                 break;
             case 's': // Alt + S: Focus Customer Search Box
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 focusCustomerSearch();
                 break;
             case 'z': // Alt + Z: Focus Zone Filter Dropdown
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 focusZoneFilter();
                 break;
             case 'h': // Alt + H: Show Customer Keyboard Guide
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 showCustomerKeyboardGuide();
                 break;
             case 'e': // Alt + E: Edit top customer
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 editFirstCustomer();
                 break;
             case 'd': // Alt + D: Delete top customer
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 deleteFirstCustomer();
                 break;
             case 'w': // Alt + W: Send WhatsApp to top customer
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 sendFirstCustomerWhatsApp();
                 break;
             case 'm': // Alt + M: Send SMS to top customer
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 sendFirstCustomerSMS();
                 break;
             case 'p': // Alt + P: Print customer list
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 if (window.printFilteredCustomerList) window.printFilteredCustomerList();
                 break;
             default:

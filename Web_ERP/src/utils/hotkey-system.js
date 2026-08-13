@@ -195,13 +195,9 @@ export function setupGlobalHotkeys(callbacks = {}) {
 
             const currentView = window.AppState?.currentView || 'dashboard';
 
-            // 1. Customer Management Page -> Toggle inline Customer Form
-            const custForm = document.getElementById('add-customer-form');
-            if (custForm || currentView === 'customers') {
-                if (typeof window.toggleAddCustomerForm === 'function') {
-                    window.toggleAddCustomerForm();
-                    return;
-                }
+            // If on customer page, customer-hotkeys.js handles it directly
+            if (currentView === 'customers' || document.getElementById('add-customer-form')) {
+                return;
             }
 
             // 2. Dashboard Page -> Open inline Dashboard Customer Form
