@@ -81,30 +81,50 @@ export function renderTable(openingBalance = 0, stateRef = {}) {
         else paidSum = safeRound(paidSum + p);
         running = safeRound(running + (b - p));
 
-        let methodBadge = '<span class="text-slate-500 text-xs">-</span>';
-        if (p > 0) {
-            if (type === 'Less') methodBadge = `<span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded text-[10px] font-black border border-amber-500/20"><i class="fa-solid fa-hand-holding-heart mr-1"></i>LESS</span>`;
-            else {
-                const icon = type === 'Bank' ? 'fa-building-columns' : 'fa-money-bill';
-                const color = type === 'Bank' ? 'text-blue-400' : 'text-emerald-400';
-                methodBadge = `<span class="${color} text-[10px] font-bold uppercase"><i class="fa-solid ${icon} mr-1"></i>${type}</span>`;
+        let entryTime = '';
+        if (txn.createdAt) {
+            try {
+                const dt = txn.createdAt.toDate ? txn.createdAt.toDate() : (txn.createdAt.toMillis ? new Date(txn.createdAt.toMillis()) : new Date(txn.createdAt));
+                if (!isNaN(dt.getTime())) {
+                    entryTime = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                }
+            } catch (e) {
+                console.error("Time parsing error in statement table:", e);
             }
         }
 
-        const voucherInfo = txn.voucherNo && txn.voucherNo !== 'OPENING' ? `<span class="px-1.5 py-0.5 bg-slate-950 rounded text-[9px] text-slate-400 border border-slate-800 font-mono">#${txn.voucherNo}</span>` : '';
-        const details = txn.receivedFrom ? `<div class="text-[9px] text-slate-500 mt-0.5">${txn.receivedFrom}</div>` : '';
+        let methodBadge = '<span class="text-slate-500 text-xs">-</span>';
+        if (p > 0) {
+            const rFrom = (txn.receivedFrom || '').trim();
+            const label = rFrom ? `${type}: ${rFrom}` : type;
+            if (type === 'Less') methodBadge = `<span class="bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-lg text-[10px] font-black border border-purple-500/20"><i class="fa-solid fa-tag mr-1"></i>[LESS] ${rFrom}</span>`;
+            else if (type === 'Bank') {
+                methodBadge = `<span class="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-lg text-[10px] font-bold border border-blue-500/20"><i class="fa-solid fa-building-columns mr-1"></i>${label}</span>`;
+            } else {
+                methodBadge = `<span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg text-[10px] font-bold border border-emerald-500/20"><i class="fa-solid fa-hand-holding-dollar mr-1"></i>${label}</span>`;
+            }
+        }
 
-        html += `<tr class="hover:bg-white/[0.02] border-b border-slate-800/50">
-            <td class="text-slate-400 text-[11px] !py-3 px-4 font-mono font-bold">${formatAppDate(txn.date)}</td>
-            <td class="!py-3 px-4"><div class="flex items-center gap-2">${methodBadge}${voucherInfo}</div>${details}</td>
-            <td class="text-right text-red-400 font-bold !py-3 px-4">${b > 0 ? '৳' + formatAmountWithComma(b) : '-'}</td>
-            <td class="text-right text-emerald-400 font-bold !py-3 px-4">${p > 0 ? '৳' + formatAmountWithComma(p) : '-'}</td>
-            <td class="text-right font-black ${running > 0 ? 'text-red-400' : 'text-emerald-400'} bg-white/[0.01] !py-3 px-4">৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '<span class="text-[9px]">(Adv)</span>' : ''}</td>
+        const voucherInfo = txn.voucherNo && txn.voucherNo !== 'OPENING' ? `<span class="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded text-[9px] border border-blue-500/20 font-mono font-black">#${txn.voucherNo}</span>` : '';
+        const notesInfo = txn.notes ? `<div class="text-[9px] text-slate-400 font-medium italic mt-0.5 truncate max-w-[200px]" title="${txn.notes}">• ${txn.notes}</div>` : '';
+
+        html += `<tr class="hover:bg-white/[0.03] border-b border-slate-800/50">
+            <td class="align-top py-2.5 px-3 whitespace-nowrap">
+                <div class="text-xs font-bold text-slate-200">${formatAppDate(txn.date)}</div>
+                ${entryTime ? `<div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1.5"><i class="fa-regular fa-clock text-[9px] text-slate-500"></i><span>${entryTime}</span></div>` : ''}
+            </td>
+            <td class="align-top py-2.5 px-3"><div class="flex items-center flex-wrap gap-1.5">${methodBadge}${voucherInfo}</div>${notesInfo}</td>
+            <td class="text-right text-red-400 font-black text-sm align-top py-2.5 px-3">${b > 0 ? '৳' + formatAmountWithComma(b) : '-'}</td>
+            <td class="text-right text-emerald-400 font-black text-sm align-top py-2.5 px-3">${p > 0 ? '৳' + formatAmountWithComma(p) : '-'}</td>
+            <td class="text-right font-black ${running > 0 ? 'text-red-400' : 'text-emerald-400'} bg-white/[0.01] align-top py-2.5 px-3 text-sm">৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '<span class="text-[9px] font-bold text-emerald-400">(Adv)</span>' : ''}</td>
         </tr>`;
 
         mobileHtml += `<div class="p-3 bg-slate-900/90 border border-slate-800 rounded-xl flex flex-col gap-1.5 text-xs">
-            <div class="flex justify-between items-center border-b border-slate-800/60 pb-1"><span class="text-slate-400 font-mono text-[10px]">${formatAppDate(txn.date)} ${voucherInfo}</span>${methodBadge}</div>
-            <div class="flex justify-between items-center text-slate-300"><span>খরচ: <strong class="text-red-400">৳${formatAmountWithComma(b)}</strong></span><span>জমা: <strong class="text-emerald-400">৳${formatAmountWithComma(p)}</strong></span></div>
+            <div class="flex justify-between items-center border-b border-slate-800/60 pb-1">
+                <span class="text-slate-300 font-bold text-[11px]">${formatAppDate(txn.date)}${entryTime ? ` (${entryTime})` : ''} ${voucherInfo}</span>
+                ${methodBadge}
+            </div>
+            <div class="flex justify-between items-center text-slate-300"><span>খরচ: <strong class="text-red-400 font-black">৳${formatAmountWithComma(b)}</strong></span><span>জমা: <strong class="text-emerald-400 font-black">৳${formatAmountWithComma(p)}</strong></span></div>
             <div class="flex justify-between items-center pt-1 border-t border-slate-800/40"><span class="text-[10px] text-slate-400 font-bold">জের/ব্যালেন্স:</span><span class="font-black ${running > 0 ? 'text-red-400' : 'text-emerald-400'}">৳ ${formatAmountWithComma(Math.abs(running))}</span></div>
         </div>`;
     });

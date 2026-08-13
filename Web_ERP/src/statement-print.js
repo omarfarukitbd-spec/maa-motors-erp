@@ -24,17 +24,45 @@ function generateRowsArray(initialDue, docs) {
         const type = txn.receivedType || '';
         running += (b - p);
 
-        let typeDisp = p > 0 ? (type === 'Less' ? `<strong style="color:#0f172a;">[LESS]</strong>` : `<strong style="color:#0f172a;">${type}</strong>`) : '-';
-        if (p > 0 && txn.receivedFrom) typeDisp += `<br><span style="font-size:9px;color:#475569;">${txn.receivedFrom}</span>`;
-        const voucher = txn.voucherNo && txn.voucherNo !== 'OPENING' ? `<br><span style="font-size:9px;color:#0f172a;font-weight:900;">#${txn.voucherNo}</span>` : '';
+        let entryTime = '';
+        if (txn.createdAt) {
+            try {
+                const dt = txn.createdAt.toDate ? txn.createdAt.toDate() : (txn.createdAt.toMillis ? new Date(txn.createdAt.toMillis()) : new Date(txn.createdAt));
+                if (!isNaN(dt.getTime())) {
+                    entryTime = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                }
+            } catch (e) {
+                console.error('Time parsing error in statement print:', e);
+            }
+        }
+
+        let typeDisp = '-';
+        if (p > 0) {
+            const rType = txn.receivedType || 'Bank';
+            const rFrom = (txn.receivedFrom || '').trim();
+            const label = rFrom ? `${rType}: ${rFrom}` : rType;
+            if (rType === 'Less') {
+                typeDisp = `<strong style="color:#7c3aed; font-size:10px; background:#f5f3ff; border:1px solid #ddd6fe; padding:1px 6px; border-radius:5px; display:inline-block;">[LESS] ${rFrom || ''}</strong>`;
+            } else if (rType === 'Bank') {
+                typeDisp = `<strong style="color:#0284c7; font-size:10px; background:#f0f9ff; border:1px solid #bae6fd; padding:1px 6px; border-radius:5px; display:inline-block;">${label}</strong>`;
+            } else {
+                typeDisp = `<strong style="color:#059669; font-size:10px; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:5px; display:inline-block;">${label}</strong>`;
+            }
+        } else if (b > 0 && txn.notes) {
+            typeDisp = `<span style="font-size:10px; color:#475569;">${txn.notes}</span>`;
+        }
+        const voucher = txn.voucherNo && txn.voucherNo !== 'OPENING' ? `<span style="font-size:9.5px; color:#0284c7; font-weight:900; font-family:monospace; margin-left:4px;">#${txn.voucherNo}</span>` : '';
 
         const rowHtml = `<tr>
-            <td style="font-size:11px; border-bottom:1px solid #e2e8f0; padding: 6px 12px; color:#0f172a;">${formatAppDate(txn.date)}</td>
-            <td style="font-size:11px; border-bottom:1px solid #e2e8f0; padding: 6px 12px; color:#0f172a;">${typeDisp}${voucher}</td>
-            <td style="text-align:right; color:#dc2626; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 6px 12px;">${b > 0 ? formatAmountWithComma(b) : '-'}</td>
-            <td style="text-align:right; color:#059669; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 6px 12px;">${p > 0 ? formatAmountWithComma(p) : '-'}</td>
-            <td style="text-align:right; font-weight:900; color:#0f172a; border-bottom:1px solid #e2e8f0; padding: 6px 12px; border-left:1px solid #e2e8f0;">
-                ৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '<span style="font-size:8px;">(Adv)</span>' : ''}
+            <td style="font-size:10.5px; border-bottom:1px solid #e2e8f0; padding: 5px 8px; color:#0f172a; line-height: 1.2; vertical-align: middle;">
+                <div style="font-weight: 700;">${formatAppDate(txn.date)}</div>
+                ${entryTime ? `<div style="font-size: 8px; color: #64748b; font-weight: 500; margin-top: 1px;">${entryTime}</div>` : ''}
+            </td>
+            <td style="font-size:11px; border-bottom:1px solid #e2e8f0; padding: 5px 10px; color:#0f172a; vertical-align: middle;">${typeDisp}${voucher}</td>
+            <td style="text-align:right; color:#dc2626; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 5px 10px; vertical-align: middle;">${b > 0 ? formatAmountWithComma(b) : '-'}</td>
+            <td style="text-align:right; color:#059669; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 5px 10px; vertical-align: middle;">${p > 0 ? formatAmountWithComma(p) : '-'}</td>
+            <td style="text-align:right; font-weight:900; color:#0f172a; border-bottom:1px solid #e2e8f0; padding: 5px 10px; border-left:1px solid #e2e8f0; vertical-align: middle;">
+                ৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '<span style="font-size:8px; color:#059669;">(Adv)</span>' : ''}
             </td>
         </tr>`;
 
@@ -219,15 +247,7 @@ export async function renderPublicStatementView(customerId) {
                     ${page1HeaderHtml}
                     ${page1ExtraHtml}
                     <table style="width:100%; border-collapse:collapse; margin-bottom:12px; border: 1px solid #cbd5e1;">
-                        <thead>
-                            <tr style="background:#f1f5f9; border-bottom:1.5px solid #0f172a;">
-                                <th style="width:12%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Date</th>
-                                <th style="width:40%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Description</th>
-                                <th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Debit</th>
-                                <th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Credit</th>
-                                <th style="width:18%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Balance</th>
-                            </tr>
-                        </thead>
+                        <thead><tr style="background:#f1f5f9; border-bottom:1.5px solid #0f172a;"><th style="width:12%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Date</th><th style="width:40%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Description</th><th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Debit</th><th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Credit</th><th style="width:18%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Balance</th></tr></thead>
                         <tbody style="font-size: 10px;">${rowsArray.join('')}</tbody>
                     </table>
                     <div style="margin-top: 40px; display: flex; justify-content: space-between; padding: 0 30px;">
@@ -235,8 +255,7 @@ export async function renderPublicStatementView(customerId) {
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
     } catch(e) {
         console.error(e);
         publicContainer.innerHTML = `<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">স্টেটমেন্ট লোড করতে ব্যর্থ!</div>`;

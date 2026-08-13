@@ -6,13 +6,16 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{o as t}from"./dao-BJg8
         <td style="text-align:right; font-weight:900; color:#0f172a; padding: 8px 12px; border-left:1px solid #cbd5e1; background:#fff;">
             ৳ ${i(Math.abs(e))} ${e<0?`(Adv)`:``}
         </td>
-    </tr>`;return n.push({html:a,textLength:15}),t.forEach(e=>{let t=Number(e.bill)||0,a=Number(e.paid)||0,o=e.receivedType||``;r+=t-a;let c=a>0?o===`Less`?`<strong style="color:#0f172a;">[LESS]</strong>`:`<strong style="color:#0f172a;">${o}</strong>`:`-`;a>0&&e.receivedFrom&&(c+=`<br><span style="font-size:9px;color:#475569;">${e.receivedFrom}</span>`);let l=e.voucherNo&&e.voucherNo!==`OPENING`?`<br><span style="font-size:9px;color:#0f172a;font-weight:900;">#${e.voucherNo}</span>`:``,u=`<tr>
-            <td style="font-size:11px; border-bottom:1px solid #e2e8f0; padding: 6px 12px; color:#0f172a;">${s(e.date)}</td>
-            <td style="font-size:11px; border-bottom:1px solid #e2e8f0; padding: 6px 12px; color:#0f172a;">${c}${l}</td>
-            <td style="text-align:right; color:#dc2626; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 6px 12px;">${t>0?i(t):`-`}</td>
-            <td style="text-align:right; color:#059669; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 6px 12px;">${a>0?i(a):`-`}</td>
-            <td style="text-align:right; font-weight:900; color:#0f172a; border-bottom:1px solid #e2e8f0; padding: 6px 12px; border-left:1px solid #e2e8f0;">
-                ৳ ${i(Math.abs(r))} ${r<0?`<span style="font-size:8px;">(Adv)</span>`:``}
+    </tr>`;return n.push({html:a,textLength:15}),t.forEach(e=>{let t=Number(e.bill)||0,a=Number(e.paid)||0;e.receivedType,r+=t-a;let o=``;if(e.createdAt)try{let t=e.createdAt.toDate?e.createdAt.toDate():e.createdAt.toMillis?new Date(e.createdAt.toMillis()):new Date(e.createdAt);isNaN(t.getTime())||(o=t.toLocaleTimeString(`en-US`,{hour:`numeric`,minute:`2-digit`,hour12:!0}))}catch(e){console.error(`Time parsing error in statement print:`,e)}let c=`-`;if(a>0){let t=e.receivedType||`Bank`,n=(e.receivedFrom||``).trim(),r=n?`${t}: ${n}`:t;c=t===`Less`?`<strong style="color:#7c3aed; font-size:10px; background:#f5f3ff; border:1px solid #ddd6fe; padding:1px 6px; border-radius:5px; display:inline-block;">[LESS] ${n||``}</strong>`:t===`Bank`?`<strong style="color:#0284c7; font-size:10px; background:#f0f9ff; border:1px solid #bae6fd; padding:1px 6px; border-radius:5px; display:inline-block;">${r}</strong>`:`<strong style="color:#059669; font-size:10px; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:5px; display:inline-block;">${r}</strong>`}else t>0&&e.notes&&(c=`<span style="font-size:10px; color:#475569;">${e.notes}</span>`);let l=e.voucherNo&&e.voucherNo!==`OPENING`?`<span style="font-size:9.5px; color:#0284c7; font-weight:900; font-family:monospace; margin-left:4px;">#${e.voucherNo}</span>`:``,u=`<tr>
+            <td style="font-size:10.5px; border-bottom:1px solid #e2e8f0; padding: 5px 8px; color:#0f172a; line-height: 1.2; vertical-align: middle;">
+                <div style="font-weight: 700;">${s(e.date)}</div>
+                ${o?`<div style="font-size: 8px; color: #64748b; font-weight: 500; margin-top: 1px;">${o}</div>`:``}
+            </td>
+            <td style="font-size:11px; border-bottom:1px solid #e2e8f0; padding: 5px 10px; color:#0f172a; vertical-align: middle;">${c}${l}</td>
+            <td style="text-align:right; color:#dc2626; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 5px 10px; vertical-align: middle;">${t>0?i(t):`-`}</td>
+            <td style="text-align:right; color:#059669; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 5px 10px; vertical-align: middle;">${a>0?i(a):`-`}</td>
+            <td style="text-align:right; font-weight:900; color:#0f172a; border-bottom:1px solid #e2e8f0; padding: 5px 10px; border-left:1px solid #e2e8f0; vertical-align: middle;">
+                ৳ ${i(Math.abs(r))} ${r<0?`<span style="font-size:8px; color:#059669;">(Adv)</span>`:``}
             </td>
         </tr>`;n.push({html:u,textLength:(e.receivedFrom||``).length})}),{rowsArray:n,running:r}}function p(e,t,n,r,i,o,s,c,l){return{page1HeaderHtml:a(o,{title:s,subtitle:c,dateRangeStr:l}),repeatHeaderHtml:`
         <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
@@ -86,15 +89,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{o as t}from"./dao-BJg8
                     ${b}
                     ${x}
                     <table style="width:100%; border-collapse:collapse; margin-bottom:12px; border: 1px solid #cbd5e1;">
-                        <thead>
-                            <tr style="background:#f1f5f9; border-bottom:1.5px solid #0f172a;">
-                                <th style="width:12%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Date</th>
-                                <th style="width:40%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Description</th>
-                                <th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Debit</th>
-                                <th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Credit</th>
-                                <th style="width:18%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Balance</th>
-                            </tr>
-                        </thead>
+                        <thead><tr style="background:#f1f5f9; border-bottom:1.5px solid #0f172a;"><th style="width:12%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Date</th><th style="width:40%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Description</th><th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Debit</th><th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Credit</th><th style="width:18%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Balance</th></tr></thead>
                         <tbody style="font-size: 10px;">${y.join(``)}</tbody>
                     </table>
                     <div style="margin-top: 40px; display: flex; justify-content: space-between; padding: 0 30px;">
@@ -102,5 +97,4 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{o as t}from"./dao-BJg8
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
                 </div>
-            </div>
-        `}catch(e){console.error(e),a.innerHTML=`<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">স্টেটমেন্ট লোড করতে ব্যর্থ!</div>`}}window.printPublicStatement=async()=>{if(!h)return;let{customer:e,docs:t,settings:n,initialDue:a,billSum:o,paidSum:s,running:c}=h,d=document.getElementById(`print-receipt-container`);d||(d=document.createElement(`div`),d.id=`print-receipt-container`,document.body.appendChild(d));let{rowsArray:m}=f(a,t),{page1HeaderHtml:g,repeatHeaderHtml:_,page1ExtraHtml:v,tableColHeaderHtml:y,signatureHtml:b}=p(e,`৳ ${i(o)}`,`৳ ${i(s)}`,`৳ ${i(Math.abs(c))} ${c<0?`(Adv)`:``}`,c,n,`STATEMENT SUMMARY`,`সকল লেনদেন`,`সকল লেনদেন`),[x,S,C]=r().split(`-`),w=await l({rowsArray:m,page1HeaderHtml:g,repeatHeaderHtml:_,tableColHeaderHtml:y,page1ExtraHtml:v,summaryHtml:``,signatureHtml:b,formattedDate:`${C}/${S}/${x}`});u(w)},window.renderPublicStatementView=g;export{m as printStatement,g as renderPublicStatementView};
+            </div>`}catch(e){console.error(e),a.innerHTML=`<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">স্টেটমেন্ট লোড করতে ব্যর্থ!</div>`}}window.printPublicStatement=async()=>{if(!h)return;let{customer:e,docs:t,settings:n,initialDue:a,billSum:o,paidSum:s,running:c}=h,d=document.getElementById(`print-receipt-container`);d||(d=document.createElement(`div`),d.id=`print-receipt-container`,document.body.appendChild(d));let{rowsArray:m}=f(a,t),{page1HeaderHtml:g,repeatHeaderHtml:_,page1ExtraHtml:v,tableColHeaderHtml:y,signatureHtml:b}=p(e,`৳ ${i(o)}`,`৳ ${i(s)}`,`৳ ${i(Math.abs(c))} ${c<0?`(Adv)`:``}`,c,n,`STATEMENT SUMMARY`,`সকল লেনদেন`,`সকল লেনদেন`),[x,S,C]=r().split(`-`),w=await l({rowsArray:m,page1HeaderHtml:g,repeatHeaderHtml:_,tableColHeaderHtml:y,page1ExtraHtml:v,summaryHtml:``,signatureHtml:b,formattedDate:`${C}/${S}/${x}`});u(w)},window.renderPublicStatementView=g;export{m as printStatement,g as renderPublicStatementView};
