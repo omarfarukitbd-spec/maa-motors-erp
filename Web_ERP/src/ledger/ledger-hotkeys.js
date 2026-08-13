@@ -152,7 +152,7 @@ export function deleteLastTransaction() {
 export function printLastTransaction() {
     const firstRow = document.querySelector('#ledger-list tr');
     if (!firstRow) return showToast('প্রিন্ট করার মতো লেনদেন পাওয়া যায়নি', 'warning');
-    const printBtn = firstRow.querySelector('button[title*="রিসিপ্ট"], button[title*="ভাউচার"]');
+    const printBtn = firstRow.querySelector('button[title*="রিসিপ্ট"], button[title*="ভাউচার"], button[title*="প্রিন্ট"]');
     if (printBtn) printBtn.click();
 }
 

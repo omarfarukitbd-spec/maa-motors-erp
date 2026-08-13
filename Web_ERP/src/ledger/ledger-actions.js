@@ -150,6 +150,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
         const vEl = document.getElementById('ledger-voucher'); if (vEl) vEl.value = '';
         const rfEl = document.getElementById('ledger-received-from'); if (rfEl) rfEl.value = '';
         if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(id);
+        setTimeout(() => { document.getElementById('ledger-bill')?.focus(); }, 150);
     } catch(e) { handleError(e, 'লেনদেন সেভ করতে ব্যর্থ'); }
     finally { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; mainBtn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20'; } }
 }
