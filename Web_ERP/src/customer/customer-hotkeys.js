@@ -9,7 +9,7 @@ export function initCustomerHotkeys() {
     if (typeof window === 'undefined' || window._customerHotkeysInitialized) return;
     window._customerHotkeysInitialized = true;
 
-    window.addEventListener('keydown', handleCustomerGlobalHotkeys);
+    window.addEventListener('keydown', handleCustomerGlobalHotkeys, true);
     document.addEventListener('keydown', handleCustomerFormEnter);
 }
 
@@ -132,17 +132,19 @@ function handleCustomerFormEnter(e) {
 export function toggleCustomerFormHotkey() {
     const form = document.getElementById('add-customer-form');
     if (!form) return;
-    if (form.classList.contains('hidden')) {
-        if (window.toggleAddCustomerForm) window.toggleAddCustomerForm();
+    if (typeof window.toggleAddCustomerForm === 'function') {
+        window.toggleAddCustomerForm();
+    } else {
+        form.classList.toggle('hidden');
+    }
+    if (!form.classList.contains('hidden')) {
         setTimeout(() => {
             const nameInput = document.getElementById('cust-name');
             if (nameInput) {
                 nameInput.focus();
                 showToast('নতুন কাস্টমার ফর্ম প্রস্তুত (Alt+N)', 'info', 1000);
             }
-        }, 150);
-    } else {
-        if (window.toggleAddCustomerForm) window.toggleAddCustomerForm();
+        }, 120);
     }
 }
 

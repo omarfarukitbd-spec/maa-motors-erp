@@ -51,49 +51,49 @@ export function setupGlobalHotkeys(callbacks = {}) {
         }
 
         // F1 -> Dashboard
-        if (e.key === 'F1' || (e.altKey && e.key.toLowerCase() === 'h')) {
+        if (e.key === 'F1') {
             e.preventDefault();
             goNav('dashboard');
             return;
         }
 
         // F2 -> Invoice / Voucher Generator
-        if (e.key === 'F2' || (e.altKey && e.key.toLowerCase() === 'i')) {
+        if (e.key === 'F2') {
             e.preventDefault();
             goNav('invoice');
             return;
         }
 
         // F3 -> Ledger Passbook
-        if (e.key === 'F3' || (e.altKey && e.key.toLowerCase() === 'l')) {
+        if (e.key === 'F3') {
             e.preventDefault();
             goNav('ledger');
             return;
         }
 
         // F4 -> Customers List
-        if (e.key === 'F4' || (e.altKey && e.key.toLowerCase() === 'c')) {
+        if (e.key === 'F4') {
             e.preventDefault();
             goNav('customers');
             return;
         }
 
         // F6 -> Daily Expenses
-        if (e.key === 'F6' || (e.altKey && e.key.toLowerCase() === 'e')) {
+        if (e.key === 'F6') {
             e.preventDefault();
             goNav('expenses');
             return;
         }
 
         // F7 -> Fast Entry / Bulk Billing
-        if (e.key === 'F7' || (e.altKey && e.key.toLowerCase() === 'b')) {
+        if (e.key === 'F7') {
             e.preventDefault();
             goNav('bulk');
             return;
         }
 
         // F8 -> Software Settings
-        if (e.key === 'F8' || (e.altKey && e.key.toLowerCase() === 's' && !e.ctrlKey)) {
+        if (e.key === 'F8') {
             e.preventDefault();
             goNav('settings');
             return;
@@ -195,24 +195,20 @@ export function setupGlobalHotkeys(callbacks = {}) {
 
             const currentView = window.AppState?.currentView || 'dashboard';
 
-            // 1. Dashboard Page -> Open inline Dashboard Customer Form (No Popup!)
-            const dashForm = document.getElementById('dash-add-customer-form');
-            if (dashForm || currentView === 'dashboard') {
-                if (typeof window.toggleDashCustomerForm === 'function') {
-                    window.toggleDashCustomerForm();
+            // 1. Customer Management Page -> Toggle inline Customer Form
+            const custForm = document.getElementById('add-customer-form');
+            if (custForm || currentView === 'customers') {
+                if (typeof window.toggleAddCustomerForm === 'function') {
+                    window.toggleAddCustomerForm();
                     return;
                 }
             }
 
-            // 2. Customer Management Page -> Toggle inline Customer Form (No Popup!)
-            if (currentView === 'customers') {
-                const custToggleBtn = document.getElementById('btn-toggle-add-customer') || document.getElementById('toggle-cust-form-btn');
-                if (custToggleBtn) {
-                    custToggleBtn.click();
-                    return;
-                }
-                if (typeof window.toggleAddCustomerForm === 'function') {
-                    window.toggleAddCustomerForm();
+            // 2. Dashboard Page -> Open inline Dashboard Customer Form
+            const dashForm = document.getElementById('dash-add-customer-form');
+            if (dashForm && currentView === 'dashboard') {
+                if (typeof window.toggleDashCustomerForm === 'function') {
+                    window.toggleDashCustomerForm();
                     return;
                 }
             }
