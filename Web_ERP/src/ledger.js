@@ -274,19 +274,11 @@ if (typeof window !== 'undefined' && !window._ledgerHotkeysBound) {
     window.addEventListener('keydown', (e) => {
         if (e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
             const isSpreadsheet = Boolean(document.getElementById('spreadsheet-body'));
-            if (e.key === '1') {
-                e.preventDefault();
-                if (isSpreadsheet && window.quickSelectSpreadsheetAccount) window.quickSelectSpreadsheetAccount('Bank', 'OneBank (IFRAT)');
-                else if (window.quickSelectPaymentAccount) window.quickSelectPaymentAccount('Bank', 'OneBank (IFRAT)');
-            } else if (e.key === '2') {
-                e.preventDefault();
-                if (isSpreadsheet && window.quickSelectSpreadsheetAccount) window.quickSelectSpreadsheetAccount('Bank', 'IBBL (IFRAT)');
-                else if (window.quickSelectPaymentAccount) window.quickSelectPaymentAccount('Bank', 'IBBL (IFRAT)');
-            } else if (e.key === '3') {
-                e.preventDefault();
-                if (isSpreadsheet && window.quickSelectSpreadsheetAccount) window.quickSelectSpreadsheetAccount('Cash', 'শোরুম ক্যাশ');
-                else if (window.quickSelectPaymentAccount) window.quickSelectPaymentAccount('Cash', 'শোরুম ক্যাশ');
-            }
+            const fn = isSpreadsheet ? window.quickSelectSpreadsheetAccount : window.quickSelectPaymentAccount;
+            if (!fn) return;
+            if (e.key === '1') { e.preventDefault(); fn('Bank', 'OneBank (IFRAT)'); }
+            else if (e.key === '2') { e.preventDefault(); fn('Bank', 'IBBL (IFRAT)'); }
+            else if (e.key === '3') { e.preventDefault(); fn('Cash', 'শোরুম ক্যাশ'); }
         }
     });
 }
@@ -294,7 +286,5 @@ if (typeof window !== 'undefined' && !window._ledgerHotkeysBound) {
 document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('ledger-cust-dropdown');
     const searchInput = document.getElementById('ledger-cust-search-input');
-    if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) {
-        dropdown.classList.add('hidden');
-    }
+    if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) dropdown.classList.add('hidden');
 });
