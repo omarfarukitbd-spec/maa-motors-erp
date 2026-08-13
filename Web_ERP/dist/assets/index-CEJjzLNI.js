@@ -1106,7 +1106,21 @@ import{i as e,n as t}from"./rolldown-runtime-Dd_uD5pT.js";import{t as n}from"./v
                 </div>
             </div>
             <div id="received-section" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-800/60">
-                <div><label class="m3-label text-emerald-400">পেমেন্ট মাধ্যম</label><div class="flex bg-slate-950 rounded-xl border border-slate-700 h-9 p-1 gap-1"><button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-blue-600 text-white rounded-lg">Bank</button><button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Cash</button><button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Less</button></div></div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="m3-label text-emerald-400 text-xs font-bold">পেমেন্ট মাধ্যম</label>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="window.quickSelectPaymentAccount('Bank', 'OneBank (IFRAT)')" class="text-[9px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="OneBank (Alt+1)"><span>OneBank</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+1</kbd></button>
+                            <button type="button" onclick="window.quickSelectPaymentAccount('Bank', 'IBBL (IFRAT)')" class="text-[9px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="IBBL (Alt+2)"><span>IBBL</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+2</kbd></button>
+                            <button type="button" onclick="window.quickSelectPaymentAccount('Cash', 'শোরুম ক্যাশ')" class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="শোরুম ক্যাশ (Alt+3)"><span>ক্যাশ</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+3</kbd></button>
+                        </div>
+                    </div>
+                    <div class="flex bg-slate-950 rounded-xl border border-slate-700 h-9 p-1 gap-1">
+                        <button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-blue-600 text-white rounded-lg">Bank</button>
+                        <button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Cash</button>
+                        <button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Less</button>
+                    </div>
+                </div>
                 <div>
                     <label id="lbl-recv-from" class="m3-label text-emerald-400">ব্যাংক অ্যাকাউন্ট (Bank Name)</label>
                     <div class="flex gap-1.5 items-center" id="recv-input-wrapper">
@@ -1247,7 +1261,7 @@ import{i as e,n as t}from"./rolldown-runtime-Dd_uD5pT.js";import{t as n}from"./v
                     </button>
                 `):(t.innerText=`ছাড়ের কারণ (Reason)`,n.innerHTML=`
                     <input type="text" id="ledger-received-from" placeholder="যেমন: সম্মানিতে ছাড়..." class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1">
-                `)}},window.Swal=W.default),document.addEventListener(`click`,e=>{let t=document.getElementById(`ledger-cust-dropdown`),n=document.getElementById(`ledger-cust-search-input`);t&&!t.contains(e.target)&&e.target!==n&&t.classList.add(`hidden`)});var nn=null,rn=[],an=1,on=20;function sn(e){if(window.AppState.currentUserRole===`Staff`&&window.AppState.permissions.viewExpenses===!1){e.innerHTML=`<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-bold text-red-500">অ্যাক্সেস ডিনাইড!</h2></div>`;return}nn=null,rn=[],an=1,e.innerHTML=`
+                `)}},window.Swal=W.default,window.quickSelectPaymentAccount=(e,t)=>{document.getElementById(`received-section`)?.classList.remove(`hidden`),window.setReceivedType&&window.setReceivedType(e);let n=document.getElementById(`ledger-received-from`);n&&(n.value=t),document.getElementById(`ledger-paid`)?.focus(),showToast(`[${e}] ${t} সিলেক্ট করা হয়েছে`,`info`)}),typeof window<`u`&&!window._ledgerHotkeysBound&&(window._ledgerHotkeysBound=!0,window.addEventListener(`keydown`,e=>{e.altKey&&!e.ctrlKey&&!e.shiftKey&&!e.metaKey&&(e.key===`1`?(e.preventDefault(),window.quickSelectPaymentAccount&&window.quickSelectPaymentAccount(`Bank`,`OneBank (IFRAT)`)):e.key===`2`?(e.preventDefault(),window.quickSelectPaymentAccount&&window.quickSelectPaymentAccount(`Bank`,`IBBL (IFRAT)`)):e.key===`3`&&(e.preventDefault(),window.quickSelectPaymentAccount&&window.quickSelectPaymentAccount(`Cash`,`শোরুম ক্যাশ`)))})),document.addEventListener(`click`,e=>{let t=document.getElementById(`ledger-cust-dropdown`),n=document.getElementById(`ledger-cust-search-input`);t&&!t.contains(e.target)&&e.target!==n&&t.classList.add(`hidden`)});var nn=null,rn=[],an=1,on=20;function sn(e){if(window.AppState.currentUserRole===`Staff`&&window.AppState.permissions.viewExpenses===!1){e.innerHTML=`<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-bold text-red-500">অ্যাক্সেস ডিনাইড!</h2></div>`;return}nn=null,rn=[],an=1,e.innerHTML=`
         <div class="flex flex-col gap-6 font-bn">
             <div class="flex flex-wrap items-center justify-between gap-3 px-2">
                 <h2 class="text-2xl font-black text-white flex items-center gap-3">

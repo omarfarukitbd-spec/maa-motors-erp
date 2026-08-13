@@ -50,7 +50,21 @@ export function renderLedger(container, params, callbacks = {}) {
                 </div>
             </div>
             <div id="received-section" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-800/60">
-                <div><label class="m3-label text-emerald-400">পেমেন্ট মাধ্যম</label><div class="flex bg-slate-950 rounded-xl border border-slate-700 h-9 p-1 gap-1"><button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-blue-600 text-white rounded-lg">Bank</button><button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Cash</button><button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Less</button></div></div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="m3-label text-emerald-400 text-xs font-bold">পেমেন্ট মাধ্যম</label>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="window.quickSelectPaymentAccount('Bank', 'OneBank (IFRAT)')" class="text-[9px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="OneBank (Alt+1)"><span>OneBank</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+1</kbd></button>
+                            <button type="button" onclick="window.quickSelectPaymentAccount('Bank', 'IBBL (IFRAT)')" class="text-[9px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="IBBL (Alt+2)"><span>IBBL</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+2</kbd></button>
+                            <button type="button" onclick="window.quickSelectPaymentAccount('Cash', 'শোরুম ক্যাশ')" class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="শোরুম ক্যাশ (Alt+3)"><span>ক্যাশ</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+3</kbd></button>
+                        </div>
+                    </div>
+                    <div class="flex bg-slate-950 rounded-xl border border-slate-700 h-9 p-1 gap-1">
+                        <button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-blue-600 text-white rounded-lg">Bank</button>
+                        <button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Cash</button>
+                        <button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Less</button>
+                    </div>
+                </div>
                 <div>
                     <label id="lbl-recv-from" class="m3-label text-emerald-400">ব্যাংক অ্যাকাউন্ট (Bank Name)</label>
                     <div class="flex gap-1.5 items-center" id="recv-input-wrapper">

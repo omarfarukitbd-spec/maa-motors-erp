@@ -259,6 +259,25 @@ if (typeof window !== 'undefined') {
         }
     };
     window.Swal = Swal;
+    window.quickSelectPaymentAccount = (type, accountName) => {
+        document.getElementById('received-section')?.classList.remove('hidden');
+        if (window.setReceivedType) window.setReceivedType(type);
+        const sel = document.getElementById('ledger-received-from');
+        if (sel) sel.value = accountName;
+        document.getElementById('ledger-paid')?.focus();
+        showToast(`[${type}] ${accountName} সিলেক্ট করা হয়েছে`, 'info');
+    };
+}
+
+if (typeof window !== 'undefined' && !window._ledgerHotkeysBound) {
+    window._ledgerHotkeysBound = true;
+    window.addEventListener('keydown', (e) => {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
+            if (e.key === '1') { e.preventDefault(); window.quickSelectPaymentAccount && window.quickSelectPaymentAccount('Bank', 'OneBank (IFRAT)'); }
+            else if (e.key === '2') { e.preventDefault(); window.quickSelectPaymentAccount && window.quickSelectPaymentAccount('Bank', 'IBBL (IFRAT)'); }
+            else if (e.key === '3') { e.preventDefault(); window.quickSelectPaymentAccount && window.quickSelectPaymentAccount('Cash', 'শোরুম ক্যাশ'); }
+        }
+    });
 }
 
 document.addEventListener('click', (e) => {
