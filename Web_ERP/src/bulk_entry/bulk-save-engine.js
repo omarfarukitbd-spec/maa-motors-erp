@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 
@@ -26,12 +26,63 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             return Swal.fire({ title: 'ভ্যালিড ডাটা নেই!', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white' } });
         }
 
+        let totalBill = 0, totalPaid = 0;
+        const rowsHtml = dataToSave.map(item => {
+            totalBill += item.bill;
+            totalPaid += item.paid;
+            return `
+                <div class="p-2.5 bg-slate-950/50 border border-slate-800/80 rounded-xl text-left">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-black text-white">${item.name}</span>
+                        <span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">ভাউচার: ${item.voucher || '-'}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400 font-bold">${formatAppDate(item.date)}</span>
+                        <div class="flex gap-4">
+                            <span class="text-blue-400 font-mono font-bold">বিল: ৳ ${formatAmountWithComma(item.bill)}</span>
+                            <span class="text-emerald-400 font-mono font-bold">জমা: ৳ ${formatAmountWithComma(item.paid)} ${item.paid > 0 ? `<span class="text-purple-400 font-bn tracking-wider ml-1 px-1.5 py-0.5 bg-purple-500/10 rounded-md border border-purple-500/20 text-[10px] uppercase">${item.receivedType}${item.receivedFrom ? ' - ' + item.receivedFrom : ''}</span>` : ''}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const confirmPreview = await Swal.fire({
+            title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-xl text-white"><i class="fa-solid fa-file-shield text-blue-400"></i><span>ফাস্ট এন্ট্রি যাচাই করুন</span></div>',
+            html: `
+                <div class="text-left space-y-3 font-bn p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner">
+                    <div class="grid grid-cols-3 gap-4 border-b border-slate-800/80 pb-3">
+                        <div class="flex flex-col gap-1 text-center bg-slate-950 p-2 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 font-black uppercase tracking-wider">মোট এন্ট্রি</span><span class="text-lg text-white font-black">${dataToSave.length}</span></div>
+                        <div class="flex flex-col gap-1 text-center bg-blue-950/30 p-2 rounded-xl border border-blue-900/30"><span class="text-[10px] text-blue-400 font-black uppercase tracking-wider">মোট বিল</span><span class="text-lg text-blue-400 font-black font-mono">৳ ${formatAmountWithComma(totalBill)}</span></div>
+                        <div class="flex flex-col gap-1 text-center bg-emerald-950/30 p-2 rounded-xl border border-emerald-900/30"><span class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">মোট জমা</span><span class="text-lg text-emerald-400 font-black font-mono">৳ ${formatAmountWithComma(totalPaid)}</span></div>
+                    </div>
+                    <div class="max-h-[350px] overflow-y-auto custom-scrollbar pr-2 mt-3 space-y-2">
+                        ${rowsHtml}
+                    </div>
+                </div>
+                <p class="text-xs text-amber-400 font-bold mt-3 text-center">সব তথ্য সঠিক থাকলে "কনফার্ম ও সেভ করুন" বাটনে ক্লিক করুন।</p>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-cloud-arrow-up mr-2"></i>কনফার্ম ও সেভ করুন',
+            cancelButtonText: '<i class="fa-solid fa-pen-to-square mr-2"></i>সংশোধন করব',
+            width: '700px',
+            customClass: {
+                popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 shadow-2xl font-bn',
+                confirmButton: 'm3-btn-primary !bg-blue-600 hover:!bg-blue-500 !px-7 !py-2.5 !rounded-xl font-bold shadow-lg shadow-blue-600/30',
+                cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700'
+            }
+        });
+
+        if (!confirmPreview.isConfirmed) {
+            return; // Cancelled
+        }
+
         Swal.fire({
             title: 'সেভ হচ্ছে...',
             text: `${dataToSave.length} টি এন্ট্রি প্রসেস করা হচ্ছে।`,
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); },
-            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700 font-bn' }
         });
 
         let cachedCustomers = getCustomerCache();
