@@ -96,9 +96,9 @@ export function renderRows(transactions, container, stateRefs = {}) {
         const custAddress = cust?.address || d.address || '';
 
         rows.push(`<tr class="hover:bg-white/[0.03] transition-colors border-b border-slate-800/50">
-            <td class="text-[10px] text-slate-300 font-bold whitespace-nowrap align-top py-2.5">
+            <td class="py-2.5 px-3 text-xs font-bold text-slate-200 whitespace-nowrap align-top">
                 <div>${formatAppDate(d.date)}</div>
-                ${entryTime ? `<div class="text-[9px] text-slate-500 font-normal mt-0.5 flex items-center gap-1"><i class="fa-regular fa-clock text-[8px] text-slate-400"></i><span>${entryTime}</span></div>` : ''}
+                ${entryTime ? `<div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1.5"><i class="fa-regular fa-clock text-[9px] text-slate-500"></i><span>${entryTime}</span></div>` : ''}
             </td>
             <td class="font-bold text-slate-200 text-xs align-top py-2.5">
                 <div class="flex items-center flex-wrap gap-1">
