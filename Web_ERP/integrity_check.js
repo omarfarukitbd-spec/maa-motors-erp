@@ -36,7 +36,92 @@ const RULES = [
         pattern: /updateLiveWords/,
         files: ['ledger.js', 'invoice/invoice-form-ui.js'],
         error: "লাইভ টাকা কথায় আসার ফাংশন কল করা হয়নি।"
-    }
+    },
+
+    // =========================================================
+    // LAYER 2: ACCOUNTING CONTRACT ENFORCEMENT (accounting-system-spec.md)
+    // =========================================================
+
+    // 2.1 — saveTransaction এ prevDue বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] prevDue in saveTransaction",
+        type: "content",
+        pattern: /prevDue/,
+        files: ['ledger/ledger-actions.js'],
+        error: "SPEC VIOLATION (Section 2.1): ledger-actions.js এ 'prevDue' field নেই। Firestore transaction এ prevDue সেভ করা বাধ্যতামূলক।"
+    },
+    // 2.2 — saveTransaction এ currentDue বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] currentDue in saveTransaction",
+        type: "content",
+        pattern: /currentDue/,
+        files: ['ledger/ledger-actions.js'],
+        error: "SPEC VIOLATION (Section 2.1): ledger-actions.js এ 'currentDue' field নেই। Firestore transaction এ currentDue সেভ করা বাধ্যতামূলক।"
+    },
+    // 2.3 — Quick Collect এ prevDue বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] prevDue in quickCollect",
+        type: "content",
+        pattern: /prevDue/,
+        files: ['statement/statement-calc.js'],
+        error: "SPEC VIOLATION (Section 2.2): statement-calc.js এ 'prevDue' field নেই। Quick collect transaction এ prevDue সেভ করা বাধ্যতামূলক।"
+    },
+    // 2.4 — Quick Collect এ currentDue বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] currentDue in quickCollect",
+        type: "content",
+        pattern: /currentDue/,
+        files: ['statement/statement-calc.js'],
+        error: "SPEC VIOLATION (Section 2.2): statement-calc.js এ 'currentDue' field নেই। Quick collect transaction এ currentDue সেভ করা বাধ্যতামূলক।"
+    },
+    // 3.1 — saveNewCustomer এ offline guard বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] Offline Guard in saveNewCustomer",
+        type: "content",
+        pattern: /navigator\.onLine/,
+        files: ['customer/customer-create-action.js'],
+        error: "SPEC VIOLATION (Section 3): customer-create-action.js এ 'navigator.onLine' offline guard নেই। Account number generation offline এ কাজ করে না, তাই block করতে হবে।"
+    },
+    // 3.2 — quickAddCustomer এ offline guard বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] Offline Guard in quickAddCustomer",
+        type: "content",
+        pattern: /navigator\.onLine/,
+        files: ['customer/customer-quick-add.js'],
+        error: "SPEC VIOLATION (Section 3): customer-quick-add.js এ 'navigator.onLine' offline guard নেই। Account number generation offline এ কাজ করে না, তাই block করতে হবে।"
+    },
+    // 3.3 — editCustomer এ offline guard বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] Offline Guard in editCustomer",
+        type: "content",
+        pattern: /navigator\.onLine/,
+        files: ['customer/customer-edit-action.js'],
+        error: "SPEC VIOLATION (Section 3): customer-edit-action.js এ 'navigator.onLine' offline guard নেই। Customer edit offline এ block করতে হবে।"
+    },
+    // 4.1 — Bulk messaging এ sendTxnSMS ব্যবহার নিষিদ্ধ
+    {
+        name: "[ACCOUNTING] No sendTxnSMS in Bulk Messaging",
+        type: "absent",
+        pattern: /sendTxnSMS/,
+        files: ['customer/customer-bulk-messaging.js'],
+        error: "SPEC VIOLATION (Section 4.3): customer-bulk-messaging.js এ 'sendTxnSMS' ব্যবহার করা নিষিদ্ধ। Bulk SMS এ সরাসরি sendSMS() call করতে হবে।"
+    },
+    // 4.2 — WhatsApp messaging এ calculatedDue preference বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] calculatedDue preference in WhatsApp",
+        type: "content",
+        pattern: /calculatedDue/,
+        files: ['ledger/ledger-messaging.js'],
+        error: "SPEC VIOLATION (Section 4.2): ledger-messaging.js এ 'calculatedDue' check নেই। WhatsApp due amount এ calculatedDue কে priority দিতে হবে।"
+    },
+    // 1.2 — ledger-actions এ safeRound বাধ্যতামূলক
+    {
+        name: "[ACCOUNTING] safeRound in ledger calculations",
+        type: "content",
+        pattern: /safeRound/,
+        files: ['ledger/ledger-actions.js'],
+        error: "SPEC VIOLATION (Section 1.2): ledger-actions.js এ 'safeRound()' ব্যবহার নেই। সব accounting calculation এ safeRound বাধ্যতামূলক।"
+    },
 ];
 
 const LINE_LIMIT = 300;
@@ -88,6 +173,11 @@ function checkIntegrity() {
                 });
             } else if (rule.type === 'content') {
                 if (!rule.pattern.test(content)) {
+                    console.error(`❌ [এরর] ${rule.name}: ${rule.error} (ফাইল: ${fileName})`);
+                    hasError = true;
+                }
+            } else if (rule.type === 'absent') {
+                if (rule.pattern.test(content)) {
                     console.error(`❌ [এরর] ${rule.name}: ${rule.error} (ফাইল: ${fileName})`);
                     hasError = true;
                 }
