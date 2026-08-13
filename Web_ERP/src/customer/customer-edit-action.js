@@ -39,8 +39,8 @@ export async function editCustomer(id, name, phone, address, currentZone) {
                 </div>
                 <div>
                     <label class="block text-[11px] font-black text-emerald-500 uppercase mb-1 ml-1">Opening Balance</label>
-                    <input id="ed-ib" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold outline-none focus:border-emerald-500 text-sm" value="${currentInitialDue}" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'ed-ib-words');">
-                    <div id="ed-ib-words" class="text-[11px] font-black text-emerald-400 mt-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 italic font-bn inline-block">(${numberToBanglaWords(currentInitialDue)})</div>
+                    <input id="ed-ib" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold outline-none focus:border-emerald-500 text-sm" value="${formatAmountWithComma(currentInitialDue)}" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'ed-ib-words');">
+                    <div id="ed-ib-words" class="text-[11px] font-black text-emerald-400 mt-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 italic font-bn inline-block${currentInitialDue ? '' : ' hidden'}">${currentInitialDue ? '(' + numberToBanglaWords(currentInitialDue) + ')' : ''}</div>
                 </div>
             </div>
         `,
