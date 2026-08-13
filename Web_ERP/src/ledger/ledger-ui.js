@@ -52,7 +52,7 @@ export function renderLedger(container, params, callbacks = {}) {
                 <div><label class="m3-label text-emerald-400">পেমেন্ট মাধ্যম</label><div class="flex bg-slate-950 rounded-xl border border-slate-700 h-9 p-1 gap-1"><button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-blue-600 text-white rounded-lg">Bank</button><button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Cash</button><button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Less</button></div></div>
                 <div>
                     <label id="lbl-recv-from" class="m3-label text-emerald-400">ব্যাংক অ্যাকাউন্ট (Bank Name)</label>
-                    <input type="text" id="ledger-received-from" list="dl-bank-names" placeholder="যেমন: DBBL, bKash..." class="m3-field py-1 text-xs bg-slate-950/80 h-9">
+                    <input type="text" id="ledger-received-from" list="dl-bank-names" placeholder="যেমন: DBBL, bKash..." class="m3-field py-1 text-xs bg-slate-950/80 h-9" onclick="try{this.showPicker();}catch(e){}" onfocus="this.select();">
                     <datalist id="dl-bank-names">
                         <option value="OneBank (IFRAT)"></option>
                         <option value="IBBL (IFRAT)"></option>
