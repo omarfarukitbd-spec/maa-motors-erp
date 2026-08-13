@@ -118,7 +118,7 @@ export async function sendReminderSMS(phone, dueAmt, name, accountNo = '') {
             .replace(/\[AccNo\]/g, accStr)
             .replace(/\[Shop\]/g, shopName)
             .replace(/\[Date\]/g, todayDate)
-            .replace(/\[Due\]/g, formatAmountWithComma(dueAmt));
+            .replace(/\[Due\]/g, formatAmountWithComma(Math.abs(dueAmt)));
 
         msg = msg.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
 
