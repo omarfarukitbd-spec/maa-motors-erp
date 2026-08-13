@@ -212,21 +212,16 @@ export async function editBankingItem(id, oldName, type) {
             let updatedCount = 0;
             const rType = isCash ? 'Cash' : 'Bank';
             
-            // Note: Firestore requires multiple batched writes if more than 500.
-            // But we can just use normal Promise.all for simplicity in this ERP scale.
-            const snap = await TransactionDAO.collection
-                .where('receivedType', '==', rType)
-                .where('receivedFrom', '==', oldName)
-                .get();
-
-            const batch = db.batch();
-            snap.forEach(doc => {
-                batch.update(doc.ref, { receivedFrom: formValues, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                updatedCount++;
-            });
-
-            if (updatedCount > 0) {
-                await batch.commit();
+            const snap = await TransactionDAO.collection.where('receivedType', '==', rType).where('receivedFrom', '==', oldName).get();
+            const docs = []; snap.forEach(doc => docs.push(doc.ref));
+            const CHUNK_SIZE = 400;
+            for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+                const b = db.batch();
+                docs.slice(i, i + CHUNK_SIZE).forEach(ref => {
+                    b.update(ref, { receivedFrom: formValues, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    updatedCount++;
+                });
+                await b.commit();
             }
 
             auditLog('GLOBAL_RENAME', 'Admin', 'BankingSystem', `Renamed ${typeLabel} from ${oldName} to ${formValues}. Updated ${updatedCount} txns.`);

@@ -239,7 +239,8 @@ export async function sendStmtReminderSMS(stateRef = {}) {
     const dueAmount = currentFinalBalance;
     const dueLabel = dueAmount < 0 ? 'advance' : 'pending due';
     const formattedDue = formatAmountWithComma(Math.abs(dueAmount));
-    const msg = `Dear ${currentCustomerInfo.name || 'Customer'}, Your total ${dueLabel} at M/S. Maa Motors is Tk ${formattedDue}. Kindly clear payment. Contact: 01819-397669. Thank you! - M/S. Maa Motors`;
+    const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(currentCustomerInfo.name) : currentCustomerInfo.name) || 'Customer';
+    const msg = `Dear ${englishName}, Your total ${dueLabel} at M/S. Maa Motors is Tk ${formattedDue}. Kindly clear payment. Contact: 01819-397669. Thank you! - M/S. Maa Motors`.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
     const { value: text } = await Swal.fire({
         title: '<i class="fa-solid fa-comment-sms text-blue-400 mr-2"></i>Send Reminder SMS', input: 'textarea', inputValue: msg, inputAttributes: { rows: 5, class: 'm3-field text-xs font-mono' },
         showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> Send SMS', cancelButtonText: 'Cancel', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }

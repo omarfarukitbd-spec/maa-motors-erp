@@ -1,97 +1,169 @@
 <!DOCTYPE html>
-<html lang="bn" class="dark">
+<html lang="en-GB" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MAA MOTORS - Client & Boss Portal</title>
-    <meta name="theme-color" content="#0f172a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Maa Motors">
-    
-    <!-- Google Fonts -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MAA MOTORS ERP - Boss & Executive Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.maateen.me/kalpurush/font.css">
     
-    <!-- Font Awesome 6 Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="theme-color" content="#0F172A">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MAA Boss ERP">
     
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            500: '#0284c7',
-                            600: '#0369a1',
-                            700: '#035485',
-                            900: '#0c4a6e',
-                        }
-                    },
-                    fontFamily: {
-                        bn: ['Hind Siliguri', 'sans-serif'],
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="/src/style.css">
 </head>
-<body class="bg-slate-950 text-slate-100 font-bn min-h-screen antialiased selection:bg-sky-500 selection:text-white pb-20">
+<body class="dark font-bn">
 
-    <!-- Print Receipts Container (Mobile-Safe A4 Output) -->
-    <div id="print-receipt-container" class="hidden"></div>
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]" onclick="app.toggleSidebar()"></div>
 
-    <!-- App Shell Header -->
-    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 py-3 shadow-xl">
-        <div class="max-w-xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-sky-500/20">
-                    MM
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 z-[50] flex items-center justify-center bg-[#0F172A] p-4">
+        <div class="w-full max-w-[420px] p-8 md:p-10 m3-card text-center bg-slate-800/60 border border-slate-700/50 rounded-[32px] shadow-2xl backdrop-blur-2xl">
+            <div class="mb-8">
+                <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white text-4xl flex items-center justify-center rounded-3xl mx-auto mb-4 shadow-xl shadow-blue-600/30">
+                    <i class="fa-solid fa-crown text-amber-300"></i>
                 </div>
-                <div>
-                    <h1 class="font-black text-base text-white leading-tight tracking-tight">MAA MOTORS</h1>
-                    <p class="text-[10px] font-bold text-sky-400 uppercase tracking-widest">Client & Boss Portal</p>
+                <h2 class="text-2xl md:text-3xl font-black tracking-tighter text-white mb-1 uppercase font-inter">MAA MOTORS ERP</h2>
+                <p class="text-blue-400 text-xs font-black uppercase tracking-widest">Boss & Executive Portal (Read-Only)</p>
+            </div>
+            <div class="space-y-4 font-bn">
+                <input type="password" id="pin-input" placeholder="মালিকের ৪-ডিজিট সিকিউরিটি পিন দিন..." class="m3-field text-center font-mono tracking-widest text-lg py-3.5 bg-slate-950/80 border border-slate-700/60 text-white rounded-2xl focus:border-blue-500 outline-none" maxlength="10">
+                <button id="login-btn" class="m3-btn-primary w-full py-4 text-base font-black rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2" onclick="app.loginWithPin()">
+                    <i class="fa-solid fa-lock-open"></i><span>লগইন করুন</span>
+                </button>
+                <div class="h-px bg-slate-700/50 my-5"></div>
+                <button class="w-full py-3.5 bg-white hover:bg-slate-100 text-slate-900 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 cursor-pointer text-sm" onclick="app.loginWithGoogle()">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/><path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.4 0 15.3c0 2.9.7 5.6 1.9 8l3.7-2.9c-.2-.7-.4-1.4-.4-2.1z"/><path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16.5C3.7 20.3 7.5 23.5 12 23.5z"/></svg>
+                    <span>Google দিয়ে লগইন করুন</span>
+                </button>
+            </div>
+            <p id="login-error" class="text-red-400 text-xs mt-4 font-bold min-h-[16px] font-bn"></p>
+        </div>
+    </div>
+
+    <!-- App Main Container -->
+    <div id="app-container" class="hidden flex h-[100dvh] min-h-[100dvh] w-screen overflow-hidden">
+
+        <!-- Sidebar Navigation (Desktop) -->
+        <nav id="app-sidebar" class="flex flex-col py-6 h-full max-h-screen overflow-hidden flex-shrink-0 w-[280px] min-w-[280px]">
+            <div class="px-5 pb-6 text-xl text-blue-500 font-black border-b border-slate-800/50 mb-4 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <i class="fa-solid fa-crown text-2xl text-amber-400 flex-shrink-0"></i>
+                    <span class="brand-title-text truncate text-white font-inter">MAA MOTORS</span>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button id="sidebar-toggle-btn" class="hidden lg:flex w-8 h-8 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white items-center justify-center transition-all cursor-pointer" onclick="app.toggleSidebarCollapse()" title="মেনু হাইড/শো করুন">
+                        <i class="fa-solid fa-chevron-left text-xs transition-transform duration-300"></i>
+                    </button>
+                    <button class="lg:hidden text-slate-500 hover:text-white p-1" onclick="app.toggleSidebar()"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
             </div>
-            <div id="user-badge" class="flex items-center gap-2">
-                <!-- Dynamically populated login status -->
+            <ul class="nav-links flex-grow space-y-1 overflow-y-auto custom-scrollbar px-3 font-bn">
+                <li onclick="navigate('dashboard')" class="nav-item active" title="ড্যাশবোর্ড"><i class="fa-solid fa-chart-pie w-6 text-center"></i> <span class="sidebar-title-text">ড্যাশবোর্ড</span></li>
+                <li onclick="navigate('customers')" class="nav-item" title="কাস্টমার তালিকা"><i class="fa-solid fa-users w-6 text-center"></i> <span class="sidebar-title-text">কাস্টমার তালিকা</span></li>
+                <li onclick="navigate('ledger')" class="nav-item" title="খতিয়ান ও হিসাব"><i class="fa-solid fa-book w-6 text-center"></i> <span class="sidebar-title-text">খতিয়ান ও হিসাব</span></li>
+                <li onclick="navigate('invoice')" class="nav-item" title="ইনভয়েস/ভাউচার"><i class="fa-solid fa-file-invoice w-6 text-center"></i> <span class="sidebar-title-text">ইনভয়েস/ভাউচার</span></li>
+                <li onclick="navigate('expenses')" class="nav-item" title="দৈনিক খরচ"><i class="fa-solid fa-wallet w-6 text-center"></i> <span class="sidebar-title-text">দৈনিক খরচ</span></li>
+            </ul>
+            <div class="px-4 pt-4 border-t border-slate-800/50 flex-shrink-0 mt-auto font-bn">
+                <button onclick="app.logout()" class="w-full py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl font-black flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all cursor-pointer" title="লগ আউট">
+                    <i class="fa-solid fa-power-off flex-shrink-0"></i> <span class="logout-text">লগ আউট</span>
+                </button>
             </div>
-        </div>
-    </header>
+        </nav>
 
-    <!-- Main Container -->
-    <main id="app-root" class="max-w-xl mx-auto px-4 pt-4 space-y-4">
-        <!-- Views rendered here dynamically -->
-    </main>
+        <!-- Content Area -->
+        <main class="flex-grow min-w-0 flex flex-col p-4 lg:p-8 gap-6 bg-[#0F172A] overflow-hidden">
+            <header class="flex justify-between items-center m3-card bg-slate-900/90 lg:bg-slate-800/20 border-slate-700/50 lg:border-slate-700/30 -mx-4 -mt-4 !rounded-none !border-x-0 !border-t-0 !px-3 !py-2.5 lg:!mx-0 lg:!mt-0 lg:!rounded-[24px] lg:!border-x lg:!border-t lg:!p-3 z-10 backdrop-blur-xl gap-2 font-bn">
+                <!-- Left: Menu Button & App Status -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <button class="lg:hidden w-9 h-9 flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 border border-slate-700/60 rounded-xl text-blue-400 active:scale-95 shadow-sm transition-all cursor-pointer" onclick="app.toggleSidebar()" title="মেনু খুলুন">
+                        <i class="fa-solid fa-bars-staggered text-sm"></i>
+                    </button>
+                    <div class="hidden md:flex flex-col text-[10px] font-black uppercase tracking-widest text-amber-400">
+                        <span id="user-role"><i class="fa-solid fa-crown mr-1"></i>Boss Portal</span>
+                        <span class="text-[8px] text-slate-500">Executive View-Only</span>
+                    </div>
+                </div>
 
-    <!-- Bottom Navigation Bar (Thumb Ergonomics) -->
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-30 py-2 hidden">
-        <div class="max-w-xl mx-auto flex justify-around items-center px-2">
-            <button onclick="window.navTo('search')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-sky-400 transition-colors py-1 px-3 rounded-xl" id="nav-search-btn">
-                <i class="fa-solid fa-magnifying-glass text-lg"></i>
-                <span class="text-[10px] font-bold">সার্চ</span>
-            </button>
-            <button onclick="window.navTo('today')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors py-1 px-3 rounded-xl" id="nav-today-btn">
-                <i class="fa-solid fa-chart-pie text-lg"></i>
-                <span class="text-[10px] font-bold">আজকের জমা</span>
-            </button>
-            <button onclick="window.navTo('directory')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-purple-400 transition-colors py-1 px-3 rounded-xl" id="nav-directory-btn">
-                <i class="fa-solid fa-users text-lg"></i>
-                <span class="text-[10px] font-bold">কাস্টমারসমূহ</span>
-            </button>
-            <button onclick="window.handleLogout()" class="nav-btn flex flex-col items-center gap-1 text-red-400/80 hover:text-red-400 transition-colors py-1 px-3 rounded-xl">
-                <i class="fa-solid fa-arrow-right-from-bracket text-lg"></i>
-                <span class="text-[10px] font-bold">লগআউট</span>
-            </button>
-        </div>
+                <!-- Center: Global Search Bar -->
+                <div class="flex-grow flex justify-center px-1 lg:px-4 relative max-w-xl">
+                    <div class="w-full relative group cursor-pointer" onclick="window.toggleOmnisearch && window.toggleOmnisearch(true)">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs transition-colors group-focus-within:text-blue-500 z-10 pointer-events-none"></i>
+                        <input type="text" id="global-search-input" readonly placeholder="লাইভ সার্চ (অ্যাকাউন্ট নং, ফোন, নাম)..." class="w-full bg-slate-900/80 border border-slate-700/50 rounded-full py-2 pr-12 lg:pr-16 text-xs sm:text-sm text-white focus:border-blue-500 outline-none transition-all shadow-inner cursor-pointer" style="padding-left: 36px !important;" onclick="window.toggleOmnisearch && window.toggleOmnisearch(true)">
+                        <kbd class="hidden sm:inline-block absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-400 bg-blue-500/10 border border-blue-500/30 rounded px-1.5 py-0.5 pointer-events-none shadow-sm">Ctrl+K</kbd>
+                        <div id="global-search-results" class="hidden absolute top-[calc(100%+12px)] left-0 right-0 bg-slate-900/95 border border-slate-700/80 rounded-2xl shadow-2xl z-[200] max-h-[450px] overflow-y-auto custom-scrollbar p-2 backdrop-blur-xl"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Network Live Sync & User Avatar -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <div id="network-sync-badge" class="w-8 h-8 md:w-auto md:h-auto flex items-center justify-center md:gap-1.5 md:px-3 md:py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-wider cursor-default" title="Sync Active">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="hidden md:inline">অনলাইন</span>
+                    </div>
+                    <div id="user-profile-avatar" class="w-9 h-9 md:w-10 md:h-10 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center text-amber-400 shadow-inner flex-shrink-0 overflow-hidden cursor-pointer" title="মালিক প্রোফাইল"><i class="fa-solid fa-crown text-sm"></i></div>
+                </div>
+            </header>
+            
+            <!-- Dynamic View Container (Edge-to-Edge with Scroll Clearance) -->
+            <div id="view-container" class="flex-grow overflow-y-auto pr-2 custom-scrollbar pb-32 lg:pb-0"></div>
+        </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Edge-to-Edge Safe-Area) -->
+    <nav id="mobile-bottom-bar" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 border-t border-slate-800/80 flex justify-around items-center pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] px-2 backdrop-blur-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.7)] font-bn mobile-bottom-nav">
+        <button onclick="navigate('dashboard')" class="mobile-nav-item active flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-chart-pie text-base"></i>
+            <span class="text-[10.5px] font-bold">হোম</span>
+        </button>
+        <button onclick="navigate('customers')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-users text-base"></i>
+            <span class="text-[10.5px] font-bold">কাস্টমার</span>
+        </button>
+        <button onclick="navigate('ledger')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-book text-base"></i>
+            <span class="text-[10.5px] font-bold">খতিয়ান</span>
+        </button>
+        <button onclick="navigate('invoice')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-file-invoice text-base"></i>
+            <span class="text-[10.5px] font-bold">ইনভয়েস</span>
+        </button>
+        <button onclick="navigate('expenses')" class="mobile-nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 py-1.5 px-3 rounded-2xl transition-all active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-wallet text-base"></i>
+            <span class="text-[10.5px] font-bold">খরচ</span>
+        </button>
     </nav>
+
+    <!-- Floating Calculator -->
+    <div id="calculator-widget" class="hidden fixed top-24 lg:top-20 right-4 lg:right-8 w-[280px] min-w-[260px] min-h-[400px] max-h-[80vh] bg-slate-900 border border-slate-700 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[999] p-4 backdrop-blur-2xl flex flex-col resize overflow-hidden">
+        <div id="calc-drag-handle" class="flex justify-between items-center mb-3 cursor-grab active:cursor-grabbing select-none shrink-0" title="Drag to move">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none"><i class="fa-solid fa-calculator mr-1"></i> স্মার্ট ক্যালকুলেটর</span>
+            <div class="flex items-center gap-2">
+                <button onclick="app.toggleCalculator()" class="w-6 h-6 bg-red-500/10 rounded-full text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all cursor-pointer" title="বন্ধ করুন"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+            </div>
+        </div>
+        <div class="bg-slate-950 rounded-2xl p-3 mb-3 border border-slate-800 shadow-inner text-right relative group shrink-0">
+            <div id="calc-history" class="text-[10px] text-slate-500 font-mono h-3.5 mb-1 truncate pr-5"></div>
+            <input type="text" id="calc-display" disabled value="0" class="w-full bg-transparent text-right text-3xl font-mono font-black text-white outline-none">
+        </div>
+        <div class="flex-1 grid grid-cols-4 gap-2 min-h-[220px]" id="calc-buttons"></div>
+    </div>
+    <button class="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 right-4 lg:right-6 w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white text-lg lg:text-xl shadow-xl shadow-blue-600/30 hover:scale-105 active:scale-95 transition-all z-[45] flex items-center justify-center border border-blue-400/30 cursor-pointer" onclick="app.toggleCalculator()" title="ক্যালকুলেটর">
+        <i class="fa-solid fa-calculator"></i>
+    </button>
+
+    <div id="print-receipt-container" class="hidden"></div>
 
     <script type="module" src="/src/main.js"></script>
 </body>

@@ -1,5 +1,5 @@
 import { ZoneDAO, CustomerDAO, SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, renderPrintHeader, getTodayLocalDateString } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, renderPrintHeader, getTodayLocalDateString, safeRound } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import Swal from 'sweetalert2';
 

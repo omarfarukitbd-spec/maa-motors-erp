@@ -99,10 +99,14 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                 const netDue = finalSmsDue;
                 const formattedDue = formatAmountWithComma(Math.abs(netDue));
 
+                const accountNo = currentCust?.accountNo || '';
+                const accStr = accountNo ? `(A/C: ${accountNo})` : '';
+
                 let autoMsg = '';
                 if (b > 0) {
-                    let tpl = settings.smsTemplateNew || 'Dear [Name], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]';
+                    let tpl = settings.smsTemplateNew || 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]';
                     autoMsg = tpl.replace(/\[Name\]/g, englishName)
+                        .replace(/\[AccNo\]/g, accStr)
                         .replace(/\[Shop\]/g, shopName)
                         .replace(/\[Date\]/g, formattedDate)
                         .replace(/\[Memo\]/g, v || '1')
@@ -110,8 +114,9 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                         .replace(/\[Paid\]/g, formatAmountWithComma(p))
                         .replace(/\[Due\]/g, formattedDue);
                 } else {
-                    let tpl = settings.smsTemplatePaid || 'Dear [Name], Received Tk [Paid] ([Type]) on [Date]. Net Due: Tk [Due]. Thanks! - [Shop]';
+                    let tpl = settings.smsTemplatePaid || 'Dear [Name] [AccNo], Received Tk [Paid] ([Type]) on [Date]. Net Due: Tk [Due]. Thanks! - [Shop]';
                     autoMsg = tpl.replace(/\[Name\]/g, englishName)
+                        .replace(/\[AccNo\]/g, accStr)
                         .replace(/\[Shop\]/g, shopName)
                         .replace(/\[Date\]/g, formattedDate)
                         .replace(/\[Paid\]/g, formatAmountWithComma(p))
