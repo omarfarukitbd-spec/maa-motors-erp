@@ -6,15 +6,24 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasUserDoc() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
     function isAdmin() {
-      return isAuthenticated() &&
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+      return hasUserDoc() && getUserData().get('role', '') == 'Admin';
+    }
+
+    function isBoss() {
+      return hasUserDoc() && getUserData().get('role', '') == 'Boss';
     }
 
     function getPerms() {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc.data.get('permissions', {});
+      return hasUserDoc() ? getUserData().get('permissions', {}) : {};
     }
 
     // By default deny all
@@ -33,26 +42,26 @@ service cloud.firestore {
     // Customers Collection
     match /customers/{customerId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAuthenticated() && (isAdmin() || getPerms().get('manageCustomers', false) == true);
+      allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageCustomers', false) == true));
       allow delete: if isAdmin();
     }
 
     // Expenses Collection
     match /expenses/{expenseId} {
-      allow read: if isAuthenticated() && (isAdmin() || getPerms().get('viewExpenses', false) == true);
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || getPerms().get('manageExpenses', false) == true);
+      allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('viewExpenses', false) == true);
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageExpenses', false) == true));
     }
 
     // Transactions Collection
     match /transactions/{txnId} {
-      allow read: if isAuthenticated() && (isAdmin() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || getPerms().get('manageLedger', false) == true);
+      allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
     }
 
     // Zones Collection
     match /zones/{zoneId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isAdmin() || getPerms().get('manageCustomers', false) == true);
+      allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageCustomers', false) == true));
     }
 
     // Audit Logs
@@ -66,16 +75,17 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+
     // Bank Accounts
     match /bank_accounts/{docId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isAdmin() || getPerms().get('manageLedger', false) == true);
+      allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
     }
 
     // Cash Collectors
     match /cash_collectors/{docId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isAdmin() || getPerms().get('manageLedger', false) == true);
+      allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
     }
   }
 }
