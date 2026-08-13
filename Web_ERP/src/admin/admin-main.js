@@ -5,19 +5,7 @@ import { changeStaffPin } from './user-auth-actions.js';
 import { managePermissions } from './user-permissions.js';
 import { showBankingSystemManager, editBankingItem, deactivateBankingItem, reactivateBankingItem } from './admin-banking.js';
 
-// Expose functions globally for HTML inline onclick attributes
-window.appAdmin = {
-    managePermissions,
-    changeStaffPin,
-    setNextAccountNo,
-    showIndividualFixer,
-    autoSyncZoneCounters,
-    resequenceZoneAccountNumbers,
-    showBankingSystemManager,
-    editBankingItem,
-    deactivateBankingItem,
-    reactivateBankingItem
-};
+// Removed redundant window.appAdmin assignment (Moved entirely to src/admin.js barrel file)
 
 /**
  * Main Admin UI Renderer — Premium Redesign

@@ -8,6 +8,8 @@ import * as AuthActions from './admin/user-auth-actions.js';
 import * as Permissions from './admin/user-permissions.js';
 import * as SystemTools from './admin/system-tools.js';
 
+import * as Banking from './admin/admin-banking.js';
+
 // Export for main navigation
 export { renderAdmin };
 
@@ -16,5 +18,6 @@ window.appAdmin = {
     loadAdminUsers,
     ...AuthActions,
     ...Permissions,
-    ...SystemTools
+    ...SystemTools,
+    ...Banking
 };
