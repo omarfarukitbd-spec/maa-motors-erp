@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO, ZoneDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, getTodayLocalDateString, toDBDate, numberToBanglaWords, handleError } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, getTodayLocalDateString, toDBDate, numberToBanglaWords, resetLiveWords, handleError } from '../utils.js';
 import { populateAddressSuggestions } from '../utils/address-suggestions.js';
 import { loadAllZones } from '../customer/customer-handlers.js';
 import { auditLog } from '../audit.js';
@@ -20,6 +20,7 @@ export function resetDashCustomerForm() {
     if (phoneInput) phoneInput.value = '';
     if (addrInput) addrInput.value = '';
     if (balInput) balInput.value = '';
+    resetLiveWords('dash-cust-initial-words');
     if (dateInput) dateInput.value = getTodayLocalDateString();
     if (zoneSelect) zoneSelect.selectedIndex = 0;
     if (codeDisplay) codeDisplay.value = '';

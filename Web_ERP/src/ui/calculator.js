@@ -21,7 +21,8 @@ export function safeEvalCalc(expression) {
             return parseFloat(res.toFixed(6)).toString();
         }
         return 'Error';
-    } catch {
+    } catch (err) {
+        console.error("Calculator expression error:", err);
         return 'Error';
     }
 }

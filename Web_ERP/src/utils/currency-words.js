@@ -51,10 +51,11 @@ export function numberToBanglaWords(number) {
  * Live Words Update Helper (With Auto Font Resizer)
  */
 export function updateLiveWords(inputObj, displayId) {
-    const displayEl = document.getElementById(displayId);
+    const displayEl = typeof displayId === 'string' ? document.getElementById(displayId) : displayId;
     if (!displayEl) return;
 
-    const amount = parseAmount(inputObj.value);
+    const val = inputObj ? inputObj.value : '';
+    const amount = parseAmount(val);
     const words = numberToBanglaWords(amount);
 
     if (words) {
@@ -70,3 +71,15 @@ export function updateLiveWords(inputObj, displayId) {
         displayEl.classList.add('hidden');
     }
 }
+
+/**
+ * Resets/clears live words display element
+ */
+export function resetLiveWords(displayId) {
+    const displayEl = typeof displayId === 'string' ? document.getElementById(displayId) : displayId;
+    if (displayEl) {
+        displayEl.innerText = '';
+        displayEl.classList.add('hidden');
+    }
+}
+

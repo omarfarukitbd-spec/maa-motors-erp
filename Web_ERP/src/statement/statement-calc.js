@@ -158,7 +158,11 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
         html: `
             <div class="flex flex-col gap-3 text-left font-bn p-2">
                 <div class="text-xs text-blue-400 font-bold">কাস্টমার: ${currentCustomerInfo?.name || 'Customer'}</div>
-                <div><label class="block text-xs font-bold text-slate-400 mb-1">জমার পরিমাণ (৳)</label><input id="stmt-recv-amt" type="text" class="m3-field text-lg font-black text-emerald-400" placeholder="০.০০"></div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">জমার পরিমাণ (৳)</label>
+                    <input id="stmt-recv-amt" type="text" class="m3-field text-lg font-black text-emerald-400" placeholder="০.০০" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'stmt-recv-words');">
+                    <div id="stmt-recv-words" class="text-[10px] font-black text-emerald-400 mt-1 hidden italic truncate"></div>
+                </div>
                 <div><label class="block text-xs font-bold text-slate-400 mb-1">পেমেন্ট মাধ্যম</label><select id="stmt-recv-type" class="m3-field"><option value="Cash">Cash (নগদ)</option><option value="Bank">Bank (ব্যাংক/বিকাশ)</option><option value="Less">Less (ছাড়/কমিশন)</option></select></div>
                 <div><label class="block text-xs font-bold text-slate-400 mb-1">বিবরণ / ব্যাংক নাম (ঐচ্ছিক)</label><input id="stmt-recv-ref" type="text" class="m3-field" placeholder="মন্তব্য..."></div>
             </div>`,
@@ -185,7 +189,10 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
             await batch.commit();
             showToast('জমা সফলভাবে সেভ হয়েছে!', 'success');
             if (callbacks.loadStatementData) callbacks.loadStatementData();
-        } catch (e) { Swal.fire('Error', 'জমা সেভ করা যায়নি', 'error'); }
+        } catch (e) {
+            console.error('Quick collect payment error:', e);
+            Swal.fire('Error', 'জমা সেভ করা যায়নি', 'error');
+        }
     }
 }
 

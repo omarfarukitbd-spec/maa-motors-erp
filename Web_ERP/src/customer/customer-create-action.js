@@ -1,6 +1,6 @@
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount, toDBDate, getTodayLocalDateString, numberToBanglaWords, formatAmountWithComma, formatAppDate, handleError, sendSMS, showToast } from '../utils.js';
+import { parseAmount, toDBDate, getTodayLocalDateString, numberToBanglaWords, resetLiveWords, formatAmountWithComma, formatAppDate, handleError, sendSMS, showToast } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones } from './customer-state.js';
@@ -10,6 +10,7 @@ export function resetAddCustomerForm() {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
+    resetLiveWords('cust-initial-words');
     const dateInput = document.getElementById('cust-date');
     if (dateInput) {
         const todayStr = getTodayLocalDateString();

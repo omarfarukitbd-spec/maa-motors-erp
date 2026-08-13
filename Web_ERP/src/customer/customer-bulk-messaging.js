@@ -214,7 +214,7 @@ async function startBulkSmsProcess(customers, shopName, dateStr) {
                     const msg = `Reminder: Dear ${c.name}${accStr}, your due is Tk ${formatAmountWithComma(c.totalDue)} on ${dateStr}. Kindly clear payment soon. Thanks! - ${shopName}`;
                     const res = await sendTxnSMS(c.phone, msg);
                     if (res) successCount++; else failCount++;
-                } catch (err) { failCount++; }
+                } catch (err) { console.error("Bulk SMS error:", err); failCount++; }
                 setTimeout(() => Swal.clickConfirm(), 400);
             }
         });

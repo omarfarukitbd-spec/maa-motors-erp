@@ -137,6 +137,8 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
         } catch (autoErr) { console.warn('Transaction SMS dispatch error:', autoErr); }
 
         document.getElementById('ledger-bill').value = ''; document.getElementById('ledger-paid').value = '';
+        resetLiveWords('ledger-bill-words');
+        resetLiveWords('ledger-paid-words');
         const vEl = document.getElementById('ledger-voucher'); if (vEl) vEl.value = '';
         const rfEl = document.getElementById('ledger-received-from'); if (rfEl) rfEl.value = '';
         if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(id);
