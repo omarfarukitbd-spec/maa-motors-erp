@@ -3,6 +3,7 @@ import { db, firebase } from '../firebase-config.js';
 import { BankDAO, CashCollectorDAO, TransactionDAO } from '../dao.js';
 import { promptSecurityPin, showToast } from '../utils.js';
 import { auditLog } from '../audit.js';
+import { loadBankOptions, loadCashCollectorOptions } from '../ledger/ledger-bank-cash.js';
 
 let currentTab = 'bank'; // 'bank' or 'cash'
 let activeBanks = [];
@@ -68,6 +69,8 @@ async function loadBankingData() {
         activeBanks = banks;
         activeCash = cash;
         renderBankingList();
+        loadBankOptions();
+        loadCashCollectorOptions();
     } catch (e) {
         console.error(e);
         document.getElementById('banking-list-container').innerHTML = '<div class="text-red-400 text-xs text-center">ডাটা লোড করতে সমস্যা হয়েছে।</div>';

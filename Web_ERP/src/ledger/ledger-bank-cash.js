@@ -33,7 +33,7 @@ export async function loadBankOptions() {
         
         for (const bName of existingTxnBanks) {
             if (!currentBankNames.has(bName) && bName.length > 0) {
-                await BankDAO.add({ name: bName });
+                await BankDAO.add({ name: bName, status: 'active' });
                 addedNew = true;
             }
         }
@@ -43,15 +43,17 @@ export async function loadBankOptions() {
         }
 
         cachedBanks = banks;
+        // Only show active accounts in dropdowns
+        const activeBanks = banks.filter(b => b.status !== 'inactive');
         let html = '<option value="" class="!bg-slate-900 !text-slate-400">-- ব্যাংক নির্বাচন করুন --</option>';
-        banks.forEach(b => {
+        activeBanks.forEach(b => {
             if (b.name) html += `<option value="${b.name}" class="!bg-slate-900 !text-slate-200 font-bold">${b.name}</option>`;
         });
         window.cachedBanksHtml = html;
         
         // If the select is currently in Bank mode, update it
         const sel = document.getElementById('ledger-received-from');
-        if (sel && sel.tagName === 'SELECT' && document.getElementById('lbl-recv-from').innerText.includes('Bank')) {
+        if (sel && sel.tagName === 'SELECT' && document.getElementById('lbl-recv-from')?.innerText.includes('Bank')) {
             const currentVal = sel.value;
             sel.innerHTML = html;
             sel.value = currentVal;
@@ -61,10 +63,6 @@ export async function loadBankOptions() {
     }
 }
 
-/**
- * Loads dynamic cash collectors from Firebase & populates datalist
- * Auto-syncs any missing collectors found in existing transactions.
- */
 export async function loadCashCollectorOptions() {
     try {
         let collectors = await CashCollectorDAO.getAllCollectors();
@@ -87,7 +85,7 @@ export async function loadCashCollectorOptions() {
 
         for (const cName of existingTxnCash) {
             if (!currentCollectorNames.has(cName) && cName.length > 0) {
-                await CashCollectorDAO.add({ name: cName });
+                await CashCollectorDAO.add({ name: cName, status: 'active' });
                 addedNew = true;
             }
         }
@@ -97,15 +95,17 @@ export async function loadCashCollectorOptions() {
         }
 
         cachedCollectors = collectors;
+        // Only show active collectors in dropdowns
+        const activeCollectors = collectors.filter(c => c.status !== 'inactive');
         let html = '<option value="" class="!bg-slate-900 !text-slate-400">-- ক্যাশ রিসিভার নির্বাচন করুন --</option>';
-        collectors.forEach(c => {
+        activeCollectors.forEach(c => {
             if (c.name) html += `<option value="${c.name}" class="!bg-slate-900 !text-slate-200 font-bold">${c.name}</option>`;
         });
         window.cachedCashHtml = html;
         
         // If the select is currently in Cash mode, update it
         const sel = document.getElementById('ledger-received-from');
-        if (sel && sel.tagName === 'SELECT' && document.getElementById('lbl-recv-from').innerText.includes('Cash')) {
+        if (sel && sel.tagName === 'SELECT' && document.getElementById('lbl-recv-from')?.innerText.includes('Cash')) {
             const currentVal = sel.value;
             sel.innerHTML = html;
             sel.value = currentVal;
@@ -131,18 +131,13 @@ export async function quickAddBank() {
             confirmButton: 'm3-btn-primary !bg-blue-600 hover:!bg-blue-500 !px-6 !py-2 !rounded-xl font-bold',
             cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2 !rounded-xl font-bold'
         },
-        inputValidator: (val) => {
-            if (!val || !val.trim()) {
-                return 'ব্যাংকের নাম লিখুন!';
-            }
-            return null;
-        }
+        inputValidator: (val) => (!val || !val.trim()) ? 'ব্যাংকের নাম লিখুন!' : null
     });
 
     if (bankName && bankName.trim()) {
         try {
             const cleanName = bankName.trim();
-            await BankDAO.add({ name: cleanName });
+            await BankDAO.add({ name: cleanName, status: 'active' });
             showToast('নতুন ব্যাংক সফলভাবে যুক্ত হয়েছে', 'success');
             await loadBankOptions();
             const input = document.getElementById('ledger-received-from');
@@ -153,9 +148,6 @@ export async function quickAddBank() {
     }
 }
 
-/**
- * Quick add new Cash Collector / Source to Firebase
- */
 export async function quickAddCashCollector() {
     const { value: collectorName } = await Swal.fire({
         title: '<div class="flex items-center gap-2 font-bn text-white text-xl"><i class="fa-solid fa-user-gear text-emerald-400"></i><span>ক্যাশ গ্রহণকারী / সোর্স যোগ করুন</span></div>',
@@ -169,18 +161,13 @@ export async function quickAddCashCollector() {
             confirmButton: 'm3-btn-primary !bg-emerald-600 hover:!bg-emerald-500 !px-6 !py-2 !rounded-xl font-bold',
             cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2 !rounded-xl font-bold'
         },
-        inputValidator: (val) => {
-            if (!val || !val.trim()) {
-                return 'প্রাপক বা সোর্সের নাম লিখুন!';
-            }
-            return null;
-        }
+        inputValidator: (val) => (!val || !val.trim()) ? 'প্রাপক বা সোর্সের নাম লিখুন!' : null
     });
 
     if (collectorName && collectorName.trim()) {
         try {
             const cleanName = collectorName.trim();
-            await CashCollectorDAO.add({ name: cleanName });
+            await CashCollectorDAO.add({ name: cleanName, status: 'active' });
             showToast('ক্যাশ সোর্স সফলভাবে যুক্ত হয়েছে', 'success');
             await loadCashCollectorOptions();
             const input = document.getElementById('ledger-received-from');
@@ -197,14 +184,10 @@ window.quickAddCashCollector = quickAddCashCollector;
 window.quickEditBank = quickEditBank;
 window.quickEditCashCollector = quickEditCashCollector;
 
-/**
- * Quick edit existing Bank Account in Firebase
- */
 export async function quickEditBank() {
     const sel = document.getElementById('ledger-received-from');
-    if (!sel || !sel.value) {
-        return showToast('দয়া করে আগে লিস্ট থেকে একটি ব্যাংক নির্বাচন করুন!', 'warning');
-    }
+    if (!sel || !sel.value) return showToast('দয়া করে আগে লিস্ট থেকে একটি ব্যাংক নির্বাচন করুন!', 'warning');
+    
     const oldName = sel.value;
     const bankObj = cachedBanks.find(b => b.name === oldName);
     if (!bankObj) return showToast('ব্যাংকটি খুঁজে পাওয়া যায়নি!', 'error');
@@ -241,8 +224,6 @@ export async function quickEditBank() {
 
             showToast('ব্যাংক আপডেট করা হয়েছে!', 'success');
             await loadBankOptions();
-            
-            // Re-select the updated bank
             const updatedSel = document.getElementById('ledger-received-from');
             if (updatedSel) updatedSel.value = finalName;
         } catch (e) {
