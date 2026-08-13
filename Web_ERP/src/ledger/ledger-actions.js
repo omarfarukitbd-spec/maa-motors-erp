@@ -55,7 +55,8 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
     });
     if (!confirmPreview.isConfirmed) { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; } return; }
     try {
-        const preCommitCust = getCustomerCache().find(c => c.id === id);
+        let preCommitCust = getCustomerCache().find(c => c.id === id);
+        try { const liveCust = await CustomerDAO.getById(id); if (liveCust) preCommitCust = liveCust; } catch (e) { console.warn('Live fetch failed', e); }
         const preCommitDue = preCommitCust ? (Number(preCommitCust.totalDue) || 0) : 0;
 
         const batch = db.batch(); const balanceDiff = safeRound(b - p);
