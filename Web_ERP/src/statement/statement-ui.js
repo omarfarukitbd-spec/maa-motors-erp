@@ -92,7 +92,7 @@ export function renderStatementUI(container, params, stateRef = {}, callbacks = 
                     <table id="statement-export-table" class="m3-table w-full min-w-[750px]">
                         <thead>
                             <tr class="text-xs font-black text-slate-400">
-                                <th class="w-28">তারিখ</th><th>বিবরণ / মাধ্যম / ভাউচার</th><th class="w-32 text-right">খরচ (Debit ৳)</th><th class="w-32 text-right">জমা (Credit ৳)</th><th class="w-36 text-right">অবশিষ্ট জের (Balance ৳)</th>
+                                <th class="w-28">তারিখ</th><th>বিবরণ / মাধ্যম / ভাউচার</th><th class="w-32 text-right">খরচ (Debit ৳)</th><th class="w-32 text-right">জমা (Credit ৳)</th><th class="w-36 text-right">বর্তমান ব্যালেন্স (Balance ৳)</th>
                             </tr>
                         </thead>
                         <tbody id="statement-list"></tbody>

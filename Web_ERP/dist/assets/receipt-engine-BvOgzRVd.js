@@ -139,9 +139,9 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t,o as n,s as r}f
                             ${u.subtotal&&u.discount>0?`<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>Subtotal:</span><strong>৳ ${i(u.subtotal)}</strong></div>`:``}
                             ${u.discount>0?`<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#d97706; position: relative; z-index: 20;"><span>Discount (-):</span><strong>- ৳ ${i(u.discount)}</strong></div>`:``}
                             <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#0f172a; font-weight:700; position: relative; z-index: 20;"><span>আজকের বিল:</span><strong>৳ ${i(u.bill)}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>পূর্বের জের:</span><strong>৳ ${i(_)}</strong></div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>পূর্বের বকেয়া:</span><strong>৳ ${i(_)}</strong></div>
                             <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#059669; font-weight:700; position: relative; z-index: 20;"><span>আজকের জমা${T}:</span><strong>- ৳ ${i(u.paid)}</strong></div>
-                            <div style="display:flex; justify-content:space-between; padding:5px 8px; border-top:2px solid #cbd5e1; font-size:12.5px; font-weight:900; color:${v>0?`#dc2626`:`#059669`}; background: ${v>0?`#fef2f2`:`#ecfdf5`}; border-radius: 6px; margin-top: 4px; border-left: 4px solid ${v>0?`#dc2626`:`#059669`}; position: relative; z-index: 20;"><span>মোট জের:</span><strong>৳ ${i(Math.abs(v))} ${v<0?`(Adv)`:``}</strong></div>
+                            <div style="display:flex; justify-content:space-between; padding:5px 8px; border-top:2px solid #cbd5e1; font-size:12.5px; font-weight:900; color:${v>0?`#dc2626`:`#059669`}; background: ${v>0?`#fef2f2`:`#ecfdf5`}; border-radius: 6px; margin-top: 4px; border-left: 4px solid ${v>0?`#dc2626`:`#059669`}; position: relative; z-index: 20;"><span>মোট বকেয়া:</span><strong>৳ ${i(Math.abs(v))} ${v<0?`(Adv)`:``}</strong></div>
                         </div>
                     </div>
 
@@ -160,9 +160,9 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t,o as n,s as r}f
                         <span>#${l(u.voucherNo||e.slice(-6).toUpperCase())}</span>
                         <span>${c(u.date)}</span>
                     </div>
-                    <div style="text-align: left; font-weight: 800; font-size: 12px; margin: 6px 0 4px 0;">কাস্টমার: ${l(u.customerName)}</div>
+                    <div style="text-align: left; font-weight: 800; font-size: 12px; margin: 6px 0 4px 0;">কাস্টমার: ${l(cleanCustName)}</div>
                     <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের জের:</span><span>৳ ${i(_)}</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের বকেয়া:</span><span>৳ ${i(_)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${i(u.bill)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা${T}:</span><span>- ৳ ${i(u.paid)}</span></div>
                     <div style="border-bottom: 1.5px solid #000; margin: 6px 0;"></div>

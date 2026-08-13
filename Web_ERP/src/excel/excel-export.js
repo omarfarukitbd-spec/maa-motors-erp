@@ -41,7 +41,7 @@ export async function downloadAdminExcelBackup() {
 
         // --- Sheet 1: Customers ---
         const wsCustData = [
-            ["মা মোটরস ইআরপি — কাস্টমার হিসেব ও বর্তমান মোট জের", "", "", "", `তারিখ: ${formattedToday}`],
+            ["মা মোটরস ইআরপি — কাস্টমার হিসেব ও বর্তমান মোট বকেয়া", "", "", "", `তারিখ: ${formattedToday}`],
             ["অ্যাকাউন্ট নং", "কাস্টমারের নাম", "মোবাইল নম্বর", "ঠিকানা", "বর্তমান মোট বকেয়া (৳)"]
         ];
         customers.forEach(c => wsCustData.push([c.accountNo || '', c.name || '', c.phone || '', c.address || '', Number(c.totalDue) || 0]));
@@ -87,14 +87,14 @@ export async function downloadAdminExcelBackup() {
         const maxCustRow = Math.max(lastCustRow, 3);
         wsTemplate['!dataValidation'] = [
             { sqref: `H3:H${totalRowIdx-1}`, type: "list", operator: "equal", formula1: '"Bank,Cash"', showErrorMessage: true },
-            { sqref: `B3:B${totalRowIdx-1}`, type: "list", operator: "equal", formula1: `'কাস্টমার তালিকা ও বর্তমান জের'!$B$3:$B$${maxCustRow}` }
+            { sqref: `B3:B${totalRowIdx-1}`, type: "list", operator: "equal", formula1: `'কাস্টমার তালিকা ও বর্তমান ব্যালেন্স'!$B$3:$B$${maxCustRow}` }
         ];
 
         wsCustomers['!cols'] = [{ wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 30 }, { wch: 24 }];
         wsTemplate['!cols'] = [{ wch: 18 }, { wch: 32 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 35 }];
 
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, wsCustomers, "কাস্টমার তালিকা ও বর্তমান জের");
+        XLSX.utils.book_append_sheet(wb, wsCustomers, "কাস্টমার তালিকা ও বর্তমান ব্যালেন্স");
         XLSX.utils.book_append_sheet(wb, wsTemplate, "খতিয়ান ও নতুন লেনদেন এন্ট্রি");
 
         const filename = `Maa_Motors_Smart_Backup_${d}-${m}-${y}.xlsx`;

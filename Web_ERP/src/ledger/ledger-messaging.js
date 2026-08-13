@@ -38,7 +38,7 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
         const formattedBill = formatAmountWithComma(targetBill);
         const formattedPaid = formatAmountWithComma(targetPaid);
         const formattedDue = formatAmountWithComma(Math.abs(targetDue));
-        const isOpening = (targetVoucher === 'OPENING' || targetVoucher === 'OPEN' || targetVoucher === 'প্রারম্ভিক জের' || (targetDate && String(targetVoucher).toUpperCase() === 'OPENING'));
+        const isOpening = (targetVoucher === 'OPENING' || targetVoucher === 'OPEN' || targetVoucher === 'প্রারম্ভিক ব্যালেন্স' || targetVoucher === 'প্রারম্ভিক জের' || (targetDate && String(targetVoucher).toUpperCase() === 'OPENING'));
 
         const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(targetName) : targetName) || 'Customer';
         const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
@@ -158,7 +158,7 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
         : (shareLink ? `আপনার সম্পূর্ণ মেমো ও হিসাবের PDF বিবরণী দেখতে নিচের লিংকে ক্লিক করুন:\n${shareLink}\n\n` : '');
 
     let msg = '';
-    const isOpening = (targetVoucher === 'OPENING' || targetVoucher === 'OPEN' || targetVoucher === 'প্রারম্ভিক জের' || (targetDate && String(targetVoucher).toUpperCase() === 'OPENING'));
+    const isOpening = (targetVoucher === 'OPENING' || targetVoucher === 'OPEN' || targetVoucher === 'প্রারম্ভিক ব্যালেন্স' || targetVoucher === 'প্রারম্ভিক জের' || (targetDate && String(targetVoucher).toUpperCase() === 'OPENING'));
 
     if (isOpening) {
         msg = `আসসালামু আলাইকুম ${targetName},\nমেসার্স মা মোটরস্ থেকে আপনার হিসাবের একাউন্ট খোলা হয়েছে।\n\n${accLine}একাউন্ট খোলার তারিখ: ${formattedDate}\n`;
@@ -170,7 +170,7 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
         } else if (initialVal < 0) {
             msg += `প্রারম্ভিক জমা: ৳ ${formattedInitial}\n`;
         } else {
-            msg += `প্রারম্ভিক জের: ৳ 0\n`;
+            msg += `প্রারম্ভিক ব্যালেন্স: ৳ 0\n`;
         }
         msg += `---------------------------------\n`;
         if (targetDue < 0) {

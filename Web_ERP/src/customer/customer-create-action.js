@@ -101,7 +101,7 @@ export async function saveNewCustomer() {
             t.set(txnRef, {
                 customerId: customerId, customerName: n, date: d, voucherNo: 'OPENING',
                 bill: initialBalance > 0 ? initialBalance : 0, paid: initialBalance < 0 ? Math.abs(initialBalance) : 0,
-                prevDue: 0, currentDue: initialBalance, notes: 'প্রারম্ভিক জের (Opening Balance)',
+                prevDue: 0, currentDue: initialBalance, notes: 'প্রারম্ভিক ব্যালেন্স (Opening Balance)',
                 createdBy: window.AppState?.currentUserEmail || 'System', createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         });

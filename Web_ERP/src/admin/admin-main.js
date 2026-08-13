@@ -164,7 +164,7 @@ export function renderAdmin(container) {
                             <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0"><i class="fa-solid fa-download text-sm"></i></div>
                             <div>
                                 <h4 class="text-white font-bold text-sm">ব্যাকআপ ডাউনলোড</h4>
-                                <p class="text-[10px] text-slate-500">সব কাস্টমারের বকেয়া জের সহ এক্সেল ডাউনলোড।</p>
+                                <p class="text-[10px] text-slate-500">সব কাস্টমারের বকেয়া ব্যালেন্স সহ এক্সেল ডাউনলোড।</p>
                             </div>
                         </div>
                         <button class="h-9 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-md shadow-emerald-600/20" onclick="downloadAdminExcelBackup()">

@@ -78,7 +78,7 @@ export async function quickAddCustomer() {
 
                 <div class="grid grid-cols-2 gap-3 border-t border-slate-800/80 pt-2.5">
                     <div>
-                        <label class="block text-[11px] font-black text-emerald-400 uppercase tracking-widest mb-1 ml-1">প্রারম্ভিক জের / বকেয়া (৳)</label>
+                        <label class="block text-[11px] font-black text-emerald-400 uppercase tracking-widest mb-1 ml-1">প্রারম্ভিক ব্যালেন্স / বকেয়া (৳)</label>
                         <input id="sw-bal" type="text" class="w-full bg-slate-950/90 border border-emerald-500/40 rounded-xl px-3.5 py-2 text-emerald-400 outline-none focus:border-emerald-500 text-xs font-black transition-all" placeholder="০.০০" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'sw-bal-words');">
                         <div id="sw-bal-words" class="text-[10px] font-black text-emerald-400 mt-1 hidden italic truncate"></div>
                     </div>
@@ -256,7 +256,7 @@ export async function quickAddCustomer() {
                     paid: f.initialBalance < 0 ? Math.abs(f.initialBalance) : 0,
                     prevDue: 0,
                     currentDue: f.initialBalance,
-                    notes: 'প্রারম্ভিক জের (Opening Balance)',
+                    notes: 'প্রারম্ভিক ব্যালেন্স (Opening Balance)',
                     createdBy: window.AppState?.currentUserEmail || 'System',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });

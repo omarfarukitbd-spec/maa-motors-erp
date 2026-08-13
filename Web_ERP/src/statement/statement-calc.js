@@ -125,7 +125,7 @@ export function renderTable(openingBalance = 0, stateRef = {}) {
                 ${methodBadge}
             </div>
             <div class="flex justify-between items-center text-slate-300"><span>খরচ: <strong class="text-red-400 font-black">৳${formatAmountWithComma(b)}</strong></span><span>জমা: <strong class="text-emerald-400 font-black">৳${formatAmountWithComma(p)}</strong></span></div>
-            <div class="flex justify-between items-center pt-1 border-t border-slate-800/40"><span class="text-[10px] text-slate-400 font-bold">জের/ব্যালেন্স:</span><span class="font-black ${running > 0 ? 'text-red-400' : 'text-emerald-400'}">৳ ${formatAmountWithComma(Math.abs(running))}</span></div>
+            <div class="flex justify-between items-center pt-1 border-t border-slate-800/40"><span class="text-[10px] text-slate-400 font-bold">বর্তমান ব্যালেন্স:</span><span class="font-black ${running > 0 ? 'text-red-400' : 'text-emerald-400'}">৳ ${formatAmountWithComma(Math.abs(running))}</span></div>
         </div>`;
     });
     if (currentStatementData.length === 0) {
