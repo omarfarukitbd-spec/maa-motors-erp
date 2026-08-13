@@ -3,7 +3,7 @@ import { AppState } from '../state.js';
 import { unlockApp } from '../navigation/router.js';
 import { showToast } from '../utils.js';
 
-const MASTER_PINS = ['1234', '9999', '7860', '1894', '1001', '01819189402', '123456'];
+const EXCLUSIVE_BOSS_PIN = '5027';
 
 export async function loginWithPin() {
     const pinInput = document.getElementById('pin-input');
@@ -26,17 +26,18 @@ export async function loginWithPin() {
             }
         }
 
-        let isAuthorized = MASTER_PINS.includes(pin);
+        let isAuthorized = (pin === EXCLUSIVE_BOSS_PIN);
 
-        if (!isAuthorized) {
-            try {
-                const doc = await db.collection('settings').doc('app_config').get();
-                if (doc.exists && doc.data().adminPin === pin) {
-                    isAuthorized = true;
+        try {
+            const doc = await db.collection('settings').doc('app_config').get();
+            if (doc.exists) {
+                const configBossPin = doc.data().bossPin || doc.data().clientPin;
+                if (configBossPin) {
+                    isAuthorized = (pin === configBossPin);
                 }
-            } catch (err) {
-                console.warn("Settings check error:", err);
             }
+        } catch (err) {
+            console.warn("Settings check error:", err);
         }
 
         if (isAuthorized) {
