@@ -25,7 +25,7 @@ export async function printZoneTagadaReport(cachedZoneReportData) {
     const reportTitle = zoneName ? `${zoneName} জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার` : 'সকল জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার';
     
     let totalDue = 0;
-    filtered.forEach(c => totalDue += (Number(c.totalDue) || 0));
+    filtered.forEach(c => totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)));
 
     const todayStr = getTodayLocalDateString();
     const [y, m, d] = todayStr.split('-');

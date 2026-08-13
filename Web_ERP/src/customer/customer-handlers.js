@@ -86,7 +86,7 @@ export async function filterCustomerList() {
 
 function updateStats(list) {
     let totalDue = 0;
-    list.forEach(c => totalDue += (Number(c.totalDue) || 0));
+    list.forEach(c => totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)));
     const countBadge = document.getElementById('cust-count-badge');
     const dueBadge = document.getElementById('cust-total-due-badge');
     if (countBadge) countBadge.innerText = list.length;

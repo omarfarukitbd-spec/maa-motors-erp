@@ -76,9 +76,9 @@ export function renderTable(openingBalance = 0, stateRef = {}) {
     currentStatementData.forEach(txn => {
         const b = Number(txn.bill) || 0, p = Number(txn.paid) || 0;
         const type = txn.receivedType || '';
-        billSum += b;
-        if (type === 'Less') lessSum += p;
-        else paidSum += p;
+        billSum = safeRound(billSum + b);
+        if (type === 'Less') lessSum = safeRound(lessSum + p);
+        else paidSum = safeRound(paidSum + p);
         running = safeRound(running + (b - p));
 
         let methodBadge = '<span class="text-slate-500 text-xs">-</span>';

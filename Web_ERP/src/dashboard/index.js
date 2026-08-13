@@ -43,7 +43,7 @@ function startDashboardRealtimeUpdates() {
     function updateCustomerStats() {
         const customers = getCustomerCache();
         let totalDue = 0;
-        customers.forEach(c => { totalDue += (Number(c.totalDue) || 0); });
+        customers.forEach(c => { totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)); });
         const dueEl = document.getElementById('dash-total-due');
         const custEl = document.getElementById('dash-total-cust');
         if(dueEl) dueEl.innerText = "৳ " + formatAmountWithComma(totalDue);

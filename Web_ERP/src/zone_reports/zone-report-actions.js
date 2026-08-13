@@ -68,7 +68,7 @@ export async function printZonePDFReport(targetZoneName = '') {
     const reportTitle = zoneName ? `${zoneName} জোনের কাস্টমার বকেয়া খতিয়ান` : 'সকল জোনের কাস্টমার বকেয়া খতিয়ান';
     
     let totalDue = 0;
-    filtered.forEach(c => totalDue += (Number(c.totalDue) || 0));
+    filtered.forEach(c => totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)));
 
     const todayStr = getTodayLocalDateString();
     const [y, m, d] = todayStr.split('-');

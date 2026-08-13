@@ -254,7 +254,7 @@ export function renderFilteredTable() {
 
     // Update KPI & Title Labels
     let totalDue = 0;
-    filtered.forEach(c => totalDue += (Number(c.totalDue) || 0));
+    filtered.forEach(c => totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)));
 
     const kpiCusts = document.getElementById('zr-kpi-total-custs');
     const kpiDue = document.getElementById('zr-kpi-total-due');
