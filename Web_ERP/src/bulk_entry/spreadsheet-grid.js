@@ -84,6 +84,29 @@ export function updateGridBankOptions(selectEl, rowIndex) {
         </select>`;
     }
 }
+
+export function quickSelectSpreadsheetAccount(type, accountName) {
+    const tbody = document.getElementById('spreadsheet-body');
+    if (!tbody || tbody.children.length === 0) return;
+
+    let targetRow = document.activeElement ? document.activeElement.closest('tr') : null;
+    if (!targetRow || !tbody.contains(targetRow)) {
+        targetRow = tbody.children[tbody.children.length - 1];
+    }
+    if (!targetRow) return;
+
+    const rowIndex = Array.from(tbody.children).indexOf(targetRow) + 1;
+    const typeSelect = targetRow.querySelector('select');
+    if (typeSelect) {
+        typeSelect.value = type;
+        updateGridBankOptions(typeSelect, rowIndex);
+        const bankSelect = document.getElementById(`bank-cell-${rowIndex}`)?.querySelector('select');
+        if (bankSelect) bankSelect.value = accountName;
+    }
+    const inputs = targetRow.querySelectorAll('input');
+    if (inputs && inputs[4]) inputs[4].focus(); // 5th input is Paid/Credit
+}
+window.quickSelectSpreadsheetAccount = quickSelectSpreadsheetAccount;
 window.updateGridBankOptions = updateGridBankOptions;
 
 export async function saveSpreadsheetData() {

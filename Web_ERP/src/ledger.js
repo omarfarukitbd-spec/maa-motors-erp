@@ -273,9 +273,20 @@ if (typeof window !== 'undefined' && !window._ledgerHotkeysBound) {
     window._ledgerHotkeysBound = true;
     window.addEventListener('keydown', (e) => {
         if (e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
-            if (e.key === '1') { e.preventDefault(); window.quickSelectPaymentAccount && window.quickSelectPaymentAccount('Bank', 'OneBank (IFRAT)'); }
-            else if (e.key === '2') { e.preventDefault(); window.quickSelectPaymentAccount && window.quickSelectPaymentAccount('Bank', 'IBBL (IFRAT)'); }
-            else if (e.key === '3') { e.preventDefault(); window.quickSelectPaymentAccount && window.quickSelectPaymentAccount('Cash', 'শোরুম ক্যাশ'); }
+            const isSpreadsheet = Boolean(document.getElementById('spreadsheet-body'));
+            if (e.key === '1') {
+                e.preventDefault();
+                if (isSpreadsheet && window.quickSelectSpreadsheetAccount) window.quickSelectSpreadsheetAccount('Bank', 'OneBank (IFRAT)');
+                else if (window.quickSelectPaymentAccount) window.quickSelectPaymentAccount('Bank', 'OneBank (IFRAT)');
+            } else if (e.key === '2') {
+                e.preventDefault();
+                if (isSpreadsheet && window.quickSelectSpreadsheetAccount) window.quickSelectSpreadsheetAccount('Bank', 'IBBL (IFRAT)');
+                else if (window.quickSelectPaymentAccount) window.quickSelectPaymentAccount('Bank', 'IBBL (IFRAT)');
+            } else if (e.key === '3') {
+                e.preventDefault();
+                if (isSpreadsheet && window.quickSelectSpreadsheetAccount) window.quickSelectSpreadsheetAccount('Cash', 'শোরুম ক্যাশ');
+                else if (window.quickSelectPaymentAccount) window.quickSelectPaymentAccount('Cash', 'শোরুম ক্যাশ');
+            }
         }
     });
 }

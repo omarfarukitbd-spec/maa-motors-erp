@@ -75,9 +75,17 @@ export function switchBulkTab(tab) {
 
     if (tab === 'spreadsheet') {
         area.innerHTML = `
-            <p class="text-[11px] text-slate-500 mb-4 flex items-center gap-2 px-2 uppercase font-bold font-bn">
-                <i class="fa-solid fa-info-circle text-blue-500"></i> কীবোর্ড দিয়ে দ্রুত টাইপ করুন। শেষ ঘরে 'Enter' বা 'Tab' চাপলে নতুন লাইন তৈরি হবে।
-            </p>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3 px-2 font-bn">
+                <p class="text-[11px] text-slate-500 flex items-center gap-1.5 uppercase font-bold">
+                    <i class="fa-solid fa-info-circle text-blue-500"></i> কীবোর্ড দিয়ে দ্রুত টাইপ করুন। শেষ ঘরে 'Enter' বা 'Tab' চাপলে নতুন লাইন তৈরি হবে।
+                </p>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] text-slate-500 font-bold">শর্টকাট:</span>
+                    <button type="button" onclick="window.quickSelectSpreadsheetAccount('Bank', 'OneBank (IFRAT)')" class="text-[10px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="OneBank (Alt+1)"><span>OneBank</span><kbd class="text-[9px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+1</kbd></button>
+                    <button type="button" onclick="window.quickSelectSpreadsheetAccount('Bank', 'IBBL (IFRAT)')" class="text-[10px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="IBBL (Alt+2)"><span>IBBL</span><kbd class="text-[9px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+2</kbd></button>
+                    <button type="button" onclick="window.quickSelectSpreadsheetAccount('Cash', 'শোরুম ক্যাশ')" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="শোরুম ক্যাশ (Alt+3)"><span>ক্যাশ</span><kbd class="text-[9px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+3</kbd></button>
+                </div>
+            </div>
             <div class="m3-table-container">
                 <table class="m3-table w-full table-fixed min-w-[960px]">
                     <thead>
