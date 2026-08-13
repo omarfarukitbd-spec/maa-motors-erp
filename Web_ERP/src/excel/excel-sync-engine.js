@@ -105,8 +105,11 @@ export async function executeSmartSync(transactionsToSave, newCustomerNamesSet) 
                 }
             }
 
+            const initialDue = cDoc.exists ? (cDoc.data().totalDue || 0) : 0;
+            const diffDelta = runningDue - initialDue;
+
             // Update final customer balance
-            batch.update(custRef, { totalDue: runningDue });
+            batch.update(custRef, { totalDue: firebase.firestore.FieldValue.increment(diffDelta) });
             operationCount++;
 
             if (operationCount >= 490) {

@@ -56,9 +56,11 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
     if (!confirmPreview.isConfirmed) { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; } return; }
     try {
         const batch = db.batch(); const balanceDiff = safeRound(b - p);
+        let actualDelta = balanceDiff;
         if(editingRef.id) {
             const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0)); const netIncrement = safeRound(balanceDiff - oldDiff);
-            batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: b, paid: p, receivedType, receivedFrom });
+            actualDelta = netIncrement;
+            batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: b, paid: p, receivedType, receivedFrom, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
             batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
             editingRef.id = null;
         } else {
@@ -78,7 +80,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                 const formattedDate = formatAppDate(date);
                 const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(name) : name) || 'Customer';
                 const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
-                const netDue = (currentCust ? (Number(currentCust.totalDue) || 0) : 0) + balanceDiff;
+                const netDue = (currentCust ? (Number(currentCust.totalDue) || 0) : 0) + actualDelta;
                 const formattedDue = formatAmountWithComma(Math.abs(netDue));
 
                 let autoMsg = '';
