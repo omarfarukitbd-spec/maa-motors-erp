@@ -97,7 +97,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t,o as n,s as r}f
                         </tr>
                     </tbody>
                 </table>
-            `}let T=``;if(u.paid>0&&u.receivedType&&(T=` <span style="font-size: 9px; opacity: 0.8;">(${l(u.receivedType)}${u.receivedFrom?` - `+l(u.receivedFrom):``})</span>`),o===`a4`){let t=m({title:`INVOICE`,dateRangeStr:`ভাউচার #: #${l(u.voucherNo||e.slice(-6).toUpperCase())} • তারিখ: ${c(u.date)}`},y);C.className=`print-a4`,C.innerHTML=`
+            `}let T=String(u.customerName||f.name||``).replace(/^\[.*?\]\s*/,``).trim(),E=``;if(u.paid>0&&u.receivedType&&(E=` <span style="font-size: 9px; opacity: 0.8;">(${l(u.receivedType)}${u.receivedFrom?` - `+l(u.receivedFrom):``})</span>`),o===`a4`){let t=m({title:`INVOICE`,dateRangeStr:`ভাউচার #: #${l(u.voucherNo||e.slice(-6).toUpperCase())} • তারিখ: ${c(u.date)}`},y);C.className=`print-a4`,C.innerHTML=`
                 <style>
                     .print-items-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
                     .print-items-table th { background: #f1f5f9 !important; border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-weight: 900; color: #0f172a; }
@@ -111,7 +111,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t,o as n,s as r}f
                     <!-- Customer Details Box (Full Width) -->
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 18px;">
                         <div style="font-size: 10px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 0.5px;">CUSTOMER DETAILS</div>
-                        <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${l(String(u.customerName||f.name||``).replace(/^\[.*?\]\s*/,``).trim())}</p>
+                        <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${l(T)}</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size:11px; color:#475569; margin-bottom: 6px;">
                             <span><strong style="color:#0f172a;">A/C No:</strong> ${l(f.accountNo||`-`)}</span>
                             <span><strong style="color:#0f172a;">Mobile:</strong> ${l(f.phone||`-`)}</span>
@@ -140,7 +140,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t,o as n,s as r}f
                             ${u.discount>0?`<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#d97706; position: relative; z-index: 20;"><span>Discount (-):</span><strong>- ৳ ${i(u.discount)}</strong></div>`:``}
                             <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#0f172a; font-weight:700; position: relative; z-index: 20;"><span>আজকের বিল:</span><strong>৳ ${i(u.bill)}</strong></div>
                             <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>পূর্বের বকেয়া:</span><strong>৳ ${i(_)}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#059669; font-weight:700; position: relative; z-index: 20;"><span>আজকের জমা${T}:</span><strong>- ৳ ${i(u.paid)}</strong></div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#059669; font-weight:700; position: relative; z-index: 20;"><span>আজকের জমা${E}:</span><strong>- ৳ ${i(u.paid)}</strong></div>
                             <div style="display:flex; justify-content:space-between; padding:5px 8px; border-top:2px solid #cbd5e1; font-size:12.5px; font-weight:900; color:${v>0?`#dc2626`:`#059669`}; background: ${v>0?`#fef2f2`:`#ecfdf5`}; border-radius: 6px; margin-top: 4px; border-left: 4px solid ${v>0?`#dc2626`:`#059669`}; position: relative; z-index: 20;"><span>মোট বকেয়া:</span><strong>৳ ${i(Math.abs(v))} ${v<0?`(Adv)`:``}</strong></div>
                         </div>
                     </div>
@@ -160,11 +160,11 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t,o as n,s as r}f
                         <span>#${l(u.voucherNo||e.slice(-6).toUpperCase())}</span>
                         <span>${c(u.date)}</span>
                     </div>
-                    <div style="text-align: left; font-weight: 800; font-size: 12px; margin: 6px 0 4px 0;">কাস্টমার: ${l(cleanCustName)}</div>
+                    <div style="text-align: left; font-weight: 800; font-size: 12px; margin: 6px 0 4px 0;">কাস্টমার: ${l(T)}</div>
                     <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের বকেয়া:</span><span>৳ ${i(_)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${i(u.bill)}</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা${T}:</span><span>- ৳ ${i(u.paid)}</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা${E}:</span><span>- ৳ ${i(u.paid)}</span></div>
                     <div style="border-bottom: 1.5px solid #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 900;">
                         <span>মোট বকেয়া:</span>
