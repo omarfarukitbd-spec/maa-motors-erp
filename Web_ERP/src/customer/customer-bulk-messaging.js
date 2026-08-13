@@ -210,7 +210,9 @@ async function startBulkSmsProcess(customers, shopName, dateStr) {
             didOpen: async () => {
                 try {
                     const accStr = c.accountNo ? ` (${c.accountNo})` : '';
-                    const msg = `Reminder: Dear ${c.name}${accStr}, your due is Tk ${formatAmountWithComma(c.totalDue)} on ${dateStr}. Kindly clear payment soon. Thanks! - ${shopName}`;
+                    const absAmount = formatAmountWithComma(Math.abs(c.totalDue || 0));
+                    const balanceText = (c.totalDue < 0) ? `Advance is Tk ${absAmount}` : `due is Tk ${absAmount}`;
+                    const msg = `Reminder: Dear ${c.name}${accStr}, your ${balanceText} on ${dateStr}. Kindly clear payment soon. Thanks! - ${shopName}`;
                     const res = await sendSMS(c.phone, msg, false);
                     if (res) successCount++; else failCount++;
                 } catch (err) { console.error("Bulk SMS error:", err); failCount++; }
@@ -251,7 +253,9 @@ async function startBulkWhatsAppProcess(customers, shopName, dateStr) {
 
         const c = customers[i];
         const accStr = c.accountNo ? ` (${c.accountNo})` : '';
-        const rawMsg = `Dear ${c.name}${accStr},\nআপনার বকেয়া পরিমাণ: ৳ ${formatAmountWithComma(c.totalDue)}\nতারিখ: ${dateStr}\nঅনুগ্রহ করে দ্রুত পেমেন্ট পরিশোধের অনুরোধ করা হচ্ছে।\nধন্যবাদ! - ${shopName}`;
+        const absAmount = formatAmountWithComma(Math.abs(c.totalDue || 0));
+        const balanceText = (c.totalDue < 0) ? `অ্যাডভান্স জমা: ৳ ${absAmount}` : `বকেয়া পরিমাণ: ৳ ${absAmount}`;
+        const rawMsg = `Dear ${c.name}${accStr},\nআপনার ${balanceText}\nতারিখ: ${dateStr}\nঅনুগ্রহ করে দ্রুত পেমেন্ট পরিশোধের অনুরোধ করা হচ্ছে।\nধন্যবাদ! - ${shopName}`;
         
         let cleanPhone = String(c.phone).replace(/[^0-9]/g, '');
         if (cleanPhone.startsWith('0')) cleanPhone = '88' + cleanPhone;
@@ -264,7 +268,7 @@ async function startBulkWhatsAppProcess(customers, shopName, dateStr) {
                 <div class="space-y-3 font-bn text-left p-3 bg-slate-900 rounded-2xl border border-slate-800">
                     <div class="text-sm font-bold text-white">${c.name} <span class="text-amber-400 font-mono text-xs">${accStr}</span></div>
                     <div class="text-xs text-slate-300 font-mono">মোবাইল: ${c.phone}</div>
-                    <div class="text-base text-red-400 font-black font-mono">বকেয়া: ৳ ${formatAmountWithComma(c.totalDue)}</div>
+                    <div class="text-base ${c.totalDue < 0 ? 'text-emerald-400' : 'text-red-400'} font-black font-mono">${c.totalDue < 0 ? 'অ্যাডভান্স' : 'বকেয়া'}: ৳ ${absAmount}</div>
                 </div>
             `,
             showCloseButton: true,
