@@ -91,7 +91,7 @@ export async function printZonePDFReport(targetZoneName = '') {
         const bgStyle = isEven ? 'background: #ffffff;' : 'background: #f8fafc;';
         const dueVal = Number(c.totalDue) || 0;
         const dueColor = dueVal > 0 ? '#dc2626' : (dueVal < 0 ? '#059669' : '#64748b');
-        const dueDisp = dueVal === 0 ? '৳ 0' : `৳ ${formatAmountWithComma(dueVal)}`;
+        const dueDisp = dueVal === 0 ? '৳ 0' : `৳ ${formatAmountWithComma(Math.abs(dueVal))} ${dueVal < 0 ? '(Adv)' : ''}`;
         const zoneBadge = c.zone 
             ? `<span style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #334155; display: inline-block;">${escapeHTML(c.zone)}</span>`
             : '-';
