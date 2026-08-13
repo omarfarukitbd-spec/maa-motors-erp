@@ -1,5 +1,5 @@
 import { CustomerDAO, SettingsDAO } from '../dao.js';
-import { promptSecurityPin, formatAmountWithComma, showToast, formatAppDate, getTodayLocalDateString, sendSMS } from '../utils.js';
+import { promptSecurityPin, formatAmountWithComma, showToast, formatAppDate, getTodayLocalDateString, sendSMS, safeRound } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 
@@ -54,7 +54,7 @@ export async function triggerBulkReminderFlow() {
         const updateSummary = () => {
             const checkedChks = document.querySelectorAll('.bulk-cust-chk:checked');
             let sum = 0;
-            checkedChks.forEach(chk => { sum += Number(chk.dataset.due || 0); });
+            checkedChks.forEach(chk => { sum = safeRound(sum + Number(chk.dataset.due || 0)); });
             const badgeCount = document.getElementById('bulk-selected-count');
             const badgeSum = document.getElementById('bulk-selected-sum');
             if (badgeCount) badgeCount.innerText = `${checkedChks.length} জন`;

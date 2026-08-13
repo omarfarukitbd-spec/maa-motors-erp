@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { SettingsDAO } from './dao.js';
-import { formatAmountWithComma, formatAppDate, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows } from './utils.js';
+import { formatAmountWithComma, formatAppDate, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound } from './utils.js';
 import { smartPaginateStatement, printViaIframe } from './utils/smart-print-engine.js';
 
 
@@ -196,9 +196,9 @@ export async function renderPublicStatementView(customerId) {
         const initialDue = Number(customer.initialDue || 0);
         let billSum = 0, paidSum = 0, lessSum = 0;
         docs.forEach(txn => {
-            if (txn.receivedType === 'Less') lessSum += Number(txn.paid) || 0; 
-            else paidSum += Number(txn.paid) || 0;
-            billSum += Number(txn.bill) || 0;
+            if (txn.receivedType === 'Less') lessSum = safeRound(lessSum + (Number(txn.paid) || 0));
+            else paidSum = safeRound(paidSum + (Number(txn.paid) || 0));
+            billSum = safeRound(billSum + (Number(txn.bill) || 0));
         });
         const running = safeRound(initialDue + billSum - paidSum - lessSum);
 

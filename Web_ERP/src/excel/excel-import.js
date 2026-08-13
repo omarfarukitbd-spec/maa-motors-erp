@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
-import { promptSecurityPin, parseAmount, formatAmountWithComma, getTodayLocalDateString, handleError } from '../utils.js';
+import { promptSecurityPin, parseAmount, formatAmountWithComma, getTodayLocalDateString, handleError, safeRound } from '../utils.js';
 import { getCustomerCache, initCustomerCache } from '../customer/index.js';
 import { executeSmartSync } from './excel-sync-engine.js';
 
@@ -84,7 +84,7 @@ export async function uploadAdminExcelBackup(fileInput) {
             if (!matchedCust && cleanName) matchedCust = existingCustomers.find(c => (c.name || '').toLowerCase().trim() === cleanName.toLowerCase());
 
             if (matchedCust) matchedCount++; else newCustomerNamesSet.add(cleanName);
-            totalBill += bill; totalPaid += paid;
+            totalBill = safeRound(totalBill + bill); totalPaid = safeRound(totalPaid + paid);
 
             transactionsToSave.push({
                 date: isoDate, customerName: cleanName, matchedCustId: matchedCust?.id || null,
