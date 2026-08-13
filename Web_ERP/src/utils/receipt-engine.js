@@ -212,7 +212,14 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
                         <span>#${escapeHTML(txn.voucherNo || txnId.slice(-6).toUpperCase())}</span>
                         <span>${formatAppDate(txn.date)}</span>
                     </div>
-                    <div style="text-align: left; font-weight: 800; font-size: 12px; margin: 6px 0 4px 0;">কাস্টমার: ${escapeHTML(cleanCustName)}</div>
+                    <div style="text-align: left; margin: 6px 0 4px 0;">
+                        <div style="font-weight: 900; font-size: 12px; line-height: 1.2;">কাস্টমার: ${escapeHTML(cleanCustName)}</div>
+                        ${(cData.accountNo || cData.phone) ? `
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #334155; margin-top: 2px;">
+                            ${cData.accountNo ? `<span><strong>A/C:</strong> ${escapeHTML(cData.accountNo)}</span>` : '<span></span>'}
+                            ${cData.phone ? `<span><strong>মোবাইল:</strong> ${escapeHTML(cData.phone)}</span>` : '<span></span>'}
+                        </div>` : ''}
+                    </div>
                     <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের বকেয়া:</span><span>৳ ${formatAmountWithComma(effectivePrevDue)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${formatAmountWithComma(txn.bill)}</span></div>

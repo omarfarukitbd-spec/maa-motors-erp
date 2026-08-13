@@ -160,7 +160,14 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t,o as n,s as r}f
                         <span>#${l(u.voucherNo||e.slice(-6).toUpperCase())}</span>
                         <span>${c(u.date)}</span>
                     </div>
-                    <div style="text-align: left; font-weight: 800; font-size: 12px; margin: 6px 0 4px 0;">কাস্টমার: ${l(T)}</div>
+                    <div style="text-align: left; margin: 6px 0 4px 0;">
+                        <div style="font-weight: 900; font-size: 12px; line-height: 1.2;">কাস্টমার: ${l(T)}</div>
+                        ${f.accountNo||f.phone?`
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #334155; margin-top: 2px;">
+                            ${f.accountNo?`<span><strong>A/C:</strong> ${l(f.accountNo)}</span>`:`<span></span>`}
+                            ${f.phone?`<span><strong>মোবাইল:</strong> ${l(f.phone)}</span>`:`<span></span>`}
+                        </div>`:``}
+                    </div>
                     <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের বকেয়া:</span><span>৳ ${i(_)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${i(u.bill)}</span></div>
