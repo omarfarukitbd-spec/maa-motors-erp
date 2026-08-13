@@ -199,8 +199,7 @@ export function renderCustomerRows(customers) {
     let mobileHtml = '';
 
     customers.forEach(d => {
-        let openingDate = d.openingDate || '';
-        let entryTime = '';
+        let openingDate = d.openingDate || '', entryTime = '';
         if (d.createdAt) {
             try {
                 const dt = d.createdAt.toDate ? d.createdAt.toDate() : (d.createdAt.toMillis ? new Date(d.createdAt.toMillis()) : new Date(d.createdAt));
@@ -208,9 +207,7 @@ export function renderCustomerRows(customers) {
                     if (!openingDate) openingDate = dt.toISOString().split('T')[0];
                     entryTime = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                 }
-            } catch(e) {
-                if (!openingDate) openingDate = getTodayLocalDateString();
-            }
+            } catch(e) { console.error(e); }
         }
         if (!openingDate) openingDate = getTodayLocalDateString();
 
