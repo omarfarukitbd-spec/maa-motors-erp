@@ -1,5 +1,23 @@
 import { loadAdminUsers } from './user-manager.js';
 import { downloadAdminExcelBackup, uploadAdminExcelBackup } from '../excel_sync.js';
+import { setNextAccountNo, showIndividualFixer, autoSyncZoneCounters, resequenceZoneAccountNumbers } from './system-tools.js';
+import { changeStaffPin } from './user-auth-actions.js';
+import { managePermissions } from './user-permissions.js';
+import { showBankingSystemManager, editBankingItem, deactivateBankingItem, reactivateBankingItem } from './admin-banking.js';
+
+// Expose functions globally for HTML inline onclick attributes
+window.appAdmin = {
+    managePermissions,
+    changeStaffPin,
+    setNextAccountNo,
+    showIndividualFixer,
+    autoSyncZoneCounters,
+    resequenceZoneAccountNumbers,
+    showBankingSystemManager,
+    editBankingItem,
+    deactivateBankingItem,
+    reactivateBankingItem
+};
 
 /**
  * Main Admin UI Renderer — Premium Redesign
@@ -126,6 +144,19 @@ export function renderAdmin(container) {
                         </div>
                         <button class="h-9 w-full rounded-xl bg-amber-600/15 border border-amber-500/25 hover:bg-amber-600 text-amber-400 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95" onclick="appAdmin.showIndividualFixer()">
                             <i class="fa-solid fa-user-pen mr-1.5"></i>আইডি এডিট
+                        </button>
+                    </div>
+
+                    <div class="group rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-pink-500/30 p-4 transition-all flex flex-col gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 shrink-0"><i class="fa-solid fa-building-columns text-sm"></i></div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm">ব্যাংকিং ও ক্যাশ সিস্টেম</h4>
+                                <p class="text-[10px] text-slate-500">ব্যাংক ও ক্যাশ অ্যাকাউন্ট যোগ, এডিট, রিনেম বা ডিলেট করুন।</p>
+                            </div>
+                        </div>
+                        <button class="h-9 w-full rounded-xl bg-pink-600/15 border border-pink-500/25 hover:bg-pink-600 text-pink-400 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95" onclick="appAdmin.showBankingSystemManager()">
+                            <i class="fa-solid fa-money-check-dollar mr-1.5"></i>ব্যাংক ম্যানেজমেন্ট
                         </button>
                     </div>
                 </div>

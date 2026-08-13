@@ -283,6 +283,13 @@ export const BankDAO = new class extends BaseDAO {
     async getAllBanks() {
         return await this.getAll('name', 'asc');
     }
+
+    async getActiveBanks() {
+        const snap = await this.collection.where('status', '==', 'active').orderBy('name', 'asc').get();
+        const results = [];
+        snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        return results;
+    }
 }();
 
 export const CashCollectorDAO = new class extends BaseDAO {
@@ -290,6 +297,13 @@ export const CashCollectorDAO = new class extends BaseDAO {
 
     async getAllCollectors() {
         return await this.getAll('name', 'asc');
+    }
+
+    async getActiveCollectors() {
+        const snap = await this.collection.where('status', '==', 'active').orderBy('name', 'asc').get();
+        const results = [];
+        snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        return results;
     }
 }();
 

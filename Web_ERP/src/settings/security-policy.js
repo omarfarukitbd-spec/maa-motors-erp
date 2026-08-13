@@ -12,12 +12,14 @@ export const DEFAULT_SECURITY_POLICY = {
     deleteTxn: true,
     deleteExpense: true,
     deleteZone: true,
+    deleteBank: true,
 
     // 2. Data Editing Security
     editCustomer: true,
     editTxn: true,
     editExpense: true,
     editSettings: true,
+    editBank: true,
 
     // 3. Messaging Security
     sendTxnSMS: false,
