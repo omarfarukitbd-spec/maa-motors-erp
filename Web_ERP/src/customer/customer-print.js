@@ -1,5 +1,5 @@
 import { SettingsDAO, ZoneDAO } from '../dao.js';
-import { formatAmountWithComma, promptSecurityPin, getTodayLocalDateString, escapeHTML, renderPrintHeader } from '../utils.js';
+import { formatAmountWithComma, promptSecurityPin, getTodayLocalDateString, escapeHTML, renderPrintHeader, formatAppDate } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import Swal from 'sweetalert2';
 import { cachedCustomers } from './customer-state.js';
@@ -126,19 +126,21 @@ export async function printFilteredCustomerList() {
             ? `<span style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #334155; display: inline-block;">${escapeHTML(c.zone)}</span>`
             : '-';
 
-        // Format creation/opening date
-        let openDateDisp = '-';
+        // Format creation/opening date and time
+        let openDateDisp = '-', openTimeDisp = '';
         if (c.createdAt) {
             try {
-                const dateObj = c.createdAt.toDate ? c.createdAt.toDate() : new Date(c.createdAt);
-                if (!isNaN(dateObj)) {
+                const dateObj = c.createdAt.toDate ? c.createdAt.toDate() : (c.createdAt.toMillis ? new Date(c.createdAt.toMillis()) : new Date(c.createdAt));
+                if (!isNaN(dateObj.getTime())) {
                     openDateDisp = dateObj.toLocaleDateString('en-GB');
+                    openTimeDisp = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                 }
             } catch (e) {
                 console.error('Error parsing customer creation date:', e);
             }
-        } else if (c.date) {
-            openDateDisp = c.date;
+        }
+        if (openDateDisp === '-' && (c.openingDate || c.date)) {
+            openDateDisp = formatAppDate(c.openingDate || c.date);
         }
 
         // Zone code lookup
@@ -147,7 +149,7 @@ export async function printFilteredCustomerList() {
 
         let cellsHtml = '';
         if (selectedCols.sl) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-family: 'Inter', sans-serif; color: #475569;">${idx + 1}</td>`;
-        if (selectedCols.date) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 10.5px; font-family: 'Inter', sans-serif; color: #475569;">${openDateDisp}</td>`;
+        if (selectedCols.date) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 2px; font-size: 10px; font-family: 'Inter', sans-serif; color: #334155; line-height: 1.15; white-space: nowrap;"><div style="font-weight: 700;">${openDateDisp}</div>${openTimeDisp ? `<div style="font-size: 8px; color: #64748b; font-weight: 500; margin-top: 1px;">${openTimeDisp}</div>` : ''}</td>`;
         if (selectedCols.acc) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.accountNo || '-')}</td>`;
         if (selectedCols.code) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 10.5px; font-weight: 700; font-family: 'Inter', monospace; color: #475569;">${escapeHTML(zCode)}</td>`;
         if (selectedCols.name) cellsHtml += `<td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 6px; font-size: 11px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #0f172a;"><strong>${escapeHTML(c.name)}</strong></td>`;
