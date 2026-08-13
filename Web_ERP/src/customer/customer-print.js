@@ -134,7 +134,9 @@ export async function printFilteredCustomerList() {
                 if (!isNaN(dateObj)) {
                     openDateDisp = dateObj.toLocaleDateString('en-GB');
                 }
-            } catch {}
+            } catch (e) {
+                console.error('Error parsing customer creation date:', e);
+            }
         } else if (c.date) {
             openDateDisp = c.date;
         }
