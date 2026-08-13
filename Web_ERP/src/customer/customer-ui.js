@@ -219,7 +219,7 @@ export function renderCustomerRows(customers) {
         const sAddr = String(d.address || '-').replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const sZone = String(d.zone || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
-        rows.push(`<tr class="hover:bg-white/[0.04] transition-colors border-b border-slate-800/60">
+        rows.push(`<tr class="hover:bg-white/[0.04] transition-colors border-b border-slate-800/60 cursor-pointer group" onclick="window.openCustomerLedger('${sId}')">
             <td class="py-2.5 px-3 text-xs font-bold text-slate-200 whitespace-nowrap align-top">
                 <div>${formatAppDate(openingDate)}</div>
                 ${entryTime ? `<div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1.5"><i class="fa-regular fa-clock text-[9px] text-slate-500"></i><span>${entryTime}</span></div>` : ''}
@@ -228,7 +228,7 @@ export function renderCustomerRows(customers) {
                 <div class="flex items-center gap-2">
                     <div class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(d.name || 'K').charAt(0)}</div>
                     <div class="flex items-center gap-2">
-                        <span class="text-xs text-white font-bold cursor-pointer hover:text-blue-400 transition-colors" onclick="window.openCustomerLedger('${sId}')">${d.name || 'N/A'}</span>
+                        <span class="text-xs text-white font-bold group-hover:text-blue-400 transition-colors">${d.name || 'N/A'}</span>
                         <span class="text-[10px] text-blue-400 font-black bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono">${d.accountNo || '-'}</span>
                     </div>
                 </div>
@@ -246,7 +246,7 @@ export function renderCustomerRows(customers) {
                     <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${due > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : (due < 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400')}">${due > 0 ? 'বকেয়া' : (due < 0 ? 'অ্যাডভান্স' : 'পরিশোধিত')}</span>
                 </div>
             </td>
-            <td class="py-2.5 px-3 text-center whitespace-nowrap sticky-action-col align-top">
+            <td class="py-2.5 px-3 text-center whitespace-nowrap sticky-action-col align-top" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-center gap-1">
                     <button class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান দেখুন"><i class="fa-solid fa-book text-blue-400"></i></button>
                     <button class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
@@ -258,12 +258,12 @@ export function renderCustomerRows(customers) {
             </td>
         </tr>`);
 
-        mobileHtml += `<div class="mobile-card">
+        mobileHtml += `<div class="mobile-card cursor-pointer" onclick="window.openCustomerLedger('${sId}')">
             <div class="mobile-card-header">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs shrink-0">${(d.name || 'K').charAt(0)}</div>
                     <div>
-                        <div class="mobile-card-title cursor-pointer hover:text-blue-400" onclick="window.openCustomerLedger('${sId}')">${d.name || 'N/A'}</div>
+                        <div class="mobile-card-title">${d.name || 'N/A'}</div>
                         <div class="mobile-card-sub text-blue-400 font-bold">${d.accountNo || '-'} ${d.zone ? '• ' + d.zone : ''}</div>
                     </div>
                 </div>
@@ -275,7 +275,7 @@ export function renderCustomerRows(customers) {
             <div class="mobile-card-row"><span class="mobile-card-label">তারিখ:</span><span class="mobile-card-value">${formatAppDate(openingDate)}${entryTime ? ` (${entryTime})` : ''}</span></div>
             <div class="mobile-card-row"><span class="mobile-card-label">মোবাইল:</span><span class="mobile-card-value">${d.phone || '-'}</span></div>
             <div class="mobile-card-row"><span class="mobile-card-label">ঠিকানা:</span><span class="mobile-card-value">${d.address || '-'}</span></div>
-            <div class="mobile-card-actions">
+            <div class="mobile-card-actions" onclick="event.stopPropagation()">
                 <button class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান"><i class="fa-solid fa-book text-blue-400"></i></button>
                 <button class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
                 <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>

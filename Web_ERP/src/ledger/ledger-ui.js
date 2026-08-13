@@ -88,11 +88,16 @@ export function renderLedger(container, params, callbacks = {}) {
     loadBankOptions();
     loadCashCollectorOptions();
 
-    if (params && params.customerId && filterLedgerByCustomer) {
+    if (params && params.customerId) {
         setTimeout(() => {
-            document.getElementById('ledger-customer-select').value = params.customerId;
-            filterLedgerByCustomer(params.customerId);
-        }, 200);
+            if (window.selectLedgerCustomer) {
+                window.selectLedgerCustomer(params.customerId);
+            } else if (filterLedgerByCustomer) {
+                const sel = document.getElementById('ledger-customer-select');
+                if (sel) sel.value = params.customerId;
+                filterLedgerByCustomer(params.customerId);
+            }
+        }, 150);
     } else if (loadRecentTransactions) {
         loadRecentTransactions();
     }
