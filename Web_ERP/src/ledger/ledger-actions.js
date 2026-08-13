@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords } from '../utils.js';
 import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
 
