@@ -82,13 +82,36 @@ export function renderRows(transactions, container, stateRefs = {}) {
         const sRf = (d.receivedFrom || '').replace(/'/g, "\\'");
         const sRt = (d.receivedType || '').replace(/'/g, "\\'");
 
+        let entryTime = '';
+        if (d.createdAt) {
+            try {
+                const dt = d.createdAt.toDate ? d.createdAt.toDate() : (d.createdAt.toMillis ? new Date(d.createdAt.toMillis()) : new Date(d.createdAt));
+                if (!isNaN(dt.getTime())) {
+                    entryTime = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                }
+            } catch (e) {
+                console.error("Time parsing error:", e);
+            }
+        }
+        const custAddress = cust?.address || d.address || '';
+
         rows.push(`<tr class="hover:bg-white/[0.03] transition-colors border-b border-slate-800/50">
-            <td class="text-[10px] text-slate-300 font-bold whitespace-nowrap">${formatAppDate(d.date)}</td>
-            <td class="font-bold text-slate-200 text-xs"><div>${d.customerName || cust?.name || 'Unknown'}${typeBadge}</div><div class="flex items-center gap-1.5 mt-1">${d.voucherNo ? `<span class="text-[9px] text-blue-400 font-black">#${d.voucherNo}</span>` : ''}${d.notes ? `<span class="text-[9px] text-slate-500 font-medium italic truncate max-w-[180px]" title="${d.notes}">• ${d.notes}</span>` : ''}</div></td>
-            <td class="text-right text-red-400 font-black text-sm">৳${formatAmountWithComma(b)}</td>
-            <td class="text-right text-emerald-400 font-black text-sm">৳${formatAmountWithComma(p)}</td>
-            <td class="text-right text-white font-black text-base bg-white/[0.02] border-l border-slate-800/50">৳${formatAmountWithComma(Math.abs(balanceVal))}<div class="text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</div></td>
-            <td class="text-center sticky-action-col"><div class="flex items-center justify-center gap-1.5">
+            <td class="text-[10px] text-slate-300 font-bold whitespace-nowrap align-top py-2.5">
+                <div>${formatAppDate(d.date)}</div>
+                ${entryTime ? `<div class="text-[9px] text-slate-500 font-normal mt-0.5 flex items-center gap-1"><i class="fa-regular fa-clock text-[8px] text-slate-400"></i><span>${entryTime}</span></div>` : ''}
+            </td>
+            <td class="font-bold text-slate-200 text-xs align-top py-2.5">
+                <div class="flex items-center flex-wrap gap-1">
+                    <span>${d.customerName || cust?.name || 'Unknown'}</span>
+                    ${typeBadge}
+                </div>
+                ${custAddress ? `<div class="text-[9px] text-slate-400 font-normal mt-0.5 truncate max-w-[220px] flex items-center gap-1" title="${custAddress}"><i class="fa-solid fa-location-dot text-[8px] text-slate-500"></i><span>${custAddress}</span></div>` : ''}
+                <div class="flex items-center gap-1.5 mt-0.5">${d.voucherNo ? `<span class="text-[9px] text-blue-400 font-black">#${d.voucherNo}</span>` : ''}${d.notes ? `<span class="text-[9px] text-slate-500 font-medium italic truncate max-w-[180px]" title="${d.notes}">• ${d.notes}</span>` : ''}</div>
+            </td>
+            <td class="text-right text-red-400 font-black text-sm align-top py-2.5">৳${formatAmountWithComma(b)}</td>
+            <td class="text-right text-emerald-400 font-black text-sm align-top py-2.5">৳${formatAmountWithComma(p)}</td>
+            <td class="text-right text-white font-black text-base bg-white/[0.02] border-l border-slate-800/50 align-top py-2.5">৳${formatAmountWithComma(Math.abs(balanceVal))}<div class="text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</div></td>
+            <td class="text-center sticky-action-col align-top py-2.5"><div class="flex items-center justify-center gap-1.5">
                 <button class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
                 <button class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
                 ${canEdit ? `<button class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
@@ -99,7 +122,11 @@ export function renderRows(transactions, container, stateRefs = {}) {
 
         mobileHtml += `<div class="mobile-card">
             <div class="mobile-card-header">
-                <div><div class="mobile-card-title">${d.customerName || cust?.name || 'Unknown'}</div><div class="mobile-card-sub text-blue-400 font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo : formatAppDate(d.date)} ${typeBadge}</div></div>
+                <div>
+                    <div class="mobile-card-title">${d.customerName || cust?.name || 'Unknown'}</div>
+                    ${custAddress ? `<div class="text-[10px] text-slate-400 font-normal flex items-center gap-1 mt-0.5"><i class="fa-solid fa-location-dot text-[9px] text-slate-500"></i><span>${custAddress}</span></div>` : ''}
+                    <div class="mobile-card-sub text-blue-400 font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo : formatAppDate(d.date)}${entryTime ? ` (${entryTime})` : ''} ${typeBadge}</div>
+                </div>
                 <div class="text-right"><div class="text-white font-black text-base">৳ ${formatAmountWithComma(Math.abs(balanceVal))}</div><span class="inline-block text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</span></div>
             </div>
             <div class="mobile-card-row"><span class="mobile-card-label">বিল (Debit):</span><span class="mobile-card-value text-red-400 font-bold">৳ ${formatAmountWithComma(b)}</span></div>
