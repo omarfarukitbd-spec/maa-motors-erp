@@ -55,10 +55,17 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
         const cData = await CustomerDAO.getById(customerId) || {};
 
         const allTxns = await TransactionDAO.getByCustomer(customerId);
+        const getTxnTime = (t) => {
+            if (!t?.createdAt) return 0;
+            if (typeof t.createdAt.toMillis === 'function') return t.createdAt.toMillis();
+            if (typeof t.createdAt.toDate === 'function') return t.createdAt.toDate().getTime();
+            return new Date(t.createdAt).getTime() || 0;
+        };
+
         allTxns.sort((a, b) => {
             const dDiff = new Date(a.date) - new Date(b.date);
             if (dDiff !== 0) return dDiff;
-            return (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0);
+            return getTxnTime(a) - getTxnTime(b);
         });
 
         let calcPrevDue = Number(cData.initialDue || 0);

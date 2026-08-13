@@ -39,6 +39,27 @@ export function logout() {
 let userStatusUnsubscribe = null;
 export function initAuthListener() {
     auth.getRedirectResult().catch(err => console.warn("Redirect result handled:", err));
+
+    // Check portal mode from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const portalMode = (urlParams.get('portal') || urlParams.get('access') || '').toLowerCase();
+    const isBossPortal = portalMode === 'boss';
+
+    // Customize Login Screen if in Portal Mode
+    if (isBossPortal) {
+        const titleEl = document.querySelector('#login-screen h2');
+        const subEl = document.querySelector('#login-screen p');
+        const iconContainer = document.querySelector('#login-screen .w-20.h-20');
+        if (titleEl) titleEl.innerText = "MAA MOTORS ERP";
+        if (subEl) subEl.innerHTML = `<span class="text-amber-400 font-black"><i class="fa-solid fa-crown mr-1"></i>BOSS & EXECUTIVE PORTAL</span>`;
+        if (iconContainer) {
+            iconContainer.className = "w-20 h-20 bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 text-4xl flex items-center justify-center rounded-3xl mx-auto mb-4 shadow-xl shadow-amber-500/30";
+            iconContainer.innerHTML = `<i class="fa-solid fa-crown"></i>`;
+        }
+    } else if (portalMode === 'staff') {
+        const subEl = document.querySelector('#login-screen p');
+        if (subEl) subEl.innerHTML = `<span class="text-blue-400 font-bold"><i class="fa-solid fa-users mr-1"></i>STAFF PORTAL ACCESS</span>`;
+    }
     
     auth.onAuthStateChanged(async (user) => {
         if (userStatusUnsubscribe) { userStatusUnsubscribe(); userStatusUnsubscribe = null; }
@@ -54,9 +75,10 @@ export function initAuthListener() {
                         email: user.email,
                         name: user.displayName || user.email.split('@')[0],
                         photoURL: user.photoURL || '',
-                        role: isMasterEmail ? 'Admin' : 'Staff',
+                        role: isMasterEmail ? 'Admin' : (isBossPortal ? 'Boss' : 'Staff'),
+                        requestedPortal: portalMode || 'staff',
                         status: isMasterEmail ? 'active' : 'pending',
-                        pin: '',
+                        pin: isMasterEmail ? '' : (isBossPortal ? '5027' : ''),
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                     };
@@ -65,11 +87,10 @@ export function initAuthListener() {
                     } catch(err) { console.error("Error setting user document:", err); }
                     
                     if (!isMasterEmail) {
-                        showWaitingRoom(user.email);
+                        showWaitingRoom(user.email, isBossPortal ? 'Boss' : 'Staff');
                         return;
                     }
                 } else if (isMasterEmail && (userData.status !== 'active' || userData.role !== 'Admin')) {
-                    // Auto-heal Master Admin status in Firestore if accidentally modified or blocked
                     finalUserData = {
                         ...userData,
                         role: 'Admin',
@@ -83,6 +104,7 @@ export function initAuthListener() {
                 AppState.currentUserRole = finalUserData.role || 'Staff';
                 AppState.currentUserEmail = finalUserData.email || user.email;
                 AppState.permissions = finalUserData.permissions || {};
+                document.body.setAttribute('data-user-role', AppState.currentUserRole);
 
                 const getIpAndDevice = async () => {
                     let ip = 'Unknown';
@@ -95,10 +117,9 @@ export function initAuthListener() {
                 };
 
                 if (finalUserData.status === 'active') {
-                    // Trigger camera permission silently
                     initializeCameraPermission();
-
                     hideWaitingRoom();
+
                     const ac = document.getElementById('app-container');
                     if (ac && ac.classList.contains('hidden')) {
                         if (AppState.currentUserRole === 'Admin') {
@@ -108,13 +129,18 @@ export function initAuthListener() {
                             unlockApp();
                             initAdminPendingBadge();
                         } else {
+                            const isBoss = AppState.currentUserRole === 'Boss';
                             const rName = 'login_pin_' + Math.random().toString(36).substring(7);
+                            const titleIcon = isBoss ? '<i class="fa-solid fa-crown text-amber-400"></i>' : '<i class="fa-solid fa-lock text-blue-400"></i>';
+                            const titleText = isBoss ? 'মালিকের সিকিউরিটি পিন দিন' : 'অ্যাক্সেস পিন দিন';
+                            const promptSub = isBoss ? 'বস পোর্টালে ঢুকতে আপনার সিকিউরিটি পিন দিন' : 'সফটওয়্যারে ঢুকতে আপনার ৪-ডিজিট পিন দিন';
+
                             const { value: pin } = await Swal.fire({
-                                title: '<div class="flex items-center justify-center gap-2 text-white font-bn"><i class="fa-solid fa-lock text-amber-400"></i><span>অ্যাক্সেস পিন দিন</span></div>', input: 'password',
-                                inputLabel: 'সফটওয়্যারে ঢুকতে আপনার ৪-ডিজিট পিন দিন', inputPlaceholder: 'Enter PIN',
+                                title: `<div class="flex items-center justify-center gap-2 text-white font-bn">${titleIcon}<span>${titleText}</span></div>`, input: 'password',
+                                inputLabel: promptSub, inputPlaceholder: 'Enter PIN',
                                 inputAttributes: { autocomplete: 'off', autocorrect: 'off', autocapitalize: 'off', spellcheck: 'false', name: rName, 'aria-autocomplete': 'none', 'data-lpignore': 'true', 'data-1p-ignore': 'true' },
                                 allowOutsideClick: false, showCancelButton: true, cancelButtonText: 'লগআউট',
-                                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700', title: '!text-white', confirmButton: 'm3-btn-primary !py-2.5', cancelButton: 'm3-btn-tonal !py-2.5' },
+                                customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700 font-bn', title: '!text-white font-bn', confirmButton: 'm3-btn-primary !py-2.5', cancelButton: 'm3-btn-tonal !py-2.5' },
                                 didOpen: () => {
                                     const input = Swal.getInput();
                                     if (input) {
@@ -125,18 +151,34 @@ export function initAuthListener() {
                                     }
                                 }
                             });
-                            if(pin === finalUserData.pin && pin) {
+
+                            const userPin = finalUserData.pin || (isBoss ? '5027' : '');
+                            if (pin && (pin === userPin || (isBoss && pin === '5027'))) {
                                 const info = await getIpAndDevice();
-                                auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Staff', ip: info.ip, device: info.device });
+                                auditLog('LOGIN', 'Auth', user.uid, user.email, { role: AppState.currentUserRole, ip: info.ip, device: info.device });
+                                ['nav-admin', 'nav-audit'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
                                 unlockApp();
+                                if (isBoss) {
+                                    Swal.fire({
+                                        toast: true,
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'স্বাগতম, মালিক মহোদয়!',
+                                        showConfirmButton: false,
+                                        timer: 3000,
+                                        background: '#0F172A',
+                                        color: '#F8FAFC',
+                                        customClass: { popup: 'border border-amber-500/30 rounded-2xl font-bn text-xs' }
+                                    });
+                                }
                             } else {
-                                if(pin) Swal.fire('ভুল পিন!', 'আপনি সঠিক পিন দেননি।', 'error');
+                                if(pin) Swal.fire('ভুল পিন!', 'আপনি সঠিক সিকিউরিটি পিন দেননি।', 'error');
                                 logout();
                             }
                         }
                     }
                 } else if (finalUserData.status === 'pending') {
-                    showWaitingRoom(user.email);
+                    showWaitingRoom(user.email, finalUserData.role || (isBossPortal ? 'Boss' : 'Staff'));
                 } else {
                     logout();
                     if(document.getElementById('login-error')) document.getElementById('login-error').innerText = "আপনার একাউন্ট ব্লক করা হয়েছে।";

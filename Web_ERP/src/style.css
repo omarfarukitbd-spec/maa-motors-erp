@@ -498,6 +498,29 @@ header {
     flex-wrap: wrap !important;
     justify-content: space-between !important;
 }
+
+/* ==========================================================================
+   Boss / Executive Mode UI Lockdown
+   ========================================================================== */
+body[data-user-role="Boss"] #nav-admin,
+body[data-user-role="Boss"] #nav-audit,
+body[data-user-role="Boss"] #nav-fast-entry,
+body[data-user-role="Boss"] #nav-bulk-entry,
+body[data-user-role="Boss"] #nav-backup,
+body[data-user-role="Boss"] #btn-add-customer,
+body[data-user-role="Boss"] #btn-add-expense,
+body[data-user-role="Boss"] .btn-edit,
+body[data-user-role="Boss"] .btn-delete,
+body[data-user-role="Boss"] .action-btn-edit,
+body[data-user-role="Boss"] .action-btn-delete,
+body[data-user-role="Boss"] .admin-only,
+body[data-user-role="Boss"] .staff-only,
+body[data-user-role="Boss"] #ledger-action-bar,
+body[data-user-role="Boss"] #customer-action-forms,
+body[data-user-role="Boss"] .hide-for-boss {
+    display: none !important;
+}
+
 .flatpickr-months {
     padding: 4px 2px 10px !important;
     background: transparent !important;
