@@ -254,12 +254,12 @@ export async function loadCollectionList(startDate, endDate) {
             let cardsHtml = '';
             if (txns.length > 0 && Object.keys(methodGroups).length > 0) {
                 cardsHtml += `
-                    <div class="method-card-btn bg-emerald-600/90 backdrop-blur-md border border-emerald-500/50 rounded-2xl p-3 sm:p-3.5 cursor-pointer hover:bg-emerald-500 transition-all flex flex-col justify-between gap-1.5 w-full min-w-0 shadow-[0_5px_15px_-5px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400" onclick="window.filterCollectionByMethod('All')" data-method="All">
-                        <span class="text-[10.5px] font-black text-emerald-100 uppercase drop-shadow-sm truncate"><i class="fa-solid fa-layer-group mr-1"></i>সব (All)</span>
-                        <div class="flex items-end justify-between gap-2">
-                            <span class="text-sm sm:text-base font-black text-white tracking-tight truncate font-inter">৳ ${formatAmountWithComma(total)}</span>
-                            <span class="text-[9px] bg-emerald-900/60 text-emerald-100 px-1.5 py-0.5 rounded-md font-bold shrink-0">${txns.filter(t => t.receivedType !== 'Less').length} জন</span>
+                    <div class="method-card-btn bg-emerald-600/90 backdrop-blur-md border border-emerald-500/50 rounded-2xl p-3 sm:p-3.5 cursor-pointer hover:bg-emerald-500 transition-all flex flex-col justify-between gap-2 w-full min-w-0 shadow-[0_5px_15px_-5px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400 select-none" onclick="window.filterCollectionByMethod('All')" data-method="All">
+                        <div class="flex items-center justify-between gap-1.5 w-full">
+                            <span class="text-[11px] font-black text-emerald-100 uppercase drop-shadow-sm truncate"><i class="fa-solid fa-layer-group mr-1"></i>সব (All)</span>
+                            <span class="text-[9.5px] bg-emerald-900/70 text-emerald-100 px-1.5 py-0.5 rounded-md font-bold shrink-0">${txns.filter(t => t.receivedType !== 'Less').length} জন</span>
                         </div>
+                        <div class="text-base sm:text-lg font-black text-white tracking-tight font-inter whitespace-nowrap">৳ ${formatAmountWithComma(total)}</div>
                     </div>
                 `;
 
@@ -273,12 +273,12 @@ export async function loadCollectionList(startDate, endDate) {
                     const ringColor = isCash ? 'ring-emerald-400' : 'ring-blue-400';
 
                     cardsHtml += `
-                        <div class="method-card-btn ${themeBg} backdrop-blur-sm border ${themeBorder} ${themeHover} rounded-2xl p-3 sm:p-3.5 cursor-pointer transition-all flex flex-col justify-between gap-1.5 w-full min-w-0 opacity-70 hover:opacity-100 shadow-sm" onclick="window.filterCollectionByMethod('${mName}')" data-method="${mName}" data-ring="${ringColor}">
-                            <span class="text-[10.5px] font-bold ${themeText} uppercase truncate">${icon}${mName}</span>
-                            <div class="flex items-end justify-between gap-2">
-                                <span class="text-sm sm:text-base font-black ${themeText} tracking-tight truncate font-inter">৳ ${formatAmountWithComma(stats.total)}</span>
-                                <span class="text-[9px] bg-slate-900/80 ${themeText} px-1.5 py-0.5 rounded-md font-bold shrink-0">${stats.count} জন</span>
+                        <div class="method-card-btn ${themeBg} backdrop-blur-sm border ${themeBorder} ${themeHover} rounded-2xl p-3 sm:p-3.5 cursor-pointer transition-all flex flex-col justify-between gap-2 w-full min-w-0 opacity-80 hover:opacity-100 shadow-sm select-none" onclick="window.filterCollectionByMethod('${mName}')" data-method="${mName}" data-ring="${ringColor}">
+                            <div class="flex items-center justify-between gap-1.5 w-full">
+                                <span class="text-[11px] font-bold ${themeText} uppercase truncate">${icon}${mName}</span>
+                                <span class="text-[9.5px] bg-slate-900/80 ${themeText} px-1.5 py-0.5 rounded-md font-bold shrink-0">${stats.count} জন</span>
                             </div>
+                            <div class="text-base sm:text-lg font-black ${themeText} tracking-tight font-inter whitespace-nowrap">৳ ${formatAmountWithComma(stats.total)}</div>
                         </div>
                     `;
                 }
