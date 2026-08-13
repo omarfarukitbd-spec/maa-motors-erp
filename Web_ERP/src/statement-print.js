@@ -73,6 +73,7 @@ function generateRowsArray(initialDue, docs) {
 }
 
 function getSharedHtmlTemplates(customer, totalBill, totalPaid, totalDue, running, settings, title, subtitle, dateRangeStr) {
+    const cleanCustomerName = (customer.name || '').replace(/^\[.*?\]\s*/, '').trim();
     const page1HeaderHtml = renderPrintHeader(settings, { title, subtitle, dateRangeStr });
     const repeatHeaderHtml = `
         <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
@@ -89,7 +90,7 @@ function getSharedHtmlTemplates(customer, totalBill, totalPaid, totalDue, runnin
 
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #0284c7; padding: 12px 16px; display: flex; flex-direction: column; justify-content: flex-start;">
                 <div style="font-size: 10px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px;">CUSTOMER DETAILS</div>
-                <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${customer.name}</p>
+                <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${cleanCustomerName}</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size:11px; color:#475569; margin-bottom: 6px;">
                     <span><strong style="color:#0f172a;">A/C No:</strong> ${customer.accountNo || '-'}</span>
                     <span><strong style="color:#0f172a;">Mobile:</strong> ${customer.phone || '-'}</span>

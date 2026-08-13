@@ -17,7 +17,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{o as t}from"./dao-BJg8
             <td style="text-align:right; font-weight:900; color:#0f172a; border-bottom:1px solid #e2e8f0; padding: 5px 10px; border-left:1px solid #e2e8f0; vertical-align: middle;">
                 ৳ ${i(Math.abs(r))} ${r<0?`<span style="font-size:8px; color:#059669;">(Adv)</span>`:``}
             </td>
-        </tr>`;n.push({html:u,textLength:(e.receivedFrom||``).length})}),{rowsArray:n,running:r}}function p(e,t,n,r,i,o,s,c,l){return{page1HeaderHtml:a(o,{title:s,subtitle:c,dateRangeStr:l}),repeatHeaderHtml:`
+        </tr>`;n.push({html:u,textLength:(e.receivedFrom||``).length})}),{rowsArray:n,running:r}}function p(e,t,n,r,i,o,s,c,l){let u=(e.name||``).replace(/^\[.*?\]\s*/,``).trim();return{page1HeaderHtml:a(o,{title:s,subtitle:c,dateRangeStr:l}),repeatHeaderHtml:`
         <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
             <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">${s} <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
             <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${l||c}</div>
@@ -30,7 +30,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{o as t}from"./dao-BJg8
 
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #0284c7; padding: 12px 16px; display: flex; flex-direction: column; justify-content: flex-start;">
                 <div style="font-size: 10px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px;">CUSTOMER DETAILS</div>
-                <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${e.name}</p>
+                <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${u}</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size:11px; color:#475569; margin-bottom: 6px;">
                     <span><strong style="color:#0f172a;">A/C No:</strong> ${e.accountNo||`-`}</span>
                     <span><strong style="color:#0f172a;">Mobile:</strong> ${e.phone||`-`}</span>

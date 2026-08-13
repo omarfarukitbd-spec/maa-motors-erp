@@ -111,7 +111,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{i as t,o as n,s as r}f
                     <!-- Customer Details Box (Full Width) -->
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 18px;">
                         <div style="font-size: 10px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 0.5px;">CUSTOMER DETAILS</div>
-                        <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${l(u.customerName)}</p>
+                        <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${l(String(u.customerName||f.name||``).replace(/^\[.*?\]\s*/,``).trim())}</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size:11px; color:#475569; margin-bottom: 6px;">
                             <span><strong style="color:#0f172a;">A/C No:</strong> ${l(f.accountNo||`-`)}</span>
                             <span><strong style="color:#0f172a;">Mobile:</strong> ${l(f.phone||`-`)}</span>

@@ -13,14 +13,17 @@ export function renderStatementUI(container, params, stateRef = {}, callbacks = 
     const cached = getCustomerCache().find(c => c.id === params.customerId);
     const dueVal = Number(cached?.totalDue || params.totalDue || 0);
 
+    const rawName = params.customerName || cached?.name || 'Customer';
+    const cleanName = rawName.replace(/^\[.*?\]\s*/, '').trim();
+
     stateRef.currentCustomerInfo = { 
-        id: params.customerId, name: params.customerName || cached?.name || 'Customer',
+        id: params.customerId, name: cleanName,
         accountNo: params.accountNo || cached?.accountNo || '', phone: params.customerPhone || cached?.phone || '',
         address: params.customerAddress || cached?.address || '', zone: cached?.zone || '', totalDue: dueVal
     };
 
     const currentCustomerInfo = stateRef.currentCustomerInfo;
-    const firstChar = (currentCustomerInfo.name || 'C').charAt(0).toUpperCase();
+    const firstChar = (cleanName || 'C').charAt(0).toUpperCase();
     const healthBadge = dueVal > 50000 
         ? '<span class="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black uppercase"><i class="fa-solid fa-circle text-[8px] mr-1 animate-pulse"></i>High Due</span>'
         : (dueVal > 0 ? '<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black uppercase">Regular</span>' : '<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black uppercase">Cleared</span>');
