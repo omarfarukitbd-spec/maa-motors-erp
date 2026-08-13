@@ -114,9 +114,10 @@ export function initDatePickers() {
         }
 
         const fp = flatpickr(input, {
+            mode: input.dataset.mode || 'single',
             dateFormat: 'Y-m-d',
             altInput: true,
-            altFormat: 'd/m/Y',
+            altFormat: input.dataset.mode === 'range' ? 'd/m/Y to d/m/Y' : 'd/m/Y',
             allowInput: true,
             clickOpens: false,
             disableMobile: true,

@@ -1,4 +1,5 @@
 import { getTodayLocalDateString } from '../utils.js';
+import { loadBankOptions, loadCashCollectorOptions } from './ledger-bank-cash.js';
 
 export function renderLedger(container, params, callbacks = {}) {
     const { loadCustomersForDropdown, loadRecentTransactions, filterLedgerByCustomer } = callbacks;
@@ -38,7 +39,7 @@ export function renderLedger(container, params, callbacks = {}) {
                     <input type="text" id="ledger-voucher" class="m3-field py-1 bg-slate-950/80 h-10 text-xs">
                 </div>
                 <div class="flex flex-col relative">
-                    <label class="m3-label text-red-400 mb-1.5 block text-xs font-bold truncate">খরচ <span class="m3-label-sub text-[10px] opacity-70">(Debit)</span></label>
+                    <label class="m3-label text-red-400 mb-1.5 block text-xs font-bold truncate">বিল <span class="m3-label-sub text-[10px] opacity-70">(Debit)</span></label>
                     <input type="text" id="ledger-bill" oninput="window.handleNumberInput(this); window.updateLedgerLiveText(); window.updateLiveWords(this, 'ledger-bill-words');" class="m3-field py-1 text-base font-black text-red-400 bg-slate-950/80 h-10">
                     <div id="ledger-bill-words" class="text-[10px] font-black text-red-400 mt-1 hidden italic truncate"></div>
                 </div>
@@ -52,33 +53,21 @@ export function renderLedger(container, params, callbacks = {}) {
                 <div><label class="m3-label text-emerald-400">পেমেন্ট মাধ্যম</label><div class="flex bg-slate-950 rounded-xl border border-slate-700 h-9 p-1 gap-1"><button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-blue-600 text-white rounded-lg">Bank</button><button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Cash</button><button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Less</button></div></div>
                 <div>
                     <label id="lbl-recv-from" class="m3-label text-emerald-400">ব্যাংক অ্যাকাউন্ট (Bank Name)</label>
-                    <input type="text" id="ledger-received-from" list="dl-bank-names" placeholder="যেমন: DBBL, bKash..." class="m3-field py-1 text-xs bg-slate-950/80 h-9" onfocus="this.dataset.old=this.value; this.value='';" onclick="try{this.showPicker();}catch(e){}" onblur="if(this.value==='') this.value=this.dataset.old||'';">
-                    <datalist id="dl-bank-names">
-                        <option value="OneBank (IFRAT)"></option>
-                        <option value="IBBL (IFRAT)"></option>
-                        <option value="bKash"></option>
-                        <option value="Nagad"></option>
-                        <option value="Rocket"></option>
-                        <option value="Upay"></option>
-                        <option value="Islami Bank"></option>
-                        <option value="Dutch-Bangla Bank (DBBL)"></option>
-                        <option value="BRAC Bank"></option>
-                        <option value="City Bank"></option>
-                        <option value="Sonali Bank"></option>
-                        <option value="Agrani Bank"></option>
-                        <option value="Pubali Bank"></option>
-                    </datalist>
-                    <datalist id="dl-cash-receivers">
-                        <option value="শোরুম ক্যাশ"></option>
-                        <option value="নিজস্ব"></option>
-                    </datalist>
+                    <div class="flex gap-1.5 items-center" id="recv-input-wrapper">
+                        <select id="ledger-received-from" class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1 cursor-pointer">
+                            <option value="">-- নির্বাচন করুন --</option>
+                        </select>
+                        <button type="button" id="btn-quick-add-recv" onclick="window.quickAddBank && window.quickAddBank()" class="w-9 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নতুন যোগ করুন">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="flex justify-end pt-2"><button class="m3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20" id="save-txn-btn" onclick="window.saveTransaction()">এন্ট্রি সেভ করুন</button></div>
         </div>
         <div class="desktop-only m3-table-container clusterize-scroll" id="ledger-scroll-area" style="max-height: 60vh;">
             <table id="ledger-table" class="m3-table min-w-[900px]">
-                <thead><tr class="font-bn"><th>তারিখ</th><th>বিবরণ / ভাউচার</th><th class="text-right">খরচ (Debit)</th><th class="text-right">জমা (Credit)</th><th class="text-right text-blue-400">অবশিষ্ট (Balance)</th><th class="text-center sticky-action-col">অ্যাকশন</th></tr></thead>
+                <thead><tr class="font-bn"><th>তারিখ</th><th>বিবরণ / ভাউচার</th><th class="text-right">বিল (Debit)</th><th class="text-right">জমা (Credit)</th><th class="text-right text-blue-400">অবশিষ্ট (Balance)</th><th class="text-center sticky-action-col">অ্যাকশন</th></tr></thead>
                 <tbody id="ledger-list" class="font-bn clusterize-content"></tbody>
                 <tfoot id="ledger-tfoot"></tfoot>
             </table>
@@ -94,6 +83,11 @@ export function renderLedger(container, params, callbacks = {}) {
 
     document.getElementById('ledger-date').value = getTodayLocalDateString();
     if (loadCustomersForDropdown) loadCustomersForDropdown();
+    
+    // Load dynamic bank & cash collector datalists
+    loadBankOptions();
+    loadCashCollectorOptions();
+
     if (params && params.customerId && filterLedgerByCustomer) {
         setTimeout(() => {
             document.getElementById('ledger-customer-select').value = params.customerId;
@@ -103,3 +97,4 @@ export function renderLedger(container, params, callbacks = {}) {
         loadRecentTransactions();
     }
 }
+

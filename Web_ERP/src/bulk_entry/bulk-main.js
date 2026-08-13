@@ -2,12 +2,29 @@ import { CustomerDAO } from '../dao.js';
 import { getCustomerCache, initCustomerCache } from '../customer/index.js';
 import { addSpreadsheetRow } from './spreadsheet-grid.js';
 import { downloadAdminExcelBackup, uploadAdminExcelBackup } from '../excel_sync.js';
+import { loadBankOptions, loadCashCollectorOptions } from '../ledger/ledger-bank-cash.js';
 
 /**
  * Main Bulk Entry UI Controller
  */
 
 export function renderBulkEntry(container) {
+    const loadData = async () => {
+        try {
+            await Promise.all([loadBankOptions(), loadCashCollectorOptions()]);
+            const firstSelect = document.getElementById('grid-bank-name-1');
+            if (firstSelect && window.cachedBanksHtml) {
+                const typeSelect = firstSelect.closest('tr').querySelector('select');
+                if (typeSelect && typeSelect.value === 'Bank') {
+                    firstSelect.innerHTML = window.cachedBanksHtml;
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+    loadData();
+
     if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.viewBulkEntry === false) {
         container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-black text-red-500">অ্যাক্সেস ডিনাইড!</h2></div>`;
         return;

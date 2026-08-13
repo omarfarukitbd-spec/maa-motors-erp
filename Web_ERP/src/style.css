@@ -61,6 +61,10 @@ html, body {
     color-scheme: dark !important;
 }
 
+.font-inter, .en-font, .font-en {
+    font-family: 'Inter', sans-serif !important;
+}
+
 .hidden {
     display: none !important;
 }

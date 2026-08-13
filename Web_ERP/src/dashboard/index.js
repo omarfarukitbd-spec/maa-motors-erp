@@ -1,28 +1,29 @@
 /**
  * --- DASHBOARD MODULE (Main Entry & Realtime Orchestrator) ---
- * Connects UI, Charts, Real-time Listeners, and Fallbacks.
+ * Connects UI, Charts, Real-time Listeners, Dynamic Date Filtering & Breakdown Drill-Down.
  */
-import { db } from '../firebase-config.js';
 import { TransactionDAO, ExpenseDAO } from '../dao.js';
-import { loadRecentTransactions } from '../ledger.js';
-import { formatAmountWithComma, getTodayLocalDateString } from '../utils.js';
+import { formatAmountWithComma, getTodayLocalDateString, toDBDate, formatAppDate } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
+import { numberToBanglaWords } from '../utils/currency-words.js';
 import { getDashboardHTML } from './dashboard-ui.js';
 import { renderSalesVsCollectionChart, renderPaymentDonutChart } from './dashboard-charts.js';
-import { renderTopDueCustomers, printExecutiveSummary } from './dashboard-actions.js';
+import { renderTopDueCustomers, printExecutiveSummary, showBreakdownDetails } from './dashboard-actions.js';
+import { loadAllZones } from '../customer/customer-handlers.js';
 
 let dashboardUnsubscribes = [];
 let currentTimeframe = 'today';
+let activeFilterDate = null;
+let currentBankBreakdown = {};
+let currentCashBreakdown = {};
 
 export function unsubscribeDashboard() {
     dashboardUnsubscribes.forEach(unsub => { if (typeof unsub === 'function') unsub(); });
     dashboardUnsubscribes = [];
 }
 
-import { loadAllZones } from '../customer/customer-handlers.js';
-
 export function renderDashboard(container, params) {
-    if(window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.viewDashboard === false) {
+    if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.viewDashboard === false) {
         container.innerHTML = `<div class="m3-card text-center"><h2 class="text-xl font-bold text-red-500 font-bn">অ্যাক্সেস ডিনাইড! আপনার ড্যাশবোর্ড দেখার অনুমতি নেই।</h2></div>`;
         return;
     }
@@ -31,14 +32,46 @@ export function renderDashboard(container, params) {
     container.innerHTML = getDashboardHTML();
 
     loadAllZones();
-    startDashboardRealtimeUpdates();
-    const filterVoucher = (params && params.filterVoucher) ? params.filterVoucher : null;
-    loadRecentTransactions(filterVoucher);
+    activeFilterDate = getTodayLocalDateString();
+    startDashboardRealtimeUpdates(activeFilterDate);
+
+    setTimeout(() => {
+        const colDpEl = document.getElementById('collection-list-datepicker');
+        if (colDpEl && colDpEl._flatpickr) {
+            colDpEl._flatpickr.set('onChange', function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    const start = toDBDate(selectedDates[0]);
+                    const end = toDBDate(selectedDates[1]);
+                    window.filterCollectionList('custom', start, end);
+                } else if (selectedDates.length === 1 && !dateStr.includes('to')) {
+                    const start = toDBDate(selectedDates[0]);
+                    window.filterCollectionList('custom', start, start);
+                }
+            });
+        }
+        window.filterCollectionList('today');
+    }, 200);
 }
 
-function startDashboardRealtimeUpdates() {
+export function startDashboardRealtimeUpdates(targetDate = null) {
     unsubscribeDashboard();
-    const today = getTodayLocalDateString();
+    const queryDate = targetDate || activeFilterDate || getTodayLocalDateString();
+    activeFilterDate = queryDate;
+
+    // Update active date display badge & date input
+    const dateInput = document.getElementById('dash-date-filter');
+    const badgeText = document.getElementById('dash-active-date-text');
+    const formattedAppDateStr = formatAppDate(queryDate);
+    const todayStr = getTodayLocalDateString();
+
+    if (dateInput) dateInput.value = formattedAppDateStr;
+    if (badgeText) {
+        if (queryDate === todayStr) {
+            badgeText.innerText = `আজকের লাইভ হিসাব (${formattedAppDateStr})`;
+        } else {
+            badgeText.innerText = `${formattedAppDateStr} এর হিসাব`;
+        }
+    }
 
     function updateCustomerStats() {
         const customers = getCustomerCache();
@@ -46,8 +79,8 @@ function startDashboardRealtimeUpdates() {
         customers.forEach(c => { totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)); });
         const dueEl = document.getElementById('dash-total-due');
         const custEl = document.getElementById('dash-total-cust');
-        if(dueEl) dueEl.innerText = "৳ " + formatAmountWithComma(totalDue);
-        if(custEl) custEl.innerText = customers.length + " জন";
+        if (dueEl) dueEl.innerText = "৳ " + formatAmountWithComma(totalDue);
+        if (custEl) custEl.innerText = customers.length + " জন";
         renderTopDueCustomers();
     }
 
@@ -58,52 +91,54 @@ function startDashboardRealtimeUpdates() {
     }, 3000);
     dashboardUnsubscribes.push(() => clearInterval(statsInterval));
 
-    // Listen for today's transactions
-    const unsubTxns = TransactionDAO.listenByDate(today, transactions => {
-        let todayCol = 0, cashCol = 0, bankCol = 0, todaySales = 0;
-        let bankBreakdown = {};
-        let cashBreakdown = {};
+    // Listen for transactions of target date
+    const unsubTxns = TransactionDAO.listenByDate(queryDate, transactions => {
+        let cashCol = 0, bankCol = 0, lessCol = 0;
+        currentBankBreakdown = {};
+        currentCashBreakdown = {};
 
         transactions.forEach(data => {
             const p = (Number(data.paid) || 0);
-            const b = (Number(data.bill) || 0);
-            todayCol += p; todaySales += b;
-            
-            if (p > 0) {
-                const rt = data.receivedType || 'Bank';
-                let rf = (data.receivedFrom || '').trim();
-                
-                if (rt === 'Cash') {
-                    cashCol += p;
-                    if (!rf) rf = 'শোরুম ক্যাশ';
-                    cashBreakdown[rf] = (cashBreakdown[rf] || 0) + p;
-                } else if (rt === 'Bank' || !data.receivedType) {
-                    bankCol += p;
-                    if (!rf) rf = 'অন্যান্য ব্যাংক';
-                    bankBreakdown[rf] = (bankBreakdown[rf] || 0) + p;
-                }
+            if (p <= 0) return;
+
+            const rt = data.receivedType || 'Bank';
+            let rf = (data.receivedFrom || '').trim();
+
+            if (rt === 'Cash') {
+                cashCol += p;
+                if (!rf) rf = 'শোরুম ক্যাশ';
+                if (!currentCashBreakdown[rf]) currentCashBreakdown[rf] = { total: 0, txns: [] };
+                currentCashBreakdown[rf].total += p;
+                currentCashBreakdown[rf].txns.push(data);
+            } else if (rt === 'Less') {
+                lessCol += p;
+            } else {
+                // Bank or default
+                bankCol += p;
+                if (!rf) rf = 'অন্যান্য ব্যাংক';
+                if (!currentBankBreakdown[rf]) currentBankBreakdown[rf] = { total: 0, txns: [] };
+                currentBankBreakdown[rf].total += p;
+                currentBankBreakdown[rf].txns.push(data);
             }
         });
 
+        const periodCol = cashCol + bankCol;
+
         const colEl = document.getElementById('dash-today-col');
-        if(colEl) colEl.innerText = "৳ " + formatAmountWithComma(todayCol);
+        if (colEl) colEl.innerText = "৳ " + formatAmountWithComma(periodCol);
 
         const cashEl = document.getElementById('dash-col-cash');
         const bankEl = document.getElementById('dash-col-bank');
-        if(cashEl) cashEl.innerText = "৳ " + formatAmountWithComma(cashCol);
-        if(bankEl) bankEl.innerText = "৳ " + formatAmountWithComma(bankCol);
-
-        if (typeof window.renderCollectionBreakdown === 'function') {
-            window.renderCollectionBreakdown(bankBreakdown, cashBreakdown);
-        }
+        if (cashEl) cashEl.innerText = "৳ " + formatAmountWithComma(cashCol);
+        if (bankEl) bankEl.innerText = "৳ " + formatAmountWithComma(bankCol);
 
         renderPaymentDonutChart('payment-donut-chart', cashCol, bankCol);
         renderSalesVsCollectionChart('sales-vs-col-chart');
     });
     dashboardUnsubscribes.push(unsubTxns);
 
-    // Listen for today's expenses
-    const unsubExp = ExpenseDAO.listenByDate(today, expenses => {
+    // Listen for expenses of target date
+    const unsubExp = ExpenseDAO.listenByDate(queryDate, expenses => {
         let totExp = 0;
         expenses.forEach(e => totExp += (Number(e.amount) || 0));
         const expEl = document.getElementById('dash-today-exp');
@@ -118,55 +153,266 @@ function startDashboardRealtimeUpdates() {
     dashboardUnsubscribes.push(unsubExp);
 }
 
-// Global Bindings
-window.switchDashTimeframe = (tf) => {
-    currentTimeframe = tf;
-    ['today', 'week', 'month'].forEach(t => {
-        const btn = document.getElementById(`tf-${t}-btn`);
-        if (btn) {
-            if (t === tf) { btn.className = 'px-3 py-1 rounded-lg bg-blue-600 text-white font-black'; }
-            else { btn.className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white font-bold'; }
+export function onDashDateFilterChange(val) {
+    if (!val) return;
+    const dbDate = toDBDate(val);
+    startDashboardRealtimeUpdates(dbDate);
+}
+
+export function getYesterdayDBDate() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+export async function loadCollectionList(startDate, endDate) {
+    const tbody = document.getElementById('dash-collection-list-tbody');
+    const totalEl = document.getElementById('dash-collection-list-total');
+    if (!tbody) return;
+    
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-xl text-emerald-500 mb-2"></i><br>ডাটা লোড হচ্ছে...</td></tr>`;
+    
+    try {
+        let snap;
+        if (startDate === endDate) {
+            snap = await TransactionDAO.collection.where('date', '==', startDate).get();
+        } else {
+            snap = await TransactionDAO.collection.where('date', '>=', startDate).where('date', '<=', endDate).get();
+        }
+        
+        let txns = [];
+        snap.forEach(doc => txns.push({ id: doc.id, ...doc.data() }));
+        
+        // Filter only collections (paid > 0)
+        txns = txns.filter(t => (Number(t.paid) || 0) > 0);
+        
+        // Sort descending by date, then createdAt
+        txns.sort((a, b) => {
+            if (a.date !== b.date) return b.date.localeCompare(a.date);
+            return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+        });
+        
+        let total = 0;
+        let html = '';
+        const methodGroups = {};
+        
+        if (txns.length === 0) {
+            html = `<tr><td colspan="5" class="text-center py-10 text-slate-500 italic">এই সময়ের মধ্যে কোনো আদায় নেই।</td></tr>`;
+        } else {
+            const customerCache = getCustomerCache();
+            txns.forEach(t => {
+                const p = Number(t.paid) || 0;
+                total += p;
+                
+                let cName = 'Unknown';
+                const cust = customerCache.find(c => c.id === t.customerId);
+                if (cust) cName = cust.name;
+                
+                const method = t.receivedType || 'Bank';
+                let actualMethod = (method === 'Cash') ? 'Cash' : (method === 'Less' ? 'Less' : (t.receivedFrom || 'Bank'));
+                
+                if (actualMethod !== 'Less') {
+                    if (!methodGroups[actualMethod]) methodGroups[actualMethod] = { total: 0, count: 0 };
+                    methodGroups[actualMethod].total += p;
+                    methodGroups[actualMethod].count++;
+                }
+
+                let methodBadge = '';
+                if (method === 'Cash') methodBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> ক্যাশ</span>`;
+                else if (method === 'Less') methodBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-bold">ছাড় (Less)</span>`;
+                else methodBadge = `<span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-building-columns mr-1"></i> ${t.receivedFrom || 'Bank'}</span>`;
+                
+                html += `
+                    <tr class="hover:bg-slate-800/30 transition-all group collection-list-row" data-method="${actualMethod}" data-amount="${p}">
+                        <td class="text-xs text-slate-400 whitespace-nowrap">${formatAppDate(t.date)}</td>
+                        <td class="text-sm font-bold text-slate-200">
+                            ${cName}
+                        </td>
+                        <td class="text-xs font-mono text-slate-400">${t.voucherNo || '-'}</td>
+                        <td>${methodBadge}</td>
+                        <td class="text-right text-emerald-400 font-black font-mono">৳ ${formatAmountWithComma(p)}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        tbody.innerHTML = html;
+        if (totalEl) totalEl.innerText = `৳ ${formatAmountWithComma(total)}`;
+        
+        // Update Card
+        const cardTotalEl = document.getElementById('dash-collection-card-total');
+        const cardWordsEl = document.getElementById('dash-collection-card-words');
+        if (cardTotalEl) cardTotalEl.innerText = `৳ ${formatAmountWithComma(total)}`;
+        if (cardWordsEl) cardWordsEl.innerText = total > 0 ? `${numberToBanglaWords(total)}` : 'শূন্য টাকা মাত্র';
+
+        // Render Method Cards
+        const cardsContainer = document.getElementById('dash-collection-method-cards');
+        if (cardsContainer) {
+            let cardsHtml = '';
+            if (txns.length > 0 && Object.keys(methodGroups).length > 0) {
+                cardsHtml += `
+                    <div class="method-card-btn bg-emerald-600/90 backdrop-blur-md border border-emerald-500/50 rounded-xl p-3 cursor-pointer hover:bg-emerald-500 transition-all flex flex-col gap-1.5 min-w-[110px] shadow-[0_5px_15px_-5px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400" onclick="window.filterCollectionByMethod('All')" data-method="All">
+                        <span class="text-[10px] font-black text-emerald-100 uppercase drop-shadow-sm"><i class="fa-solid fa-layer-group mr-1"></i>সব (All)</span>
+                        <div class="flex items-end justify-between gap-3">
+                            <span class="text-sm font-black text-white tracking-tight">৳ ${formatAmountWithComma(total)}</span>
+                            <span class="text-[9px] bg-emerald-900/40 text-emerald-100 px-1.5 py-0.5 rounded-md font-bold">${txns.filter(t => t.receivedType !== 'Less').length} জন</span>
+                        </div>
+                    </div>
+                `;
+
+                for (const [mName, stats] of Object.entries(methodGroups)) {
+                    const isCash = mName === 'Cash';
+                    const icon = isCash ? '<i class="fa-solid fa-hand-holding-dollar mr-1"></i>' : '<i class="fa-solid fa-building-columns mr-1"></i>';
+                    const themeBg = isCash ? 'bg-emerald-500/10' : 'bg-blue-500/10';
+                    const themeBorder = isCash ? 'border-emerald-500/30' : 'border-blue-500/30';
+                    const themeText = isCash ? 'text-emerald-400' : 'text-blue-400';
+                    const themeHover = isCash ? 'hover:bg-emerald-500/20 hover:border-emerald-500/50' : 'hover:bg-blue-500/20 hover:border-blue-500/50';
+                    const ringColor = isCash ? 'ring-emerald-400' : 'ring-blue-400';
+
+                    cardsHtml += `
+                        <div class="method-card-btn ${themeBg} backdrop-blur-sm border ${themeBorder} ${themeHover} rounded-xl p-3 cursor-pointer transition-all flex flex-col gap-1.5 min-w-[120px] opacity-70 hover:opacity-100 shadow-sm" onclick="window.filterCollectionByMethod('${mName}')" data-method="${mName}" data-ring="${ringColor}">
+                            <span class="text-[10px] font-bold ${themeText} uppercase truncate max-w-[100px]">${icon}${mName}</span>
+                            <div class="flex items-end justify-between gap-3">
+                                <span class="text-sm font-black ${themeText} tracking-tight">৳ ${formatAmountWithComma(stats.total)}</span>
+                                <span class="text-[9px] bg-slate-900/60 ${themeText} px-1.5 py-0.5 rounded-md font-bold">${stats.count} জন</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            cardsContainer.innerHTML = cardsHtml;
+        }
+        
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">ডাটা লোড করতে সমস্যা হয়েছে</td></tr>`;
+    }
+}
+
+export function filterCollectionByMethod(methodName) {
+    const rows = document.querySelectorAll('.collection-list-row');
+    let visibleTotal = 0;
+    
+    rows.forEach(row => {
+        const rowMethod = row.getAttribute('data-method');
+        // 'Less' transactions should always hide if filtering a specific method, or show if 'All'
+        if (methodName === 'All' || rowMethod === methodName) {
+            row.style.display = '';
+            const amt = Number(row.getAttribute('data-amount')) || 0;
+            visibleTotal += amt;
+        } else {
+            row.style.display = 'none';
         }
     });
-};
-window.printExecutiveSummary = printExecutiveSummary;
 
-window.renderCollectionBreakdown = (bankData, cashData) => {
-    const card = document.getElementById('dash-collection-breakdown-card');
-    const list = document.getElementById('dash-collection-breakdown-list');
-    if (!card || !list) return;
-    
-    let html = '';
-    
-    // Check if there is any data
-    if (Object.keys(bankData).length === 0 && Object.keys(cashData).length === 0) {
-        card.classList.remove('flex');
-        card.classList.add('hidden');
-        return;
-    }
-    
-    card.classList.remove('hidden');
-    card.classList.add('flex');
+    // Update active styles on buttons
+    const btns = document.querySelectorAll('.method-card-btn');
+    btns.forEach(btn => {
+        const bm = btn.getAttribute('data-method');
+        const ringColor = btn.getAttribute('data-ring') || 'ring-emerald-400';
+        
+        if (bm === methodName) {
+            if (bm === 'All') {
+                btn.classList.add('bg-emerald-600', 'ring-2', 'ring-emerald-400');
+                btn.classList.remove('bg-emerald-600/50');
+            } else {
+                btn.classList.add('ring-2', ringColor, 'opacity-100');
+                btn.classList.remove('opacity-70');
+            }
+        } else {
+            if (bm === 'All') {
+                btn.classList.remove('bg-emerald-600', 'ring-2', 'ring-emerald-400');
+                btn.classList.add('bg-emerald-600/50');
+            } else {
+                btn.classList.remove('ring-2', ringColor, 'opacity-100');
+                btn.classList.add('opacity-70');
+            }
+        }
+    });
 
-    if (Object.keys(bankData).length > 0) {
-        html += `<div class="text-[11px] text-blue-400 font-black uppercase mt-1 mb-1"><i class="fa-solid fa-building-columns mr-1"></i> ব্যাংক জমা</div>`;
-        for (const [bank, amount] of Object.entries(bankData)) {
-            html += `<div class="flex items-center justify-between bg-slate-950/50 p-2 rounded-lg border border-slate-800">
-                        <span class="text-xs text-slate-300 font-bold truncate max-w-[60%]">${bank}</span>
-                        <span class="text-xs font-black text-blue-400">৳ ${window.formatAmountWithComma ? window.formatAmountWithComma(amount) : amount}</span>
-                     </div>`;
+    // Update Summary Card
+    const cardTotalEl = document.getElementById('dash-collection-card-total');
+    const cardWordsEl = document.getElementById('dash-collection-card-words');
+    const listTotalEl = document.getElementById('dash-collection-list-total');
+    
+    if (cardTotalEl) cardTotalEl.innerText = `৳ ${formatAmountWithComma(visibleTotal)}`;
+    if (listTotalEl) listTotalEl.innerText = `৳ ${formatAmountWithComma(visibleTotal)}`;
+    if (cardWordsEl) cardWordsEl.innerText = visibleTotal > 0 ? `${numberToBanglaWords(visibleTotal)}` : 'শূন্য টাকা মাত্র';
+}
+
+export function filterCollectionList(range, customStart = null, customEnd = null) {
+    const today = getTodayLocalDateString();
+    let start = today, end = today;
+    
+    // Update UI active states
+    ['today', 'yesterday', 'week', 'month'].forEach(r => {
+        const btn = document.getElementById(`btn-col-${r}`);
+        if (btn) {
+            if (r === range) {
+                btn.classList.add('bg-emerald-600', 'text-white');
+                btn.classList.remove('bg-slate-800', 'text-slate-300', 'bg-emerald-600/20', 'text-emerald-400');
+            } else {
+                btn.classList.remove('bg-emerald-600', 'text-white', 'bg-emerald-600/20', 'text-emerald-400');
+                btn.classList.add('bg-slate-800', 'text-slate-300');
+            }
         }
+    });
+
+    if (range === 'yesterday') {
+        start = end = getYesterdayDBDate();
+    } else if (range === 'week') {
+        const d = new Date();
+        d.setDate(d.getDate() - 6);
+        start = toDBDate(d);
+        end = today;
+    } else if (range === 'month') {
+        const d = new Date();
+        d.setDate(d.getDate() - 29);
+        start = toDBDate(d);
+        end = today;
+    } else if (range === 'custom' && customStart && customEnd) {
+        start = customStart;
+        end = customEnd;
     }
     
-    if (Object.keys(cashData).length > 0) {
-        html += `<div class="text-[11px] text-emerald-400 font-black uppercase mt-2 mb-1"><i class="fa-solid fa-money-bill-wave mr-1"></i> ক্যাশ জমা</div>`;
-        for (const [receiver, amount] of Object.entries(cashData)) {
-            html += `<div class="flex items-center justify-between bg-slate-950/50 p-2 rounded-lg border border-slate-800">
-                        <span class="text-xs text-slate-300 font-bold truncate max-w-[60%]">${receiver}</span>
-                        <span class="text-xs font-black text-emerald-400">৳ ${window.formatAmountWithComma ? window.formatAmountWithComma(amount) : amount}</span>
-                     </div>`;
-        }
+    // Update datepicker UI silently
+    const dp = document.getElementById('collection-list-datepicker');
+    if (dp && dp._flatpickr && range !== 'custom') {
+        if (start === end) dp._flatpickr.setDate(start, false);
+        else dp._flatpickr.setDate([start, end], false);
     }
-    
-    list.innerHTML = html;
-};
+
+    loadCollectionList(start, end);
+}
+
+// Global API Bindings
+if (typeof window !== 'undefined') {
+    window.switchDashTimeframe = (tf) => {
+        currentTimeframe = tf;
+        const today = getTodayLocalDateString();
+        const yesterday = getYesterdayDBDate();
+
+        const btnToday = document.getElementById('tf-today-btn');
+        const btnYesterday = document.getElementById('tf-yesterday-btn');
+
+        if (btnToday && btnYesterday) {
+            if (tf === 'today') {
+                btnToday.className = 'px-3 py-1.5 min-h-[34px] rounded-lg bg-blue-600 text-white font-black cursor-pointer';
+                btnYesterday.className = 'px-3 py-1.5 min-h-[34px] rounded-lg text-slate-400 hover:text-white font-bold cursor-pointer';
+                startDashboardRealtimeUpdates(today);
+            } else if (tf === 'yesterday') {
+                btnYesterday.className = 'px-3 py-1.5 min-h-[34px] rounded-lg bg-blue-600 text-white font-black cursor-pointer';
+                btnToday.className = 'px-3 py-1.5 min-h-[34px] rounded-lg text-slate-400 hover:text-white font-bold cursor-pointer';
+                startDashboardRealtimeUpdates(yesterday);
+            }
+        }
+    };
+    window.onDashDateFilterChange = onDashDateFilterChange;
+    window.loadCollectionList = loadCollectionList;
+    window.filterCollectionList = filterCollectionList;
+    window.filterCollectionByMethod = filterCollectionByMethod;
+    window.printExecutiveSummary = printExecutiveSummary;
+}

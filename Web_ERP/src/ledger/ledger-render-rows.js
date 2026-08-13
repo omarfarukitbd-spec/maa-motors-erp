@@ -65,8 +65,22 @@ export function renderRows(transactions, container, stateRefs = {}) {
             };
         }
 
-        const type = d.receivedType || '';
-        let typeBadge = p > 0 ? `<span class="text-emerald-400 text-[10px] font-bold uppercase ml-2"><i class="fa-solid fa-money-bill-wave mr-1"></i>${type || 'Cash'}</span>` : '';
+        let typeBadge = '';
+        if (p > 0) {
+            const rType = d.receivedType || 'Bank';
+            const rFrom = (d.receivedFrom || '').trim();
+            const label = rFrom ? `${rType}: ${rFrom}` : rType;
+            if (rType === 'Bank') {
+                typeBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-black text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-lg ml-2" title="${label}"><i class="fa-solid fa-building-columns text-[9px]"></i><span>${label}</span></span>`;
+            } else if (rType === 'Less') {
+                typeBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-lg ml-2" title="${label}"><i class="fa-solid fa-tag text-[9px]"></i><span>${label}</span></span>`;
+            } else {
+                typeBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg ml-2" title="${label}"><i class="fa-solid fa-hand-holding-dollar text-[9px]"></i><span>${label}</span></span>`;
+            }
+        }
+
+        const sRf = (d.receivedFrom || '').replace(/'/g, "\\'");
+        const sRt = (d.receivedType || '').replace(/'/g, "\\'");
 
         rows.push(`<tr class="hover:bg-white/[0.03] transition-colors border-b border-slate-800/50">
             <td class="text-[10px] text-slate-300 font-bold whitespace-nowrap">${formatAppDate(d.date)}</td>
@@ -77,7 +91,7 @@ export function renderRows(transactions, container, stateRefs = {}) {
             <td class="text-center sticky-action-col"><div class="flex items-center justify-center gap-1.5">
                 <button class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
                 <button class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
-                ${canEdit ? `<button class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${d.receivedType || ''}', '${d.receivedFrom || ''}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
+                ${canEdit ? `<button class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
                 ${canDelete ? `<button class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
                 <button class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
             </div></td>
@@ -88,12 +102,12 @@ export function renderRows(transactions, container, stateRefs = {}) {
                 <div><div class="mobile-card-title">${d.customerName || cust?.name || 'Unknown'}</div><div class="mobile-card-sub text-blue-400 font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo : formatAppDate(d.date)} ${typeBadge}</div></div>
                 <div class="text-right"><div class="text-white font-black text-base">৳ ${formatAmountWithComma(Math.abs(balanceVal))}</div><span class="inline-block text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</span></div>
             </div>
-            <div class="mobile-card-row"><span class="mobile-card-label">খরচ (Debit):</span><span class="mobile-card-value text-red-400 font-bold">৳ ${formatAmountWithComma(b)}</span></div>
+            <div class="mobile-card-row"><span class="mobile-card-label">বিল (Debit):</span><span class="mobile-card-value text-red-400 font-bold">৳ ${formatAmountWithComma(b)}</span></div>
             <div class="mobile-card-row"><span class="mobile-card-label">জমা (Credit):</span><span class="mobile-card-value text-emerald-400 font-bold">৳ ${formatAmountWithComma(p)}</span></div>
             <div class="mobile-card-actions">
                 <button class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
                 <button class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
-                ${canEdit ? `<button class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${d.receivedType || ''}', '${d.receivedFrom || ''}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
+                ${canEdit ? `<button class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
                 ${canDelete ? `<button class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
                 <button class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
             </div>

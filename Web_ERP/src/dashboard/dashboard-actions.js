@@ -58,6 +58,66 @@ export function sendDashWhatsAppReminder(phone, due, name) {
     if (window.sendWhatsApp) window.sendWhatsApp(phone, msg);
 }
 
+export function showBreakdownDetails(name, category, sourceData, queryDateStr) {
+    if (!sourceData || !sourceData.txns || sourceData.txns.length === 0) {
+        return Swal.fire({ title: name, text: 'এই ব্যাংক বা উৎসে কোনো লেনদেন ডাটা পাওয়া যায়নি', icon: 'info' });
+    }
+
+    const txns = sourceData.txns;
+    const formattedDate = formatAppDate(queryDateStr || getTodayLocalDateString());
+    
+    let rowsHtml = '';
+    txns.forEach((t, i) => {
+        const cName = t.customerName || 'Customer';
+        const vNo = t.voucherNo ? `#${t.voucherNo}` : '-';
+        const paidAmt = Number(t.paid) || 0;
+
+        rowsHtml += `
+            <tr class="border-b border-slate-800/80 hover:bg-white/[0.02]">
+                <td class="py-2 px-3 text-center text-slate-400 font-bold">${i + 1}</td>
+                <td class="py-2 px-3 text-left text-white font-black">${cName}</td>
+                <td class="py-2 px-3 text-center text-blue-400 font-mono font-bold">${vNo}</td>
+                <td class="py-2 px-3 text-right font-mono font-black text-emerald-400">৳ ${formatAmountWithComma(paidAmt)}</td>
+            </tr>`;
+    });
+
+    Swal.fire({
+        title: `<div class="flex flex-col items-center gap-1 font-bn">
+                    <div class="flex items-center gap-2 text-xl text-white font-black">
+                        <i class="fa-solid ${category === 'Bank' ? 'fa-building-columns text-blue-400' : 'fa-hand-holding-dollar text-emerald-400'}"></i>
+                        <span>${name}</span>
+                    </div>
+                    <span class="text-xs text-slate-400 font-bold">তারিখ: ${formattedDate} • মোট ${txns.length}টি এন্ট্রি</span>
+                </div>`,
+        html: `
+            <div class="text-left font-bn space-y-3">
+                <div class="max-h-60 overflow-y-auto custom-scrollbar rounded-xl border border-slate-800 bg-slate-950/90">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="bg-slate-900 text-slate-400 font-black border-b border-slate-800 text-[11px] uppercase">
+                                <th class="py-2 px-3 text-center">ক্রমিক</th>
+                                <th class="py-2 px-3 text-left">কাস্টমারের নাম</th>
+                                <th class="py-2 px-3 text-center">ভাউচার</th>
+                                <th class="py-2 px-3 text-right">জমা টাকা (৳)</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-blue-600/10 border border-blue-500/30 rounded-xl font-bn">
+                    <span class="text-xs font-black text-slate-300">মোট জমা যোগফল:</span>
+                    <span class="text-base font-black text-blue-400 font-mono">৳ ${formatAmountWithComma(sourceData.total)}</span>
+                </div>
+            </div>
+        `,
+        confirmButtonText: 'ঠিক আছে',
+        customClass: {
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 shadow-2xl font-bn max-w-lg',
+            confirmButton: 'm3-btn-primary !bg-blue-600 hover:!bg-blue-500 !px-8 !py-2 !rounded-xl font-bold'
+        }
+    });
+}
+
 export async function printExecutiveSummary() {
     try {
         const today = getTodayLocalDateString();
@@ -182,4 +242,5 @@ if (typeof window !== 'undefined') {
     window.sendDashWhatsAppReminder = sendDashWhatsAppReminder;
     window.toggleDashCustomerForm = toggleDashCustomerForm;
     window.saveDashCustomer = saveDashCustomer;
+    window.showBreakdownDetails = showBreakdownDetails;
 }

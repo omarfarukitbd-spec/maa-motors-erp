@@ -66,5 +66,16 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+    // Bank Accounts
+    match /bank_accounts/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || getPerms().get('manageLedger', false) == true);
+    }
+
+    // Cash Collectors
+    match /cash_collectors/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || getPerms().get('manageLedger', false) == true);
+    }
   }
 }

@@ -276,3 +276,20 @@ export const AuditDAO = new class extends BaseDAO {
         }, err => console.error("Audit listener error:", err));
     }
 }();
+
+export const BankDAO = new class extends BaseDAO {
+    constructor() { super('bank_accounts'); }
+
+    async getAllBanks() {
+        return await this.getAll('name', 'asc');
+    }
+}();
+
+export const CashCollectorDAO = new class extends BaseDAO {
+    constructor() { super('cash_collectors'); }
+
+    async getAllCollectors() {
+        return await this.getAll('name', 'asc');
+    }
+}();
+
