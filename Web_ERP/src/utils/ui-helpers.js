@@ -125,15 +125,13 @@ export function initNetworkSyncBadge() {
     const updateStatus = () => {
         const isOnline = navigator.onLine;
         const badge = document.getElementById('network-sync-badge');
-        if (badge) {
             badge.innerHTML = isOnline 
-                ? `<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse block"></span>`
-                : `<span class="w-2.5 h-2.5 rounded-full bg-red-500 block"></span>`;
+                ? `<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-emerald-400">অনলাইন</span>`
+                : `<span class="w-2.5 h-2.5 rounded-full bg-red-500 block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-red-400">অফলাইন</span>`;
             badge.className = isOnline 
-                ? 'w-8 h-8 flex items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm cursor-default'
-                : 'w-8 h-8 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 shadow-sm cursor-default';
+                ? 'w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm cursor-default'
+                : 'w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 shadow-sm cursor-default';
             badge.title = isOnline ? 'অনলাইন — Sync Active' : 'অফলাইন — Local Mode';
-        }
     };
 
     window.addEventListener('online', () => { updateStatus(); showToast('অনলাইন কানেকশন পুনরুদ্ধার হয়েছে!', 'success', 'নেটওয়ার্ক'); });
