@@ -23,20 +23,30 @@ export async function runBalanceIntegrityScanner() {
         ]);
 
         const txnMap = {};
+        const openingMap = {};
+
         transactions.forEach(t => {
             if (!t.customerId) return;
             const v = String(t.voucherNo || '').trim().toUpperCase();
-            if (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের') return;
+            const isOp = (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের');
 
-            if (!txnMap[t.customerId]) txnMap[t.customerId] = { totalBill: 0, totalPaid: 0, count: 0 };
-            txnMap[t.customerId].totalBill = safeRound(txnMap[t.customerId].totalBill + (Number(t.bill) || 0));
-            txnMap[t.customerId].totalPaid = safeRound(txnMap[t.customerId].totalPaid + (Number(t.paid) || 0));
-            txnMap[t.customerId].count++;
+            if (isOp) {
+                const opAmt = safeRound((Number(t.bill) || 0) - (Number(t.paid) || 0));
+                openingMap[t.customerId] = opAmt;
+            } else {
+                if (!txnMap[t.customerId]) txnMap[t.customerId] = { totalBill: 0, totalPaid: 0, count: 0 };
+                txnMap[t.customerId].totalBill = safeRound(txnMap[t.customerId].totalBill + (Number(t.bill) || 0));
+                txnMap[t.customerId].totalPaid = safeRound(txnMap[t.customerId].totalPaid + (Number(t.paid) || 0));
+                txnMap[t.customerId].count++;
+            }
         });
 
         const discrepancies = [];
         customers.forEach(c => {
-            const initial = Number(c.initialDue || 0);
+            let initial = Number(c.initialDue || 0);
+            if (initial === 0 && openingMap[c.id] !== undefined) {
+                initial = openingMap[c.id];
+            }
             const tData = txnMap[c.id] || { totalBill: 0, totalPaid: 0, count: 0 };
             const expectedDue = safeRound(initial + tData.totalBill - tData.totalPaid);
             const currentDue = safeRound(Number(c.totalDue || 0));
