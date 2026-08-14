@@ -109,9 +109,9 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
         const tempMap = { ...customersMap };
         dataToSave.forEach(item => {
             const nameKey = item.name.trim().toLowerCase();
-            const accMatch = item.name.match(/^\[(\d+)\]/);
+            const accMatch = item.name.match(/^\[([a-zA-Z0-9_-]+)\]/);
             const accNo = accMatch ? accMatch[1].toLowerCase() : null;
-            const strippedName = item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim().toLowerCase();
+            const strippedName = item.name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim().toLowerCase();
 
             const exists = (accNo && customersMapByAccNo[accNo]) || tempMap[strippedName] || tempMap[nameKey];
             if (!exists) {
@@ -147,7 +147,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             let customerId = '';
             let resolvedKey = nameKey;
 
-            const accMatch = item.name.match(/^\[(\d+)\]/);
+            const accMatch = item.name.match(/^\[([a-zA-Z0-9_-]+)\]/);
             if (accMatch) {
                 const accNo = accMatch[1].toLowerCase();
                 if (customersMapByAccNo[accNo]) {
@@ -157,7 +157,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             }
 
             if (!customerId) {
-                const strippedName = item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim().toLowerCase();
+                const strippedName = item.name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim().toLowerCase();
                 if (customersMap[strippedName]) {
                     customerId = customersMap[strippedName].id;
                     resolvedKey = strippedName;
@@ -168,7 +168,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
                     customerId = newCustRef.id;
                     currentAllocatedAccountNo++;
                     const accNoStr = defaultZoneCode + String(currentAllocatedAccountNo).padStart(4, '0');
-                    customersMap[nameKey] = { id: customerId, totalDue: 0, accountNo: accNoStr, zone: defaultZone, isNew: true, phone: item.phone || '', name: item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim() };
+                    customersMap[nameKey] = { id: customerId, totalDue: 0, accountNo: accNoStr, zone: defaultZone, isNew: true, phone: item.phone || '', name: item.name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim() };
                     resolvedKey = nameKey;
                 }
             }
@@ -178,7 +178,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             const currentDue = safeRound(prevDue + changeInDue);
             if (customersMap[resolvedKey]) customersMap[resolvedKey].totalDue = currentDue;
 
-            const cleanName = customersMap[resolvedKey]?.name || item.name.replace(/^\[\d+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim();
+            const cleanName = customersMap[resolvedKey]?.name || item.name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*\(.*\)$/, '').trim();
 
             const txnRef = TransactionDAO.getRef();
             batch.set(txnRef, {
@@ -193,26 +193,30 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             opCount++;
 
             if (customersMap[resolvedKey]?.isNew) {
-                newCustomerDocs[customerId] = {
-                    name: cleanName, phone: customersMap[resolvedKey].phone || '',
-                    address: 'Bulk Import', zone: customersMap[resolvedKey].zone || defaultZone,
-                    accountNo: customersMap[resolvedKey].accountNo,
-                    totalDue: currentDue, initialDue: 0,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                customersMap[resolvedKey].isNew = false;
+                if (!newCustomerDocs[customerId]) {
+                    newCustomerDocs[customerId] = {
+                        name: cleanName, phone: customersMap[resolvedKey].phone || '',
+                        address: 'Bulk Import', zone: customersMap[resolvedKey].zone || defaultZone,
+                        accountNo: customersMap[resolvedKey].accountNo,
+                        totalDue: currentDue, initialDue: 0,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                } else {
+                    newCustomerDocs[customerId].totalDue = currentDue;
+                }
             } else {
                 customerDeltas[customerId] = safeRound((customerDeltas[customerId] || 0) + changeInDue);
             }
 
             if (opCount >= 300) {
                 for (const [cId, delta] of Object.entries(customerDeltas)) {
-                    if (delta !== 0) {
+                    if (delta !== 0 && !newCustomerDocs[cId]) {
                         batch.update(CustomerDAO.getRef(cId), { totalDue: firebase.firestore.FieldValue.increment(delta) });
                     }
                 }
                 for (const [cId, docData] of Object.entries(newCustomerDocs)) {
                     batch.set(CustomerDAO.getRef(cId), docData);
+                    if (customersMap[resolvedKey]) customersMap[resolvedKey].isNew = false;
                 }
                 await batch.commit();
                 batch = db.batch();
@@ -223,7 +227,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
         }
 
         for (const [cId, delta] of Object.entries(customerDeltas)) {
-            if (delta !== 0) {
+            if (delta !== 0 && !newCustomerDocs[cId]) {
                 batch.update(CustomerDAO.getRef(cId), { totalDue: firebase.firestore.FieldValue.increment(delta) });
                 opCount++;
             }

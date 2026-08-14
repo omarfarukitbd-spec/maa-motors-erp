@@ -27,7 +27,10 @@ export async function loadStatementData(stateRef = {}) {
         }
 
         let docs = await TransactionDAO.getByCustomer(currentCustomerInfo?.id);
-        docs = docs.filter(d => d.voucherNo !== 'OPENING');
+        docs = docs.filter(d => {
+            const v = String(d.voucherNo || '').trim().toUpperCase();
+            return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের';
+        });
         docs.sort((a, b) => {
             const dDiff = new Date(a.date) - new Date(b.date);
             if (dDiff !== 0) return dDiff;

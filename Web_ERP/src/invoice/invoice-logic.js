@@ -181,13 +181,21 @@ export async function saveAndPrintInvoice(layoutType) {
         const bill = safeRound(Math.max(0, subtotal - calculatedDiscount));
         if (bill === 0 && paid === 0) throw new Error("বিল বা জমা এন্ট্রি দিন");
 
+        let receivedType = '', receivedFrom = '';
+        if (paid > 0) {
+            const cashBtn = document.getElementById('inv-recv-cash-btn');
+            receivedType = (cashBtn && cashBtn.classList.contains('bg-emerald-600')) ? 'Cash' : 'Bank';
+            receivedFrom = document.getElementById('inv-received-from')?.value?.trim() || '';
+        }
+
         const confirmPreview = await Swal.fire({
             title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-xl text-white"><i class="fa-solid fa-file-invoice text-blue-400"></i><span>ইনভয়েস যাচাই করুন</span></div>',
             html: `
                 <div class="text-left font-bn p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-2.5 shadow-inner">
                     <div class="flex justify-between items-center border-b border-slate-800/80 pb-2"><span class="text-xs text-slate-400 font-bold">কাস্টমার:</span><strong class="text-sm text-white font-black">${customerName}</strong></div>
                     <div class="flex justify-between items-center border-b border-slate-800/80 pb-2"><span class="text-xs text-slate-400 font-bold">মোট বিল:</span><strong class="text-base text-blue-400 font-black font-mono">৳ ${formatAmountWithComma(bill)}</strong></div>
-                    <div class="flex justify-between items-center"><span class="text-xs text-slate-400 font-bold">আদায় (Paid):</span><strong class="text-base text-emerald-400 font-black font-mono">৳ ${formatAmountWithComma(paid)}</strong></div>
+                    <div class="flex justify-between items-center border-b border-slate-800/80 pb-2"><span class="text-xs text-slate-400 font-bold">আদায় (Paid):</span><strong class="text-base text-emerald-400 font-black font-mono">৳ ${formatAmountWithComma(paid)}</strong></div>
+                    ${paid > 0 ? `<div class="flex justify-between items-center"><span class="text-xs text-purple-400 font-bold">পেমেন্ট মাধ্যম:</span><strong class="text-xs text-purple-300 font-bold">${receivedType} ${receivedFrom ? '(' + receivedFrom + ')' : ''}</strong></div>` : ''}
                 </div>`,
             showCancelButton: true, 
             confirmButtonText: '<i class="fa-solid fa-print mr-2"></i>সেভ ও প্রিন্ট করুন', 
@@ -214,7 +222,8 @@ export async function saveAndPrintInvoice(layoutType) {
 
         const txnData = {
             customerId, customerName, date, voucherNo, notes,
-            bill, paid, subtotal, discount: calculatedDiscount,
+            bill, paid, receivedType, receivedFrom,
+            subtotal, discount: calculatedDiscount,
             discountInput: discountInputVal, discountMode: mode,
             prevDue, currentDue,
             hasItems: validItems.length > 0,

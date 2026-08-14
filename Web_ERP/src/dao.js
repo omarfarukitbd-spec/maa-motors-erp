@@ -24,20 +24,10 @@ class BaseDAO {
         return results;
     }
 
-    /**
-     * Paginated fetch for large collections
-     */
     async getByPage(pageSize = 20, lastDoc = null, orderByField = 'createdAt', direction = 'desc', filters = []) {
         let query = this.collection.orderBy(orderByField, direction);
-
-        // Apply optional filters (array of objects { field, op, value })
-        filters.forEach(f => {
-            query = query.where(f.field, f.op, f.value);
-        });
-
-        if (lastDoc) {
-            query = query.startAfter(lastDoc);
-        }
+        filters.forEach(f => { query = query.where(f.field, f.op, f.value); });
+        if (lastDoc) query = query.startAfter(lastDoc);
 
         const snap = await query.limit(pageSize).get();
         const results = [];
@@ -61,18 +51,12 @@ class BaseDAO {
 
     async add(data) {
         const docRef = this.collection.doc();
-        await docRef.set({
-            ...data,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        await docRef.set({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
         return docRef.id;
     }
 
     async update(id, data) {
-        await this.collection.doc(id).update({
-            ...data,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        await this.collection.doc(id).update({ ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     }
 
     async delete(id) {
@@ -113,11 +97,8 @@ export const TransactionDAO = new class extends BaseDAO {
     }
 
     listenByCustomer(customerId, callback, limitCount = 50) {
-        return this.collection
-            .where('customerId', '==', customerId)
-            .orderBy('date', 'desc')
-            .orderBy('createdAt', 'desc')
-            .limit(limitCount)
+        return this.collection.where('customerId', '==', customerId)
+            .orderBy('date', 'desc').orderBy('createdAt', 'desc').limit(limitCount)
             .onSnapshot(snap => {
                 const results = [];
                 snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
@@ -138,6 +119,7 @@ export const TransactionDAO = new class extends BaseDAO {
         snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
         return results;
     }
+
     async getByCustomer(customerId) {
         const snap = await this.collection.where('customerId', '==', customerId).get();
         const results = [];
@@ -164,10 +146,7 @@ export const SettingsDAO = new class {
         const counterRef = this.collection.doc('counters');
         await db.runTransaction(async (t) => {
             const doc = await t.get(counterRef);
-            let zoneCounters = {};
-            if (doc.exists && doc.data().zoneCounters) {
-                zoneCounters = doc.data().zoneCounters;
-            }
+            let zoneCounters = (doc.exists && doc.data().zoneCounters) ? doc.data().zoneCounters : {};
             zoneCounters[zoneName] = val;
             t.set(counterRef, { zoneCounters }, { merge: true });
         });
@@ -177,14 +156,9 @@ export const SettingsDAO = new class {
         const counterRef = this.collection.doc('counters');
         const work = async (t) => {
             const doc = await t.get(counterRef);
-            let zoneCounters = {};
-            if (doc.exists && doc.data().zoneCounters) {
-                zoneCounters = doc.data().zoneCounters;
-            }
-
+            let zoneCounters = (doc.exists && doc.data().zoneCounters) ? doc.data().zoneCounters : {};
             let nextNo = (zoneCounters[zoneName] || 0) + 1;
             zoneCounters[zoneName] = nextNo;
-
             t.set(counterRef, { zoneCounters }, { merge: true });
             return String(nextNo).padStart(4, '0');
         };
@@ -192,7 +166,6 @@ export const SettingsDAO = new class {
         return db.runTransaction(work);
     }
 
-    // Legacy helper for checking availability without incrementing
     async peekNextAccountNo(zoneName) {
         const doc = await this.collection.doc('counters').get();
         let zoneCounters = (doc.exists && doc.data().zoneCounters) ? doc.data().zoneCounters : {};
@@ -229,11 +202,8 @@ export const UserDAO = new class extends BaseDAO {
 
     listenUser(uid, callback) {
         return this.collection.doc(uid).onSnapshot(doc => {
-            if (doc.exists) {
-                callback({ id: doc.id, ...doc.data() });
-            } else {
-                callback(null);
-            }
+            if (doc.exists) callback({ id: doc.id, ...doc.data() });
+            else callback(null);
         });
     }
 }();
@@ -306,4 +276,3 @@ export const CashCollectorDAO = new class extends BaseDAO {
         return results;
     }
 }();
-

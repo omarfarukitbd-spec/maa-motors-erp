@@ -215,7 +215,10 @@ export async function renderPublicStatementView(customerId) {
         if (!customer) return publicContainer.innerHTML = `<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">কাস্টমার হিসাব পাওয়া যায়নি!</div>`;
 
         const settings = await SettingsDAO.getAppSettings();
-        let docs = (await TransactionDAO.getByCustomer(customerId)).filter(d => d.voucherNo !== 'OPENING');
+        let docs = (await TransactionDAO.getByCustomer(customerId)).filter(d => {
+            const v = String(d.voucherNo || '').trim().toUpperCase();
+            return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের';
+        });
         docs.sort((a, b) => {
             const dDiff = new Date(a.date) - new Date(b.date);
             if (dDiff !== 0) return dDiff;

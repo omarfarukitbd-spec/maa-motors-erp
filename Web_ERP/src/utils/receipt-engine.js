@@ -54,7 +54,10 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
         const customerId = txn.customerId;
         const cData = await CustomerDAO.getById(customerId) || {};
 
-        const allTxns = await TransactionDAO.getByCustomer(customerId);
+        let allTxns = (await TransactionDAO.getByCustomer(customerId)).filter(t => {
+            const v = String(t.voucherNo || '').trim().toUpperCase();
+            return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের';
+        });
         const getTxnTime = (t) => {
             if (!t?.createdAt) return 0;
             if (typeof t.createdAt.toMillis === 'function') return t.createdAt.toMillis();
