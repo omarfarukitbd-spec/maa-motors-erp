@@ -1,14 +1,13 @@
 // --- Audit Module (DAO & UI) ---
-import { UserDAO, AuditDAO } from './dao.js';
-import { auditLog } from './audit/audit-logger.js';
+import { db, firebase } from './firebase-config.js';
+import { UserDAO, SettingsDAO, AuditDAO } from './dao.js';
+import { capturePhoto } from './utils/camera-capture.js';
 import { renderVisualDiff } from './audit/audit-diff-viewer.js';
 import { filterAuditLogs } from './audit/audit-filters.js';
 import { exportAuditLogsToExcel } from './audit/audit-export.js';
 import { calculateAuditStats } from './audit/audit-stats.js';
 import { renderAuditStatsCards, renderAuditTabsNavigation } from './audit/audit-sections-ui.js';
 import { printAuditLogReport } from './audit/audit-print.js';
-
-export { auditLog };
 
 let auditUnsubscribes = [];
 let cachedAuditLogs = [];
@@ -20,6 +19,94 @@ export function unsubscribeAuditLogs() {
         if (typeof unsub === 'function') unsub();
     });
     auditUnsubscribes = [];
+}
+
+/**
+ * Logs an action to the audit trail.
+ */
+export async function auditLog(action, module, entityId, entityName, details = {}, changes = null) {
+    try {
+        const currentUser = firebase.auth().currentUser;
+        const isMobile = (typeof navigator !== 'undefined' && navigator.userAgent && /Mobi|Android|iPhone/i.test(navigator.userAgent));
+        
+        const logEntry = {
+            action: action,
+            module: module,
+            entityId: entityId || '',
+            entityName: entityName || '',
+            details: details || {},
+            deviceInfo: isMobile ? 'Mobile' : 'Desktop',
+            userEmail: currentUser ? currentUser.email : 'Unknown',
+            userId: currentUser ? currentUser.uid : 'System',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            clientTimestamp: new Date().toISOString()
+        };
+
+        if (changes) logEntry.changes = changes;
+
+        await AuditDAO.add(logEntry);
+        console.log(`[Audit] ${action} on ${module} (${entityName}) logged successfully.`);
+
+        // Telegram Alert Logic (Free plan alternative)
+        if (['DELETE', 'UPDATE', 'SECURITY_ALERT', 'LOGIN'].includes(action)) {
+            try {
+                const daoModule = await import('./dao.js');
+                const settings = await daoModule.SettingsDAO.getAppSettings();
+                const botToken = settings.telegramBotToken;
+                const chatId = settings.telegramChatId;
+                
+                if (botToken && chatId) {
+                    let alertType = '[INFO]';
+                    if (action === 'DELETE' || action === 'SECURITY_ALERT') alertType = '[ALERT]';
+                    else if (action === 'UPDATE') alertType = '[WARN]';
+                    else if (action === 'LOGIN') alertType = '[SUCCESS]';
+
+                    let detailsStr = '';
+                    if (details && typeof details === 'object' && Object.keys(details).length > 0) {
+                        detailsStr = `\n*Details:* \`${JSON.stringify(details).substring(0, 100)}\``;
+                    }
+
+                    const text = `
+${alertType} *Maa Motors ERP Alert*
+*Action:* ${action}
+*Module:* ${module || 'Unknown'}
+*Target:* ${entityName || entityId || 'Unknown'}
+*User:* ${logEntry.userEmail}
+*Time:* ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' })}${detailsStr}
+                    `.trim();
+
+                    let photoBlob = null;
+                    if (action === 'SECURITY_ALERT') {
+                        photoBlob = await capturePhoto();
+                    }
+
+                    if (photoBlob) {
+                        const formData = new FormData();
+                        formData.append('chat_id', chatId);
+                        formData.append('photo', photoBlob, 'intruder.jpg');
+                        formData.append('caption', text);
+                        formData.append('parse_mode', 'Markdown');
+
+                        await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                    } else {
+                        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
+                        });
+                    }
+                }
+            } catch(e) {
+                console.error('Failed to send Telegram alert:', e);
+            }
+        }
+
+    } catch (error) {
+        console.error("Failed to write audit log:", error);
+    }
 }
 
 export async function getRecentAuditLogs(limitCount = 50) {
@@ -157,6 +244,7 @@ async function loadAuditLogsData() {
     try {
         cachedAuditLogs = await AuditDAO.getRecent(150);
         
+        // Update stats cards & tabs
         const stats = calculateAuditStats(cachedAuditLogs);
         const statsEl = document.getElementById('audit-stats-cards-container');
         if (statsEl) statsEl.innerHTML = renderAuditStatsCards(stats);

@@ -9,6 +9,7 @@ import * as Permissions from './admin/user-permissions.js';
 import * as SystemTools from './admin/system-tools.js';
 
 import * as Banking from './admin/admin-banking.js';
+import * as BalanceRecon from './admin/balance-reconciliation.js';
 
 // Export for main navigation
 export { renderAdmin };
@@ -19,5 +20,6 @@ window.appAdmin = {
     ...AuthActions,
     ...Permissions,
     ...SystemTools,
-    ...Banking
+    ...Banking,
+    ...BalanceRecon
 };
