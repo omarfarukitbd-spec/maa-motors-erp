@@ -138,7 +138,7 @@ function getDashboardMainGridHTML() {
                         <h3 class="text-sm md:text-base font-black text-white uppercase tracking-widest flex items-center gap-2 whitespace-nowrap flex-nowrap">
                             <div class="w-2 h-5 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] shrink-0"></div> 
                             <span class="shrink-0">আদায় / কালেকশন লিস্ট</span>
-                            <input type="text" id="collection-list-datepicker" data-mode="range" class="m3-field py-1.5 bg-slate-950/80 h-8 text-[11px] w-44 datepicker cursor-pointer ml-2 text-center text-emerald-400 font-bold border-emerald-500/30 rounded-lg hover:border-emerald-500/60 transition-all" placeholder="Select Date Range">
+                            <input type="text" id="collection-list-datepicker" class="m3-field py-1.5 bg-slate-950/80 h-8 text-[11px] w-36 datepicker cursor-pointer ml-2 text-center text-emerald-400 font-bold border-emerald-500/30 rounded-lg hover:border-emerald-500/60 transition-all" placeholder="Select Date">
                         </h3>
                         <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
                             <button id="btn-col-today" class="px-3.5 py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-bold transition-all shadow-[0_0_10px_rgba(16,185,129,0.3)]" onclick="window.filterCollectionList('today')">আজ</button>

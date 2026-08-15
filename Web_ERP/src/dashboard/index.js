@@ -40,11 +40,7 @@ export function renderDashboard(container, params) {
         const colDpEl = document.getElementById('collection-list-datepicker');
         if (colDpEl && colDpEl._flatpickr) {
             colDpEl._flatpickr.set('onChange', function(selectedDates, dateStr, instance) {
-                if (selectedDates.length === 2) {
-                    const start = toDBDate(selectedDates[0]);
-                    const end = toDBDate(selectedDates[1]);
-                    window.filterCollectionList('custom', start, end);
-                } else if (selectedDates.length === 1 && !dateStr.includes('to')) {
+                if (selectedDates.length > 0) {
                     const start = toDBDate(selectedDates[0]);
                     window.filterCollectionList('custom', start, start);
                 }
