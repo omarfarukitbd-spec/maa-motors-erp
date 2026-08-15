@@ -217,8 +217,8 @@ export function filterCollectionList(range, customStart = null, customEnd = null
     
     const dp = document.getElementById('collection-list-datepicker');
     if (dp && dp._flatpickr && range !== 'custom') {
-        if (start === end) dp._flatpickr.setDate(start, false);
-        else dp._flatpickr.setDate([start, end], false);
+        dp._flatpickr.set('mode', 'single');
+        dp._flatpickr.setDate(start, false);
     }
 
     loadCollectionList(start, end);
