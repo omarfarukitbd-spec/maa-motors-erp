@@ -92,7 +92,7 @@ export function loadDashboardDateData(queryDate) {
             const rf = (t.receivedFrom || '').trim() || (rt === 'Cash' ? 'Cash' : 'Bank');
 
             if (rt === 'Cash') cashCol = safeRound(cashCol + p);
-            else bankCol = safeRound(bankCol + p);
+            else if (rt !== 'Less') bankCol = safeRound(bankCol + p);
 
             if (rt !== 'Less') {
                 if (!methodGroups[rf]) methodGroups[rf] = { total: 0, count: 0 };
@@ -204,9 +204,11 @@ function renderCollectionTable(txns) {
     let runningTotal = 0;
     txns.forEach(t => {
         const p = Number(t.paid) || 0;
-        runningTotal = safeRound(runningTotal + p);
-        const cleanName = cleanCustomerName(t.customerName || 'Unknown');
         const method = (t.receivedFrom || t.receivedType || 'Cash').trim();
+        if (t.receivedType !== 'Less') {
+            runningTotal = safeRound(runningTotal + p);
+        }
+        const cleanName = cleanCustomerName(t.customerName || 'Unknown');
 
         html += `
             <tr class="collection-list-row hover:bg-slate-800/40 transition-colors" data-method="${method}" data-amount="${p}">
@@ -232,7 +234,9 @@ window.filterCollectionByMethod = function(methodName) {
         if (methodName === 'All' || rowMethod === methodName) {
             row.style.display = '';
             const amt = Number(row.getAttribute('data-amount')) || 0;
-            visibleTotal = safeRound(visibleTotal + amt);
+            if (rowMethod !== 'Less' && rowMethod !== 'ছাড় (Less)') {
+                visibleTotal = safeRound(visibleTotal + amt);
+            }
         } else {
             row.style.display = 'none';
         }

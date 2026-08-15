@@ -49,7 +49,6 @@ export async function loadCollectionList(startDate, endDate) {
             const customerCache = getCustomerCache();
             txns.forEach(t => {
                 const p = Number(t.paid) || 0;
-                total = safeRound(total + p);
                 
                 let cName = 'Unknown';
                 const cust = customerCache.find(c => c.id === t.customerId);
@@ -62,6 +61,7 @@ export async function loadCollectionList(startDate, endDate) {
                     if (!methodGroups[actualMethod]) methodGroups[actualMethod] = { total: 0, count: 0 };
                     methodGroups[actualMethod].total = safeRound(methodGroups[actualMethod].total + p);
                     methodGroups[actualMethod].count++;
+                    total = safeRound(total + p);
                 }
 
                 let methodBadge = '';
@@ -140,7 +140,9 @@ export function filterCollectionByMethod(methodName) {
         if (methodName === 'All' || rowMethod === methodName) {
             row.style.display = '';
             const amt = Number(row.getAttribute('data-amount')) || 0;
-            visibleTotal = safeRound(visibleTotal + amt);
+            if (rowMethod !== 'Less') {
+                visibleTotal = safeRound(visibleTotal + amt);
+            }
         } else {
             row.style.display = 'none';
         }

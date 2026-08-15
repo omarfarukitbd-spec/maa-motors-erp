@@ -35,6 +35,15 @@ export function formatTimestampToAppDate(ts) {
  */
 export function toDBDate(dateString) {
     if (!dateString) return getTodayLocalDateString();
+
+    if (dateString instanceof Date) {
+        if (isNaN(dateString.getTime())) return getTodayLocalDateString();
+        const year = dateString.getFullYear();
+        const month = String(dateString.getMonth() + 1).padStart(2, '0');
+        const day = String(dateString.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     const trimmed = String(dateString).trim();
 
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
@@ -46,7 +55,10 @@ export function toDBDate(dateString) {
 
     const d = new Date(dateString);
     if (isNaN(d.getTime())) return getTodayLocalDateString();
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 export function toDisplayDate(dateString) {

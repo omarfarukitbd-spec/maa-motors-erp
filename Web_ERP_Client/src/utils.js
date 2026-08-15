@@ -38,6 +38,13 @@ export function getTodayLocalDateString() {
 
 export function toDBDate(dateStr) {
     if (!dateStr) return '';
+    if (dateStr instanceof Date) {
+        if (isNaN(dateStr.getTime())) return '';
+        const year = dateStr.getFullYear();
+        const month = String(dateStr.getMonth() + 1).padStart(2, '0');
+        const day = String(dateStr.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
     if (typeof dateStr !== 'string') return '';
     const parts = dateStr.split(/[-/]/);
     if (parts.length === 3) {
