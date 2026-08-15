@@ -154,7 +154,7 @@ export async function loadSettings() {
             'set-sms-reminder': data.smsTemplateReminder || 'Reminder: Dear [Name] [AccNo], your due is Tk [Due] on [Date]. Kindly clear payment soon. Thanks! - [Shop]',
             'set-sms-opening': data.smsTemplateOpening || 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!',
             'set-sms-new-bill': data.smsTemplateNew || 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]',
-            'set-sms-payment': data.smsTemplatePaid || 'Dear [Name] [AccNo], Received Tk [Paid] ([Type]) on [Date]. Net Due: Tk [Due]. Thanks! - [Shop]',
+            'set-sms-payment': data.smsTemplatePaid || 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]',
             'set-sms-api': data.smsApiKey || '',
             'set-sms-sender': data.smsSenderId || '',
             'set-admin-pin': data.adminSecurityPin || '1060',

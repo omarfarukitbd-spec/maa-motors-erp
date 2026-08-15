@@ -65,7 +65,7 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 .replace(/\[Paid\]/g, formattedPaid)
                 .replace(/\[Due\]/g, formattedDue);
         } else {
-            let tpl = settings.smsTemplatePaid || 'Dear [Name] [AccNo], Received Tk [Paid] ([Type]) on [Date]. Net Due: Tk [Due]. Thanks! - [Shop]';
+            let tpl = settings.smsTemplatePaid || 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]';
             let recvType = txn?.receivedType || 'Cash';
             defaultMsg = tpl.replace(/\[Name\]/g, englishName)
                 .replace(/\[AccNo\]/g, accStr)
@@ -74,6 +74,10 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 .replace(/\[Paid\]/g, formattedPaid)
                 .replace(/\[Type\]/g, recvType)
                 .replace(/\[Due\]/g, formattedDue);
+            // If template has no [Date] placeholder, auto-append date at the end before shop name
+            if (tpl.indexOf('[Date]') === -1 && formattedDate) {
+                defaultMsg = defaultMsg.replace(/ - [^-]+$/, ` (${formattedDate})$&`);
+            }
         }
 
         // Clean extra double spaces if any

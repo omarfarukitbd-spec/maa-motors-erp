@@ -1,0 +1,22 @@
+[debug] [2026-08-15T09:11:28.452Z] ----------------------------------------------------------------------
+[debug] [2026-08-15T09:11:28.456Z] Command:       E:\tools\node-v22.14.0-win-x64\node.exe C:\Users\Joni-pc\AppData\Local\npm-cache\_npx\ba4f1959e38407b5\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting
+[debug] [2026-08-15T09:11:28.456Z] CLI Version:   15.27.0
+[debug] [2026-08-15T09:11:28.456Z] Platform:      win32
+[debug] [2026-08-15T09:11:28.457Z] Node Version:  v22.14.0
+[debug] [2026-08-15T09:11:28.457Z] Detected Agent: antigravity
+[debug] [2026-08-15T09:11:28.457Z] Time:          Sat Aug 15 2026 15:11:28 GMT+0600 (Bangladesh Standard Time)
+[debug] [2026-08-15T09:11:28.457Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-15T09:11:32.890Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-15T09:11:32.891Z] > authorizing via signed-in user (office.maamotors@gmail.com)
+[debug] [2026-08-15T09:11:32.891Z] [iam] checking project maa-motors-erp for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-08-15T09:11:32.927Z] Checked if tokens are valid: false, expires at: 1786784684542
+[debug] [2026-08-15T09:11:32.931Z] Checked if tokens are valid: false, expires at: 1786784684542
+[debug] [2026-08-15T09:11:32.933Z] > refreshing access token with scopes: []
+[debug] [2026-08-15T09:11:32.939Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-08-15T09:11:32.939Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-08-15T09:11:33.422Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-08-15T09:11:33.422Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-08-15T09:11:33.444Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/maa-motors-erp:testIamPermissions [none]
+[debug] [2026-08-15T09:11:33.448Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/maa-motors-erp:testIamPermissions  x-goog-user-project=maa-motors-erp
+[debug] [2026-08-15T09:11:33.450Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/maa-motors-erp:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}

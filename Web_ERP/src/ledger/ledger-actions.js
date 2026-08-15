@@ -114,7 +114,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                         .replace(/\[Paid\]/g, formatAmountWithComma(p))
                         .replace(/\[Due\]/g, formattedDue);
                 } else {
-                    let tpl = settings.smsTemplatePaid || 'Dear [Name] [AccNo], Received Tk [Paid] ([Type]) on [Date]. Net Due: Tk [Due]. Thanks! - [Shop]';
+                    let tpl = settings.smsTemplatePaid || 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]';
                     autoMsg = tpl.replace(/\[Name\]/g, englishName)
                         .replace(/\[AccNo\]/g, accStr)
                         .replace(/\[Shop\]/g, shopName)
@@ -122,6 +122,9 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                         .replace(/\[Paid\]/g, formatAmountWithComma(p))
                         .replace(/\[Type\]/g, receivedType || 'Cash')
                         .replace(/\[Due\]/g, formattedDue);
+                    if (tpl.indexOf('[Date]') === -1 && formattedDate) {
+                        autoMsg = autoMsg.replace(/ - [^-]+$/, ` (${formattedDate})$&`);
+                    }
                 }
                 autoMsg = autoMsg.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
 
