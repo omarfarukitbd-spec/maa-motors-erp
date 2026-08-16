@@ -255,10 +255,8 @@ export const BankDAO = new class extends BaseDAO {
     }
 
     async getActiveBanks() {
-        const snap = await this.collection.where('status', '==', 'active').get();
-        const results = [];
-        snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
-        return results.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const results = await this.getAllBanks();
+        return results.filter(b => b.status !== 'inactive').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 }();
 
@@ -270,10 +268,8 @@ export const CashCollectorDAO = new class extends BaseDAO {
     }
 
     async getActiveCollectors() {
-        const snap = await this.collection.where('status', '==', 'active').get();
-        const results = [];
-        snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
-        return results.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const results = await this.getAllCollectors();
+        return results.filter(c => c.status !== 'inactive').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 }();
 
