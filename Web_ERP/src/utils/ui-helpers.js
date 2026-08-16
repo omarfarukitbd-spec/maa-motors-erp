@@ -184,3 +184,8 @@ export function triggerUniversalPrint(container) {
         }
     });
 }
+
+// Global bindings for HTML onclick usage
+if (typeof window !== 'undefined') {
+    window.exportTableToExcel = exportTableToExcel;
+}
