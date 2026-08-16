@@ -4,6 +4,7 @@ import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
 import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords } from '../utils.js';
 import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
+import { auditLog } from '../audit.js';
 
 export async function saveTransaction(editingRef = {}, callbacks = {}) {
     const mainBtn = document.getElementById('save-txn-btn');
@@ -75,12 +76,14 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                 batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
                 batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
             }
+            auditLog('UPDATE', 'Ledger', editingRef.id, name, { oldBill: editingRef.oldBill, oldPaid: editingRef.oldPaid, newBill: b, newPaid: p });
             editingRef.id = null;
             editingRef.oldCid = null;
         } else {
             const txnRef = TransactionDAO.getRef();
             batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
+            auditLog('CREATE', 'Ledger', txnRef.id, name, { bill: b, paid: p, type: receivedType || 'Bill' });
         }
         
         const finalSmsDue = safeRound(preCommitDue + actualDelta);
@@ -210,6 +213,7 @@ export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
         batch.update(CustomerDAO.getRef(cid), { totalDue: firebase.firestore.FieldValue.increment(safeRound(p - b)) });
         batch.delete(TransactionDAO.getRef(id));
         await batch.commit();
+        auditLog('DELETE', 'Ledger', id, cid, { bill: b, paid: p });
         showToast('লেনদেন ডিলেট করা হয়েছে!', 'info');
         if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(cid);
     }

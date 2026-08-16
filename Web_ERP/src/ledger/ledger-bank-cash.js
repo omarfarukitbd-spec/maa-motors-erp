@@ -1,6 +1,7 @@
 import Swal from 'sweetalert2';
 import { BankDAO, CashCollectorDAO, TransactionDAO } from '../dao.js';
 import { showToast, handleError } from '../utils.js';
+import { auditLog } from '../audit.js';
 
 let cachedBanks = [];
 let cachedCollectors = [];
@@ -138,6 +139,7 @@ export async function quickAddBank() {
         try {
             const cleanName = bankName.trim();
             await BankDAO.add({ name: cleanName, status: 'active' });
+            auditLog('ADD_BANKING', 'Ledger', 'BankingSystem', `Quick added Bank: ${cleanName}`);
             showToast('নতুন ব্যাংক সফলভাবে যুক্ত হয়েছে', 'success');
             await loadBankOptions();
             const input = document.getElementById('ledger-received-from');
@@ -168,6 +170,7 @@ export async function quickAddCashCollector() {
         try {
             const cleanName = collectorName.trim();
             await CashCollectorDAO.add({ name: cleanName, status: 'active' });
+            auditLog('ADD_BANKING', 'Ledger', 'BankingSystem', `Quick added Cash Collector: ${cleanName}`);
             showToast('ক্যাশ সোর্স সফলভাবে যুক্ত হয়েছে', 'success');
             await loadCashCollectorOptions();
             const input = document.getElementById('ledger-received-from');
@@ -222,6 +225,7 @@ export async function quickEditBank() {
                 await TransactionDAO.update(t.id, { receivedFrom: finalName });
             }
 
+            auditLog('GLOBAL_RENAME', 'Ledger', 'BankingSystem', `Quick renamed Bank from ${oldName} to ${finalName}`);
             showToast('ব্যাংক আপডেট করা হয়েছে!', 'success');
             await loadBankOptions();
             const updatedSel = document.getElementById('ledger-received-from');
@@ -274,6 +278,7 @@ export async function quickEditCashCollector() {
                 await TransactionDAO.update(t.id, { receivedFrom: finalName });
             }
 
+            auditLog('GLOBAL_RENAME', 'Ledger', 'BankingSystem', `Quick renamed Cash Collector from ${oldName} to ${finalName}`);
             showToast('ক্যাশ সোর্স আপডেট করা হয়েছে!', 'success');
             await loadCashCollectorOptions();
             
