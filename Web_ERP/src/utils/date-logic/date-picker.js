@@ -112,8 +112,10 @@ export function initDatePickers() {
             currentVal = `${y}-${m}-${d}`;
             input.value = currentVal;
         }
+        let swalContainer = input.closest('.swal2-container');
 
         const fp = flatpickr(input, {
+            appendTo: swalContainer || undefined,
             mode: input.dataset.mode || 'single',
             dateFormat: 'Y-m-d',
             altInput: true,
