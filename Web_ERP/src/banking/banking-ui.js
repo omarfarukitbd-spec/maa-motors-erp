@@ -217,15 +217,20 @@ async function loadBankingDashboard(timeFilter = 'month') {
         
         container.innerHTML = `
             <div class="p-5 bg-slate-900 border border-slate-700 rounded-2xl shadow-xl">
-                <div class="flex justify-between items-center mb-5">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
                     <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-chart-pie text-purple-400"></i> ব্যাংকিং সামারি</h3>
-                    <select id="banking-summary-filter" class="bg-slate-950 border border-slate-700 text-white text-sm font-bold rounded-lg px-3 py-1.5 outline-none focus:border-purple-500 cursor-pointer transition-colors" onchange="window.bankingApp.loadBankingDashboard(this.value)">
-                        <option value="today" ${timeFilter === 'today' ? 'selected' : ''}>আজকে</option>
-                        <option value="week" ${timeFilter === 'week' ? 'selected' : ''}>এই সপ্তাহ</option>
-                        <option value="month" ${timeFilter === 'month' ? 'selected' : ''}>এই মাস</option>
-                        <option value="year" ${timeFilter === 'year' ? 'selected' : ''}>এই বছর</option>
-                        <option value="all" ${timeFilter === 'all' ? 'selected' : ''}>আজীবন</option>
-                    </select>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="banking-custom-range" class="${timeFilter.includes('to') ? '' : 'hidden'} bg-slate-950 border border-slate-700 text-white text-sm font-bold rounded-lg px-3 py-1.5 outline-none focus:border-purple-500 w-52 datepicker text-center" data-mode="range" placeholder="DD/MM/YYYY to DD/MM/YYYY" value="${timeFilter.includes('to') ? timeFilter : ''}" onchange="if(this.value.includes(' to ')) window.bankingApp.loadBankingDashboard(this.value)">
+                        
+                        <select id="banking-summary-filter" class="bg-slate-950 border border-slate-700 text-white text-sm font-bold rounded-lg px-3 py-1.5 outline-none focus:border-purple-500 cursor-pointer transition-colors" onchange="if(this.value === 'custom') { document.getElementById('banking-custom-range').classList.remove('hidden'); document.getElementById('banking-custom-range').focus(); } else { document.getElementById('banking-custom-range').classList.add('hidden'); window.bankingApp.loadBankingDashboard(this.value); }">
+                            <option value="today" ${timeFilter === 'today' ? 'selected' : ''}>আজকে</option>
+                            <option value="week" ${timeFilter === 'week' ? 'selected' : ''}>এই সপ্তাহ</option>
+                            <option value="month" ${timeFilter === 'month' ? 'selected' : ''}>এই মাস</option>
+                            <option value="year" ${timeFilter === 'year' ? 'selected' : ''}>এই বছর</option>
+                            <option value="all" ${timeFilter === 'all' ? 'selected' : ''}>আজীবন</option>
+                            <option value="custom" ${timeFilter.includes('to') ? 'selected' : ''}>কাস্টম তারিখ</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

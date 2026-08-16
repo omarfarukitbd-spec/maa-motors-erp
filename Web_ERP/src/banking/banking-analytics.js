@@ -5,7 +5,11 @@ export async function getBankingSummary(dateFilter = 'month') {
     let endDate = '';
     const todayObj = new Date();
     
-    if (dateFilter === 'today') {
+    if (dateFilter.includes(' to ')) {
+        const [start, end] = dateFilter.split(' to ');
+        startDate = start;
+        endDate = end;
+    } else if (dateFilter === 'today') {
         const d = todayObj.toISOString().split('T')[0];
         startDate = d; endDate = d;
     } else if (dateFilter === 'week') {
