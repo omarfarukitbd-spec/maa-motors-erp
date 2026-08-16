@@ -21,8 +21,8 @@ export function updateLedgerLiveText() {
     }
 }
 
-export function renderRows(transactions, container, stateRefs = {}) {
-    if (!container) return;
+export function renderRows(transactions, container, stateRefs = {}, startBalance = null) {
+    if (!container) return { finalRunning: 0 };
     const mobileContainer = document.getElementById('ledger-list-mobile');
     const tfootContainer = document.getElementById('ledger-tfoot');
     const sel = document.getElementById('ledger-customer-select');
@@ -36,12 +36,18 @@ export function renderRows(transactions, container, stateRefs = {}) {
     }
 
     const allCustomers = getCustomerCache() || [];
+    let running = 0;
 
     if (isFilteredCustomer) {
         const custId = sel.value;
         const currentCustomer = allCustomers.find(c => c.id === custId);
-        let running = Number(currentCustomer?.totalDue || 0);
-        transactions.forEach((d, index) => { runningBalances[index] = running; running = safeRound(running - ((Number(d.bill) || 0) - (Number(d.paid) || 0))); });
+        running = (startBalance !== null && startBalance !== undefined) 
+            ? Number(startBalance) 
+            : Number(currentCustomer?.totalDue || 0);
+        transactions.forEach((d, index) => { 
+            runningBalances[index] = running; 
+            running = safeRound(running - ((Number(d.bill) || 0) - (Number(d.paid) || 0))); 
+        });
     }
 
     (transactions || []).forEach((d, index) => {
@@ -196,4 +202,5 @@ export function renderRows(transactions, container, stateRefs = {}) {
             mobileStickyBar.classList.add('hidden');
         }
     }
+    return { finalRunning: running, runningBalances };
 }

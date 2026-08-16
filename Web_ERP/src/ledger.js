@@ -13,7 +13,7 @@ import { initLedgerHotkeys } from './ledger/ledger-hotkeys.js';
 
 let editingRef = { id: null, oldBill: 0, oldPaid: 0 };
 let recentTxnsListener = null, currentLedgerTxns = [], currentLedgerTxnsMap = {};
-let lastVisibleDoc = null, pageStack = [], currentPage = 1;
+let lastVisibleDoc = null, pageStack = [], balanceStack = [], currentPage = 1;
 const pageSize = 20;
 
 const stateRefs = { currentLedgerTxns, currentLedgerTxnsMap };
@@ -28,6 +28,7 @@ export async function loadRecentTransactions(filterVoucher = null, filterCustome
     if (direction === 'reset') {
         lastVisibleDoc = null;
         pageStack = [];
+        balanceStack = [];
         currentPage = 1;
     }
 
@@ -70,7 +71,22 @@ export async function loadRecentTransactions(filterVoucher = null, filterCustome
                 if (nextBtn) nextBtn.disabled = results.count < pageSize;
             }
         }
-        renderRows(results.data, tbody);
+
+        let startBalance = null;
+        if (filterCustomer) {
+            if (direction === 'reset' || balanceStack.length === 0) {
+                const currentCustomer = (getCustomerCache() || []).find(c => c.id === filterCustomer);
+                startBalance = Number(currentCustomer?.totalDue || 0);
+                balanceStack = [startBalance];
+            } else {
+                startBalance = balanceStack[currentPage - 1] !== undefined ? balanceStack[currentPage - 1] : null;
+            }
+        }
+
+        const renderRes = renderRows(results.data, tbody, startBalance);
+        if (filterCustomer && renderRes && renderRes.finalRunning !== undefined) {
+            balanceStack[currentPage] = renderRes.finalRunning;
+        }
     } catch (err) {
         handleError(err, 'লেনদেন লোড করতে সমস্যা হয়েছে');
         if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-red-400">ডাটা লোড করতে সমস্যা হয়েছে</td></tr>';
@@ -78,16 +94,16 @@ export async function loadRecentTransactions(filterVoucher = null, filterCustome
 }
 
 export function filterLedgerByCustomer(custId) {
-    lastVisibleDoc = null; pageStack = []; currentPage = 1;
-    updateLedgerLiveText(); loadRecentTransactions(null, custId);
+    lastVisibleDoc = null; pageStack = []; balanceStack = []; currentPage = 1;
+    updateLedgerLiveText(); loadRecentTransactions(null, custId, 'reset');
 }
 
 export function updateLedgerLiveText() {
     updateLiveTextUI();
 }
 
-export function renderRows(transactions, container) {
-    renderRowsUI(transactions, container, stateRefs);
+export function renderRows(transactions, container, startBalance = null) {
+    return renderRowsUI(transactions, container, stateRefs, startBalance);
 }
 
 export function renderLedger(container, params) {
@@ -96,7 +112,7 @@ export function renderLedger(container, params) {
         loadRecentTransactions,
         filterLedgerByCustomer
     });
-    currentPage = 1; pageStack = []; lastVisibleDoc = null;
+    currentPage = 1; pageStack = []; balanceStack = []; lastVisibleDoc = null;
 }
 
 export async function saveTransaction() {
