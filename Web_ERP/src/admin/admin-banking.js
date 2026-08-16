@@ -284,7 +284,7 @@ export async function reactivateBankingItem(id, name, type) {
         
         auditLog('REACTIVATE_BANKING', 'Admin', 'BankingSystem', `Reactivated ${typeLabel}: ${name}`);
         await loadBankingData();
-        showToast('সফলভাবে চালু করা হয়েছে', 'success');
+        Swal.fire({ title: 'সফল!', text: 'সফলভাবে চালু করা হয়েছে।', icon: 'success', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }});
     } catch (e) {
         Swal.fire('ত্রুটি', 'চালু করতে সমস্যা হয়েছে।', 'error');
     }
