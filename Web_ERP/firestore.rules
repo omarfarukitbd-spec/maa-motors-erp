@@ -87,5 +87,11 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
     }
+
+    // Bank Transactions
+    match /bank_transactions/{docId} {
+      allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
+      allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
+    }
   }
 }
