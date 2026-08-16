@@ -16,6 +16,10 @@ export function initLedgerHotkeys() {
 function handleGlobalHotkeys(e) {
     // 1. SweetAlert active dialog Y/N handling
     if (Swal.isVisible()) {
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        const isEditable = activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.isContentEditable;
+        if (isEditable) return; // Do not intercept typing
+
         const key = e.key.toLowerCase();
         if (key === 'y' && !e.ctrlKey && !e.altKey && !e.metaKey) {
             e.preventDefault();
