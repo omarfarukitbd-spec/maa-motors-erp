@@ -67,6 +67,7 @@ async function loadAndRenderAccounts() {
 
             activeAccounts.forEach((acc, index) => {
                 const balance = balances[index];
+                acc.balance = balance; // Fix: Save balance so dashboard can sum it up
                 const icon = acc.isCash ? '<i class="fa-solid fa-wallet text-emerald-400 text-2xl"></i>' : '<i class="fa-solid fa-building-columns text-blue-400 text-2xl"></i>';
                 const typeLabel = acc.isCash ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CASH</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">BANK</span>';
                 
