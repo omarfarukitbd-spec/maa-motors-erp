@@ -197,15 +197,22 @@ async function openTransactionModal(type) {
     }
 }
 
-import { openAccountLedger, loadLedgerTable, printLedger, exportLedgerExcel } from './banking-ledger-ui.js';
+import { openAccountLedger, loadLedgerTable, printLedger, exportLedgerExcel, deleteBankingTransaction } from './banking-ledger-ui.js';
 
 export const bankingApp = {
     renderBankingLedger,
     openTransactionModal,
-    viewAccountLedger: openAccountLedger,
+    viewAccountLedger: (acc, isCash) => {
+        if (typeof window !== 'undefined' && window.bankingApp) {
+            window.bankingApp.isCurrentAccountCash = isCash;
+        }
+        openAccountLedger(acc, isCash);
+    },
     loadLedgerTable,
     printLedger,
-    exportLedgerExcel
+    exportLedgerExcel,
+    deleteBankingTransaction,
+    refreshCards: loadAndRenderAccounts
 };
 
 if (typeof window !== 'undefined') {

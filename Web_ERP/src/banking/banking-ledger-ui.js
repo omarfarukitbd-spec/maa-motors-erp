@@ -116,10 +116,18 @@ export async function loadLedgerTable(accountName, isCash) {
             const balColor = t.runningBalance < 0 ? 'text-red-400' : 'text-slate-200';
             
             const formattedDate = new Date(t.dateStr).toLocaleDateString('en-GB');
+            
+            // Allow deletion for manual deposits, withdrawals, and transfers
+            const deleteBtn = t.type !== 'CUSTOMER_PAYMENT' 
+                ? `<button onclick="window.bankingApp.deleteBankingTransaction('${t.id}')" class="text-slate-600 hover:text-red-400 p-1 rounded transition-colors" title="ডিলিট করুন"><i class="fa-solid fa-trash-can text-[10px]"></i></button>`
+                : '';
 
             trs += `
-                <tr class="hover:bg-slate-800/50 transition-colors text-left">
-                    <td class="p-3 text-sm text-slate-300 whitespace-nowrap">${formattedDate}</td>
+                <tr class="hover:bg-slate-800/50 transition-colors text-left group">
+                    <td class="p-3 text-sm text-slate-300 whitespace-nowrap flex items-center justify-between">
+                        ${formattedDate}
+                        <div class="opacity-0 group-hover:opacity-100 transition-opacity ml-2">${deleteBtn}</div>
+                    </td>
                     <td class="p-3 text-sm text-slate-300">
                         <div class="font-bold">${t.type}</div>
                         <div class="text-[10px] text-slate-500">${t.note}</div>
@@ -262,4 +270,48 @@ export function exportLedgerExcel() {
     const ws = xlsx.utils.aoa_to_sheet(rows);
     xlsx.utils.book_append_sheet(wb, ws, "Ledger");
     xlsx.writeFile(wb, `Bank_Ledger_${currentAccountName}_${new Date().getTime()}.xlsx`);
+}
+
+export async function deleteBankingTransaction(txnId) {
+    // We need to import BankTransactionDAO and promptSecurityPin
+    const { BankTransactionDAO } = await import('../dao.js');
+    const { promptSecurityPin } = await import('../utils.js');
+    const { auditLog } = await import('../audit.js');
+
+    const result = await Swal.fire({
+        title: 'আপনি কি নিশ্চিত?',
+        text: "এই ট্রানজাকশনটি ডিলিট করলে ব্যাংকের ব্যালেন্স থেকে এটি মাইনাস/অ্যাডজাস্ট হয়ে যাবে। এটি পুনরায় ফিরে পাওয়া সম্ভব নয়!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'হ্যাঁ, ডিলিট করুন!',
+        cancelButtonText: 'বাতিল',
+        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+    });
+
+    if (result.isConfirmed) {
+        const isPinValid = await promptSecurityPin('Delete Transaction (Master PIN)');
+        if (!isPinValid) return;
+
+        Swal.fire({ title: 'ডিলিট করা হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        
+        try {
+            await BankTransactionDAO.delete(txnId);
+            auditLog('BANKING_TXN_DELETE', 'Admin', 'BankingLedger', `Deleted bank transaction ID: ${txnId}`);
+            
+            Swal.fire({ title: 'ডিলিটেড!', text: 'ট্রানজাকশনটি সফলভাবে ডিলিট করা হয়েছে।', icon: 'success', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }});
+            
+            // Refresh ledger modal table
+            await loadLedgerTable(currentAccountName, window.bankingApp.isCurrentAccountCash);
+            
+            // Refresh background cards if possible
+            if (typeof window.bankingApp.refreshCards === 'function') {
+                window.bankingApp.refreshCards();
+            }
+        } catch (error) {
+            console.error(error);
+            Swal.fire('ত্রুটি', 'ডিলিট করতে সমস্যা হয়েছে!', 'error');
+        }
+    }
 }
