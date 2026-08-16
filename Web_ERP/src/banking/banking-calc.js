@@ -19,7 +19,6 @@ export async function calculateAccountBalance(accountName, isCash = false) {
     
     // Note: TransactionDAO has no direct getByReceivedFrom, so we fetch all matching
     const collectionSnap = await TransactionDAO.collection
-        .where('receivedType', '==', rType)
         .where('receivedFrom', '==', accountName)
         .get();
         
