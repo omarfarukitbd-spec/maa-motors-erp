@@ -197,7 +197,18 @@ if (typeof window !== 'undefined') {
     window.toggleDashCustomerForm = toggleDashCustomerForm;
     window.saveDashCustomer = saveDashCustomer;
     window.resetDashCustomerForm = resetDashCustomerForm;
-    window.showBreakdownDetails = (type) => showBreakdownDetails(type, currentBankBreakdown, currentCashBreakdown);
+    window.showBreakdownDetails = (type, accountName) => {
+        const breakdown = type === 'Bank' ? currentBankBreakdown : currentCashBreakdown;
+        const sourceData = accountName ? breakdown[accountName] : null;
+        if (!sourceData) {
+            const allEntries = Object.entries(breakdown);
+            if (allEntries.length === 0) return Swal.fire({ title: type, text: 'এই ক্যাটাগরিতে কোনো লেনদেন নেই', icon: 'info', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
+            const [firstName, firstData] = allEntries[0];
+            showBreakdownDetails(firstName, type, firstData, activeFilterDate);
+            return;
+        }
+        showBreakdownDetails(accountName, type, sourceData, activeFilterDate);
+    };
 }
 
 export { 

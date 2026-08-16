@@ -290,8 +290,6 @@ if (typeof window !== 'undefined') {
     initLedgerHotkeys();
 }
 
-initLedgerHotkeys();
-
 document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('ledger-cust-dropdown');
     const searchInput = document.getElementById('ledger-cust-search-input');

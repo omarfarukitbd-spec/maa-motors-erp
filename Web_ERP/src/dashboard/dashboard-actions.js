@@ -125,6 +125,12 @@ export async function printExecutiveSummary() {
         const colEl = document.getElementById('dash-today-col')?.innerText || '৳ ০';
         const expEl = document.getElementById('dash-today-exp')?.innerText || '৳ ০';
         const custEl = document.getElementById('dash-total-cust')?.innerText || '০ জন';
+        const cashColEl = document.getElementById('dash-col-cash')?.innerText || '৳ ০';
+        const bankColEl = document.getElementById('dash-col-bank')?.innerText || '৳ ০';
+        const netCashRaw = document.getElementById('dash-net-cash')?.innerText || '';
+        const netCashLabel = netCashRaw.includes('ঘাটতি') ? 'ঘাটতি (Deficit)' : 'উদ্বৃত্ত (Surplus)';
+        const netCashColor = netCashRaw.includes('ঘাটতি') ? '#dc2626' : '#059669';
+        const netCashDisplay = netCashRaw.replace(/\s*\(.*?\)\s*/g, '').replace('নিট ক্যাশ:', '').trim();
 
         const settings = await SettingsDAO.getAppSettings();
 
@@ -192,6 +198,28 @@ export async function printExecutiveSummary() {
                                     <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; padding: 12px; border-radius: 10px;">
                                         <div style="font-size: 9px; font-weight: 900; color: #1e40af; text-transform: uppercase; margin-bottom: 4px;">মোট কাস্টমার সংখ্যা</div>
                                         <strong style="font-size: 15px; font-weight: 900; color: #2563eb;">${custEl}</strong>
+                                    </div>
+                                </div>
+
+                                <div style="font-size: 11px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 2px solid #0284c7; padding-bottom: 4px; margin-bottom: 10px; letter-spacing: 0.5px; margin-top: 4px;">
+                                    দৈনিক ক্যাশ ফ্লো বিভাজন (DAILY CASH FLOW BREAKDOWN)
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+                                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; padding: 10px; border-radius: 10px;">
+                                        <div style="font-size: 8px; font-weight: 900; color: #166534; text-transform: uppercase; margin-bottom: 3px;">ক্যাশ আদায়</div>
+                                        <strong style="font-size: 13px; font-weight: 900; color: #059669;">${cashColEl}</strong>
+                                    </div>
+                                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; padding: 10px; border-radius: 10px;">
+                                        <div style="font-size: 8px; font-weight: 900; color: #1e40af; text-transform: uppercase; margin-bottom: 3px;">ব্যাংক আদায়</div>
+                                        <strong style="font-size: 13px; font-weight: 900; color: #2563eb;">${bankColEl}</strong>
+                                    </div>
+                                    <div style="background: #fffbe6; border: 1px solid #ffe58f; border-left: 4px solid #d97706; padding: 10px; border-radius: 10px;">
+                                        <div style="font-size: 8px; font-weight: 900; color: #856404; text-transform: uppercase; margin-bottom: 3px;">মোট খরচ</div>
+                                        <strong style="font-size: 13px; font-weight: 900; color: #d97706;">${expEl}</strong>
+                                    </div>
+                                    <div style="background: ${netCashColor === '#dc2626' ? '#fdf2f2' : '#f0fdf4'}; border: 1px solid ${netCashColor === '#dc2626' ? '#fecaca' : '#bbf7d0'}; border-left: 4px solid ${netCashColor}; padding: 10px; border-radius: 10px;">
+                                        <div style="font-size: 8px; font-weight: 900; color: ${netCashColor}; text-transform: uppercase; margin-bottom: 3px;">নিট ক্যাশ · ${netCashLabel}</div>
+                                        <strong style="font-size: 13px; font-weight: 900; color: ${netCashColor};">${netCashDisplay}</strong>
                                     </div>
                                 </div>
 

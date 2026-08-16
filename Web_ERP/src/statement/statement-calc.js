@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, parseAmount, safeRound, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, parseAmount, safeRound, showToast, formatSmsCounterText } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 
@@ -211,11 +211,12 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
             const cachedCust = getCustomerCache().find(c => c.id === currentCustomerInfo.id);
             const prevDue = safeRound(Number(cachedCust?.totalDue || 0));
             const newDue = safeRound(prevDue - formValues.amount);
+            const autoVoucherNo = 'QC-' + Date.now().toString(36).toUpperCase();
             batch.set(txnRef, {
                 customerId: currentCustomerInfo.id,
                 customerName: currentCustomerInfo.name,
                 date: getTodayLocalDateString(),
-                voucherNo: '',
+                voucherNo: autoVoucherNo,
                 bill: 0,
                 paid: formValues.amount,
                 receivedType: formValues.type,
@@ -247,8 +248,15 @@ export async function sendStmtReminderSMS(stateRef = {}) {
     const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(currentCustomerInfo.name) : currentCustomerInfo.name) || 'Customer';
     const msg = `Dear ${englishName}, Your total ${dueLabel} at M/S. Maa Motors is Tk ${formattedDue}. Kindly clear payment. Contact: 01819-397669. Thank you! - M/S. Maa Motors`.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
     const { value: text } = await Swal.fire({
-        title: '<i class="fa-solid fa-comment-sms text-blue-400 mr-2"></i>Send Reminder SMS', input: 'textarea', inputValue: msg, inputAttributes: { rows: 5, class: 'm3-field text-xs font-mono' },
-        showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> Send SMS', cancelButtonText: 'Cancel', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+        title: '<i class="fa-solid fa-comment-sms text-blue-400 mr-2"></i>Send Reminder SMS',
+        html: `<div class="text-left space-y-1 mb-2 font-bn"><div class="text-xs text-slate-400">Recipient: <strong class="text-white">${phone}</strong></div><div id="stmt-sms-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(msg)}</div></div>`,
+        input: 'textarea', inputValue: msg, inputAttributes: { rows: 5, class: 'm3-field text-xs font-mono' },
+        didOpen: () => {
+            const ta = Swal.getInput(); const ctr = document.getElementById('stmt-sms-counter');
+            if (ta) ta.oninput = () => { if (ctr) ctr.innerText = formatSmsCounterText(ta.value); };
+        },
+        showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> Send SMS', cancelButtonText: 'Cancel',
+        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700', confirmButton: 'm3-btn-primary !bg-blue-600 hover:!bg-blue-500 !px-6 !py-2 rounded-xl font-bold', cancelButton: 'm3-btn-tonal !bg-slate-800 !text-slate-300 !px-5 !py-2 rounded-xl font-bold border border-slate-700' }
     });
     if (text) {
         const ok = await window.sendSMS(phone, text, false);

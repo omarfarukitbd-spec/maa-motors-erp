@@ -230,7 +230,7 @@ export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
             
             await batch.commit();
             
-            auditLog('DELETE', 'Ledger', id, cid, { bill: b, paid: p, action: 'Soft Delete to Recycle Bin' });
+            auditLog('DELETE', 'Ledger', id, txnDoc.customerName || cid, { bill: b, paid: p, action: 'Soft Delete to Recycle Bin' });
             showToast('ভাউচার রিসাইকেল বিনে মুভ করা হয়েছে!', 'info');
             Swal.close();
             if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(cid);
