@@ -190,34 +190,15 @@ async function openTransactionModal(type) {
     }
 }
 
-async function viewAccountLedger(accountName, isCash) {
-    Swal.fire({ title: 'লেজার তৈরি হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    
-    try {
-        const bankTxns = await BankTransactionDAO.getByBank(accountName);
-        const incomingTxns = await BankTransactionDAO.getTransfersByTargetBank(accountName);
-        
-        // Wait, for full ledger we need customer payments too. But it's complex to merge & sort them manually right now.
-        // I will implement a simplified ledger that shows manual txns first. Or better, fetch from transactions collection!
-        
-        // Let's implement full ledger view combining both arrays and sorting them.
-        Swal.close();
-        Swal.fire({
-            title: `<div class="font-bn font-black text-white text-xl">${accountName} - লেজার</div>`,
-            html: `<div class="font-bn text-sm text-amber-400">এই ভার্সনে সম্পূর্ণ ডিটেইলস লেজার পরের আপডেটে আসবে। আপাতত ড্যাশবোর্ডে ব্যালেন্স দেখতে পারবেন।</div>`,
-            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
-            confirmButtonText: 'ঠিক আছে'
-        });
-    } catch (e) {
-        console.error(e);
-        Swal.fire('ত্রুটি', 'লেজার তৈরি করতে সমস্যা হয়েছে।', 'error');
-    }
-}
+import { openAccountLedger, loadLedgerTable, printLedger, exportLedgerExcel } from './banking-ledger-ui.js';
 
 export const bankingApp = {
     renderBankingLedger,
     openTransactionModal,
-    viewAccountLedger
+    viewAccountLedger: openAccountLedger,
+    loadLedgerTable,
+    printLedger,
+    exportLedgerExcel
 };
 
 if (typeof window !== 'undefined') {
