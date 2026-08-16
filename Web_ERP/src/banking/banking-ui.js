@@ -88,7 +88,7 @@ async function loadAndRenderAccounts() {
     } catch (e) {
         console.error("Error loading banking accounts:", e);
         const grid = document.getElementById('banking-accounts-grid');
-        if (grid) grid.innerHTML = `<div class="text-center py-12 col-span-full text-red-400 font-bold">ব্যালেন্স লোড করতে সমস্যা হয়েছে!</div>`;
+        if (grid) grid.innerHTML = `<div class="text-center py-12 col-span-full text-red-400 font-bold break-all">ব্যালেন্স লোড করতে সমস্যা হয়েছে! Error: ${e.message}</div>`;
     }
 }
 

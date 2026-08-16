@@ -261,5 +261,5 @@ export function exportLedgerExcel() {
     const wb = xlsx.utils.book_new();
     const ws = xlsx.utils.aoa_to_sheet(rows);
     xlsx.utils.book_append_sheet(wb, ws, "Ledger");
-    xlsx.writeFile(wb, \`Bank_Ledger_\${currentAccountName}_\${new Date().getTime()}.xlsx\`);
+    xlsx.writeFile(wb, `Bank_Ledger_${currentAccountName}_${new Date().getTime()}.xlsx`);
 }
