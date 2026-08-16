@@ -203,6 +203,16 @@ export function renderAdmin(container) {
                             <i class="fa-solid fa-broom mr-1.5"></i>অডিট লগ ক্লিনআপ
                         </button>
                     </div>
+
+                    <div class="group rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-red-500/30 p-4 transition-all flex flex-col gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0"><i class="fa-solid fa-trash-can text-sm"></i></div>
+                            <div><h4 class="text-white font-bold text-sm">রিসাইকেল বিন</h4><p class="text-[10px] text-slate-500">ডিলিট হওয়া কাস্টমার ও ভাউচার রিস্টোর করুন।</p></div>
+                        </div>
+                        <button class="h-9 w-full rounded-xl bg-red-600/15 border border-red-500/25 hover:bg-red-600 text-red-400 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95" onclick="window.navigate('recycle-bin')">
+                            <i class="fa-solid fa-trash-arrow-up mr-1.5"></i>রিসাইকেল বিন খুলুন
+                        </button>
+                    </div>
                 </div>
             </div>
 

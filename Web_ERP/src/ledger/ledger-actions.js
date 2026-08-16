@@ -209,12 +209,36 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
 
 export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
     if (await promptSecurityPin("Delete")) {
-        const batch = db.batch();
-        batch.update(CustomerDAO.getRef(cid), { totalDue: firebase.firestore.FieldValue.increment(safeRound(p - b)) });
-        batch.delete(TransactionDAO.getRef(id));
-        await batch.commit();
-        auditLog('DELETE', 'Ledger', id, cid, { bill: b, paid: p });
-        showToast('লেনদেন ডিলেট করা হয়েছে!', 'info');
-        if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(cid);
+        try {
+            Swal.fire({ title: 'ডিলিট হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const txnDoc = await TransactionDAO.getById(id);
+            if (!txnDoc) throw new Error("Transaction not found");
+
+            const batch = db.batch();
+            
+            // 1. Decrease Customer Due
+            batch.update(CustomerDAO.getRef(cid), { totalDue: firebase.firestore.FieldValue.increment(safeRound(p - b)) });
+            
+            // 2. Move to Recycle Bin
+            batch.set(db.collection('recycle_bin').doc(id), {
+                module: 'Transaction',
+                data: txnDoc,
+                deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                deletedBy: window.AppState?.currentUserEmail || 'Unknown'
+            });
+
+            // 3. Delete original
+            batch.delete(TransactionDAO.getRef(id));
+            
+            await batch.commit();
+            
+            auditLog('DELETE', 'Ledger', id, cid, { bill: b, paid: p, action: 'Soft Delete to Recycle Bin' });
+            showToast('ভাউচার রিসাইকেল বিনে মুভ করা হয়েছে!', 'info');
+            Swal.close();
+            if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(cid);
+        } catch (e) {
+            console.error("deleteTransaction error:", e);
+            Swal.fire('ত্রুটি', 'ভাউচার ডিলিট করা সম্ভব হয়নি।', 'error');
+        }
     }
 }

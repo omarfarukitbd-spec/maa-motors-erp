@@ -9,6 +9,7 @@ import { renderBulkEntry } from '../bulk_entry.js';
 import { renderAdmin } from '../admin.js';
 import { renderInvoice } from '../invoice.js';
 import { renderAuditLogs, unsubscribeAuditLogs } from '../audit.js';
+import { renderRecycleBin, unsubscribeRecycleBinData } from '../admin/recycle-bin.js';
 import { renderZoneReports } from '../zone_reports/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
@@ -104,6 +105,7 @@ export function initOnlineStatus() {
 export function navigate(view, params = {}) {
     if (AppState.currentView === 'dashboard' && view !== 'dashboard') unsubscribeDashboard();
     if (AppState.currentView === 'audit' && view !== 'audit') unsubscribeAuditLogs();
+    if (AppState.currentView === 'recycle-bin' && view !== 'recycle-bin') unsubscribeRecycleBinData();
 
     AppState.currentView = view;
     const sidebar = document.getElementById('app-sidebar');
@@ -132,6 +134,7 @@ export function navigate(view, params = {}) {
         case 'statement': renderStatement(container, params); break;
         case 'admin': renderAdmin(container); break;
         case 'audit': renderAuditLogs(container); break;
+        case 'recycle-bin': renderRecycleBin(container); break;
     }
 
     // Refresh date pickers after render
