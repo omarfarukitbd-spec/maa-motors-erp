@@ -1,6 +1,7 @@
 import Swal from 'sweetalert2';
 import { BankDAO, CashCollectorDAO, BankTransactionDAO } from '../dao.js';
 import { calculateAccountBalance } from './banking-calc.js';
+import { getBankingSummary } from './banking-analytics.js';
 import { formatAmountWithComma, promptSecurityPin, showToast, parseAmount } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { firebase } from '../firebase-config.js';
@@ -35,6 +36,8 @@ export async function renderBankingLedger(container) {
                     </button>
                 </div>
             </div>
+
+            <div id="banking-dashboard-container" class="mb-2"></div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="banking-accounts-grid">
                 <div class="text-center py-12 col-span-full text-slate-400 font-bold italic"><i class="fa-solid fa-spinner fa-spin mr-2"></i>অ্যাকাউন্ট ব্যালেন্স লোড হচ্ছে...</div>
@@ -91,6 +94,8 @@ async function loadAndRenderAccounts() {
 
         const grid = document.getElementById('banking-accounts-grid');
         if (grid) grid.innerHTML = html;
+        
+        await loadBankingDashboard('month');
         
     } catch (e) {
         console.error("Error loading banking accounts:", e);
@@ -200,9 +205,60 @@ async function openTransactionModal(type) {
 
 import { openAccountLedger, loadLedgerTable, printLedger, exportLedgerExcel, deleteBankingTransaction } from './banking-ledger-ui.js';
 
+async function loadBankingDashboard(timeFilter = 'month') {
+    const container = document.getElementById('banking-dashboard-container');
+    if (!container) return;
+    
+    container.innerHTML = `<div class="text-center py-8 text-slate-400 font-bold italic"><i class="fa-solid fa-spinner fa-spin mr-2"></i>সামারি লোড হচ্ছে...</div>`;
+
+    try {
+        const totalBankBalance = activeAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+        const summary = await getBankingSummary(timeFilter);
+        
+        container.innerHTML = `
+            <div class="p-5 bg-slate-900 border border-slate-700 rounded-2xl shadow-xl">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-chart-pie text-purple-400"></i> ব্যাংকিং সামারি</h3>
+                    <select id="banking-summary-filter" class="bg-slate-950 border border-slate-700 text-white text-sm font-bold rounded-lg px-3 py-1.5 outline-none focus:border-purple-500 cursor-pointer transition-colors" onchange="window.bankingApp.loadBankingDashboard(this.value)">
+                        <option value="today" ${timeFilter === 'today' ? 'selected' : ''}>আজকে</option>
+                        <option value="week" ${timeFilter === 'week' ? 'selected' : ''}>এই সপ্তাহ</option>
+                        <option value="month" ${timeFilter === 'month' ? 'selected' : ''}>এই মাস</option>
+                        <option value="year" ${timeFilter === 'year' ? 'selected' : ''}>এই বছর</option>
+                        <option value="all" ${timeFilter === 'all' ? 'selected' : ''}>আজীবন</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">মোট জমা (IN)</p>
+                        <h4 class="text-emerald-400 font-black text-xl">৳ ${formatAmountWithComma(summary.totalIn)}</h4>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">মোট উত্তোলন (OUT)</p>
+                        <h4 class="text-red-400 font-black text-xl">৳ ${formatAmountWithComma(summary.totalOut)}</h4>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">নিট ফ্লো (NET)</p>
+                        <h4 class="${summary.netFlow >= 0 ? 'text-emerald-400' : 'text-red-400'} font-black text-xl">৳ ${formatAmountWithComma(summary.netFlow)}</h4>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-purple-900/50 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-purple-600/20 rounded-full blur-xl"></div>
+                        <p class="text-purple-300 text-[10px] font-bold uppercase tracking-wider mb-1">সর্বমোট ব্যাংক ব্যালেন্স</p>
+                        <h4 class="text-purple-400 font-black text-xl relative z-10">৳ ${formatAmountWithComma(totalBankBalance)}</h4>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        console.error("Dashboard load error", e);
+        container.innerHTML = `<div class="text-center py-8 text-red-400 font-bold italic">সামারি লোড করতে সমস্যা হয়েছে!</div>`;
+    }
+}
+
 export const bankingApp = {
     renderBankingLedger,
     openTransactionModal,
+    loadBankingDashboard,
     viewAccountLedger: (acc, isCash) => {
         if (typeof window !== 'undefined' && window.bankingApp) {
             window.bankingApp.isCurrentAccountCash = isCash;
