@@ -138,13 +138,19 @@ function getDashboardMainGridHTML() {
                         <h3 class="text-sm md:text-base font-black text-white uppercase tracking-widest flex items-center gap-2 whitespace-nowrap flex-nowrap">
                             <div class="w-2 h-5 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] shrink-0"></div> 
                             <span class="shrink-0">আদায় / কালেকশন লিস্ট</span>
-                            <input type="text" id="collection-list-datepicker" class="m3-field py-1.5 bg-slate-950/80 h-8 text-[11px] w-36 datepicker cursor-pointer ml-2 text-center text-emerald-400 font-bold border-emerald-500/30 rounded-lg hover:border-emerald-500/60 transition-all" placeholder="Select Date">
                         </h3>
-                        <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
-                            <button id="btn-col-today" class="px-3.5 py-1.5 bg-emerald-600 text-white rounded-xl text-[11px] font-bold transition-all shadow-[0_0_10px_rgba(16,185,129,0.3)]" onclick="window.filterCollectionList('today')">আজ</button>
-                            <button id="btn-col-yesterday" class="px-3.5 py-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl text-[11px] font-bold transition-all" onclick="window.filterCollectionList('yesterday')">গতকাল</button>
-                            <button id="btn-col-week" class="px-3.5 py-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl text-[11px] font-bold transition-all" onclick="window.filterCollectionList('week')">১ সপ্তাহ</button>
-                            <button id="btn-col-month" class="px-3.5 py-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl text-[11px] font-bold transition-all" onclick="window.filterCollectionList('month')">১ মাস</button>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="dashboard-collection-custom-range" class="hidden m3-field py-1.5 bg-slate-950/80 h-8 text-[11px] w-40 datepicker cursor-pointer text-center text-emerald-400 font-bold border-emerald-500/30 rounded-lg hover:border-emerald-500/60 transition-all" data-mode="range" placeholder="DD/MM/YYYY to DD/MM/YYYY" onchange="if(this.value.includes(' to ')) window.filterCollectionList(this.value)">
+                            
+                            <select id="dashboard-collection-filter" class="m3-field py-1.5 bg-slate-950/80 h-8 text-[11px] text-emerald-400 font-bold border-emerald-500/30 rounded-lg hover:border-emerald-500/60 transition-all cursor-pointer outline-none focus:border-emerald-500" onchange="window.filterCollectionList(this.value)">
+                                <option value="today">আজ</option>
+                                <option value="yesterday">গতকাল</option>
+                                <option value="week">এই সপ্তাহ</option>
+                                <option value="month">এই মাস</option>
+                                <option value="year">এই বছর</option>
+                                <option value="all">আজীবন</option>
+                                <option value="custom">কাস্টম তারিখ</option>
+                            </select>
                         </div>
                     </div>
 

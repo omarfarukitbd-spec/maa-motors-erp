@@ -37,15 +37,6 @@ export function renderDashboard(container, params) {
     startDashboardRealtimeUpdates(activeFilterDate);
 
     setTimeout(() => {
-        const colDpEl = document.getElementById('collection-list-datepicker');
-        if (colDpEl && colDpEl._flatpickr) {
-            colDpEl._flatpickr.set('onChange', function(selectedDates, dateStr, instance) {
-                if (selectedDates.length > 0) {
-                    const start = toDBDate(selectedDates[0]);
-                    window.filterCollectionList('custom', start, start);
-                }
-            });
-        }
         window.filterCollectionList('today');
     }, 200);
 }

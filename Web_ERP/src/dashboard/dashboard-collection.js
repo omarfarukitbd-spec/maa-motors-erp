@@ -181,24 +181,34 @@ export function filterCollectionByMethod(methodName) {
     if (cardWordsEl) cardWordsEl.innerText = visibleTotal > 0 ? `${numberToBanglaWords(visibleTotal)}` : 'শূন্য টাকা মাত্র';
 }
 
-export function filterCollectionList(range, customStart = null, customEnd = null) {
+export function filterCollectionList(range) {
     const today = getTodayLocalDateString();
     let start = today, end = today;
-    
-    ['today', 'yesterday', 'week', 'month'].forEach(r => {
-        const btn = document.getElementById(`btn-col-${r}`);
-        if (btn) {
-            if (r === range) {
-                btn.classList.add('bg-emerald-600', 'text-white');
-                btn.classList.remove('bg-slate-800', 'text-slate-300', 'bg-emerald-600/20', 'text-emerald-400');
-            } else {
-                btn.classList.remove('bg-emerald-600', 'text-white', 'bg-emerald-600/20', 'text-emerald-400');
-                btn.classList.add('bg-slate-800', 'text-slate-300');
-            }
-        }
-    });
 
-    if (range === 'yesterday') {
+    // Update the dropdown select to match the passed range (if called programmatically)
+    const selectEl = document.getElementById('dashboard-collection-filter');
+    const customRangeEl = document.getElementById('dashboard-collection-custom-range');
+    
+    if (selectEl) {
+        if (range.includes('to') || range === 'custom') {
+            selectEl.value = 'custom';
+            if (customRangeEl) {
+                customRangeEl.classList.remove('hidden');
+                if (range.includes('to')) {
+                    customRangeEl.value = range;
+                }
+            }
+        } else {
+            selectEl.value = range;
+            if (customRangeEl) customRangeEl.classList.add('hidden');
+        }
+    }
+
+    if (range.includes(' to ')) {
+        const [s, e] = range.split(' to ');
+        start = s;
+        end = e;
+    } else if (range === 'yesterday') {
         start = end = getYesterdayDBDate();
     } else if (range === 'week') {
         const d = new Date();
@@ -210,15 +220,16 @@ export function filterCollectionList(range, customStart = null, customEnd = null
         d.setDate(d.getDate() - 29);
         start = toDBDate(d);
         end = today;
-    } else if (range === 'custom' && customStart && customEnd) {
-        start = customStart;
-        end = customEnd;
-    }
-    
-    const dp = document.getElementById('collection-list-datepicker');
-    if (dp && dp._flatpickr && range !== 'custom') {
-        dp._flatpickr.set('mode', 'single');
-        dp._flatpickr.setDate(start, false);
+    } else if (range === 'year') {
+        const d = new Date();
+        d.setFullYear(d.getFullYear() - 1);
+        start = toDBDate(d);
+        end = today;
+    } else if (range === 'all') {
+        start = '2000-01-01';
+        end = '2099-12-31';
+    } else if (range === 'custom') {
+        return; // Wait for the custom range input
     }
 
     loadCollectionList(start, end);
