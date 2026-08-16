@@ -119,7 +119,7 @@ export function initDatePickers() {
             mode: input.dataset.mode || 'single',
             dateFormat: 'Y-m-d',
             altInput: true,
-            altFormat: input.dataset.mode === 'range' ? 'd/m/Y to d/m/Y' : 'd/m/Y',
+            altFormat: 'd/m/Y',
             allowInput: true,
             clickOpens: false,
             disableMobile: true,
