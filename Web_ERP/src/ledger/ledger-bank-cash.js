@@ -1,10 +1,10 @@
 import Swal from 'sweetalert2';
+import { db } from '../firebase-config.js';
 import { BankDAO, CashCollectorDAO, TransactionDAO } from '../dao.js';
 import { showToast, handleError } from '../utils.js';
 import { auditLog } from '../audit.js';
 
-let cachedBanks = [];
-let cachedCollectors = [];
+let cachedBanks = [], cachedCollectors = [];
 window.cachedBanksHtml = '<option value="">-- ব্যাংক নির্বাচন করুন --</option>';
 window.cachedCashHtml = '<option value="">-- ক্যাশ রিসিভার নির্বাচন করুন --</option>';
 
@@ -15,36 +15,25 @@ window.cachedCashHtml = '<option value="">-- ক্যাশ রিসিভা�
 export async function loadBankOptions() {
     try {
         let banks = await BankDAO.getAllBanks();
-        
-        // Auto-sync missing banks from Ledger transactions
         const allTxns = await TransactionDAO.getAll();
         const existingTxnBanks = new Set();
         allTxns.forEach(t => {
-            if (t.receivedType === 'Bank' && t.receivedFrom) {
-                existingTxnBanks.add(t.receivedFrom.trim());
-            }
+            if (t.receivedType === 'Bank' && t.receivedFrom) existingTxnBanks.add(t.receivedFrom.trim());
         });
-
-        // Add defaults just in case
         existingTxnBanks.add('OneBank (IFRAT)');
         existingTxnBanks.add('IBBL (IFRAT)');
 
         const currentBankNames = new Set(banks.map(b => b.name));
         let addedNew = false;
-        
         for (const bName of existingTxnBanks) {
             if (!currentBankNames.has(bName) && bName.length > 0) {
                 await BankDAO.add({ name: bName, status: 'active' });
                 addedNew = true;
             }
         }
-
-        if (addedNew) {
-            banks = await BankDAO.getAllBanks();
-        }
+        if (addedNew) banks = await BankDAO.getAllBanks();
 
         cachedBanks = banks;
-        // Only show active accounts in dropdowns
         const activeBanks = banks.filter(b => b.status !== 'inactive');
         let html = '<option value="" class="!bg-slate-900 !text-slate-400">-- ব্যাংক নির্বাচন করুন --</option>';
         activeBanks.forEach(b => {
@@ -52,51 +41,37 @@ export async function loadBankOptions() {
         });
         window.cachedBanksHtml = html;
         
-        // If the select is currently in Bank mode, update it
         const sel = document.getElementById('ledger-received-from');
         if (sel && sel.tagName === 'SELECT' && document.getElementById('lbl-recv-from')?.innerText.includes('Bank')) {
             const currentVal = sel.value;
             sel.innerHTML = html;
             sel.value = currentVal;
         }
-    } catch (e) {
-        console.error('Error loading bank options:', e);
-    }
+    } catch (e) { console.error('Error loading bank options:', e); }
 }
 
 export async function loadCashCollectorOptions() {
     try {
         let collectors = await CashCollectorDAO.getAllCollectors();
-        
-        // Auto-sync missing cash collectors from Ledger transactions
         const allTxns = await TransactionDAO.getAll();
         const existingTxnCash = new Set();
         allTxns.forEach(t => {
-            if (t.receivedType === 'Cash' && t.receivedFrom) {
-                existingTxnCash.add(t.receivedFrom.trim());
-            }
+            if (t.receivedType === 'Cash' && t.receivedFrom) existingTxnCash.add(t.receivedFrom.trim());
         });
-
-        // Add defaults
         existingTxnCash.add('শোরুম ক্যাশ');
         existingTxnCash.add('ইফরাত');
 
         const currentCollectorNames = new Set(collectors.map(c => c.name));
         let addedNew = false;
-
         for (const cName of existingTxnCash) {
             if (!currentCollectorNames.has(cName) && cName.length > 0) {
                 await CashCollectorDAO.add({ name: cName, status: 'active' });
                 addedNew = true;
             }
         }
-
-        if (addedNew) {
-            collectors = await CashCollectorDAO.getAllCollectors();
-        }
+        if (addedNew) collectors = await CashCollectorDAO.getAllCollectors();
 
         cachedCollectors = collectors;
-        // Only show active collectors in dropdowns
         const activeCollectors = collectors.filter(c => c.status !== 'inactive');
         let html = '<option value="" class="!bg-slate-900 !text-slate-400">-- ক্যাশ রিসিভার নির্বাচন করুন --</option>';
         activeCollectors.forEach(c => {
@@ -104,16 +79,13 @@ export async function loadCashCollectorOptions() {
         });
         window.cachedCashHtml = html;
         
-        // If the select is currently in Cash mode, update it
         const sel = document.getElementById('ledger-received-from');
         if (sel && sel.tagName === 'SELECT' && document.getElementById('lbl-recv-from')?.innerText.includes('Cash')) {
             const currentVal = sel.value;
             sel.innerHTML = html;
             sel.value = currentVal;
         }
-    } catch (e) {
-        console.error('Error loading cash collectors:', e);
-    }
+    } catch (e) { console.error('Error loading cash collectors:', e); }
 }
 
 /**
@@ -218,14 +190,18 @@ export async function quickEditBank() {
             const finalName = newName.trim();
             await BankDAO.update(bankObj.id, { name: finalName });
             
-            // Auto update all past transactions with this bank name
-            const allTxns = await TransactionDAO.getAll();
-            const txnsToUpdate = allTxns.filter(t => t.receivedType === 'Bank' && t.receivedFrom === oldName);
-            for (const t of txnsToUpdate) {
-                await TransactionDAO.update(t.id, { receivedFrom: finalName });
+            // Auto update all past transactions with this bank name using targeted query and batch commit
+            const snap = await db.collection('transactions').where('receivedType', '==', 'Bank').where('receivedFrom', '==', oldName).get();
+            const CHUNK_SIZE = 400;
+            for (let i = 0; i < snap.docs.length; i += CHUNK_SIZE) {
+                const batch = db.batch();
+                snap.docs.slice(i, i + CHUNK_SIZE).forEach(doc => {
+                    batch.update(doc.ref, { receivedFrom: finalName });
+                });
+                await batch.commit();
             }
 
-            auditLog('GLOBAL_RENAME', 'Ledger', 'BankingSystem', `Quick renamed Bank from ${oldName} to ${finalName}`);
+            auditLog('GLOBAL_RENAME', 'Ledger', 'BankingSystem', `Quick renamed Bank from ${oldName} to ${finalName} (${snap.size} txns)`);
             showToast('ব্যাংক আপডেট করা হয়েছে!', 'success');
             await loadBankOptions();
             const updatedSel = document.getElementById('ledger-received-from');
@@ -271,14 +247,18 @@ export async function quickEditCashCollector() {
             const finalName = newName.trim();
             await CashCollectorDAO.update(collObj.id, { name: finalName });
             
-            // Auto update all past transactions with this cash source
-            const allTxns = await TransactionDAO.getAll();
-            const txnsToUpdate = allTxns.filter(t => t.receivedType === 'Cash' && t.receivedFrom === oldName);
-            for (const t of txnsToUpdate) {
-                await TransactionDAO.update(t.id, { receivedFrom: finalName });
+            // Auto update all past transactions with this cash source using targeted query and batch commit
+            const snap = await db.collection('transactions').where('receivedType', '==', 'Cash').where('receivedFrom', '==', oldName).get();
+            const CHUNK_SIZE = 400;
+            for (let i = 0; i < snap.docs.length; i += CHUNK_SIZE) {
+                const batch = db.batch();
+                snap.docs.slice(i, i + CHUNK_SIZE).forEach(doc => {
+                    batch.update(doc.ref, { receivedFrom: finalName });
+                });
+                await batch.commit();
             }
 
-            auditLog('GLOBAL_RENAME', 'Ledger', 'BankingSystem', `Quick renamed Cash Collector from ${oldName} to ${finalName}`);
+            auditLog('GLOBAL_RENAME', 'Ledger', 'BankingSystem', `Quick renamed Cash Collector from ${oldName} to ${finalName} (${snap.size} txns)`);
             showToast('ক্যাশ সোর্স আপডেট করা হয়েছে!', 'success');
             await loadCashCollectorOptions();
             

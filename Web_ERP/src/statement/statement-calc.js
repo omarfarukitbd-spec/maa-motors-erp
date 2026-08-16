@@ -3,6 +3,7 @@ import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, parseAmount, safeRound, showToast } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
+import { auditLog } from '../audit.js';
 
 export async function loadStatementData(stateRef = {}) {
     const tbody = document.getElementById('statement-list');
@@ -224,8 +225,9 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
                 createdBy: window.AppState?.currentUserEmail || 'Unknown',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            batch.update(CustomerDAO.getRef(currentCustomerInfo.id), { totalDue: firebase.firestore.FieldValue.increment(-formValues.amount) });
+            batch.update(CustomerDAO.getRef(currentCustomerInfo.id), { totalDue: firebase.firestore.FieldValue.increment(safeRound(-formValues.amount)) });
             await batch.commit();
+            auditLog('CREATE', 'Ledger', txnRef.id, currentCustomerInfo.name, { bill: 0, paid: formValues.amount, receivedType: formValues.type, receivedFrom: formValues.ref, source: 'Statement Quick Collect' });
             showToast('জমা সফলভাবে সেভ হয়েছে!', 'success');
             if (callbacks.loadStatementData) callbacks.loadStatementData();
         } catch (e) {

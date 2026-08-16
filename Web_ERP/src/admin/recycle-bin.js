@@ -185,19 +185,28 @@ export async function restoreRecycleItem(encodedItem) {
             
         } else if (item.module === 'Customer') {
             const batchId = item.batchId;
-            const batch = db.batch();
+            const ops = [];
             
-            batch.set(CustomerDAO.getRef(item.id), item.data);
-            batch.delete(db.collection('recycle_bin').doc(item.id));
+            ops.push((b) => {
+                b.set(CustomerDAO.getRef(item.id), item.data);
+                b.delete(db.collection('recycle_bin').doc(item.id));
+            });
             
             const txnsSnap = await db.collection('recycle_bin').where('batchId', '==', batchId).where('module', '==', 'Transaction').get();
             txnsSnap.forEach(doc => {
                 const tItem = doc.data();
-                batch.set(TransactionDAO.getRef(doc.id), tItem.data);
-                batch.delete(doc.ref);
+                ops.push((b) => {
+                    b.set(TransactionDAO.getRef(doc.id), tItem.data);
+                    b.delete(doc.ref);
+                });
             });
             
-            await batch.commit();
+            const CHUNK_SIZE = 200; // 200 ops * 2 actions = 400 operations per batch
+            for (let i = 0; i < ops.length; i += CHUNK_SIZE) {
+                const batch = db.batch();
+                ops.slice(i, i + CHUNK_SIZE).forEach(op => op(batch));
+                await batch.commit();
+            }
             auditLog('RESTORE', 'Customers', item.id, item.data.name, { action: 'Restored Customer and ' + txnsSnap.size + ' Txns' });
         }
 
@@ -214,15 +223,20 @@ export async function deleteRecycleItemPermanently(docId, batchId) {
 
     try {
         Swal.fire({ title: 'মুছে ফেলা হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const batch = db.batch();
-        batch.delete(db.collection('recycle_bin').doc(docId));
         
         if (batchId && batchId !== 'undefined' && batchId !== 'null') {
             const txnsSnap = await db.collection('recycle_bin').where('batchId', '==', batchId).where('module', '==', 'Transaction').get();
-            txnsSnap.forEach(d => batch.delete(d.ref));
+            const refsToDelete = [db.collection('recycle_bin').doc(docId), ...txnsSnap.docs.map(d => d.ref)];
+            const CHUNK_SIZE = 400;
+            for (let i = 0; i < refsToDelete.length; i += CHUNK_SIZE) {
+                const batch = db.batch();
+                refsToDelete.slice(i, i + CHUNK_SIZE).forEach(r => batch.delete(r));
+                await batch.commit();
+            }
+        } else {
+            await db.collection('recycle_bin').doc(docId).delete();
         }
 
-        await batch.commit();
         Swal.fire('সফল!', 'চিরতরে মুছে ফেলা হয়েছে।', 'success');
     } catch (e) {
         console.error("Permanent delete error:", e);
