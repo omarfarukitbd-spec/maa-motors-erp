@@ -56,30 +56,34 @@ async function loadAndRenderAccounts() {
         ];
 
         let html = '';
-        for (const acc of activeAccounts) {
-            const balance = await calculateAccountBalance(acc.name, acc.isCash);
-            const icon = acc.isCash ? '<i class="fa-solid fa-wallet text-emerald-400 text-2xl"></i>' : '<i class="fa-solid fa-building-columns text-blue-400 text-2xl"></i>';
-            const typeLabel = acc.isCash ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CASH</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">BANK</span>';
-            
-            html += `
-                <div class="m3-card relative overflow-hidden group cursor-pointer hover:border-purple-500/50 transition-colors" onclick="window.bankingApp.viewAccountLedger('${acc.name}', ${acc.isCash})">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center">
-                            ${icon}
+        if (activeAccounts.length === 0) {
+            html = `<div class="col-span-full text-center py-12 text-slate-400 font-bold">এখনো কোনো ব্যাংক বা ক্যাশ অ্যাকাউন্ট যুক্ত করা হয়নি।</div>`;
+        } else {
+            for (const acc of activeAccounts) {
+                const balance = await calculateAccountBalance(acc.name, acc.isCash);
+                const icon = acc.isCash ? '<i class="fa-solid fa-wallet text-emerald-400 text-2xl"></i>' : '<i class="fa-solid fa-building-columns text-blue-400 text-2xl"></i>';
+                const typeLabel = acc.isCash ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CASH</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">BANK</span>';
+                
+                html += `
+                    <div class="m3-card relative overflow-hidden group cursor-pointer hover:border-purple-500/50 transition-colors" onclick="window.bankingApp.viewAccountLedger('${acc.name}', ${acc.isCash})">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center">
+                                ${icon}
+                            </div>
+                            <div>${typeLabel}</div>
                         </div>
-                        <div>${typeLabel}</div>
+                        <div>
+                            <h3 class="text-lg font-black text-slate-200 truncate">${acc.name}</h3>
+                            <div class="text-sm font-bold text-slate-500 mb-1">বর্তমান ব্যালেন্স</div>
+                            <div class="text-3xl font-black ${balance < 0 ? 'text-red-400' : 'text-white'}">৳ ${formatAmountWithComma(balance)}</div>
+                        </div>
+                        
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-slate-800">
+                            <div class="h-full bg-gradient-to-r from-purple-500 to-blue-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-lg font-black text-slate-200 truncate">${acc.name}</h3>
-                        <div class="text-sm font-bold text-slate-500 mb-1">বর্তমান ব্যালেন্স</div>
-                        <div class="text-3xl font-black ${balance < 0 ? 'text-red-400' : 'text-white'}">৳ ${formatAmountWithComma(balance)}</div>
-                    </div>
-                    
-                    <div class="absolute bottom-0 left-0 w-full h-1 bg-slate-800">
-                        <div class="h-full bg-gradient-to-r from-purple-500 to-blue-500 w-0 group-hover:w-full transition-all duration-500"></div>
-                    </div>
-                </div>
-            `;
+                `;
+            }
         }
 
         const grid = document.getElementById('banking-accounts-grid');
