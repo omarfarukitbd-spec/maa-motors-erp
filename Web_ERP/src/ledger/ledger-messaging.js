@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, promptSecurityPin, sendSMS, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, formatSmsCounterText, promptSecurityPin, sendSMS, showToast } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 
 export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, stateRefs = {}) {
@@ -80,12 +80,11 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
             }
         }
 
-        // Clean extra double spaces if any
-        defaultMsg = defaultMsg.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
+        defaultMsg = defaultMsg.replace(/\s+/g, ' ');
 
         const { value: text } = await Swal.fire({
             title: '<i class="fa-solid fa-comment-sms text-blue-400 mr-2"></i>Send Transaction SMS',
-            html: `<div class="text-left space-y-1 mb-2 font-bn"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${phone}</strong></div><div id="sms-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">0 / 160 Characters (1 SMS)</div></div>`,
+            html: `<div class="text-left space-y-1 mb-2 font-bn"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${phone}</strong></div><div id="sms-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(defaultMsg)}</div></div>`,
             input: 'textarea', inputValue: defaultMsg, inputAttributes: { rows: 5, class: 'm3-field text-xs font-mono' },
             showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> Send SMS', cancelButtonText: 'Cancel',
             customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
@@ -93,9 +92,7 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 const textarea = Swal.getInput(); const counter = document.getElementById('sms-char-counter');
                 const updateCount = () => { 
                     if (textarea && counter) { 
-                        const len = textarea.value.length;
-                        const parts = Math.ceil(len / 160) || 1;
-                        counter.innerText = `${len} / 160 Characters (${parts} SMS)`; 
+                        counter.innerText = formatSmsCounterText(textarea.value); 
                     } 
                 };
                 if (textarea) textarea.oninput = updateCount; updateCount();

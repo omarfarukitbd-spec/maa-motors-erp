@@ -108,9 +108,34 @@ export async function sendSMS(phone, message, isAuto = false) {
 }
 
 /**
+ * Calculates SMS character length, Unicode detection and billing parts
+ */
+export function calculateSmsParts(message = '') {
+    const text = String(message || '');
+    const len = text.length;
+    const isUnicode = /[^\x00-\x7F]/.test(text);
+    const singleLimit = isUnicode ? 70 : 160;
+    const multiLimit = isUnicode ? 67 : 153;
+    const parts = len === 0 ? 1 : (len <= singleLimit ? 1 : Math.ceil(len / multiLimit));
+    const limit = len <= singleLimit ? singleLimit : multiLimit;
+    const typeLabel = isUnicode ? 'বাংলা/Unicode' : 'English/GSM';
+    return { len, isUnicode, singleLimit, multiLimit, limit, parts, typeLabel };
+}
+
+export function formatSmsCounterText(message = '') {
+    const info = calculateSmsParts(message);
+    return `${info.len} / ${info.limit} Chars [${info.typeLabel}] • ${info.parts} SMS`;
+}
+
+/**
  * WhatsApp Messaging Utility
  */
 export function sendWhatsApp(phone, message) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        Swal.fire({ title: 'ইন্টারনেট অফলাইন!', text: 'ইন্টারনেট কানেকশন চেক করুন।', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
+        return false;
+    }
+
     if (!phone || phone === '-' || !message) {
         Swal.fire({ title: 'মোবাইল নম্বর মিসিং!', text: 'কাস্টমারের ফোন নম্বর পাওয়া যায়নি।', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
         return false;

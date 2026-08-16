@@ -1,6 +1,6 @@
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount, toDBDate, getTodayLocalDateString, numberToBanglaWords, resetLiveWords, formatAmountWithComma, formatAppDate, handleError, sendSMS, showToast } from '../utils.js';
+import { parseAmount, toDBDate, getTodayLocalDateString, numberToBanglaWords, resetLiveWords, formatAmountWithComma, formatAppDate, formatSmsCounterText, handleError, sendSMS, showToast } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones } from './customer-state.js';
@@ -125,13 +125,13 @@ export async function saveNewCustomer() {
                     .replace(/\[Date\]/g, todayDate)
                     .replace(/\[Due\]/g, formatAmountWithComma(Math.abs(initialBalance)));
 
-                msg = msg.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
+                msg = msg.replace(/\s+/g, ' ');
 
                 const { value: text, isConfirmed } = await Swal.fire({
                     title: '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-comment-sms text-emerald-400 text-3xl mb-1"></i><span class="font-bn font-black text-xl text-white">Welcome SMS</span></div>',
                     html: `<div class="text-left space-y-2 mb-2 font-bn">
                             <p class="text-[13px] text-slate-300">কাস্টমারকে কি অ্যাকাউন্ট খোলার মেসেজ পাঠাতে চান? চাইলে নিচের লেখা এডিট করতে পারেন:</p>
-                            <div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${p}</strong></div><div id="sms-open-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">0 / 160 Characters (1 SMS)</div></div>
+                            <div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${p}</strong></div><div id="sms-open-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(msg)}</div></div>
                            </div>`,
                     input: 'textarea', inputValue: msg, inputAttributes: { rows: 4, class: 'm3-field text-xs font-mono !mt-0' },
                     showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> পাঠিয়ে দিন', cancelButtonText: 'স্কিপ করুন',
@@ -140,9 +140,7 @@ export async function saveNewCustomer() {
                         const textarea = Swal.getInput(); const counter = document.getElementById('sms-open-char-counter');
                         const updateCount = () => { 
                             if (textarea && counter) { 
-                                const len = textarea.value.length;
-                                const parts = Math.ceil(len / 160) || 1;
-                                counter.innerText = `${len} / 160 Characters (${parts} SMS)`; 
+                                counter.innerText = formatSmsCounterText(textarea.value); 
                             } 
                         };
                         if (textarea) {

@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, formatSmsCounterText, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords } from '../utils.js';
 import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
@@ -129,13 +129,13 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                         autoMsg = autoMsg.replace(/ - [^-]+$/, ` (${formattedDate})$&`);
                     }
                 }
-                autoMsg = autoMsg.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
+                autoMsg = autoMsg.replace(/\s+/g, ' ');
 
                 const { value: text, isConfirmed } = await Swal.fire({
                     title: '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-comment-sms text-emerald-400 text-3xl mb-1"></i><span class="font-bn font-black text-xl text-white">Transaction SMS Preview</span></div>',
                     html: `<div class="text-left space-y-2 mb-2 font-bn">
                             <p class="text-[13px] text-slate-300">কাস্টমারকে কি লেনদেনের মেসেজ পাঠাতে চান? চাইলে নিচের লেখা এডিট করতে পারেন:</p>
-                            <div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${phone}</strong></div><div id="sms-txn-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">0 / 160 Characters (1 SMS)</div></div>
+                            <div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${phone}</strong></div><div id="sms-txn-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(autoMsg)}</div></div>
                            </div>`,
                     input: 'textarea', inputValue: autoMsg, inputAttributes: { rows: 4, class: 'm3-field text-xs font-mono !mt-0' },
                     showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> পাঠিয়ে দিন', cancelButtonText: 'স্কিপ করুন',
@@ -144,9 +144,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                         const textarea = Swal.getInput(); const counter = document.getElementById('sms-txn-char-counter');
                         const updateCount = () => {
                             if (textarea && counter) {
-                                const len = textarea.value.length;
-                                const parts = Math.ceil(len / 160) || 1;
-                                counter.innerText = `${len} / 160 Characters (${parts} SMS)`;
+                                counter.innerText = formatSmsCounterText(textarea.value);
                             }
                         };
                         if (textarea) {
