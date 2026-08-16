@@ -170,8 +170,6 @@ async function autoHealCustomerBalances(discrepancies) {
     }
 }
 
-}
-
 export async function runBankingBalanceScanner() {
     try {
         const { BankDAO, CashCollectorDAO } = await import('../dao.js');
