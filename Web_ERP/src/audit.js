@@ -15,6 +15,12 @@ let cachedAuditLogs = [];
 let filteredAuditLogsCache = [];
 let activeAuditTab = 'all';
 
+let lastVisibleAudit = null;
+let pageStackAudit = [];
+let currentAuditPage = 1;
+const auditPageSize = 30;
+let isFilteringAudit = false;
+
 export function unsubscribeAuditLogs() {
     auditUnsubscribes.forEach(unsub => {
         if (typeof unsub === 'function') unsub();
@@ -140,9 +146,15 @@ export async function renderAuditLogs(container) {
                         </thead>
                         <tbody id="audit-logs-list" class="divide-y divide-slate-800/50">
                             <tr><td colspan="5" class="text-center py-16 text-slate-400 italic"><i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mb-2 block"></i>অডিট ডাটা লোড হচ্ছে...</td></tr>
-                        </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="audit-pagination" class="flex items-center justify-center gap-4 py-4 hidden font-bn">
+                <button id="audit-prev-page" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors font-bold disabled:opacity-50" onclick="window.changeAuditPage('prev')">পূর্ববর্তী</button>
+                <div class="text-white font-bold bg-blue-600/10 border border-blue-500/30 px-4 py-2 rounded-xl">পৃষ্ঠা: <span id="audit-current-page-display">1</span></div>
+                <button id="audit-next-page" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors font-bold disabled:opacity-50" onclick="window.changeAuditPage('next')">পরবর্তী</button>
             </div>
         </div>
     `;
@@ -150,29 +162,52 @@ export async function renderAuditLogs(container) {
     loadAuditLogsData();
 }
 
-async function loadAuditLogsData() {
+async function loadAuditLogsData(direction = 'next') {
     const tbody = document.getElementById('audit-logs-list');
     if (!tbody) return;
 
-    try {
-        cachedAuditLogs = await AuditDAO.getRecent(150);
-        
-        const stats = calculateAuditStats(cachedAuditLogs);
-        const statsEl = document.getElementById('audit-stats-cards-container');
-        if (statsEl) statsEl.innerHTML = renderAuditStatsCards(stats);
+    if (!isFilteringAudit) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-16 text-slate-400 italic"><i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mb-2 block"></i>অডিট ডাটা লোড হচ্ছে...</td></tr>';
+        try {
+            const cursor = (direction === 'next') ? lastVisibleAudit : (pageStackAudit.length > 1 ? pageStackAudit[pageStackAudit.length - 2] : null);
+            const results = await AuditDAO.getByPage(auditPageSize, cursor, 'timestamp', 'desc');
+            lastVisibleAudit = results.lastDoc;
+            if (direction === 'next') { if (cursor) pageStackAudit.push(cursor); } else { pageStackAudit.pop(); }
 
-        const tabsEl = document.getElementById('audit-tabs-container');
-        if (tabsEl) tabsEl.innerHTML = renderAuditTabsNavigation(activeAuditTab);
+            const paginationEl = document.getElementById('audit-pagination');
+            if (paginationEl) {
+                paginationEl.classList.remove('hidden');
+                document.getElementById('audit-current-page-display').innerText = currentAuditPage;
+                document.getElementById('audit-prev-page').disabled = currentAuditPage === 1;
+                document.getElementById('audit-next-page').disabled = results.count < auditPageSize;
+            }
 
-        await populateUserDropdown(cachedAuditLogs);
-        applyAuditFilters();
-    } catch (err) {
-        console.error("Load audit error:", err);
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 text-red-400 font-bold">ডাটা লোড করতে সমস্যা হয়েছে</td></tr>';
+            cachedAuditLogs = results.data;
+            renderAuditRows(cachedAuditLogs, tbody);
+            
+            // Only update stats on first load with a larger sample or rely on visible page
+            const stats = calculateAuditStats(cachedAuditLogs);
+            const statsEl = document.getElementById('audit-stats-cards-container');
+            if (statsEl) statsEl.innerHTML = renderAuditStatsCards(stats);
+
+            const tabsEl = document.getElementById('audit-tabs-container');
+            if (tabsEl && !tabsEl.innerHTML.trim()) tabsEl.innerHTML = renderAuditTabsNavigation(activeAuditTab);
+
+            await populateUserDropdown(cachedAuditLogs);
+            filteredAuditLogsCache = cachedAuditLogs;
+        } catch (err) {
+            console.error("Load audit error:", err);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 text-red-400 font-bold">ডাটা লোড করতে সমস্যা হয়েছে</td></tr>';
+        }
+    } else {
+        try {
+            if (cachedAuditLogs.length < 100) cachedAuditLogs = await AuditDAO.getRecent(300);
+            applyAuditFilters();
+        } catch(e) { console.error(e); }
     }
 }
 
-export function applyAuditFilters() {
+export async function applyAuditFilters() {
     const tbody = document.getElementById('audit-logs-list');
     if (!tbody) return;
 
@@ -185,6 +220,26 @@ export function applyAuditFilters() {
 
     if (activeAuditTab === 'critical') {
         if (!actionFilter) actionFilter = 'DELETE';
+    }
+
+    const hasFilters = searchQuery || userFilter || actionFilter || moduleFilter || startDate || endDate || activeAuditTab !== 'all';
+
+    const paginationEl = document.getElementById('audit-pagination');
+    if (!hasFilters) {
+        isFilteringAudit = false;
+        if (paginationEl) paginationEl.classList.remove('hidden');
+        lastVisibleAudit = null; pageStackAudit = []; currentAuditPage = 1;
+        loadAuditLogsData();
+        return;
+    }
+
+    isFilteringAudit = true;
+    if (paginationEl) paginationEl.classList.add('hidden');
+    
+    // If filtering, load a large chunk to filter against if not already loaded
+    if (cachedAuditLogs.length < 100) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-16 text-slate-400 italic"><i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mb-2 block"></i>খুঁজছি...</td></tr>';
+        cachedAuditLogs = await AuditDAO.getRecent(300);
     }
 
     filteredAuditLogsCache = filterAuditLogs(cachedAuditLogs, { searchQuery, userFilter, actionFilter, moduleFilter, startDate, endDate });
@@ -231,10 +286,18 @@ window.switchAuditTab = (tabId) => {
     applyAuditFilters();
 };
 
+window.changeAuditPage = (dir) => {
+    if (dir === 'next') currentAuditPage++; else currentAuditPage--;
+    loadAuditLogsData(dir);
+};
+
 window.auditLog = auditLog;
 window.getRecentAuditLogs = getRecentAuditLogs;
 window.unsubscribeAuditLogs = unsubscribeAuditLogs;
 window.applyAuditFilters = applyAuditFilters;
-window.refreshAuditLogsList = loadAuditLogsData;
+window.refreshAuditLogsList = () => { 
+    lastVisibleAudit = null; pageStackAudit = []; currentAuditPage = 1; cachedAuditLogs = [];
+    loadAuditLogsData(); 
+};
 window.exportActiveAuditExcel = () => exportAuditLogsToExcel(filteredAuditLogsCache);
 window.triggerPrintAuditLogReport = () => printAuditLogReport(filteredAuditLogsCache);
