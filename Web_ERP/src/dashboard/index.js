@@ -90,17 +90,18 @@ export function startDashboardRealtimeUpdates(targetDate = null) {
         const netEl = document.getElementById('dash-net-cash');
         if (netEl) {
             if (netCash < 0) {
-                netEl.className = 'flex items-center gap-1.5 text-red-400 font-inter font-bold';
-                netEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400"></i> নিট ক্যাশ: -৳ ${formatAmountWithComma(Math.abs(netCash))} <span class="text-[9px] bg-red-500/20 px-1 py-0.5 rounded text-red-300 font-bn">(ঘাটতি)</span>`;
+                netEl.className = 'flex items-center gap-1.5 text-red-400 font-bn font-bold text-xs';
+                netEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400"></i> নিট ক্যাশ: <span class="font-mono text-red-300 font-black">-৳ ${formatAmountWithComma(Math.abs(netCash))}</span> <span class="text-[10px] bg-red-500/20 px-1.5 py-0.5 rounded-md text-red-300 font-bold">(ঘাটতি)</span>`;
             } else {
-                netEl.className = 'flex items-center gap-1.5 text-emerald-400 font-inter font-bold';
-                netEl.innerHTML = `<i class="fa-solid fa-coins text-emerald-500"></i> নিট ক্যাশ: ৳ ${formatAmountWithComma(netCash)} <span class="text-[9px] bg-emerald-500/20 px-1 py-0.5 rounded text-emerald-300 font-bn">(উদ্বৃত্ত)</span>`;
+                netEl.className = 'flex items-center gap-1.5 text-emerald-400 font-bn font-bold text-xs';
+                netEl.innerHTML = `<i class="fa-solid fa-coins text-emerald-400"></i> নিট ক্যাশ: <span class="font-mono text-white font-black">৳ ${formatAmountWithComma(netCash)}</span> <span class="text-[10px] bg-emerald-500/20 px-1.5 py-0.5 rounded-md text-emerald-300 font-bold">(উদ্বৃত্ত)</span>`;
             }
         }
 
         const bankInflowEl = document.getElementById('dash-bank-inflow');
         if (bankInflowEl) {
-            bankInflowEl.innerHTML = `<i class="fa-solid fa-building-columns"></i> ব্যাংক: ৳ ${formatAmountWithComma(latestBankCol)}`;
+            bankInflowEl.className = 'text-blue-400 font-black bg-blue-500/10 px-2 py-0.5 rounded-lg flex items-center gap-1 border border-blue-500/20 font-bn text-[11px]';
+            bankInflowEl.innerHTML = `<i class="fa-solid fa-building-columns text-[10px]"></i> ব্যাংক: <span class="font-mono text-white font-bold">৳ ${formatAmountWithComma(latestBankCol)}</span>`;
         }
     }
 

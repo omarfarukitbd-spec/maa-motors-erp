@@ -57,8 +57,8 @@ export function getDashboardKPICardsHTML() {
                         <h2 id="dash-today-col" class="text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-md font-inter">৳ ০</h2>
                         <div class="mt-auto pt-5">
                             <div class="flex items-center justify-between text-[10px] text-slate-400 font-bold border-t border-slate-800/60 pt-2.5">
-                                <span id="dash-net-cash" class="flex items-center gap-1.5 text-emerald-400 font-inter font-bold"><i class="fa-solid fa-coins text-emerald-500"></i> নিট ক্যাশ: ৳ ০</span>
-                                <span id="dash-bank-inflow" class="text-blue-400 font-black bg-blue-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 border border-blue-500/20 font-inter"><i class="fa-solid fa-building-columns"></i> ব্যাংক: ৳ ০</span>
+                                <span id="dash-net-cash" class="flex items-center gap-1.5 text-emerald-400 font-bn font-bold text-xs"><i class="fa-solid fa-coins text-emerald-500"></i> নিট ক্যাশ: <span class="font-mono text-white font-black">৳ ০</span> <span class="text-[10px] bg-emerald-500/20 px-1.5 py-0.5 rounded-md text-emerald-300 font-bold">(উদ্বৃত্ত)</span></span>
+                                <span id="dash-bank-inflow" class="text-blue-400 font-black bg-blue-500/10 px-2 py-0.5 rounded-lg flex items-center gap-1 border border-blue-500/20 font-bn text-[11px]"><i class="fa-solid fa-building-columns text-[10px]"></i> ব্যাংক: <span class="font-mono text-white font-bold">৳ ০</span></span>
                             </div>
                         </div>
                     </div>
