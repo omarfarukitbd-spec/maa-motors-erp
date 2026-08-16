@@ -84,11 +84,13 @@ export function renderRows(transactions, container, stateRefs = {}) {
         const sRt = (d.receivedType || '').replace(/'/g, "\\'");
 
         let entryTime = '';
+        let fullEntryDateTime = '';
         if (d.createdAt) {
             try {
                 const dt = d.createdAt.toDate ? d.createdAt.toDate() : (d.createdAt.toMillis ? new Date(d.createdAt.toMillis()) : new Date(d.createdAt));
                 if (!isNaN(dt.getTime())) {
                     entryTime = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    fullEntryDateTime = `${dt.toLocaleDateString('en-GB')} ${entryTime}`;
                 }
             } catch (e) {
                 console.error("Time parsing error:", e);
@@ -99,7 +101,7 @@ export function renderRows(transactions, container, stateRefs = {}) {
         rows.push(`<tr class="hover:bg-white/[0.03] transition-colors border-b border-slate-800/50">
             <td class="py-2.5 px-3 text-xs font-bold text-slate-200 whitespace-nowrap align-top">
                 <div>${formatAppDate(d.date)}</div>
-                ${entryTime ? `<div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1.5"><i class="fa-regular fa-clock text-[9px] text-slate-500"></i><span>${entryTime}</span></div>` : ''}
+                ${entryTime ? `<div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1.5 cursor-help" title="আসল এন্ট্রির সময়: ${fullEntryDateTime}"><i class="fa-regular fa-clock text-[9px] text-slate-500"></i><span>${entryTime}</span></div>` : ''}
             </td>
             <td class="font-bold text-slate-200 text-xs align-top py-2.5">
                 <div class="flex items-center flex-wrap gap-1">
@@ -126,7 +128,7 @@ export function renderRows(transactions, container, stateRefs = {}) {
                 <div>
                     <div class="mobile-card-title">${d.customerName || cust?.name || 'Unknown'}</div>
                     ${custAddress ? `<div class="text-[10px] text-slate-400 font-normal flex items-center gap-1 mt-0.5"><i class="fa-solid fa-location-dot text-[9px] text-slate-500"></i><span>${custAddress}</span></div>` : ''}
-                    <div class="mobile-card-sub text-blue-400 font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo : formatAppDate(d.date)}${entryTime ? ` (${entryTime})` : ''} ${typeBadge}</div>
+                    <div class="mobile-card-sub text-blue-400 font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo : formatAppDate(d.date)}${entryTime ? ` <span title="আসল এন্ট্রির সময়: ${fullEntryDateTime}" class="cursor-help">(${entryTime})</span>` : ''} ${typeBadge}</div>
                 </div>
                 <div class="text-right"><div class="text-white font-black text-base">৳ ${formatAmountWithComma(Math.abs(balanceVal))}</div><span class="inline-block text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</span></div>
             </div>
