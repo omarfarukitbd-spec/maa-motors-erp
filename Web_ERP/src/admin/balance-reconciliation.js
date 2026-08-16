@@ -174,7 +174,6 @@ export async function runBankingBalanceScanner() {
     try {
         const { BankDAO, CashCollectorDAO } = await import('../dao.js');
         const { calculateAccountBalance } = await import('../banking/banking-calc.js');
-        const { auditLog } = await import('./audit.js');
 
         const confirm = await Swal.fire({
             title: 'ব্যাংকিং ব্যালেন্স স্ক্যানার',
