@@ -161,15 +161,33 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
         return;
     }
 
+    const scrollElem = document.getElementById('ledger-scroll-area');
+    const contentElem = document.getElementById('ledger-list');
+
     if (window.ledgerClusterize) {
-        window.ledgerClusterize.destroy();
+        try {
+            window.ledgerClusterize.destroy();
+        } catch (e) {
+            console.warn("Ledger clusterize destroy error:", e);
+        }
+        window.ledgerClusterize = null;
     }
+
     if (rows.length > 0) {
-        window.ledgerClusterize = new Clusterize({
-            rows: rows,
-            scrollId: 'ledger-scroll-area',
-            contentId: 'ledger-list'
-        });
+        if (scrollElem && contentElem) {
+            try {
+                window.ledgerClusterize = new Clusterize({
+                    rows: rows,
+                    scrollId: 'ledger-scroll-area',
+                    contentId: 'ledger-list'
+                });
+            } catch (clErr) {
+                console.warn("Ledger clusterize init failed, falling back to innerHTML:", clErr);
+                container.innerHTML = rows.join('');
+            }
+        } else {
+            container.innerHTML = rows.join('');
+        }
     } else {
         container.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-slate-600 italic">কোনো লেনদেন পাওয়া যায়নি</td></tr>';
     }

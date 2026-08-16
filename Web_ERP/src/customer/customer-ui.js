@@ -156,15 +156,9 @@ export function renderCustomers(container, params) {
 
             <!-- Pagination Controls -->
             <div id="cust-pagination" class="flex items-center justify-center gap-4 py-4 font-bn">
-                <button id="cust-prev-page" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl border border-slate-700 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all" onclick="window.changeCustomerPage('prev')">
-                    <i class="fa-solid fa-chevron-left mr-2"></i> পূর্ববর্তী
-                </button>
-                <div class="text-white font-bold bg-blue-600/10 border border-blue-500/30 px-4 py-2 rounded-xl">
-                    পৃষ্ঠা: <span id="cust-current-page-display">1</span>
-                </div>
-                <button id="cust-next-page" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl border border-slate-700 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all" onclick="window.changeCustomerPage('next')">
-                    পরবর্তী <i class="fa-solid fa-chevron-right ml-2"></i>
-                </button>
+                <button id="cust-prev-page" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl border border-slate-700 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all" onclick="window.changeCustomerPage('prev')"><i class="fa-solid fa-chevron-left mr-2"></i> পূর্ববর্তী</button>
+                <div class="text-white font-bold bg-blue-600/10 border border-blue-500/30 px-4 py-2 rounded-xl">পৃষ্ঠা: <span id="cust-current-page-display">1</span></div>
+                <button id="cust-next-page" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl border border-slate-700 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all" onclick="window.changeCustomerPage('next')">পরবর্তী <i class="fa-solid fa-chevron-right ml-2"></i></button>
             </div>
         </div>`;
     if (window.loadCustomers) window.loadCustomers();
@@ -280,18 +274,25 @@ export function renderCustomerRows(customers) {
         </div>`;
     });
 
+    const custScroll = document.getElementById('cust-scroll-area');
+    const custContent = document.getElementById('customer-list');
     if (window.customerClusterize) {
-        window.customerClusterize.destroy();
+        try { window.customerClusterize.destroy(); } catch (e) { console.warn("Cust clusterize destroy err:", e); }
+        window.customerClusterize = null;
     }
     if (rows.length > 0) {
-        window.customerClusterize = new Clusterize({
-            rows: rows,
-            scrollId: 'cust-scroll-area',
-            contentId: 'customer-list'
-        });
+        if (custScroll && custContent) {
+            try {
+                window.customerClusterize = new Clusterize({ rows, scrollId: 'cust-scroll-area', contentId: 'customer-list' });
+            } catch (e) {
+                console.warn("Cust clusterize init fallback:", e);
+                tbody.innerHTML = rows.join('');
+            }
+        } else {
+            tbody.innerHTML = rows.join('');
+        }
     } else {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center py-20 text-slate-500 italic font-bold">কোনো কাস্টমার পাওয়া যায়নি</td></tr>';
     }
-    
     if (mobileContainer) mobileContainer.innerHTML = mobileHtml || '<div class="text-center py-10 text-slate-500 font-bold italic">কোনো কাস্টমার পাওয়া যায়নি</div>';
 }

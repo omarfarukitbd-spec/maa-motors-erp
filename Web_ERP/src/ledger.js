@@ -83,7 +83,10 @@ export async function loadRecentTransactions(filterVoucher = null, filterCustome
             }
         }
 
-        const renderRes = renderRows(results.data, tbody, startBalance);
+        const activeTbody = document.getElementById('ledger-list') || document.getElementById('recent-txn-list');
+        if (!activeTbody) return;
+
+        const renderRes = renderRows(results.data, activeTbody, startBalance);
         if (filterCustomer && renderRes && renderRes.finalRunning !== undefined) {
             balanceStack[currentPage] = renderRes.finalRunning;
         }
