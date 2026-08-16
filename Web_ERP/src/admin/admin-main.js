@@ -1,6 +1,6 @@
 import { loadAdminUsers } from './user-manager.js';
 import { downloadAdminExcelBackup, uploadAdminExcelBackup } from '../excel_sync.js';
-import { setNextAccountNo, showIndividualFixer, autoSyncZoneCounters, resequenceZoneAccountNumbers } from './system-tools.js';
+import { setNextAccountNo, showIndividualFixer, autoSyncZoneCounters, resequenceZoneAccountNumbers, cleanupOldAuditLogs } from './system-tools.js';
 import { changeStaffPin } from './user-auth-actions.js';
 import { managePermissions } from './user-permissions.js';
 import { showBankingSystemManager, editBankingItem, deactivateBankingItem, reactivateBankingItem } from './admin-banking.js';
@@ -191,6 +191,16 @@ export function renderAdmin(container) {
                         </div>
                         <button class="h-9 w-full rounded-xl bg-emerald-600/15 border border-emerald-500/25 hover:bg-emerald-600 text-emerald-400 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95" onclick="appAdmin.runBalanceIntegrityScanner()">
                             <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>১-ক্লিকে ব্যালেন্স ভেরিফাই
+                        </button>
+                    </div>
+
+                    <div class="group rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-amber-500/30 p-4 transition-all flex flex-col gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0"><i class="fa-solid fa-broom text-sm"></i></div>
+                            <div><h4 class="text-white font-bold text-sm">পুরোনো অডিট লগ মুছুন</h4><p class="text-[10px] text-slate-500">৩ বা ৬ মাসের পুরোনো অডিট লগ মুছে স্টোরেজ ক্লিয়ার করুন।</p></div>
+                        </div>
+                        <button class="h-9 w-full rounded-xl bg-amber-600/15 border border-amber-500/25 hover:bg-amber-600 text-amber-400 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95" onclick="appAdmin.cleanupOldAuditLogs()">
+                            <i class="fa-solid fa-broom mr-1.5"></i>অডিট লগ ক্লিনআপ
                         </button>
                     </div>
                 </div>
