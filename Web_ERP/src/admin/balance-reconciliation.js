@@ -170,6 +170,141 @@ async function autoHealCustomerBalances(discrepancies) {
     }
 }
 
+}
+
+export async function runBankingBalanceScanner() {
+    try {
+        const { BankDAO, CashCollectorDAO } = await import('../dao.js');
+        const { calculateAccountBalance } = await import('../banking/banking-calc.js');
+        const { auditLog } = await import('./audit.js');
+
+        const confirm = await Swal.fire({
+            title: 'ব্যাংকিং ব্যালেন্স স্ক্যানার',
+            text: 'এই টুলটি আপনার সবগুলো ব্যাংক এবং ক্যাশ অ্যাকাউন্টের শুরু থেকে আজ পর্যন্ত সমস্ত লেনদেন (ডিপোজিট, উত্তোলন, ট্রান্সফার, কালেকশন) যোগ-বিয়োগ করে মেইন ব্যালেন্সের সাথে মেলাবে। কোনো অ্যাকাউন্টে ডাটাবেজের ভুলের কারণে ব্যালেন্স গড়মিল থাকলে তা নিজে থেকেই রিস্টোর করে দেবে। শুরু করবেন?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-play"></i> স্ক্যান শুরু করুন',
+            cancelButtonText: 'বাতিল',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-pink-500/40 font-bn' }
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        Swal.fire({
+            title: 'স্ক্যানিং চলছে...',
+            html: 'দয়া করে অপেক্ষা করুন, সমস্ত ব্যাংকের অডিট লেজার চেক করা হচ্ছে...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-pink-500/40 font-bn' }
+        });
+
+        const [banks, cash] = await Promise.all([
+            BankDAO.getAllBanks(),
+            CashCollectorDAO.getActiveCollectors()
+        ]);
+
+        const allAccounts = [
+            ...banks.map(b => ({ ...b, isCash: false, dao: BankDAO })),
+            ...cash.map(c => ({ ...c, isCash: true, dao: CashCollectorDAO }))
+        ];
+
+        const discrepancies = [];
+
+        // Concurrently calculate all exact balances
+        const calculatedBalances = await Promise.all(allAccounts.map(acc => calculateAccountBalance(acc.name, acc.isCash)));
+
+        for (let i = 0; i < allAccounts.length; i++) {
+            const acc = allAccounts[i];
+            const exactBalance = calculatedBalances[i];
+            const storedBalance = acc.balance || 0;
+
+            if (exactBalance !== storedBalance) {
+                discrepancies.push({
+                    id: acc.id,
+                    name: acc.name,
+                    isCash: acc.isCash,
+                    storedBalance: storedBalance,
+                    expectedBalance: exactBalance,
+                    dao: acc.dao,
+                    diff: exactBalance - storedBalance
+                });
+            }
+        }
+
+        if (discrepancies.length === 0) {
+            Swal.fire({
+                title: '১০০% পারফেক্ট!',
+                text: 'আপনার সবগুলো ব্যাংক এবং ক্যাশ অ্যাকাউন্টের ব্যালেন্স ও লেনদেনের হিসাব ১০০% নিখুঁত আছে। কোনো গড়মিল পাওয়া যায়নি!',
+                icon: 'success',
+                confirmButtonText: 'চমৎকার',
+                customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-emerald-500/40 font-bn' }
+            });
+            return;
+        }
+
+        let html = `<div class="text-left mt-4 max-h-60 overflow-y-auto custom-scrollbar font-bn text-slate-300 space-y-3">`;
+        html += `<div class="text-red-400 font-bold mb-3 border-b border-red-500/20 pb-2"><i class="fa-solid fa-triangle-exclamation"></i> মোট ${discrepancies.length}টি অ্যাকাউন্টের ব্যালেন্সে গরমিল পাওয়া গেছে:</div>`;
+        
+        for (const d of discrepancies) {
+            html += `
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/50">
+                    <div class="font-bold text-white mb-1"><i class="fa-solid ${d.isCash ? 'fa-wallet text-emerald-400' : 'fa-building-columns text-blue-400'}"></i> ${d.name}</div>
+                    <div class="flex justify-between text-[11px]">
+                        <span class="text-slate-400">বর্তমান: <span class="text-red-400">৳ ${d.storedBalance}</span></span>
+                        <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                        <span class="text-slate-400">হওয়ার কথা: <span class="text-emerald-400">৳ ${d.expectedBalance}</span></span>
+                    </div>
+                </div>
+            `;
+        }
+        html += `</div>`;
+
+        const healConfirm = await Swal.fire({
+            title: 'গরমিল পাওয়া গেছে!',
+            html: html + `<div class="mt-4 text-xs text-slate-400 bg-red-500/10 p-2 rounded-lg border border-red-500/20">সিস্টেম নিজে থেকেই সবগুলো অ্যাকাউন্টের ব্যালেন্স রিস্টোর করে সঠিক অঙ্কে বসিয়ে দেবে। আপনি কি রিস্টোর করতে চান?</div>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-wand-magic-sparkles"></i> হ্যাঁ, ব্যালেন্স রিস্টোর করুন',
+            cancelButtonText: 'না, বাতিল করুন',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-red-500/40 font-bn' }
+        });
+
+        if (!healConfirm.isConfirmed) return;
+
+        Swal.fire({
+            title: 'রিস্টোর হচ্ছে...',
+            html: 'দয়া করে অপেক্ষা করুন...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-pink-500/40 font-bn' }
+        });
+
+        let healedCount = 0;
+        for (const d of discrepancies) {
+            await d.dao.update(d.id, { balance: d.expectedBalance });
+            auditLog('HEAL_BANK_BALANCE', d.isCash ? 'Cash' : 'Bank', d.id, d.name, {
+                storedBalance: d.storedBalance,
+                correctedBalance: d.expectedBalance,
+                diff: d.diff
+            });
+            healedCount++;
+        }
+
+        Swal.fire({
+            title: 'সফলভাবে সম্পন্ন!',
+            text: `মোট ${healedCount}টি ব্যাংক/ক্যাশ অ্যাকাউন্টের ব্যালেন্স নিখুঁতভাবে রিস্টোর করা হয়েছে।`,
+            icon: 'success',
+            confirmButtonText: 'ঠিক আছে',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-emerald-500/40 font-bn' }
+        });
+
+    } catch (e) {
+        console.error("Banking Scanner error:", e);
+        Swal.fire('Error', 'স্ক্যান করতে সমস্যা হয়েছে: ' + e.message, 'error');
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.runBalanceIntegrityScanner = runBalanceIntegrityScanner;
+    window.runBankingBalanceScanner = runBankingBalanceScanner;
 }

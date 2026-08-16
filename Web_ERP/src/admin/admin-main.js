@@ -194,6 +194,16 @@ export function renderAdmin(container) {
                         </button>
                     </div>
 
+                    <div class="group rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-blue-500/30 p-4 transition-all flex flex-col gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0"><i class="fa-solid fa-building-columns text-sm"></i></div>
+                            <div><h4 class="text-white font-bold text-sm">ব্যাংকিং ব্যালেন্স ভেরিফায়ার</h4><p class="text-[10px] text-slate-500">সব ব্যাংকের সমস্ত লেনদেন যোগফল ও ব্যালেন্স অটো-ভেরিফাই করুন।</p></div>
+                        </div>
+                        <button class="h-9 w-full rounded-xl bg-blue-600/15 border border-blue-500/25 hover:bg-blue-600 text-blue-400 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95" onclick="appAdmin.runBankingBalanceScanner()">
+                            <i class="fa-solid fa-shield-halved mr-1.5"></i>ব্যাংকিং ব্যালেন্স স্ক্যান
+                        </button>
+                    </div>
+
                     <div class="group rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-amber-500/30 p-4 transition-all flex flex-col gap-3">
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0"><i class="fa-solid fa-broom text-sm"></i></div>
