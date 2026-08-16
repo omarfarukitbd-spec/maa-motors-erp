@@ -9,6 +9,7 @@ import { initSearch } from './search/global-search.js';
 import { initDatePickers, startDateObserver } from './utils/date-logic/date-picker.js';
 import { handleCalc, initCalculatorKeyboard, initDraggableCalculator } from './ui/calculator.js';
 import { initOmnisearch, initNetworkSyncBadge, initGlobalButtonInteractions } from './utils.js';
+import './banking/banking-ui.js';
 
 // -------------------------------------------------------------------------
 // APP STARTUP

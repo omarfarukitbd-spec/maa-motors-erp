@@ -276,3 +276,21 @@ export const CashCollectorDAO = new class extends BaseDAO {
         return results;
     }
 }();
+
+export const BankTransactionDAO = new class extends BaseDAO {
+    constructor() { super('bank_transactions'); }
+
+    async getByBank(bankName) {
+        const snap = await this.collection.where('bankName', '==', bankName).orderBy('createdAt', 'desc').get();
+        const results = [];
+        snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        return results;
+    }
+
+    async getTransfersByTargetBank(bankName) {
+        const snap = await this.collection.where('type', '==', 'TRANSFER').where('targetBankName', '==', bankName).orderBy('createdAt', 'desc').get();
+        const results = [];
+        snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        return results;
+    }
+}();

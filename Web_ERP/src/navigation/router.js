@@ -134,6 +134,7 @@ export function navigate(view, params = {}) {
         case 'statement': renderStatement(container, params); break;
         case 'admin': renderAdmin(container); break;
         case 'audit': renderAuditLogs(container); break;
+        case 'banking': window.bankingApp.renderBankingLedger(container); break;
         case 'recycle-bin': renderRecycleBin(container); break;
     }
 
