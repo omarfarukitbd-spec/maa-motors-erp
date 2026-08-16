@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/dao-C6HjIw1i.js","assets/rolldown-runtime-Dd_uD5pT.js","assets/vendor-firebase-YQIUDKRL.js","assets/vendor-CJahiyzm.js","assets/vendor-CwbMEznW.css"])))=>i.map(i=>d[i]);
-import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-C6HjIw1i.js";import{n}from"./vendor-ui-n4g2UPZQ.js";import{a as r,d as i,i as a,l as o,n as s,o as c,s as l,u}from"./index---LqdcSa.js";var d=e(n());function f(e,t){let n=[],r=e,i=`<tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-C6HjIw1i.js";import{n}from"./vendor-ui-n4g2UPZQ.js";import{a as r,d as i,i as a,l as o,n as s,o as c,s as l,u}from"./index-DEsC7zTE.js";var d=e(n());function f(e,t){let n=[],r=e,i=`<tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
         <td colspan="2" style="font-weight:900; color:#0f172a; text-transform:uppercase; font-size:10px; padding: 8px 12px; letter-spacing: 1px;">Opening Balance</td>
         <td style="text-align:right; color:#0f172a; padding: 8px 12px;">-</td>
         <td style="text-align:right; color:#0f172a; padding: 8px 12px;">-</td>

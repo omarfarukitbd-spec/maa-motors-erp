@@ -25,8 +25,8 @@ export async function calculateAccountBalance(accountName, isCash = false) {
     let customerCollectionTotal = 0;
     collectionSnap.forEach(doc => {
         const t = doc.data();
-        if (t.receivedAmount && !isNaN(t.receivedAmount)) {
-            customerCollectionTotal += Number(t.receivedAmount);
+        if (t.paid && !isNaN(t.paid)) {
+            customerCollectionTotal += Number(t.paid);
         }
     });
 
