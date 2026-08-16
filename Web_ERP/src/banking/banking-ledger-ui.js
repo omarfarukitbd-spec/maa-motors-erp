@@ -18,11 +18,11 @@ export async function openAccountLedger(accountName, isCash) {
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-900 p-4 rounded-2xl border border-slate-700 text-left">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 mb-1">From Date</label>
-                    <input type="date" id="bl-from-date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm outline-none" value="${defaultFromDate.toISOString().split('T')[0]}">
+                    <input type="text" id="bl-from-date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm outline-none datepicker" value="${defaultFromDate.toISOString().split('T')[0]}">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 mb-1">To Date</label>
-                    <input type="date" id="bl-to-date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm outline-none" value="${new Date().toISOString().split('T')[0]}">
+                    <input type="text" id="bl-to-date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm outline-none datepicker" value="${new Date().toISOString().split('T')[0]}">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 mb-1">Type</label>

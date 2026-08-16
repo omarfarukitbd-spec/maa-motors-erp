@@ -139,7 +139,7 @@ async function openTransactionModal(type) {
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-400 mb-1">তারিখ</label>
-                <input type="date" id="banking-txn-date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none" value="${new Date().toISOString().split('T')[0]}">
+                <input type="text" id="banking-txn-date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none datepicker" value="${new Date().toISOString().split('T')[0]}">
             </div>
         </div>
     `;
