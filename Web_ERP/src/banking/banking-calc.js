@@ -13,15 +13,14 @@ import { safeRound } from '../utils.js';
 export async function calculateAccountBalance(accountName, isCash = false) {
     if (!accountName) return 0;
     
-    // 1. Get Customer Collections (from TransactionDAO)
-    // For Cash, receivedType is 'Cash'. For Bank, it is 'Bank'
-    const rType = isCash ? 'Cash' : 'Bank';
-    
-    // Note: TransactionDAO has no direct getByReceivedFrom, so we fetch all matching
-    const collectionSnap = await TransactionDAO.collection
-        .where('receivedFrom', '==', accountName)
-        .get();
+    // Run all 3 queries concurrently to speed up calculation
+    const [collectionSnap, bankTxns, incomingTxns] = await Promise.all([
+        TransactionDAO.collection.where('receivedFrom', '==', accountName).get(),
+        BankTransactionDAO.getByBank(accountName),
+        BankTransactionDAO.getTransfersByTargetBank(accountName)
+    ]);
         
+    // 1. Process Customer Collections
     let customerCollectionTotal = 0;
     collectionSnap.forEach(doc => {
         const t = doc.data();
@@ -30,9 +29,7 @@ export async function calculateAccountBalance(accountName, isCash = false) {
         }
     });
 
-    // 2. Get Bank Transactions (Deposits, Withdrawals, Transfers outgoing)
-    const bankTxns = await BankTransactionDAO.getByBank(accountName);
-    
+    // 2. Process Bank Transactions (Deposits, Withdrawals, Transfers outgoing)
     let manualDeposits = 0;
     let manualWithdrawals = 0;
     let outgoingTransfers = 0;
@@ -44,8 +41,7 @@ export async function calculateAccountBalance(accountName, isCash = false) {
         else if (tx.type === 'TRANSFER') outgoingTransfers += amt;
     });
     
-    // 3. Get Incoming Transfers (from other banks to this bank)
-    const incomingTxns = await BankTransactionDAO.getTransfersByTargetBank(accountName);
+    // 3. Process Incoming Transfers
     let incomingTransfers = 0;
     incomingTxns.forEach(tx => {
         incomingTransfers += Number(tx.amount || 0);

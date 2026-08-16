@@ -59,8 +59,11 @@ async function loadAndRenderAccounts() {
         if (activeAccounts.length === 0) {
             html = `<div class="col-span-full text-center py-12 text-slate-400 font-bold">এখনো কোনো ব্যাংক বা ক্যাশ অ্যাকাউন্ট যুক্ত করা হয়নি।</div>`;
         } else {
-            for (const acc of activeAccounts) {
-                const balance = await calculateAccountBalance(acc.name, acc.isCash);
+            // Fetch all balances concurrently for massive speedup
+            const balances = await Promise.all(activeAccounts.map(acc => calculateAccountBalance(acc.name, acc.isCash)));
+
+            activeAccounts.forEach((acc, index) => {
+                const balance = balances[index];
                 const icon = acc.isCash ? '<i class="fa-solid fa-wallet text-emerald-400 text-2xl"></i>' : '<i class="fa-solid fa-building-columns text-blue-400 text-2xl"></i>';
                 const typeLabel = acc.isCash ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CASH</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">BANK</span>';
                 
@@ -83,7 +86,7 @@ async function loadAndRenderAccounts() {
                         </div>
                     </div>
                 `;
-            }
+            });
         }
 
         const grid = document.getElementById('banking-accounts-grid');
