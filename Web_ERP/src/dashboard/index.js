@@ -83,6 +83,27 @@ export function startDashboardRealtimeUpdates(targetDate = null) {
     }, 3000);
     dashboardUnsubscribes.push(() => clearInterval(statsInterval));
 
+    let latestCashCol = 0, latestBankCol = 0, latestTotExp = 0;
+
+    function updateNetBalances() {
+        const netCash = safeRound(latestCashCol - latestTotExp);
+        const netEl = document.getElementById('dash-net-cash');
+        if (netEl) {
+            if (netCash < 0) {
+                netEl.className = 'flex items-center gap-1.5 text-red-400 font-inter font-bold';
+                netEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400"></i> নিট ক্যাশ: -৳ ${formatAmountWithComma(Math.abs(netCash))} <span class="text-[9px] bg-red-500/20 px-1 py-0.5 rounded text-red-300 font-bn">(ঘাটতি)</span>`;
+            } else {
+                netEl.className = 'flex items-center gap-1.5 text-emerald-400 font-inter font-bold';
+                netEl.innerHTML = `<i class="fa-solid fa-coins text-emerald-500"></i> নিট ক্যাশ: ৳ ${formatAmountWithComma(netCash)} <span class="text-[9px] bg-emerald-500/20 px-1 py-0.5 rounded text-emerald-300 font-bn">(উদ্বৃত্ত)</span>`;
+            }
+        }
+
+        const bankInflowEl = document.getElementById('dash-bank-inflow');
+        if (bankInflowEl) {
+            bankInflowEl.innerHTML = `<i class="fa-solid fa-building-columns"></i> ব্যাংক: ৳ ${formatAmountWithComma(latestBankCol)}`;
+        }
+    }
+
     const unsubTxns = TransactionDAO.listenByDate(queryDate, transactions => {
         let cashCol = 0, bankCol = 0, lessCol = 0;
         currentBankBreakdown = {};
@@ -112,6 +133,9 @@ export function startDashboardRealtimeUpdates(targetDate = null) {
             }
         });
 
+        latestCashCol = cashCol;
+        latestBankCol = bankCol;
+
         const periodCol = safeRound(cashCol + bankCol);
         const colEl = document.getElementById('dash-today-col');
         if (colEl) colEl.innerText = "৳ " + formatAmountWithComma(periodCol);
@@ -121,6 +145,7 @@ export function startDashboardRealtimeUpdates(targetDate = null) {
         if (cashEl) cashEl.innerText = "৳ " + formatAmountWithComma(cashCol);
         if (bankEl) bankEl.innerText = "৳ " + formatAmountWithComma(bankCol);
 
+        updateNetBalances();
         renderPaymentDonutChart('payment-donut-chart', cashCol, bankCol);
         renderSalesVsCollectionChart('sales-vs-col-chart');
     });
@@ -129,14 +154,10 @@ export function startDashboardRealtimeUpdates(targetDate = null) {
     const unsubExp = ExpenseDAO.listenByDate(queryDate, expenses => {
         let totExp = 0;
         expenses.forEach(e => totExp = safeRound(totExp + (Number(e.amount) || 0)));
+        latestTotExp = totExp;
         const expEl = document.getElementById('dash-today-exp');
         if (expEl) expEl.innerText = "৳ " + formatAmountWithComma(totExp);
-
-        const colText = document.getElementById('dash-today-col')?.innerText?.replace(/[^0-9]/g, '') || '0';
-        const colVal = Number(colText);
-        const netCash = safeRound(colVal - totExp);
-        const netEl = document.getElementById('dash-net-cash');
-        if (netEl) netEl.innerText = `নিট জমা: ৳ ${formatAmountWithComma(Math.max(0, netCash))}`;
+        updateNetBalances();
     });
     dashboardUnsubscribes.push(unsubExp);
 }
