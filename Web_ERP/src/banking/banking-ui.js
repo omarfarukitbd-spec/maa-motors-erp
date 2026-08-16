@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { BankDAO, CashCollectorDAO, BankTransactionDAO } from '../dao.js';
 import { calculateAccountBalance } from './banking-calc.js';
-import { formatAmountWithComma, promptSecurityPin, showToast } from '../utils.js';
+import { formatAmountWithComma, promptSecurityPin, showToast, parseAmount } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { firebase } from '../firebase-config.js';
 
@@ -130,7 +130,8 @@ async function openTransactionModal(type) {
     html += `
             <div>
                 <label class="block text-xs font-bold text-slate-400 mb-1">পরিমাণ (Amount ৳)</label>
-                <input type="number" id="banking-txn-amount" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-black text-xl outline-none focus:border-purple-500" placeholder="0.00">
+                <input type="text" id="banking-txn-amount" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'banking-txn-amount-words');" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-black text-xl outline-none focus:border-purple-500" placeholder="0.00">
+                <div id="banking-txn-amount-words" class="text-xs text-blue-400 font-bold hidden italic mt-1"></div>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-400 mb-1">বিবরণ / নোট</label>
@@ -154,7 +155,7 @@ async function openTransactionModal(type) {
         preConfirm: () => {
             const acc = document.getElementById('banking-txn-acc').value;
             const targetAcc = type === 'TRANSFER' ? document.getElementById('banking-txn-target-acc').value : null;
-            const amount = Number(document.getElementById('banking-txn-amount').value);
+            const amount = parseAmount(document.getElementById('banking-txn-amount').value);
             const note = document.getElementById('banking-txn-note').value.trim();
             const date = document.getElementById('banking-txn-date').value;
 
