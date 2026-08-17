@@ -74,19 +74,11 @@ export async function managePermissions(userId, email) {
                     ${createToggle('perm-allowInvoiceDiscount', 'ইনভয়েসে ডিসকাউন্ট / ছাড় দেওয়া', 'Allow Invoice Discount', perms.allowInvoiceDiscount !== false)}
 
                     <div class="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-wallet mr-1.5"></i>দৈনিক খরচ (Daily Expenses):</div>
-
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
-                        <input type="checkbox" id="perm-viewExpenses" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500" ${perms.viewExpenses !== false ? 'checked' : ''}>
-                        <span class="leading-tight">দৈনিক খরচ দেখার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">View Expenses</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-amber-500/50">
-                        <input type="checkbox" id="perm-editExpenses" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-amber-500" ${perms.editExpenses !== false && perms.manageExpenses !== false ? 'checked' : ''}>
-                        <span class="leading-tight text-amber-300"><i class="fa-solid fa-pen-to-square mr-1 text-amber-400"></i>খরচ এডিট আইকন দেখানো ও সংশোধনের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Show Edit Icon & Edit Expenses</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-red-500/50">
-                        <input type="checkbox" id="perm-deleteExpenses" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-red-500 focus:ring-red-500" ${perms.deleteExpenses ? 'checked' : ''}>
-                        <span class="leading-tight text-red-300"><i class="fa-solid fa-trash-can mr-1 text-red-400"></i>খরচ ডিলিট আইকন দেখানো ও খরচ ডিলেটের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Show Delete Icon & Delete Expenses</span></span>
-                    </label>
+                    ${createToggle('perm-viewExpenses', 'দৈনিক খরচ দেখার অনুমতি', 'View Expenses', perms.viewExpenses !== false)}
+                    ${createToggle('perm-addExpense', 'নতুন খরচ এন্ট্রি (সেভ) করার অনুমতি', 'Add Expense', perms.addExpense !== false)}
+                    ${createToggle('perm-printExpenseStatement', 'খরচ স্টেটমেন্ট (PDF) প্রিন্ট করার অনুমতি', 'Print Expense Statement', perms.printExpenseStatement !== false)}
+                    ${createToggle('perm-editExpenses', 'খরচ এডিট ও সংশোধন করার অনুমতি', 'Edit Expenses', perms.editExpenses !== false)}
+                    ${createToggle('perm-deleteExpenses', 'খরচ ডিলেট (Delete) করার অনুমতি', 'Delete Expenses', perms.deleteExpenses === true)}
 
                     <div class="text-xs font-black text-cyan-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-users mr-1.5"></i>কাস্টমার ডাটাবেস (Customers):</div>
 

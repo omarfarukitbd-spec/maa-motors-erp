@@ -76,7 +76,10 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 printInvoicePOS: false,
                 printInvoiceA4: false,
                 holdInvoiceBtn: false,
-                allowInvoiceDiscount: false
+                allowInvoiceDiscount: false,
+                addExpense: false,
+                printExpenseStatement: false,
+                editExpenses: false
             } : {};
 
             await UserDAO.update(userId, { 
@@ -276,7 +279,10 @@ export async function createNewUser() {
                 printInvoicePOS: false,
                 printInvoiceA4: false,
                 holdInvoiceBtn: false,
-                allowInvoiceDiscount: false
+                allowInvoiceDiscount: false,
+                addExpense: false,
+                printExpenseStatement: false,
+                editExpenses: false
             } : {};
 
             await UserDAO.getRef(newUid).set({

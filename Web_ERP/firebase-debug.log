@@ -1,0 +1,17 @@
+[debug] [2026-08-17T09:49:16.829Z] ----------------------------------------------------------------------
+[debug] [2026-08-17T09:49:16.834Z] Command:       E:\tools\node-v22.14.0-win-x64\node.exe C:\Users\Joni-pc\AppData\Local\npm-cache\_npx\ba4f1959e38407b5\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting
+[debug] [2026-08-17T09:49:16.836Z] CLI Version:   15.27.0
+[debug] [2026-08-17T09:49:16.836Z] Platform:      win32
+[debug] [2026-08-17T09:49:16.836Z] Node Version:  v22.14.0
+[debug] [2026-08-17T09:49:16.837Z] Detected Agent: antigravity
+[debug] [2026-08-17T09:49:16.837Z] Time:          Mon Aug 17 2026 15:49:16 GMT+0600 (Bangladesh Standard Time)
+[debug] [2026-08-17T09:49:16.838Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-17T09:49:23.131Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-17T09:49:23.132Z] > authorizing via signed-in user (office.maamotors@gmail.com)
+[debug] [2026-08-17T09:49:23.132Z] [iam] checking project maa-motors-erp for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-08-17T09:49:23.201Z] Checked if tokens are valid: true, expires at: 1786962840832
+[debug] [2026-08-17T09:49:23.201Z] Checked if tokens are valid: true, expires at: 1786962840832
+[debug] [2026-08-17T09:49:23.206Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/maa-motors-erp:testIamPermissions [none]
+[debug] [2026-08-17T09:49:23.211Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/maa-motors-erp:testIamPermissions  x-goog-user-project=maa-motors-erp
+[debug] [2026-08-17T09:49:23.211Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/maa-motors-erp:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}

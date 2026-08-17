@@ -29,13 +29,13 @@ export function renderExpenses(container) {
                         <i class="fa-solid fa-wallet"></i>
                         <span>আজকের খরচ: <strong id="expense-today-sum" class="text-white font-black">৳ ০</strong></span>
                     </div>
-                    <button class="m3-btn-primary px-4 py-2 text-xs" onclick="window.generateExpenseReport()">
+                    <button data-perm="printExpenseStatement" class="m3-btn-primary px-4 py-2 text-xs" onclick="window.generateExpenseReport()">
                         <i class="fa-solid fa-file-pdf mr-1"></i> প্রিন্ট স্টেটমেন্ট
                     </button>
                 </div>
             </div>
 
-            <div class="m3-card">
+            <div data-perm="addExpense" class="m3-card">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-start font-bn">
                     <div><label class="m3-label">তারিখ <span class="m3-label-sub">(Date *)</span></label><input type="text" id="exp-date" class="m3-field h-[42px] py-0 datepicker"></div>
                     <div><label class="m3-label">ক্যাটাগরি <span class="m3-label-sub">(Category *)</span></label><select id="exp-category" class="m3-field h-[42px] py-0 font-bold" onchange="window.handleCategoryChange()"></select></div>
@@ -132,8 +132,8 @@ function renderExpenseRows(expenses, tbody) {
                 <td class="text-right text-red-400 font-black text-base">৳${formatAmountWithComma(d.amount)}</td>
                 <td class="text-center">
                     <div class="flex items-center justify-center gap-1.5">
-                        ${canEdit ? `<button class="m3-btn-icon" onclick="window.editExpense('${d.id}', '${d.date}', '${catEscJs}', ${d.amount}, '${encodeURIComponent(d.details || '')}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
-                        ${canDelete ? `<button class="m3-btn-icon" onclick="window.deleteExpense('${d.id}', '${catEscJs}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
+                        ${canEdit ? `<button data-perm="editExpenses" class="m3-btn-icon" onclick="window.editExpense('${d.id}', '${d.date}', '${catEscJs}', ${d.amount}, '${encodeURIComponent(d.details || '')}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
+                        ${canDelete ? `<button data-perm="deleteExpenses" class="m3-btn-icon" onclick="window.deleteExpense('${d.id}', '${catEscJs}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
                     </div>
                 </td>
             </tr>`;
@@ -153,8 +153,8 @@ function renderExpenseRows(expenses, tbody) {
                 ${d.createdBy ? `<div class="mobile-card-row"><span class="mobile-card-label">এন্ট্রিদাতা:</span><span class="mobile-card-value text-blue-400 text-xs">${escapeHTML(d.createdBy)}</span></div>` : ''}
                 ${(canEdit || canDelete) ? `
                 <div class="mobile-card-actions">
-                    ${canEdit ? `<button class="m3-btn-icon" onclick="window.editExpense('${d.id}', '${d.date}', '${catEscJs}', ${d.amount}, '${encodeURIComponent(d.details || '')}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
-                    ${canDelete ? `<button class="m3-btn-icon" onclick="window.deleteExpense('${d.id}', '${catEscJs}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
+                    ${canEdit ? `<button data-perm="editExpenses" class="m3-btn-icon" onclick="window.editExpense('${d.id}', '${d.date}', '${catEscJs}', ${d.amount}, '${encodeURIComponent(d.details || '')}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
+                    ${canDelete ? `<button data-perm="deleteExpenses" class="m3-btn-icon" onclick="window.deleteExpense('${d.id}', '${catEscJs}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
                 </div>` : ''}
             </div>`;
     });
