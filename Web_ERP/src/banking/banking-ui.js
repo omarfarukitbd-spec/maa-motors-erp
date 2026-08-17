@@ -9,8 +9,8 @@ import { firebase } from '../firebase-config.js';
 let activeAccounts = []; // mixed banks and cash
 
 export async function renderBankingLedger(container) {
-    if (window.AppState.currentUserRole !== 'Boss' && window.AppState.currentUserRole !== 'Admin') {
-        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-bold text-red-500">অ্যাক্সেস ডিনাইড! শুধুমাত্র অ্যাডমিন/বস দেখতে পারবেন।</h2></div>`;
+    if (window.AppState.currentUserRole === 'Staff' && window.AppState.permissions.viewBanking === false) {
+        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-bold text-red-500">অ্যাক্সেস ডিনাইড!</h2></div>`;
         return;
     }
 
@@ -25,13 +25,13 @@ export async function renderBankingLedger(container) {
                     </button>
                 </h2>
                 <div class="flex items-center gap-2">
-                    <button class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('DEPOSIT')">
+                    <button data-perm="addBankDeposit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('DEPOSIT')">
                         <i class="fa-solid fa-arrow-down"></i> ম্যানুয়াল জমা
                     </button>
-                    <button class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-red-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('WITHDRAWAL')">
+                    <button data-perm="addBankWithdrawal" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-red-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('WITHDRAWAL')">
                         <i class="fa-solid fa-arrow-up"></i> টাকা উত্তোলন
                     </button>
-                    <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('TRANSFER')">
+                    <button data-perm="addBankTransfer" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('TRANSFER')">
                         <i class="fa-solid fa-right-left"></i> ট্রান্সফার
                     </button>
                 </div>

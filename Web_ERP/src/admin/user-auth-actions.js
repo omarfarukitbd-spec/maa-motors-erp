@@ -79,7 +79,14 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 allowInvoiceDiscount: false,
                 addExpense: false,
                 printExpenseStatement: false,
-                editExpenses: false
+                editExpenses: false,
+                viewBanking: false,
+                addBankDeposit: false,
+                addBankWithdrawal: false,
+                addBankTransfer: false,
+                printBankLedger: false,
+                exportBankLedger: false,
+                deleteBankTransaction: false
             } : {};
 
             await UserDAO.update(userId, { 
@@ -282,7 +289,14 @@ export async function createNewUser() {
                 allowInvoiceDiscount: false,
                 addExpense: false,
                 printExpenseStatement: false,
-                editExpenses: false
+                editExpenses: false,
+                viewBanking: false,
+                addBankDeposit: false,
+                addBankWithdrawal: false,
+                addBankTransfer: false,
+                printBankLedger: false,
+                exportBankLedger: false,
+                deleteBankTransaction: false
             } : {};
 
             await UserDAO.getRef(newUid).set({

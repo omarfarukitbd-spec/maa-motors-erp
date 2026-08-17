@@ -94,6 +94,15 @@ export async function managePermissions(userId, email) {
                     ${createToggle('perm-sendCustWhatsApp', 'WhatsApp তাগাদা বাটন', 'WhatsApp Icon', perms.sendCustWhatsApp !== false)}
                     ${createToggle('perm-sendCustSMS', 'রিমাইন্ডার SMS বাটন', 'SMS Icon', perms.sendCustSMS !== false)}
 
+                    <div class="text-xs font-black text-purple-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-building-columns mr-1.5"></i>ব্যাংকিং লেজার (Banking Ledger):</div>
+                    ${createToggle('perm-viewBanking', 'ব্যাংকিং লেজার দেখার অনুমতি', 'View Banking Ledger', perms.viewBanking !== false)}
+                    ${createToggle('perm-addBankDeposit', 'ম্যানুয়াল জমা করার অনুমতি', 'Add Deposit', perms.addBankDeposit !== false)}
+                    ${createToggle('perm-addBankWithdrawal', 'টাকা উত্তোলন করার অনুমতি', 'Add Withdrawal', perms.addBankWithdrawal !== false)}
+                    ${createToggle('perm-addBankTransfer', 'ব্যাংক ট্রান্সফার করার অনুমতি', 'Add Transfer', perms.addBankTransfer !== false)}
+                    ${createToggle('perm-printBankLedger', 'লেজার প্রিন্ট / এক্সেল ডাউনলোড', 'Print / Export Ledger', perms.printBankLedger !== false)}
+                    ${createToggle('perm-exportBankLedger', 'এক্সেল এক্সপোর্ট (Export Excel)', 'Export Ledger', perms.exportBankLedger !== false)}
+                    ${createToggle('perm-deleteBankTransaction', 'ট্রানজাকশন ডিলেট (Delete)', 'Delete Transaction', perms.deleteBankTransaction === true)}
+
                     <div class="text-xs font-black text-pink-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-file-invoice mr-1.5"></i>স্টেটমেন্ট, SMS ও ডিরেক্টরি:</div>
 
                     <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
@@ -121,6 +130,7 @@ export async function managePermissions(userId, email) {
                 const deleteLedger = document.getElementById('perm-deleteLedger').checked;
                 const editExpenses = document.getElementById('perm-editExpenses').checked;
                 const deleteExpenses = document.getElementById('perm-deleteExpenses').checked;
+                const deleteBankTransaction = document.getElementById('perm-deleteBankTransaction').checked;
                 const editCustomers = document.getElementById('perm-editCustomers').checked;
                 const deleteCustomers = document.getElementById('perm-deleteCustomers').checked;
 
@@ -157,9 +167,19 @@ export async function managePermissions(userId, email) {
                     allowInvoiceDiscount: document.getElementById('perm-allowInvoiceDiscount').checked,
 
                     viewExpenses: document.getElementById('perm-viewExpenses').checked,
+                    addExpense: document.getElementById('perm-addExpense')?.checked ?? false,
+                    printExpenseStatement: document.getElementById('perm-printExpenseStatement')?.checked ?? false,
                     manageExpenses: editExpenses || deleteExpenses,
                     editExpenses: editExpenses,
                     deleteExpenses: deleteExpenses,
+
+                    viewBanking: document.getElementById('perm-viewBanking').checked,
+                    addBankDeposit: document.getElementById('perm-addBankDeposit').checked,
+                    addBankWithdrawal: document.getElementById('perm-addBankWithdrawal').checked,
+                    addBankTransfer: document.getElementById('perm-addBankTransfer').checked,
+                    printBankLedger: document.getElementById('perm-printBankLedger').checked,
+                    exportBankLedger: document.getElementById('perm-exportBankLedger').checked,
+                    deleteBankTransaction: deleteBankTransaction,
 
                     viewCustomers: document.getElementById('perm-viewCustomers').checked,
                     addCustomer: document.getElementById('perm-addCustomer').checked,

@@ -40,8 +40,8 @@ export async function openAccountLedger(accountName, isCash) {
             </div>
             
             <div class="flex justify-end gap-2">
-                <button onclick="window.bankingApp.printLedger()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-xs font-bold transition-all"><i class="fa-solid fa-print mr-1"></i> Print / PDF</button>
-                <button onclick="window.bankingApp.exportLedgerExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-bold transition-all"><i class="fa-solid fa-file-excel mr-1"></i> Export Excel</button>
+                <button data-perm="printBankLedger" onclick="window.bankingApp.printLedger()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-xs font-bold transition-all"><i class="fa-solid fa-print mr-1"></i> Print / PDF</button>
+                <button data-perm="exportBankLedger" onclick="window.bankingApp.exportLedgerExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-bold transition-all"><i class="fa-solid fa-file-excel mr-1"></i> Export Excel</button>
             </div>
 
             <div class="bg-slate-950 rounded-2xl border border-slate-700 overflow-hidden">
@@ -119,7 +119,7 @@ export async function loadLedgerTable(accountName, isCash) {
             
             // Allow deletion for manual deposits, withdrawals, and transfers
             const deleteBtn = t.type !== 'CUSTOMER_PAYMENT' 
-                ? `<button onclick="window.bankingApp.deleteBankingTransaction('${t.id}')" class="text-slate-600 hover:text-red-400 p-1 rounded transition-colors" title="ডিলিট করুন"><i class="fa-solid fa-trash-can text-[10px]"></i></button>`
+                ? `<button data-perm="deleteBankTransaction" onclick="window.bankingApp.deleteBankingTransaction('${t.id}')" class="text-slate-600 hover:text-red-400 p-1 rounded transition-colors" title="ডিলিট করুন"><i class="fa-solid fa-trash-can text-[10px]"></i></button>`
                 : '';
 
             trs += `
