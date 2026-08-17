@@ -4,6 +4,7 @@ import { UserDAO } from '../dao.js';
 import { auditLog } from '../audit.js';
 import { promptSecurityPin } from '../utils.js';
 import { unlockApp } from '../navigation/router.js';
+import { managePermissions } from './user-permissions.js';
 
 /**
  * User Authentication Actions (Approval, PIN, Block, Delete, Create)
@@ -97,7 +98,13 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 permissions: defaultPerms
             });
             auditLog('APPROVE', 'Admin', userId, email, { role: formValues.role, pinSet: true });
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${email} সফলভাবে অনুমোদিত হয়েছে!`, showConfirmButton: false, timer: 3000 });
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${email} সফলভাবে অনুমোদিত হয়েছে!`, showConfirmButton: false, timer: 2000 });
+            
+            if (formValues.role === 'Staff' || formValues.role === 'Boss') {
+                setTimeout(() => {
+                    managePermissions(userId, email, true);
+                }, 2000);
+            }
         } catch(e) { console.error(e); Swal.fire('Error', 'অনুমোদন ব্যর্থ হয়েছে', 'error'); }
     }
 }

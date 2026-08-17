@@ -7,11 +7,13 @@ import { promptSecurityPin } from '../utils.js';
  * Sophisticated Permission Management
  * Fully Restored from original logic.
  */
-export async function managePermissions(userId, email) {
+export async function managePermissions(userId, email, skipPin = false) {
     if (window.AppState.currentUserRole !== 'Admin') return;
 
-    const isPinValid = await promptSecurityPin("পারমিশন পরিবর্তন (Manage Permissions)");
-    if (!isPinValid) return;
+    if (!skipPin) {
+        const isPinValid = await promptSecurityPin("পারমিশন পরিবর্তন (Manage Permissions)");
+        if (!isPinValid) return;
+    }
 
     try {
         const userData = await UserDAO.getById(userId);
