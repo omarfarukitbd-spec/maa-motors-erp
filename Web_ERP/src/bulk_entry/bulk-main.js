@@ -46,7 +46,7 @@ export function renderBulkEntry(container) {
             </div>
             <div class="flex flex-wrap gap-2 p-1 bg-slate-800/50 border border-slate-700/50 rounded-xl self-start ml-2 font-bn">
                 <button class="px-6 py-2 text-sm font-semibold rounded-lg transition-all" id="tab-spreadsheet" onclick="window.switchBulkTab('spreadsheet')">স্প্রেডশিট গ্রিড</button>
-                <button class="px-6 py-2 text-sm font-semibold rounded-lg transition-all" id="tab-excel" onclick="window.switchBulkTab('excel')">এক্সেল আপলোড</button>
+                <button data-perm="addBulkExcel" class="px-6 py-2 text-sm font-semibold rounded-lg transition-all" id="tab-excel" onclick="window.switchBulkTab('excel')">এক্সেল আপলোড</button>
                 ${adminTabBtn}
             </div>
             <div id="bulk-content-area" class="m3-card"></div>
@@ -103,7 +103,7 @@ export function switchBulkTab(tab) {
                 </table>
             </div>
             <div class="mt-4 flex justify-end px-2">
-                <button class="m3-btn-primary px-10" onclick="window.saveSpreadsheetData()" id="save-spreadsheet-btn">সব সেভ করুন</button>
+                <button data-perm="addBulkSpreadsheet" class="m3-btn-primary px-10" onclick="window.saveSpreadsheetData()" id="save-spreadsheet-btn">সব সেভ করুন</button>
             </div>
         `;
         addSpreadsheetRow();
@@ -131,7 +131,7 @@ export function switchBulkTab(tab) {
             <div class="max-w-2xl mx-auto space-y-6 py-10 font-bn text-center">
                 <p class="text-slate-300">এক্সেল (.xlsx) বা .csv ফাইল সিলেক্ট করুন।</p>
                 <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" class="m3-field py-10 border-dashed border-2">
-                <button class="m3-btn-primary w-full" onclick="window.processExcelUpload()" id="process-excel-btn">আপলোড ও সেভ</button>
+                <button data-perm="addBulkExcel" class="m3-btn-primary w-full" onclick="window.processExcelUpload()" id="process-excel-btn">আপলোড ও সেভ</button>
             </div>`;
     }
 }

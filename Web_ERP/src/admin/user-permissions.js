@@ -64,10 +64,9 @@ export async function managePermissions(userId, email) {
 
                     <div class="text-xs font-black text-purple-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-bolt mr-1.5"></i>দ্রুত এন্ট্রি ও ইনভয়েস (Bulk & Invoices):</div>
 
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
-                        <input type="checkbox" id="perm-viewBulkEntry" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500" ${perms.viewBulkEntry !== false ? 'checked' : ''}>
-                        <span class="leading-tight">ফাস্ট এন্ট্রি (Bulk Entry) ব্যবহারের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">View Bulk Entry</span></span>
-                    </label>
+                    ${createToggle('perm-viewBulkEntry', 'ফাস্ট এন্ট্রি (Bulk Entry) দেখার অনুমতি', 'View Bulk Entry', perms.viewBulkEntry !== false)}
+                    ${createToggle('perm-addBulkSpreadsheet', 'স্প্রেডশিট থেকে এন্ট্রি সেভ করা', 'Spreadsheet Save', perms.addBulkSpreadsheet !== false)}
+                    ${createToggle('perm-addBulkExcel', 'এক্সেল আপলোড ও সেভ করা', 'Excel Upload Save', perms.addBulkExcel !== false)}
                     <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
                         <input type="checkbox" id="perm-viewInvoice" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500" ${perms.viewInvoice !== false ? 'checked' : ''}>
                         <span class="leading-tight">ইনভয়েস/ভাউচার তৈরি ও প্রিন্টের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Create Invoice & Voucher</span></span>
@@ -163,6 +162,8 @@ export async function managePermissions(userId, email) {
                     viewZoneCustLedgerBtn: document.getElementById('perm-viewZoneCustLedgerBtn').checked,
 
                     viewBulkEntry: document.getElementById('perm-viewBulkEntry').checked,
+                    addBulkSpreadsheet: document.getElementById('perm-addBulkSpreadsheet').checked,
+                    addBulkExcel: document.getElementById('perm-addBulkExcel').checked,
                     viewInvoice: document.getElementById('perm-viewInvoice').checked,
                     allowInvoiceDiscount: document.getElementById('perm-allowInvoiceDiscount').checked,
 

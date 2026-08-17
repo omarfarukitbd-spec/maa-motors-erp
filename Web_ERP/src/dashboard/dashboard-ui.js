@@ -19,7 +19,7 @@ function getDashboardHeaderAndFormHTML() {
             </div>
 
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <button class="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-lg shadow-blue-600/20 transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.navigate('bulk')">
+                <button data-perm="viewBulkEntry" class="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-lg shadow-blue-600/20 transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.navigate('bulk')">
                     <i class="fa-solid fa-plus-circle"></i><span>বিক্রি এন্ট্রি</span>
                 </button>
                 <button class="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.navigate('ledger')">
