@@ -72,7 +72,11 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 printTagadaSheet: false,
                 exportZoneReport: false,
                 addBulkSpreadsheet: false,
-                addBulkExcel: false
+                addBulkExcel: false,
+                printInvoicePOS: false,
+                printInvoiceA4: false,
+                holdInvoiceBtn: false,
+                allowInvoiceDiscount: false
             } : {};
 
             await UserDAO.update(userId, { 
@@ -268,7 +272,11 @@ export async function createNewUser() {
                 printTagadaSheet: false,
                 exportZoneReport: false,
                 addBulkSpreadsheet: false,
-                addBulkExcel: false
+                addBulkExcel: false,
+                printInvoicePOS: false,
+                printInvoiceA4: false,
+                holdInvoiceBtn: false,
+                allowInvoiceDiscount: false
             } : {};
 
             await UserDAO.getRef(newUid).set({

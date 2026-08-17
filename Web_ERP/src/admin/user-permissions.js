@@ -67,14 +67,11 @@ export async function managePermissions(userId, email) {
                     ${createToggle('perm-viewBulkEntry', 'ফাস্ট এন্ট্রি (Bulk Entry) দেখার অনুমতি', 'View Bulk Entry', perms.viewBulkEntry !== false)}
                     ${createToggle('perm-addBulkSpreadsheet', 'স্প্রেডশিট থেকে এন্ট্রি সেভ করা', 'Spreadsheet Save', perms.addBulkSpreadsheet !== false)}
                     ${createToggle('perm-addBulkExcel', 'এক্সেল আপলোড ও সেভ করা', 'Excel Upload Save', perms.addBulkExcel !== false)}
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
-                        <input type="checkbox" id="perm-viewInvoice" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500" ${perms.viewInvoice !== false ? 'checked' : ''}>
-                        <span class="leading-tight">ইনভয়েস/ভাউচার তৈরি ও প্রিন্টের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Create Invoice & Voucher</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-purple-500/50">
-                        <input type="checkbox" id="perm-allowInvoiceDiscount" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-purple-400 focus:ring-purple-400" ${perms.allowInvoiceDiscount !== false ? 'checked' : ''}>
-                        <span class="leading-tight text-purple-300"><i class="fa-solid fa-tag mr-1 text-purple-400"></i>ইনভয়েসে ডিসকাউন্ট / ছাড় দেওয়ার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Allow Invoice Discounts</span></span>
-                    </label>
+                    ${createToggle('perm-viewInvoice', 'ইনভয়েস/ভাউচার তৈরি ও দেখার অনুমতি', 'Create Invoice & Voucher', perms.viewInvoice !== false)}
+                    ${createToggle('perm-printInvoicePOS', 'POS মেমো (অর্ধেক পাতা) প্রিন্ট ও সেভ', 'POS Memo Print', perms.printInvoicePOS !== false)}
+                    ${createToggle('perm-printInvoiceA4', 'A4 ইনভয়েস (ফুল পাতা) প্রিন্ট ও সেভ', 'A4 Invoice Print', perms.printInvoiceA4 !== false)}
+                    ${createToggle('perm-holdInvoiceBtn', 'ইনভয়েস হোল্ড (Hold) করার বাটন', 'Hold Invoice Button', perms.holdInvoiceBtn !== false)}
+                    ${createToggle('perm-allowInvoiceDiscount', 'ইনভয়েসে ডিসকাউন্ট / ছাড় দেওয়া', 'Allow Invoice Discount', perms.allowInvoiceDiscount !== false)}
 
                     <div class="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-wallet mr-1.5"></i>দৈনিক খরচ (Daily Expenses):</div>
 
