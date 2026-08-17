@@ -16,10 +16,17 @@ export async function login() {
 export async function loginWithGoogle() {
     const errEl = document.getElementById('login-error');
     if (errEl) errEl.innerText = "গুগল লগইন প্রসেস করা হচ্ছে...";
+    
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
     try {
-        await auth.signInWithPopup(googleProvider);
+        if (isMobile) {
+            await auth.signInWithRedirect(googleProvider);
+        } else {
+            await auth.signInWithPopup(googleProvider);
+        }
     } catch (e) {
-        console.warn("Popup blocked, trying redirect:", e);
+        console.warn("Popup blocked or failed, trying redirect fallback:", e);
         try { await auth.signInWithRedirect(googleProvider); }
         catch(err) { if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ!"; }
     }
@@ -72,8 +79,8 @@ export function initAuthListener() {
 
                 if(!userData) {
                     finalUserData = {
-                        email: user.email,
-                        name: user.displayName || user.email.split('@')[0],
+                        email: user.email || '',
+                        name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
                         photoURL: user.photoURL || '',
                         role: isMasterEmail ? 'Admin' : (isBossPortal ? 'Boss' : 'Staff'),
                         requestedPortal: portalMode || 'staff',
