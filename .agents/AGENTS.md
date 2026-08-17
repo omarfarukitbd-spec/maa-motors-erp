@@ -27,3 +27,10 @@
     - Use **"বর্তমান বকেয়া" / "মোট ব্যালেন্স" (Current Due / Total Balance)** instead of "মোট জের"
     - Use **"প্রারম্ভিক ব্যালেন্স" (Opening Balance)** instead of "প্রারম্ভিক জের"
 
+12. **Global Systems & UI Consistency Rule**: Whenever adding or modifying UI components, you MUST use the existing global systems. NEVER use raw HTML elements when a global utility exists:
+    - **Date Pickers**: NEVER use native `<input type="date">`. ALWAYS use `<input type="text" class="... datepicker">` which automatically attaches the global Flatpickr (DD/MM/YYYY format). The global observer will automatically handle appending to `.swal2-container` if inside a SweetAlert to prevent focus-trap bugs.
+    - **Number Formatting**: ALWAYS add `oninput="window.handleNumberInput(this)"` to any currency/amount input to automatically format numbers with commas (e.g. 1,50,000).
+    - **Amount in Words**: ALWAYS add `oninput="window.updateLiveWords(this, 'target-word-element-id')"` along with `handleNumberInput` to instantly show the Bengali text representation below or near the input.
+    - **Modals & Alerts**: NEVER use native `alert()`, `confirm()`, or `prompt()`. ALWAYS use `Swal.fire()` with the project's default dark-mode styling.
+    - **Sensitive Actions**: ALWAYS wrap any data deletion, ledger modification, or high-privilege action with `await promptSecurityPin()` before making the DB call.
+    - **Notifications**: ALWAYS use `showToast('Message', 'success|error')` for non-blocking feedback after an action completes.
