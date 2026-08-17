@@ -1,32 +1,43 @@
 import { TransactionDAO, BankTransactionDAO } from '../dao.js';
+import { toDBDate, getTodayLocalDateString } from '../utils.js';
 
 export async function getBankingSummary(dateFilter = 'month') {
     let startDate = '';
     let endDate = '';
     const todayObj = new Date();
+    const todayStr = getTodayLocalDateString();
     
-    if (dateFilter.includes(' to ')) {
+    if (typeof dateFilter === 'string' && dateFilter.includes(' to ')) {
         const [start, end] = dateFilter.split(' to ');
-        startDate = start;
-        endDate = end;
+        startDate = toDBDate(start.trim());
+        endDate = toDBDate(end.trim());
+    } else if (typeof dateFilter === 'string' && (dateFilter.includes('/') || (dateFilter.includes('-') && dateFilter.length === 10))) {
+        const d = toDBDate(dateFilter.trim());
+        startDate = d;
+        endDate = d;
     } else if (dateFilter === 'today') {
-        const d = todayObj.toISOString().split('T')[0];
-        startDate = d; endDate = d;
+        startDate = todayStr;
+        endDate = todayStr;
     } else if (dateFilter === 'week') {
-        // Find start of week (Sunday)
         const d = new Date(todayObj);
         const day = d.getDay();
         const diff = d.getDate() - day;
         const firstDay = new Date(d.setDate(diff));
         const lastDay = new Date(d.setDate(diff + 6));
-        
-        startDate = firstDay.toISOString().split('T')[0];
-        endDate = lastDay.toISOString().split('T')[0];
+        startDate = toDBDate(firstDay);
+        endDate = toDBDate(lastDay);
     } else if (dateFilter === 'month') {
         const y = todayObj.getFullYear();
         const m = String(todayObj.getMonth() + 1).padStart(2, '0');
         startDate = `${y}-${m}-01`;
         const lastDay = new Date(y, todayObj.getMonth() + 1, 0);
+        endDate = `${y}-${m}-${String(lastDay.getDate()).padStart(2, '0')}`;
+    } else if (dateFilter === 'lastMonth') {
+        const prevMonthDate = new Date(todayObj.getFullYear(), todayObj.getMonth() - 1, 1);
+        const y = prevMonthDate.getFullYear();
+        const m = String(prevMonthDate.getMonth() + 1).padStart(2, '0');
+        startDate = `${y}-${m}-01`;
+        const lastDay = new Date(y, prevMonthDate.getMonth() + 1, 0);
         endDate = `${y}-${m}-${String(lastDay.getDate()).padStart(2, '0')}`;
     } else if (dateFilter === 'year') {
         const y = todayObj.getFullYear();
@@ -36,8 +47,10 @@ export async function getBankingSummary(dateFilter = 'month') {
 
     // 1. Get all customer collections in range
     let collectionsSnap;
-    if (dateFilter === 'all') {
+    if (dateFilter === 'all' || !startDate || !endDate) {
         collectionsSnap = await TransactionDAO.collection.get();
+    } else if (startDate === endDate) {
+        collectionsSnap = await TransactionDAO.collection.where('date', '==', startDate).get();
     } else {
         collectionsSnap = await TransactionDAO.collection
             .where('date', '>=', startDate)
@@ -47,8 +60,10 @@ export async function getBankingSummary(dateFilter = 'month') {
 
     // 2. Get all bank transactions in range
     let bankTxnSnap;
-    if (dateFilter === 'all') {
+    if (dateFilter === 'all' || !startDate || !endDate) {
         bankTxnSnap = await BankTransactionDAO.collection.get();
+    } else if (startDate === endDate) {
+        bankTxnSnap = await BankTransactionDAO.collection.where('date', '==', startDate).get();
     } else {
         bankTxnSnap = await BankTransactionDAO.collection
             .where('date', '>=', startDate)
@@ -56,25 +71,33 @@ export async function getBankingSummary(dateFilter = 'month') {
             .get();
     }
 
-    // Process
-    let totalIn = 0;
-    let totalOut = 0;
+    // Process calculations
+    let totalCustomerCollections = 0;
+    let totalDeposits = 0;
+    let totalWithdrawals = 0;
 
     collectionsSnap.forEach(doc => {
         const t = doc.data();
-        if (t.paid && !isNaN(t.paid) && t.receivedFrom) {
-            totalIn += Number(t.paid);
+        const paid = Number(t.paid || 0);
+        if (paid > 0 && t.receivedFrom) {
+            totalCustomerCollections += paid;
         }
     });
 
     bankTxnSnap.forEach(doc => {
         const t = doc.data();
-        if (t.type === 'DEPOSIT') totalIn += Number(t.amount);
-        if (t.type === 'WITHDRAWAL') totalOut += Number(t.amount);
-        // We ignore TRANSFER since it's just moving money internally
+        const amt = Number(t.amount || 0);
+        if (t.type === 'DEPOSIT') totalDeposits += amt;
+        if (t.type === 'WITHDRAWAL') totalWithdrawals += amt;
     });
 
+    const totalIn = totalCustomerCollections + totalDeposits;
+    const totalOut = totalWithdrawals;
+
     return {
+        totalCustomerCollections,
+        totalDeposits,
+        totalWithdrawals,
         totalIn,
         totalOut,
         netFlow: totalIn - totalOut
