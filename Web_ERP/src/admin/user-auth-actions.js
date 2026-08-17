@@ -64,7 +64,10 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 deleteExpenses: false,
                 deleteCustomers: false,
                 exportCustomers: false,
-                bulkCustReminder: false
+                bulkCustReminder: false,
+                addLedgerEntry: false,
+                exportLedger: false,
+                editLedger: false
             } : {};
 
             await UserDAO.update(userId, { 
@@ -252,7 +255,10 @@ export async function createNewUser() {
                 deleteExpenses: false,
                 deleteCustomers: false,
                 exportCustomers: false,
-                bulkCustReminder: false
+                bulkCustReminder: false,
+                addLedgerEntry: false,
+                exportLedger: false,
+                editLedger: false
             } : {};
 
             await UserDAO.getRef(newUid).set({

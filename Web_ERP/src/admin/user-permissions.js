@@ -47,21 +47,14 @@ export async function managePermissions(userId, email) {
                     <div class="text-xs font-black text-amber-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-book mr-1.5"></i>খতিয়ান ও লেনদেন (Ledger & Icons):</div>
 
                     <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
-                        <input type="checkbox" id="perm-viewLedger" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500" ${perms.viewLedger !== false ? 'checked' : ''}>
-                        <span class="leading-tight">খতিয়ান পেজ দেখার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">View Ledger Page</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-amber-500/50">
-                        <input type="checkbox" id="perm-editLedger" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-amber-500" ${perms.editLedger !== false && perms.manageLedger !== false ? 'checked' : ''}>
-                        <span class="leading-tight text-amber-300"><i class="fa-solid fa-pen-to-square mr-1 text-amber-400"></i>খতিয়ান এডিট আইকন দেখানো ও সংশোধনের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Show Edit Icon & Edit Transactions</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-red-500/50">
-                        <input type="checkbox" id="perm-deleteLedger" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-red-500 focus:ring-red-500" ${perms.deleteLedger ? 'checked' : ''}>
-                        <span class="leading-tight text-red-300"><i class="fa-solid fa-trash-can mr-1 text-red-400"></i>খতিয়ান ডিলিট আইকন দেখানো ও লেনদেন ডিলেটের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Show Delete Icon & Delete Transactions</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-emerald-500/50">
-                        <input type="checkbox" id="perm-exportLedger" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500" ${perms.exportLedger !== false ? 'checked' : ''}>
-                        <span class="leading-tight text-emerald-300"><i class="fa-solid fa-file-excel mr-1 text-emerald-400"></i>খতিয়ান এক্সেল ডাউনলোড করার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Export Ledger Excel</span></span>
-                    </label>
+                    ${createToggle('perm-viewLedger', 'লেজার খতিয়ান দেখার অনুমতি', 'View Ledger', perms.viewLedger !== false)}
+                    ${createToggle('perm-addLedgerEntry', 'নতুন এন্ট্রি করা (বিল/জমা)', 'Add Ledger Entry', perms.addLedgerEntry !== false)}
+                    ${createToggle('perm-editLedger', 'এন্ট্রি এডিট করা', 'Edit Entry', perms.editLedger !== false && perms.manageLedger !== false)}
+                    ${createToggle('perm-deleteLedger', 'এন্ট্রি ডিলিট করা', 'Delete Entry', perms.deleteLedger === true)}
+                    ${createToggle('perm-exportLedger', 'লেজার এক্সেল ডাউনলোড', 'Export Excel', perms.exportLedger !== false)}
+                    ${createToggle('perm-printLedgerReceipt', 'ট্রানজেকশন রিসিপ্ট প্রিন্ট করা', 'Print Receipt', perms.printLedgerReceipt !== false)}
+                    ${createToggle('perm-sendLedgerWhatsApp', 'ট্রানজেকশন WhatsApp মেসেজ', 'WhatsApp Alert', perms.sendLedgerWhatsApp !== false)}
+                    ${createToggle('perm-sendLedgerSMS', 'ট্রানজেকশন SMS', 'SMS Alert', perms.sendLedgerSMS !== false)}
 
                     <div class="text-xs font-black text-purple-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-bolt mr-1.5"></i>দ্রুত এন্ট্রি ও ইনভয়েস (Bulk & Invoices):</div>
 
@@ -147,9 +140,14 @@ export async function managePermissions(userId, email) {
                     printExecutiveReport: document.getElementById('perm-printExecutiveReport').checked,
 
                     viewLedger: document.getElementById('perm-viewLedger').checked,
+                    addLedgerEntry: document.getElementById('perm-addLedgerEntry').checked,
                     manageLedger: editLedger || deleteLedger,
                     editLedger: editLedger,
                     deleteLedger: deleteLedger,
+                    exportLedger: document.getElementById('perm-exportLedger').checked,
+                    printLedgerReceipt: document.getElementById('perm-printLedgerReceipt').checked,
+                    sendLedgerWhatsApp: document.getElementById('perm-sendLedgerWhatsApp').checked,
+                    sendLedgerSMS: document.getElementById('perm-sendLedgerSMS').checked,
                     exportLedger: document.getElementById('perm-exportLedger').checked,
 
                     viewBulkEntry: document.getElementById('perm-viewBulkEntry').checked,

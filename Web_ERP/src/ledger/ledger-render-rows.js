@@ -53,8 +53,6 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
     (transactions || []).forEach((d, index) => {
         const isBoss = String(AppState?.currentUserRole || '').toLowerCase() === 'boss';
         const isAdmin = String(AppState?.currentUserRole || '').toLowerCase() === 'admin';
-        const canEdit = !isBoss && (isAdmin || (AppState?.permissions?.editLedger !== false && AppState?.permissions?.manageLedger !== false));
-        const canDelete = !isBoss && (isAdmin || (AppState?.permissions?.deleteLedger === true));
         const balanceVal = isFilteredCustomer ? runningBalances[index] : (Number(d.currentDue) || 0);
         const b = Number(d.bill) || 0, p = Number(d.paid) || 0;
         totBill += b; totPaid += p;
@@ -121,11 +119,11 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
             <td class="text-right text-emerald-400 font-black text-sm align-top py-2.5">৳${formatAmountWithComma(p)}</td>
             <td class="text-right text-white font-black text-base bg-white/[0.02] border-l border-slate-800/50 align-top py-2.5">৳${formatAmountWithComma(Math.abs(balanceVal))}<div class="text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</div></td>
             <td class="text-center sticky-action-col align-top py-2.5"><div class="flex items-center justify-center gap-1.5">
-                <button class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
-                <button class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
-                ${canEdit ? `<button class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
-                ${canDelete ? `<button class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
-                <button class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
+                <button data-perm="sendLedgerWhatsApp" class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
+                <button data-perm="sendLedgerSMS" class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
+                <button data-perm="editLedger" class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
+                <button data-perm="deleteLedger" class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>
+                <button data-perm="printLedgerReceipt" class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
             </div></td>
         </tr>`);
 
@@ -141,11 +139,11 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
             <div class="mobile-card-row"><span class="mobile-card-label">বিল (Debit):</span><span class="mobile-card-value text-red-400 font-bold">৳ ${formatAmountWithComma(b)}</span></div>
             <div class="mobile-card-row"><span class="mobile-card-label">জমা (Credit):</span><span class="mobile-card-value text-emerald-400 font-bold">৳ ${formatAmountWithComma(p)}</span></div>
             <div class="mobile-card-actions">
-                <button class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
-                <button class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
-                ${canEdit ? `<button class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
-                ${canDelete ? `<button class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
-                <button class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
+                <button data-perm="sendLedgerWhatsApp" class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
+                <button data-perm="sendLedgerSMS" class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
+                <button data-perm="editLedger" class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
+                <button data-perm="deleteLedger" class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>
+                <button data-perm="printLedgerReceipt" class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
             </div>
         </div>`;
     });
@@ -211,7 +209,7 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button class="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer" onclick="window.openCustomerStatement('${sel.value}')">
+                    <button data-perm="viewCustStatementBtn" class="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer" onclick="window.openCustomerStatement('${sel.value}')">
                         <i class="fa-solid fa-file-invoice"></i><span>মেমো</span>
                     </button>
                 </div>`;
