@@ -55,7 +55,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Hind Siliguri', 'Inter', 'Kalpurush', sans-serif;
+    font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', sans-serif;
 }
 
 html, body {
@@ -66,8 +66,17 @@ html, body {
     height: 100dvh;
     min-height: 100dvh;
     width: 100vw;
-    font-family: 'Hind Siliguri', 'Inter', sans-serif;
+    font-family: 'Inter', 'Hind Siliguri', sans-serif;
     color-scheme: dark !important;
+}
+
+.font-mono, .font-num {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace !important;
+    font-feature-settings: "tnum" 1;
+}
+
+.font-bn {
+    font-family: 'Inter', 'Hind Siliguri', sans-serif;
 }
 
 /* ─── Edge-to-Edge Mobile Scrolling & Safe-Area Cushions ─── */
