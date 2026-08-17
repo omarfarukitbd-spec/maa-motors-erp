@@ -196,14 +196,14 @@ async function loadBankingDashboard(timeFilter = 'month') {
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <input type="text" id="banking-custom-range" class="${timeFilter.includes('to') ? '' : 'hidden'} bg-slate-950 border border-slate-700 text-white text-xs font-bold rounded-xl px-3 py-1.5 outline-none focus:border-purple-500 w-52 datepicker text-center" data-mode="range" placeholder="DD/MM/YYYY to DD/MM/YYYY" value="${timeFilter.includes('to') ? timeFilter : ''}" onchange="if(this.value.includes(' to ')) window.bankingApp.loadBankingDashboard(this.value)">
+                        <input type="text" id="banking-custom-range" class="${timeFilter.includes('to') || timeFilter.includes('/') || (timeFilter.includes('-') && timeFilter.length === 10) ? '' : 'hidden'} bg-slate-950 border border-slate-700 text-white text-xs font-bold rounded-xl px-3 py-1.5 outline-none focus:border-purple-500 w-52 datepicker text-center" data-mode="range" placeholder="DD/MM/YYYY to DD/MM/YYYY" value="${['today', 'month', 'lastMonth', 'year', 'all', 'custom'].includes(timeFilter) ? '' : timeFilter}" onchange="if(this.value) window.bankingApp.loadBankingDashboard(this.value)">
                         <select id="banking-summary-filter" class="bg-slate-950 border border-slate-700/80 text-purple-300 text-xs font-black rounded-xl px-3 py-1.5 outline-none focus:border-purple-500 cursor-pointer shadow-inner" onchange="if(this.value === 'custom') { document.getElementById('banking-custom-range').classList.remove('hidden'); document.getElementById('banking-custom-range').focus(); } else { document.getElementById('banking-custom-range').classList.add('hidden'); window.bankingApp.loadBankingDashboard(this.value); }">
                             <option value="today" ${timeFilter === 'today' ? 'selected' : ''}>আজকের সামারি (Today)</option>
                             <option value="month" ${timeFilter === 'month' ? 'selected' : ''}>চলতি মাস (This Month)</option>
                             <option value="lastMonth" ${timeFilter === 'lastMonth' ? 'selected' : ''}>গত মাস (Last Month)</option>
                             <option value="year" ${timeFilter === 'year' ? 'selected' : ''}>চলতি বছর (This Year)</option>
                             <option value="all" ${timeFilter === 'all' ? 'selected' : ''}>সর্বমোট (All Time)</option>
-                            <option value="custom" ${timeFilter.includes('to') ? 'selected' : ''}>কাস্টম তারিখ ফিল্টার...</option>
+                            <option value="custom" ${timeFilter.includes('to') || timeFilter.includes('/') || (timeFilter.includes('-') && timeFilter.length === 10) ? 'selected' : ''}>কাস্টম তারিখ ফিল্টার...</option>
                         </select>
                     </div>
                 </div>
