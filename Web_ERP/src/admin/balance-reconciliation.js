@@ -2,6 +2,9 @@ import Swal from 'sweetalert2';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { safeRound, formatAmountWithComma } from '../utils.js';
 import { auditLog } from '../audit.js';
+import { autoHealCustomerBalances } from './balance-recon-heal.js';
+
+export { autoHealCustomerBalances } from './balance-recon-heal.js';
 
 /**
  * --- Balance Integrity Scanner & Auto-Healer ---
@@ -31,8 +34,7 @@ export async function runBalanceIntegrityScanner() {
             const isOp = (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের');
 
             if (isOp) {
-                const opAmt = safeRound((Number(t.bill) || 0) - (Number(t.paid) || 0));
-                openingMap[t.customerId] = opAmt;
+                openingMap[t.customerId] = safeRound((Number(t.bill) || 0) - (Number(t.paid) || 0));
             } else {
                 if (!txnMap[t.customerId]) txnMap[t.customerId] = { totalBill: 0, totalPaid: 0, count: 0 };
                 txnMap[t.customerId].totalBill = safeRound(txnMap[t.customerId].totalBill + (Number(t.bill) || 0));
@@ -84,7 +86,6 @@ export async function runBalanceIntegrityScanner() {
             });
         }
 
-        // Show Discrepancy Table with 1-Click Heal Button
         let tableRows = discrepancies.map((d, i) => `
             <tr class="border-b border-slate-800 text-xs">
                 <td class="p-2 text-slate-400 font-mono">${i + 1}</td>
@@ -137,39 +138,6 @@ export async function runBalanceIntegrityScanner() {
     }
 }
 
-async function autoHealCustomerBalances(discrepancies) {
-    Swal.fire({
-        title: 'ব্যালেন্স ঠিক করা হচ্ছে...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-        customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn' }
-    });
-
-    try {
-        let healedCount = 0;
-        for (const d of discrepancies) {
-            await CustomerDAO.update(d.id, { totalDue: d.expectedDue });
-            auditLog('HEAL_BALANCE', 'Customer', d.id, d.name, {
-                storedDue: d.storedDue,
-                correctedDue: d.expectedDue,
-                diff: d.diff
-            });
-            healedCount++;
-        }
-
-        Swal.fire({
-            title: 'সফলভাবে সম্পন্ন!',
-            text: `মোট ${healedCount} জন কাস্টমারের খতিয়ান ব্যালেন্স নিখুঁতভাবে রিস্টোর করা হয়েছে।`,
-            icon: 'success',
-            confirmButtonText: 'ঠিক আছে',
-            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-emerald-500/40 font-bn' }
-        });
-    } catch (e) {
-        console.error("Heal error:", e);
-        Swal.fire('Error', 'ব্যালেন্স রিস্টোর করতে সমস্যা হয়েছে: ' + e.message, 'error');
-    }
-}
-
 export async function runBankingBalanceScanner() {
     try {
         const { BankDAO, CashCollectorDAO } = await import('../dao.js');
@@ -177,7 +145,7 @@ export async function runBankingBalanceScanner() {
 
         const confirm = await Swal.fire({
             title: 'ব্যাংকিং ব্যালেন্স স্ক্যানার',
-            text: 'এই টুলটি আপনার সবগুলো ব্যাংক এবং ক্যাশ অ্যাকাউন্টের শুরু থেকে আজ পর্যন্ত সমস্ত লেনদেন (ডিপোজিট, উত্তোলন, ট্রান্সফার, কালেকশন) যোগ-বিয়োগ করে মেইন ব্যালেন্সের সাথে মেলাবে। কোনো অ্যাকাউন্টে ডাটাবেজের ভুলের কারণে ব্যালেন্স গড়মিল থাকলে তা নিজে থেকেই রিস্টোর করে দেবে। শুরু করবেন?',
+            text: 'এই টুলটি আপনার সবগুলো ব্যাংক এবং ক্যাশ অ্যাকাউন্টের শুরু থেকে আজ পর্যন্ত সমস্ত লেনদেন যোগ-বিয়োগ করে মেইন ব্যালেন্সের সাথে মেলাবে। কোনো অ্যাকাউন্টে ডাটাবেজের ভুলের কারণে ব্যালেন্স গড়মিল থাকলে তা নিজে থেকেই রিস্টোর করে দেবে। শুরু করবেন?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: '<i class="fa-solid fa-play"></i> স্ক্যান শুরু করুন',
@@ -206,8 +174,6 @@ export async function runBankingBalanceScanner() {
         ];
 
         const discrepancies = [];
-
-        // Concurrently calculate all exact balances
         const calculatedBalances = await Promise.all(allAccounts.map(acc => calculateAccountBalance(acc.name, acc.isCash)));
 
         for (let i = 0; i < allAccounts.length; i++) {
@@ -229,14 +195,13 @@ export async function runBankingBalanceScanner() {
         }
 
         if (discrepancies.length === 0) {
-            Swal.fire({
+            return Swal.fire({
                 title: '১০০% পারফেক্ট!',
                 text: 'আপনার সবগুলো ব্যাংক এবং ক্যাশ অ্যাকাউন্টের ব্যালেন্স ও লেনদেনের হিসাব ১০০% নিখুঁত আছে। কোনো গড়মিল পাওয়া যায়নি!',
                 icon: 'success',
                 confirmButtonText: 'চমৎকার',
                 customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-emerald-500/40 font-bn' }
             });
-            return;
         }
 
         let html = `<div class="text-left mt-4 max-h-60 overflow-y-auto custom-scrollbar font-bn text-slate-300 space-y-3">`;

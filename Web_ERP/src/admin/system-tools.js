@@ -1,9 +1,15 @@
 import Swal from 'sweetalert2';
-import { db } from '../firebase-config.js';
 import { SettingsDAO, ZoneDAO, CustomerDAO } from '../dao.js';
 import { promptSecurityPin } from '../utils.js';
 import { initCustomerCache, getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
+
+export { resequenceZoneAccountNumbers, syncSingleZoneCounter } from './system-resequence.js';
+export { cleanupOldAuditLogs } from './system-cleanup.js';
+import { downloadFullSystemBackup, restoreSystemFromBackup } from '../backup/index.js';
+
+window.downloadFullSystemBackup = downloadFullSystemBackup;
+window.restoreSystemFromBackup = restoreSystemFromBackup;
 
 export async function setNextAccountNo() {
     try {
@@ -38,7 +44,10 @@ export async function setNextAccountNo() {
             try {
                 await SettingsDAO.updateZoneCounter(formValues.zone, formValues.val);
                 Swal.fire('সফল!', `জোনের (${formValues.zone}) পরবর্তী সিরিয়াল আপডেট করা হয়েছে।`, 'success');
-            } catch (e) { Swal.fire('Error', 'কাউন্টার আপডেট করা যায়নি।', 'error'); }
+            } catch (e) { 
+                console.error(e);
+                Swal.fire('Error', 'কাউন্টার আপডেট করা যায়নি।', 'error'); 
+            }
         }
     } catch (err) {
         console.error("setNextAccountNo error:", err);
@@ -77,7 +86,10 @@ export async function showIndividualFixer() {
             await CustomerDAO.update(formValues.id, { accountNo: formValues.newAcc });
             auditLog('ID_FIX', 'Admin', formValues.id, '', { newAccountNo: formValues.newAcc });
             Swal.fire('সফল!', 'অ্যাকাউন্ট নাম্বার পরিবর্তন করা হয়েছে।', 'success');
-        } catch (e) { Swal.fire('Error', 'পরিবর্তন করা যায়নি।', 'error'); }
+        } catch (e) { 
+            console.error(e);
+            Swal.fire('Error', 'পরিবর্তন করা যায়নি।', 'error'); 
+        }
     }
 }
 
@@ -136,203 +148,3 @@ export async function autoSyncZoneCounters() {
         Swal.fire('ত্রুটি!', 'কাউন্টার সিঙ্ক করার সময় সমস্যা হয়েছে।', 'error');
     }
 }
-
-export async function resequenceZoneAccountNumbers(presetZoneName = null) {
-    if (window.AppState.currentUserRole !== 'Admin') {
-        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন সিরিয়াল সাজাতে পারবেন।', 'error');
-    }
-
-    const zones = await ZoneDAO.getAllZones();
-    if (!zones || zones.length === 0) return Swal.fire('warning', 'কোনো জোন নেই!');
-
-    let selectedZone = presetZoneName;
-    if (!selectedZone) {
-        let zoneOpts = '<option value="">-- জোন সিলেক্ট করুন --</option>';
-        zones.forEach(z => { zoneOpts += `<option value="${z.name}">${z.name}</option>`; });
-
-        const { value: sel } = await Swal.fire({
-            title: 'সিরিয়াল অনুযায়ী অ্যাকাউন্ট পুনঃসাজানো',
-            html: `<div class="text-left space-y-3 font-bn p-2">
-                    <p class="text-xs text-amber-400 font-bold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                        <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1.5"></i>সতর্কবার্তা: এটি সিলেক্ট করা জোনের সকল সক্রিয় কাস্টমারের অ্যাকাউন্ট নম্বর ১, ২, ৩... ক্রমানুসারে পুনরায় সেট করবে।
-                    </p>
-                    <div><label class="block text-xs font-bold text-slate-400 mb-1">জোন সিলেক্ট করুন</label><select id="reseq-zone-sel" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-blue-500">${zoneOpts}</select></div>
-                </div>`,
-            showCancelButton: true, confirmButtonText: 'পুনরায় সাজান', cancelButtonText: 'বাতিল',
-            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
-            preConfirm: () => {
-                const z = document.getElementById('reseq-zone-sel').value;
-                if (!z) return Swal.showValidationMessage('জোন সিলেক্ট করুন');
-                return z;
-            }
-        });
-        selectedZone = sel;
-    }
-
-    if (!selectedZone) return;
-
-    const isPinValid = await promptSecurityPin("কাস্টমার সিরিয়াল পুনঃসাজানো");
-    if (!isPinValid) return;
-
-    try {
-        Swal.fire({ title: 'প্রসেস হচ্ছে...', text: 'কাস্টমারদের অ্যাকাউন্ট নম্বর ক্রমানুসারে আপডেট হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-        const customers = await CustomerDAO.getAll();
-        const zoneObj = zones.find(z => z.name === selectedZone);
-        const zoneCode = zoneObj ? (zoneObj.code || '') : '';
-        const zoneCusts = customers.filter(c => (c.zone || '').trim() === selectedZone);
-
-        zoneCusts.sort((a, b) => (a.accountNo || '').localeCompare(b.accountNo || '', undefined, { numeric: true }));
-
-        let updatedCount = 0;
-        const ops = [];
-        for (let i = 0; i < zoneCusts.length; i++) {
-            const c = zoneCusts[i];
-            const newSerialStr = String(i + 1).padStart(4, '0');
-            const newAccNo = zoneCode + newSerialStr;
-            if (c.accountNo !== newAccNo) {
-                ops.push({ ref: CustomerDAO.getRef(c.id), newAccNo });
-                updatedCount++;
-            }
-        }
-
-        const CHUNK_SIZE = 400;
-        for (let i = 0; i < ops.length; i += CHUNK_SIZE) {
-            const batch = db.batch();
-            ops.slice(i, i + CHUNK_SIZE).forEach(item => batch.update(item.ref, { accountNo: item.newAccNo }));
-            await batch.commit();
-        }
-
-        await SettingsDAO.updateZoneCounter(selectedZone, zoneCusts.length);
-        auditLog('RESEQUENCE_ACC_NO', 'Admin', selectedZone, `${updatedCount} updated`);
-
-        Swal.fire('সফল!', `জোনের (${selectedZone}) ${zoneCusts.length} জন কাস্টমারের আইডি ১ থেকে ${zoneCusts.length} সিরিয়ালে সুন্দরভাবে সাজানো হয়েছে।`, 'success');
-        if (window.loadCustomers) window.loadCustomers();
-    } catch (err) {
-        console.error("resequenceZoneAccountNumbers error:", err);
-        Swal.fire('ত্রুটি!', 'সিরিয়াল পুনঃসাজানোর সময় সমস্যা হয়েছে।', 'error');
-    }
-}
-
-export async function syncSingleZoneCounter(zoneName) {
-    if (!zoneName) return;
-    try {
-        const customers = await CustomerDAO.getAll();
-        const zoneCusts = customers.filter(c => (c.zone || '').trim() === zoneName);
-        let maxSerial = 0;
-        zoneCusts.forEach(c => {
-            const acc = c.accountNo || '';
-            const match = acc.match(/\d+/);
-            if (match) {
-                const num = parseInt(match[0], 10);
-                if (!isNaN(num) && num > maxSerial) maxSerial = num;
-            }
-        });
-        await SettingsDAO.updateZoneCounter(zoneName, maxSerial);
-    } catch (e) { console.error('syncSingleZoneCounter error:', e); }
-}
-
-window.resequenceZoneModal = resequenceZoneAccountNumbers;
-
-export async function cleanupOldAuditLogs() {
-    if (window.AppState?.currentUserRole !== 'Admin') {
-        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন এই কাজটি করতে পারবেন।', 'error');
-    }
-
-    const { value: months } = await Swal.fire({
-        title: '<i class="fa-solid fa-broom text-amber-500 mr-2"></i>অডিট লগ ক্লিনআপ',
-        html: `
-            <div class="text-left font-bn space-y-4">
-                <p class="text-xs text-slate-400">ডাটাবেস স্টোরেজ বাঁচাতে পুরোনো অডিট লগ মুছে ফেলুন। আপনি কতদিন আগের লগ মুছতে চান তা নির্বাচন করুন:</p>
-                <select id="cleanup-months" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500">
-                    <option value="1">১ মাসের আগের সব লগ</option>
-                    <option value="3">৩ মাসের আগের সব লগ</option>
-                    <option value="6" selected>৬ মাসের আগের সব লগ</option>
-                    <option value="12">১ বছরের আগের সব লগ</option>
-                </select>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'পরবর্তী ধাপ',
-        cancelButtonText: 'বাতিল',
-        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700 font-bn' },
-        preConfirm: () => parseInt(document.getElementById('cleanup-months').value)
-    });
-
-    if (!months) return;
-
-    const isPinValid = await promptSecurityPin("পুরোনো অডিট লগ মুছে ফেলা");
-    if (!isPinValid) return;
-
-    const confirmWipe = await Swal.fire({
-        title: 'চূড়ান্ত ওয়ার্নিং',
-        html: `<span class="font-bn text-sm text-red-400">আপনি <b>${months} মাস</b> এর পুরোনো সমস্ত অডিট লগ স্থায়ীভাবে মুছে ফেলতে যাচ্ছেন! এটি আর ফেরানো সম্ভব নয়।</span>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        confirmButtonText: 'হ্যাঁ, মুছুন',
-        cancelButtonText: 'বাতিল',
-        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700 font-bn' }
-    });
-
-    if (!confirmWipe.isConfirmed) return;
-
-    Swal.fire({
-        title: 'লগ মুছে ফেলা হচ্ছে...',
-        html: '<div class="font-bn text-sm text-slate-300">দয়া করে ব্রাউজার বন্ধ করবেন না।</div>',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
-    });
-
-    try {
-        const targetDate = new Date();
-        targetDate.setMonth(targetDate.getMonth() - months);
-        const targetTimestamp = firebase.firestore.Timestamp.fromDate(targetDate);
-
-        // Fetch logs older than targetDate
-        const snap = await db.collection('audit_logs')
-            .where('timestamp', '<', targetTimestamp)
-            .get();
-
-        if (snap.empty) {
-            return Swal.fire('তথ্য পাওয়া যায়নি', `${months} মাসের পুরোনো কোনো অডিট লগ ডাটাবেসে নেই।`, 'info');
-        }
-
-        let wipeBatch = db.batch();
-        let wipeCount = 0;
-        let totalDeleted = 0;
-
-        for (const doc of snap.docs) {
-            wipeBatch.delete(doc.ref);
-            wipeCount++;
-            totalDeleted++;
-            if (wipeCount >= 400) {
-                await wipeBatch.commit();
-                wipeBatch = db.batch();
-                wipeCount = 0;
-            }
-        }
-        if (wipeCount > 0) {
-            await wipeBatch.commit();
-        }
-
-        auditLog('CLEANUP', 'System', 'AuditLogs', `Deleted ${totalDeleted} logs older than ${months} months`);
-
-        Swal.fire({
-            title: 'সফল!',
-            text: `সফলভাবে ${totalDeleted} টি পুরোনো অডিট লগ ডাটাবেস থেকে মুছে ফেলা হয়েছে।`,
-            icon: 'success',
-            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700 font-bn' }
-        });
-
-    } catch (e) {
-        console.error("Audit log cleanup error:", e);
-        Swal.fire('Error', 'লগ মুছতে সমস্যা হয়েছে: ' + e.message, 'error');
-    }
-}
-
-
-import { downloadFullSystemBackup, restoreSystemFromBackup } from '../backup/index.js';
-window.downloadFullSystemBackup = downloadFullSystemBackup;
-window.restoreSystemFromBackup = restoreSystemFromBackup;

@@ -78,12 +78,10 @@ export async function renderAuditLogs(container) {
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <button onclick="window.triggerPrintAuditLogReport()" class="h-10 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-lg cursor-pointer">
-                        <i class="fa-solid fa-print text-sm"></i>
-                        <span>প্রিন্ট রিপোর্ট</span>
+                        <i class="fa-solid fa-print text-sm"></i><span>প্রিন্ট রিপোর্ট</span>
                     </button>
                     <button onclick="window.exportActiveAuditExcel()" class="h-10 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-lg cursor-pointer">
-                        <i class="fa-solid fa-file-excel text-sm"></i>
-                        <span>এক্সপোর্ট এক্সেল</span>
+                        <i class="fa-solid fa-file-excel text-sm"></i><span>এক্সপোর্ট এক্সেল</span>
                     </button>
                     <button onclick="window.refreshAuditLogsList()" class="h-10 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer">
                         <i class="fa-solid fa-rotate text-sm"></i>
@@ -185,7 +183,6 @@ async function loadAuditLogsData(direction = 'next') {
             cachedAuditLogs = results.data;
             renderAuditRows(cachedAuditLogs, tbody);
             
-            // Only update stats on first load with a larger sample or rely on visible page
             const stats = calculateAuditStats(cachedAuditLogs);
             const statsEl = document.getElementById('audit-stats-cards-container');
             if (statsEl) statsEl.innerHTML = renderAuditStatsCards(stats);
@@ -223,7 +220,6 @@ export async function applyAuditFilters() {
     }
 
     const hasFilters = searchQuery || userFilter || actionFilter || moduleFilter || startDate || endDate || activeAuditTab !== 'all';
-
     const paginationEl = document.getElementById('audit-pagination');
     if (!hasFilters) {
         isFilteringAudit = false;
@@ -236,7 +232,6 @@ export async function applyAuditFilters() {
     isFilteringAudit = true;
     if (paginationEl) paginationEl.classList.add('hidden');
     
-    // If filtering, load a large chunk to filter against if not already loaded
     if (cachedAuditLogs.length < 100) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center py-16 text-slate-400 italic"><i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mb-2 block"></i>খুঁজছি...</td></tr>';
         cachedAuditLogs = await AuditDAO.getRecent(300);

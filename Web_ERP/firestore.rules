@@ -14,6 +14,10 @@ service cloud.firestore {
       return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
+    function isAmountValid(amount) {
+      return amount is number && amount > 0;
+    }
+
     function isAdmin() {
       return hasUserDoc() && getUserData().get('role', '') == 'Admin';
     }
@@ -42,20 +46,26 @@ service cloud.firestore {
     // Customers Collection
     match /customers/{customerId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageCustomers', false) == true));
+      allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageCustomers', false) == true))
+                             && (!request.resource.data.keys().hasAny(['phone']) || request.resource.data.phone is string)
+                             && (!request.resource.data.keys().hasAny(['balance']) || request.resource.data.balance is number);
       allow delete: if isAdmin();
     }
 
     // Expenses Collection
     match /expenses/{expenseId} {
       allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('viewExpenses', false) == true);
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageExpenses', false) == true));
+      allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageExpenses', false) == true))
+                            && (!request.resource.data.keys().hasAny(['amount']) || isAmountValid(request.resource.data.amount));
+      allow delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageExpenses', false) == true));
     }
 
     // Transactions Collection
     match /transactions/{txnId} {
       allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
+      allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true))
+                            && (!request.resource.data.keys().hasAny(['amount']) || isAmountValid(request.resource.data.amount));
+      allow delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
     }
 
     // Zones Collection

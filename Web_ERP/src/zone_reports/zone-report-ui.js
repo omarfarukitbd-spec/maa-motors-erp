@@ -103,13 +103,11 @@ export async function renderZoneReports(container) {
 
                     <!-- Multi-Filter & Search Toolbar -->
                     <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-                        <!-- Search Input -->
                         <div class="relative w-full sm:w-64">
                             <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10 pointer-events-none"></i>
                             <input type="text" id="zr-search-input" placeholder="কাস্টমার নাম, A/C, ফোন বা ঠিকানা..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pr-4 py-2 text-xs text-white outline-none focus:border-indigo-500 font-bn transition-all shadow-inner" style="padding-left: 44px !important;" oninput="window.zoneReportApp.renderFilteredTable()">
                         </div>
 
-                        <!-- Status Filter -->
                         <div class="relative">
                             <select id="zr-status-filter" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500 font-bn cursor-pointer font-bold shadow-inner" onchange="window.zoneReportApp.setStatusFilter(this.value)">
                                 <option value="all">স্ট্যাটাস: সকল কাস্টমার</option>
@@ -119,7 +117,6 @@ export async function renderZoneReports(container) {
                             </select>
                         </div>
 
-                        <!-- Sort By -->
                         <div class="relative">
                             <select id="zr-sort-by" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500 font-bn cursor-pointer font-bold shadow-inner" onchange="window.zoneReportApp.setSortBy(this.value)">
                                 <option value="due_desc">ক্রমানুসারে: সর্বোচ্চ বকেয়া আগে</option>
@@ -187,13 +184,11 @@ function renderZonePills(zones, customers) {
     const container = document.getElementById('zr-zone-pills-container');
     const kpiZones = document.getElementById('zr-kpi-total-zones');
     if (kpiZones) kpiZones.innerText = zones.length;
-
     if (!container) return;
 
     const state = getZoneReportState();
     const currentZone = state.selectedZone || '';
 
-    // "All Zones" pill
     let pillsHtml = `
         <button onclick="window.zoneReportApp.selectZone('')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 ${!currentZone ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'}">
             <i class="fa-solid fa-border-all text-xs"></i>
@@ -205,7 +200,6 @@ function renderZonePills(zones, customers) {
     zones.forEach(z => {
         const count = customers.filter(c => (c.zone || '').trim() === z.name).length;
         const isActive = currentZone === z.name;
-
         pillsHtml += `
             <button onclick="window.zoneReportApp.selectZone('${escapeHTML(z.name)}')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 ${isActive ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'}">
                 <i class="fa-solid fa-location-dot text-xs ${isActive ? 'text-white' : 'text-indigo-400'}"></i>
@@ -245,19 +239,13 @@ export function renderFilteredTable() {
         return matchesZone && matchesSearch && matchesStatus;
     });
 
-    // Apply Sorting
     filtered.sort((a, b) => {
-        if (sortBy === 'due_desc') {
-            return (Number(b.totalDue) || 0) - (Number(a.totalDue) || 0);
-        } else if (sortBy === 'acc_asc') {
-            return (a.accountNo || '').localeCompare(b.accountNo || '', undefined, { numeric: true });
-        } else if (sortBy === 'name_asc') {
-            return (a.name || '').localeCompare(b.name || '');
-        }
+        if (sortBy === 'due_desc') return (Number(b.totalDue) || 0) - (Number(a.totalDue) || 0);
+        if (sortBy === 'acc_asc') return (a.accountNo || '').localeCompare(b.accountNo || '', undefined, { numeric: true });
+        if (sortBy === 'name_asc') return (a.name || '').localeCompare(b.name || '');
         return 0;
     });
 
-    // Update KPI & Title Labels
     let totalDue = 0;
     filtered.forEach(c => totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)));
 
@@ -301,4 +289,3 @@ window.zoneReportApp = {
     printTagada: () => printZoneTagadaReport(),
     exportExcel: () => exportZoneExcelReport()
 };
-
