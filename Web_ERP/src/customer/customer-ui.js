@@ -27,14 +27,13 @@ export function renderCustomers(container, params) {
                     </div>
 
                     <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end font-bn">
-                        <button class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-md shadow-amber-500/10" onclick="window.triggerBulkReminderFlow()" title="১-ক্লিকে টপ ১০ বকেয়া তাগাদা"><i class="fa-solid fa-paper-plane text-amber-400"></i><span>বাল্ক তাগাদা (Top 10)</span></button>
-                        <button class="h-9 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.exportTableToExcel('customer-export-table', 'customer-list.xlsx')" title="এক্সেল ডাউনলোড"><i class="fa-solid fa-file-excel text-emerald-400"></i><span>এক্সেল</span></button>
-                        <button class="h-9 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.printFilteredCustomerList()" title="লিস্ট প্রিন্ট"><i class="fa-solid fa-print text-blue-400"></i><span>প্রিন্ট লিস্ট</span></button>
-                        ${canManageCust ? `
-                        <button class="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.toggleAddCustomerForm()">
+                        <button data-perm="bulkCustReminder" class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-md shadow-amber-500/10" onclick="window.triggerBulkReminderFlow()" title="১-ক্লিকে টপ ১০ বকেয়া তাগাদা"><i class="fa-solid fa-paper-plane text-amber-400"></i><span>বাল্ক তাগাদা (Top 10)</span></button>
+                        <button data-perm="exportCustomers" class="h-9 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.exportTableToExcel('customer-export-table', 'customer-list.xlsx')" title="এক্সেল ডাউনলোড"><i class="fa-solid fa-file-excel text-emerald-400"></i><span>এক্সেল</span></button>
+                        <button data-perm="printCustList" class="h-9 px-3.5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-200 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.printFilteredCustomerList()" title="লিস্ট প্রিন্ট"><i class="fa-solid fa-print text-blue-400"></i><span>প্রিন্ট লিস্ট</span></button>
+                        <button data-perm="addCustomer" class="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-2 shrink-0 cursor-pointer" onclick="window.toggleAddCustomerForm()">
                             <i class="fa-solid fa-user-plus text-xs"></i>
                             <span>নতুন কাস্টমার (Alt+N)</span>
-                        </button>` : ''}
+                        </button>
                     </div>
                 </div>
 
@@ -50,7 +49,7 @@ export function renderCustomers(container, params) {
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 pt-2 border-t border-slate-800/60 text-xs font-bold font-bn">
+                <div data-perm="viewCustStats" class="flex items-center gap-3 pt-2 border-t border-slate-800/60 text-xs font-bold font-bn">
                     <div class="flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] font-bold text-blue-400">
                         <i class="fa-solid fa-users text-blue-400"></i> মোট কাস্টমার: <strong id="cust-count-badge" class="text-white font-black">০</strong> জন
                     </div>
@@ -180,8 +179,6 @@ export function renderCustomerRows(customers) {
 
     const isBoss = String(window.AppState?.currentUserRole || '').toLowerCase() === 'boss';
     const isAdmin = String(window.AppState?.currentUserRole || '').toLowerCase() === 'admin';
-    const canEditCust = !isBoss && (isAdmin || (window.AppState?.permissions?.editCustomers !== false && window.AppState?.permissions?.manageCustomers !== false));
-    const canDeleteCust = !isBoss && (isAdmin || (window.AppState?.permissions?.deleteCustomers === true));
 
     let rows = [];
     let mobileHtml = '';
@@ -236,12 +233,12 @@ export function renderCustomerRows(customers) {
             </td>
             <td class="py-2.5 px-3 text-center whitespace-nowrap sticky-action-col align-top" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-center gap-1">
-                    <button class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান দেখুন"><i class="fa-solid fa-book text-blue-400"></i></button>
-                    <button class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
-                    <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
-                    ${due > 0 ? `<button class="m3-btn-icon" onclick="window.sendReminderSMS('${sPhone}', ${due}, '${sName}', '${d.accountNo || ''}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>` : ''}
-                    ${canEditCust ? `<button class="m3-btn-icon" onclick="window.editCustomer('${sId}', '${sName}', '${sPhone}', '${sAddr}', '${sZone}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
-                    ${canDeleteCust ? `<button class="m3-btn-icon" onclick="window.deleteCustomer('${sId}', '${sName}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
+                    <button data-perm="viewCustLedgerBtn" class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান দেখুন"><i class="fa-solid fa-book text-blue-400"></i></button>
+                    <button data-perm="viewCustStatementBtn" class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
+                    <button data-perm="sendCustWhatsApp" class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
+                    ${due > 0 ? `<button data-perm="sendCustSMS" class="m3-btn-icon" onclick="window.sendReminderSMS('${sPhone}', ${due}, '${sName}', '${d.accountNo || ''}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>` : ''}
+                    <button data-perm="editCustomers" class="m3-btn-icon" onclick="window.editCustomer('${sId}', '${sName}', '${sPhone}', '${sAddr}', '${sZone}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
+                    <button data-perm="deleteCustomers" class="m3-btn-icon" onclick="window.deleteCustomer('${sId}', '${sName}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>
                 </div>
             </td>
         </tr>`);
@@ -264,12 +261,12 @@ export function renderCustomerRows(customers) {
             <div class="mobile-card-row"><span class="mobile-card-label">মোবাইল:</span><span class="mobile-card-value">${d.phone || '-'}</span></div>
             <div class="mobile-card-row"><span class="mobile-card-label">ঠিকানা:</span><span class="mobile-card-value">${d.address || '-'}</span></div>
             <div class="mobile-card-actions" onclick="event.stopPropagation()">
-                <button class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান"><i class="fa-solid fa-book text-blue-400"></i></button>
-                <button class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
-                <button class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
-                ${due > 0 ? `<button class="m3-btn-icon" onclick="window.sendReminderSMS('${sPhone}', ${due}, '${sName}', '${d.accountNo || ''}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>` : ''}
-                ${canEditCust ? `<button class="m3-btn-icon" onclick="window.editCustomer('${sId}', '${sName}', '${sPhone}', '${sAddr}', '${sZone}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
-                ${canDeleteCust ? `<button class="m3-btn-icon" onclick="window.deleteCustomer('${sId}', '${sName}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
+                <button data-perm="viewCustLedgerBtn" class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান"><i class="fa-solid fa-book text-blue-400"></i></button>
+                <button data-perm="viewCustStatementBtn" class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
+                <button data-perm="sendCustWhatsApp" class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
+                ${due > 0 ? `<button data-perm="sendCustSMS" class="m3-btn-icon" onclick="window.sendReminderSMS('${sPhone}', ${due}, '${sName}', '${d.accountNo || ''}')" title="রিমাইন্ডার SMS"><i class="fa-solid fa-bell text-amber-400"></i></button>` : ''}
+                <button data-perm="editCustomers" class="m3-btn-icon" onclick="window.editCustomer('${sId}', '${sName}', '${sPhone}', '${sAddr}', '${sZone}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
+                <button data-perm="deleteCustomers" class="m3-btn-icon" onclick="window.deleteCustomer('${sId}', '${sName}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>
             </div>
         </div>`;
     });

@@ -95,18 +95,17 @@ export async function managePermissions(userId, email) {
 
                     <div class="text-xs font-black text-cyan-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-users mr-1.5"></i>কাস্টমার ডাটাবেস (Customers):</div>
 
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
-                        <input type="checkbox" id="perm-viewCustomers" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500" ${perms.viewCustomers !== false ? 'checked' : ''}>
-                        <span class="leading-tight">কাস্টমার লিস্ট দেখার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">View Customers</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-amber-500/50">
-                        <input type="checkbox" id="perm-editCustomers" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-amber-500" ${perms.editCustomers !== false && perms.manageCustomers !== false ? 'checked' : ''}>
-                        <span class="leading-tight text-amber-300"><i class="fa-solid fa-pen-to-square mr-1 text-amber-400"></i>কাস্টমার এডিট আইকন দেখানো ও এডিটের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Show Edit Icon & Edit Customer Info</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-red-500/50">
-                        <input type="checkbox" id="perm-deleteCustomers" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-red-500 focus:ring-red-500" ${perms.deleteCustomers ? 'checked' : ''}>
-                        <span class="leading-tight text-red-300"><i class="fa-solid fa-trash-can mr-1 text-red-400"></i>কাস্টমার ডিলিট আইকন দেখানো ও একাউন্ট ডিলেটের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Show Delete Icon & Delete Customer</span></span>
-                    </label>
+                    ${createToggle('perm-viewCustomers', 'কাস্টমার লিস্ট দেখার অনুমতি', 'View Customers', perms.viewCustomers !== false)}
+                    ${createToggle('perm-addCustomer', 'নতুন কাস্টমার যুক্ত করা', 'Add Customer', perms.addCustomer !== false)}
+                    ${createToggle('perm-editCustomers', 'কাস্টমার এডিট করা', 'Edit Customer', perms.editCustomers !== false && perms.manageCustomers !== false)}
+                    ${createToggle('perm-deleteCustomers', 'কাস্টমার ডিলিট করা', 'Delete Customer', perms.deleteCustomers === true)}
+                    ${createToggle('perm-exportCustomers', 'কাস্টমার এক্সেল ডাউনলোড', 'Export Excel', perms.exportCustomers !== false)}
+                    ${createToggle('perm-printCustList', 'কাস্টমার লিস্ট প্রিন্ট করা', 'Print List', perms.printCustList !== false)}
+                    ${createToggle('perm-bulkCustReminder', 'টপ ১০ বাল্ক তাগাদা (Top 10)', 'Bulk Reminder', perms.bulkCustReminder !== false)}
+                    ${createToggle('perm-viewCustLedgerBtn', 'খতিয়ান দেখার বাটন', 'View Ledger Icon', perms.viewCustLedgerBtn !== false)}
+                    ${createToggle('perm-viewCustStatementBtn', 'স্টেটমেন্ট বাটন', 'Statement Icon', perms.viewCustStatementBtn !== false)}
+                    ${createToggle('perm-sendCustWhatsApp', 'WhatsApp তাগাদা বাটন', 'WhatsApp Icon', perms.sendCustWhatsApp !== false)}
+                    ${createToggle('perm-sendCustSMS', 'রিমাইন্ডার SMS বাটন', 'SMS Icon', perms.sendCustSMS !== false)}
 
                     <div class="text-xs font-black text-pink-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-file-invoice mr-1.5"></i>স্টেটমেন্ট, SMS ও ডিরেক্টরি:</div>
 
@@ -163,9 +162,17 @@ export async function managePermissions(userId, email) {
                     deleteExpenses: deleteExpenses,
 
                     viewCustomers: document.getElementById('perm-viewCustomers').checked,
+                    addCustomer: document.getElementById('perm-addCustomer').checked,
                     manageCustomers: editCustomers || deleteCustomers,
                     editCustomers: editCustomers,
                     deleteCustomers: deleteCustomers,
+                    exportCustomers: document.getElementById('perm-exportCustomers').checked,
+                    printCustList: document.getElementById('perm-printCustList').checked,
+                    bulkCustReminder: document.getElementById('perm-bulkCustReminder').checked,
+                    viewCustLedgerBtn: document.getElementById('perm-viewCustLedgerBtn').checked,
+                    viewCustStatementBtn: document.getElementById('perm-viewCustStatementBtn').checked,
+                    sendCustWhatsApp: document.getElementById('perm-sendCustWhatsApp').checked,
+                    sendCustSMS: document.getElementById('perm-sendCustSMS').checked,
 
                     viewStatement: document.getElementById('perm-viewStatement').checked,
                     sendSMS: document.getElementById('perm-sendSMS').checked

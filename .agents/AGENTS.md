@@ -34,3 +34,5 @@
     - **Modals & Alerts**: NEVER use native `alert()`, `confirm()`, or `prompt()`. ALWAYS use `Swal.fire()` with the project's default dark-mode styling.
     - **Sensitive Actions**: ALWAYS wrap any data deletion, ledger modification, or high-privilege action with `await promptSecurityPin()` before making the DB call.
     - **Notifications**: ALWAYS use `showToast('Message', 'success|error')` for non-blocking feedback after an action completes.
+
+13. **Strict Bengali Language for Artifacts**: ALWAYS write `implementation_plan.md`, `task.md`, and `walkthrough.md` artifacts entirely in Bengali. The user prefers to review plans and understand technical walkthroughs in their native language (Bengali). This applies to all future interactions and feature implementations.
