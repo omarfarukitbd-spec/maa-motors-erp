@@ -60,8 +60,8 @@ async function populateUserDropdown(logs) {
  * Renders the Advanced Audit Logs & Security UI.
  */
 export async function renderAuditLogs(container) {
-    if (window.AppState.currentUserRole !== 'Admin') {
-        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-black text-red-500">অ্যাক্সেস ডিনাইড! শুধুমাত্র অ্যাডমিন সিকিউরিটি অডিট দেখতে পারবেন।</h2></div>`;
+    if (window.AppState.currentUserRole === 'Staff' && window.AppState.permissions.viewAuditLog === false) {
+        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-black text-red-500">অ্যাক্সেস ডিনাইড!</h2></div>`;
         return;
     }
 

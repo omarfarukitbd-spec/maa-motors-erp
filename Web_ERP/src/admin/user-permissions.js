@@ -106,6 +106,10 @@ export async function managePermissions(userId, email) {
                     <div class="text-xs font-black text-pink-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-file-invoice mr-1.5"></i>স্টেটমেন্ট, SMS ও ডিরেক্টরি:</div>
 
                     <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
+                        <input type="checkbox" id="perm-viewAuditLog" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500" ${perms.viewAuditLog === true ? 'checked' : ''}>
+                        <span class="leading-tight text-emerald-300">অডিট লগ দেখার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">View Audit Log</span></span>
+                    </label>
+                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
                         <input type="checkbox" id="perm-viewStatement" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500" ${perms.viewStatement !== false ? 'checked' : ''}>
                         <span class="leading-tight">স্টেটমেন্ট/রিপোর্ট দেখার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">View Statement</span></span>
                     </label>
@@ -195,7 +199,8 @@ export async function managePermissions(userId, email) {
                     sendCustSMS: document.getElementById('perm-sendCustSMS').checked,
 
                     viewStatement: document.getElementById('perm-viewStatement').checked,
-                    sendSMS: document.getElementById('perm-sendSMS').checked
+                    sendSMS: document.getElementById('perm-sendSMS').checked,
+                    viewAuditLog: document.getElementById('perm-viewAuditLog').checked
                 };
             }
         });

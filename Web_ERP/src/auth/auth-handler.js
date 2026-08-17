@@ -123,7 +123,7 @@ export function initAuthListener() {
                     const ac = document.getElementById('app-container');
                     if (ac && ac.classList.contains('hidden')) {
                         if (AppState.currentUserRole === 'Admin') {
-                            ['nav-admin', 'nav-audit', 'nav-settings'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+                            ['nav-admin', 'nav-settings'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
                             const info = await getIpAndDevice();
                             auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Admin', ip: info.ip, device: info.device });
                             unlockApp();

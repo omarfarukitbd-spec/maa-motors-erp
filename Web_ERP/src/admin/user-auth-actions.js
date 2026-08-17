@@ -86,7 +86,8 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 addBankTransfer: false,
                 printBankLedger: false,
                 exportBankLedger: false,
-                deleteBankTransaction: false
+                deleteBankTransaction: false,
+                viewAuditLog: false
             } : {};
 
             await UserDAO.update(userId, { 
@@ -296,7 +297,8 @@ export async function createNewUser() {
                 addBankTransfer: false,
                 printBankLedger: false,
                 exportBankLedger: false,
-                deleteBankTransaction: false
+                deleteBankTransaction: false,
+                viewAuditLog: false
             } : {};
 
             await UserDAO.getRef(newUid).set({

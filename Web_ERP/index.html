@@ -97,7 +97,7 @@
                 <li id="nav-settings" onclick="navigate('settings')" class="nav-item hidden" title="সেটিংস"><i class="fa-solid fa-gear w-6 text-center"></i> <span class="sidebar-title-text">সেটিংস</span></li>
                 <li data-perm="viewBanking" onclick="navigate('banking')" class="nav-item !text-purple-400" title="ব্যাংকিং লেজার"><i class="fa-solid fa-building-columns w-6 text-center"></i> <span class="sidebar-title-text">ব্যাংকিং লেজার</span></li>
                 <li id="nav-admin" onclick="navigate('admin')" class="nav-item !text-purple-400 hidden" title="অ্যাডমিন প্যানেল"><i class="fa-solid fa-shield-halved w-6 text-center"></i> <span class="sidebar-title-text">অ্যাডমিন প্যানেল</span></li>
-                <li id="nav-audit" onclick="navigate('audit')" class="nav-item !text-emerald-400 hidden" title="অডিট লগ"><i class="fa-solid fa-clipboard-list w-6 text-center"></i> <span class="sidebar-title-text">অডিট লগ</span></li>
+                <li data-perm="viewAuditLog" onclick="navigate('audit')" class="nav-item !text-emerald-400" title="অডিট লগ"><i class="fa-solid fa-clipboard-list w-6 text-center"></i> <span class="sidebar-title-text">অডিট লগ</span></li>
             </ul>
             <div class="px-4 pt-4 border-t border-slate-800/50 flex-shrink-0 mt-auto">
                 <button onclick="app.logout()" class="w-full py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl font-black flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all cursor-pointer" title="লগ আউট">
