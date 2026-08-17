@@ -21,11 +21,22 @@ export function renderTopDueCustomers() {
         return;
     }
 
+    const canWhatsApp = window.AppState?.permissions?.sendLedgerWhatsApp !== false;
+    const canSMS = window.AppState?.permissions?.sendLedgerSMS !== false;
+
     let html = '';
     sorted.forEach((c, idx) => {
         const due = Number(c.totalDue) || 0;
         const sName = (c.name || 'Unknown').replace(/'/g, "\\'");
         const sPhone = c.phone || '';
+
+        const whatsappBtn = canWhatsApp ? `<button class="w-7 h-7 rounded-lg bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা">
+                        <i class="fa-brands fa-whatsapp text-[12px]"></i>
+                    </button>` : '';
+        
+        const smsBtn = canSMS ? `<button class="w-7 h-7 rounded-lg bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.sendReminderSMS && window.sendReminderSMS('${sPhone}', ${due}, '${sName}')" title="SMS রিমাইন্ডার">
+                        <i class="fa-solid fa-comment-sms text-[11px]"></i>
+                    </button>` : '';
 
         html += `
             <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60 hover:border-red-500/30 transition-all">
@@ -38,12 +49,8 @@ export function renderTopDueCustomers() {
                 </div>
                 <div class="flex items-center gap-1.5">
                     <span class="text-xs font-black text-red-400 mr-1">৳ ${formatAmountWithComma(due)}</span>
-                    <button class="w-7 h-7 rounded-lg bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা">
-                        <i class="fa-brands fa-whatsapp text-[12px]"></i>
-                    </button>
-                    <button class="w-7 h-7 rounded-lg bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.sendReminderSMS && window.sendReminderSMS('${sPhone}', ${due}, '${sName}')" title="SMS রিমাইন্ডার">
-                        <i class="fa-solid fa-comment-sms text-[11px]"></i>
-                    </button>
+                    ${whatsappBtn}
+                    ${smsBtn}
                 </div>
             </div>`;
     });
