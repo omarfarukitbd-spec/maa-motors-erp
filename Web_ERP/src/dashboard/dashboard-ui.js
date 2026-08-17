@@ -28,10 +28,10 @@ function getDashboardHeaderAndFormHTML() {
                 <button class="h-9 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-lg shadow-purple-600/20 transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.navigate('expenses')">
                     <i class="fa-solid fa-wallet"></i><span>নতুন খরচ</span>
                 </button>
-                <button class="h-9 px-3.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.toggleDashCustomerForm()">
+                <button data-perm="dashAddCustomer" class="h-9 px-3.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.toggleDashCustomerForm()">
                     <i class="fa-solid fa-user-plus text-blue-400"></i><span>কাস্টমার</span>
                 </button>
-                <button class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.printExecutiveSummary && window.printExecutiveSummary()" title="১-ক্লিক দৈনিক সারসংক্ষেপ">
+                <button data-perm="printExecutiveReport" class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.printExecutiveSummary && window.printExecutiveSummary()" title="১-ক্লিক দৈনিক সারসংক্ষেপ">
                     <i class="fa-solid fa-print"></i><span>রিপোর্ট</span>
                 </button>
             </div>
@@ -117,7 +117,7 @@ function getDashboardMainGridHTML() {
             <div class="lg:col-span-2 flex flex-col gap-6">
 
                 <!-- Trend Graph Card -->
-                <div class="m3-card bg-slate-900/60 border border-slate-800/80 p-4 rounded-2xl shadow-xl">
+                <div data-perm="viewDashChart" class="m3-card bg-slate-900/60 border border-slate-800/80 p-4 rounded-2xl shadow-xl">
                     <div class="flex items-center justify-between mb-3 border-b border-slate-800/60 pb-2">
                         <h3 class="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
                             <i class="fa-solid fa-chart-line text-blue-400"></i> বিক্রি বনাম আদায় পারফরম্যান্স গ্রাফ
@@ -133,7 +133,7 @@ function getDashboardMainGridHTML() {
                 </div>
 
                 <!-- Premium Collection List Section -->
-                <div class="m3-card bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-5 rounded-2xl shadow-xl flex flex-col gap-5">
+                <div data-perm="viewDashRecentCol" class="m3-card bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-5 rounded-2xl shadow-xl flex flex-col gap-5">
                     <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-800/60 pb-3">
                         <h3 class="text-sm md:text-base font-black text-white uppercase tracking-widest flex items-center gap-2 whitespace-nowrap flex-nowrap">
                             <div class="w-2 h-5 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] shrink-0"></div> 
@@ -235,7 +235,7 @@ function getDashboardMainGridHTML() {
                 </div>
 
                 <!-- Top 5 Due Customers Widget -->
-                <div class="m3-card bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-5 rounded-2xl shadow-xl flex flex-col gap-4 relative overflow-hidden group">
+                <div data-perm="viewDashTopDue" class="m3-card bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-5 rounded-2xl shadow-xl flex flex-col gap-4 relative overflow-hidden group">
                     <div class="absolute -right-6 -bottom-6 opacity-[0.03] text-[120px] pointer-events-none group-hover:scale-110 transition-transform duration-500">
                         <i class="fa-solid fa-triangle-exclamation"></i>
                     </div>

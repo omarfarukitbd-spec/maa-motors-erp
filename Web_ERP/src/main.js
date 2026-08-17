@@ -8,7 +8,7 @@ import { navigate, toggleSidebarCollapse, initOnlineStatus } from './navigation/
 import { initSearch } from './search/global-search.js';
 import { initDatePickers, startDateObserver } from './utils/date-logic/date-picker.js';
 import { handleCalc, initCalculatorKeyboard, initDraggableCalculator } from './ui/calculator.js';
-import { initOmnisearch, initNetworkSyncBadge, initGlobalButtonInteractions } from './utils.js';
+import { initOmnisearch, initNetworkSyncBadge, initGlobalButtonInteractions, initPermissionObserver } from './utils.js';
 import './banking/banking-ui.js';
 
 // -------------------------------------------------------------------------
@@ -57,9 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initDatePickers();
     startDateObserver();
 
-    // 4. Initialize Network Status Badge & Touch Haptic Listener
+    // 4. Initialize Network Status Badge, Touch Haptic & Permission Engine
     initNetworkSyncBadge();
     initGlobalButtonInteractions();
+    initPermissionObserver();
 
 
     // 5. Setup Sidebar State

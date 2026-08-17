@@ -17,24 +17,32 @@ export async function managePermissions(userId, email) {
         const userData = await UserDAO.getById(userId);
         const perms = userData.permissions || {};
 
+        const createToggle = (id, label, subLabel, isChecked) => `
+            <label class="flex items-center justify-between p-2.5 bg-slate-950/50 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer border border-slate-800 hover:border-slate-700 mb-2">
+                <div>
+                    <div class="text-[13px] font-bold text-slate-200 leading-tight">${label}</div>
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">${subLabel}</div>
+                </div>
+                <div class="relative flex items-center">
+                    <input type="checkbox" id="${id}" class="peer sr-only" ${isChecked ? 'checked' : ''}>
+                    <div class="w-10 h-5 bg-slate-800 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-500/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 peer-checked:after:bg-white after:border-slate-800 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500 shadow-inner"></div>
+                </div>
+            </label>
+        `;
+
         const { value: formValues } = await Swal.fire({
             title: `Permissions for ${email}`,
             html: `
-                <div class="text-left space-y-3 text-sm mt-3 p-4 bg-slate-900 rounded-2xl border border-slate-800 max-h-[60vh] overflow-y-auto font-bn">
-                    <div class="text-xs font-black text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mb-2"><i class="fa-solid fa-chart-pie mr-1.5"></i>ড্যাশবোর্ড ও রিপোর্ট পারমিশন:</div>
+                <div class="text-left space-y-1.5 text-sm mt-3 p-3 bg-slate-900 rounded-2xl border border-slate-800 max-h-[60vh] overflow-y-auto font-bn custom-scrollbar">
+                    <div class="text-xs font-black text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mb-3 sticky top-0 bg-slate-900 z-10 pt-1"><i class="fa-solid fa-chart-pie mr-1.5"></i>ড্যাশবোর্ড ও রিপোর্ট পারমিশন:</div>
 
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
-                        <input type="checkbox" id="perm-viewDashboard" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500" ${perms.viewDashboard !== false ? 'checked' : ''}>
-                        <span class="leading-tight">ড্যাশবোর্ড দেখার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">View Dashboard</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-blue-500/50">
-                        <input type="checkbox" id="perm-viewDashboardFinancials" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-400 focus:ring-blue-400" ${perms.viewDashboardFinancials !== false ? 'checked' : ''}>
-                        <span class="leading-tight text-blue-300">ড্যাশবোর্ডে টাকার অংক ও মোট বকেয়া দেখার অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">View Financial Stats</span></span>
-                    </label>
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors pl-6 border-l-2 border-blue-500/50">
-                        <input type="checkbox" id="perm-printExecutiveReport" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-blue-400 focus:ring-blue-400" ${perms.printExecutiveReport !== false ? 'checked' : ''}>
-                        <span class="leading-tight text-blue-300">১-ক্লিক দৈনিক এক্সিকিউটিভ রিপোর্ট প্রিন্টের অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Print Executive Summary</span></span>
-                    </label>
+                    ${createToggle('perm-viewDashboard', 'ড্যাশবোর্ড মেনু দেখার অনুমতি', 'View Dashboard', perms.viewDashboard !== false)}
+                    ${createToggle('perm-viewDashboardFinancials', 'টাকার অংক ও মোট বকেয়া দেখা', 'View Financial Stats', perms.viewDashboardFinancials !== false)}
+                    ${createToggle('perm-viewDashChart', 'আয়-ব্যয়ের গ্রাফ ও অ্যানালিটিক্স', 'View Analytics Chart', perms.viewDashChart !== false)}
+                    ${createToggle('perm-viewDashRecentCol', 'সর্বশেষ কালেকশন লিস্ট দেখা', 'View Recent Collections', perms.viewDashRecentCol !== false)}
+                    ${createToggle('perm-viewDashTopDue', 'শীর্ষ ৫ বকেয়া কাস্টমার লিস্ট', 'View Top Due Customers', perms.viewDashTopDue !== false)}
+                    ${createToggle('perm-dashAddCustomer', 'দ্রুত কাস্টমার যুক্ত করার বাটন', 'Quick Add Customer', perms.dashAddCustomer !== false)}
+                    ${createToggle('perm-printExecutiveReport', '১-ক্লিক দৈনিক এক্সিকিউটিভ রিপোর্ট', 'Print Executive Summary', perms.printExecutiveReport !== false)}
 
                     <div class="text-xs font-black text-amber-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-book mr-1.5"></i>খতিয়ান ও লেনদেন (Ledger & Icons):</div>
 
@@ -133,6 +141,10 @@ export async function managePermissions(userId, email) {
                 return {
                     viewDashboard: document.getElementById('perm-viewDashboard').checked,
                     viewDashboardFinancials: document.getElementById('perm-viewDashboardFinancials').checked,
+                    viewDashChart: document.getElementById('perm-viewDashChart').checked,
+                    viewDashRecentCol: document.getElementById('perm-viewDashRecentCol').checked,
+                    viewDashTopDue: document.getElementById('perm-viewDashTopDue').checked,
+                    dashAddCustomer: document.getElementById('perm-dashAddCustomer').checked,
                     printExecutiveReport: document.getElementById('perm-printExecutiveReport').checked,
 
                     viewLedger: document.getElementById('perm-viewLedger').checked,

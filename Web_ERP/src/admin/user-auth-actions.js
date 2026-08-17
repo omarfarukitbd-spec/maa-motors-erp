@@ -56,7 +56,21 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
 
     if (formValues) {
         try {
-            await UserDAO.update(userId, { status: 'active', role: formValues.role, pin: formValues.pin });
+            const defaultPerms = formValues.role === 'Staff' ? {
+                viewDashboardFinancials: false,
+                viewDashChart: false,
+                viewDashTopDue: false,
+                deleteLedger: false,
+                deleteExpenses: false,
+                deleteCustomers: false
+            } : {};
+
+            await UserDAO.update(userId, { 
+                status: 'active', 
+                role: formValues.role, 
+                pin: formValues.pin,
+                permissions: defaultPerms
+            });
             auditLog('APPROVE', 'Admin', userId, email, { role: formValues.role, pinSet: true });
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${email} সফলভাবে অনুমোদিত হয়েছে!`, showConfirmButton: false, timer: 3000 });
         } catch(e) { console.error(e); Swal.fire('Error', 'অনুমোদন ব্যর্থ হয়েছে', 'error'); }
@@ -228,10 +242,20 @@ export async function createNewUser() {
             const userCredential = await secondaryAuth.createUserWithEmailAndPassword(formValues.email, formValues.password);
             const newUid = userCredential.user.uid;
 
+            const defaultPerms = formValues.role === 'Staff' ? {
+                viewDashboardFinancials: false,
+                viewDashChart: false,
+                viewDashTopDue: false,
+                deleteLedger: false,
+                deleteExpenses: false,
+                deleteCustomers: false
+            } : {};
+
             await UserDAO.getRef(newUid).set({
                 email: formValues.email,
                 role: formValues.role,
                 status: 'active',
+                permissions: defaultPerms,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 

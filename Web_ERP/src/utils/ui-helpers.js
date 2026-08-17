@@ -189,3 +189,37 @@ export function triggerUniversalPrint(container) {
 if (typeof window !== 'undefined') {
     window.exportTableToExcel = exportTableToExcel;
 }
+
+/**
+ * Global Permission Engine (Hide/Show RBAC)
+ */
+export function initPermissionObserver() {
+    const applyPermissions = () => {
+        if (!window.AppState || !window.AppState.permissions) return;
+        const perms = window.AppState.permissions;
+        const elements = document.querySelectorAll('[data-perm]');
+        elements.forEach(el => {
+            const permKey = el.getAttribute('data-perm');
+            // If the permission is explicitly false, hide it permanently
+            if (perms[permKey] === false) {
+                el.style.cssText = 'display: none !important;';
+                // For extra security on sensitive data, we can also remove innerHTML
+                if (!el.classList.contains('nav-item')) {
+                    el.innerHTML = ''; 
+                }
+            } else {
+                // If it was hidden previously (e.g. user switch without refresh), restore it
+                el.style.cssText = '';
+            }
+        });
+    };
+
+    // Run initially
+    applyPermissions();
+
+    // Observe future DOM changes (since it's an SPA, views are injected)
+    const observer = new MutationObserver(() => {
+        applyPermissions();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+}
