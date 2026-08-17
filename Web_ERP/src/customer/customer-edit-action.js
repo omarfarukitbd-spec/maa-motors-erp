@@ -6,8 +6,8 @@ import { auditLog } from '../audit.js';
 import { cachedZones, cachedCustomers } from './customer-state.js';
 
 export async function editCustomer(id, name, phone, address, currentZone) {
-    if (window.AppState.currentUserRole !== 'Admin') {
-        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন কাস্টমার তথ্য এডিট করতে পারবেন।', 'error');
+    if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.editCustomers === false) {
+        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'আপনার কাস্টমার তথ্য এডিট করার অনুমতি নেই।', 'error');
     }
 
     // <i class="fa-solid fa-check text-emerald-400"></i> Offline Guard — editing requires server transaction
@@ -163,8 +163,8 @@ export async function editCustomer(id, name, phone, address, currentZone) {
 }
 
 export async function deleteCustomer(id, name) {
-    if (window.AppState.currentUserRole !== 'Admin') {
-        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন কাস্টমার ডিলেট করতে পারবেন।', 'error');
+    if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.deleteCustomers === false) {
+        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'আপনার কাস্টমার ডিলেট করার অনুমতি নেই।', 'error');
     }
 
     const confirm = await Swal.fire({

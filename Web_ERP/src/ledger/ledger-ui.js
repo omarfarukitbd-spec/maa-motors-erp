@@ -4,6 +4,11 @@ import { loadBankOptions, loadCashCollectorOptions } from './ledger-bank-cash.js
 export function renderLedger(container, params, callbacks = {}) {
     const { loadCustomersForDropdown, loadRecentTransactions, filterLedgerByCustomer } = callbacks;
 
+    if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.viewLedger === false) {
+        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-bold text-red-500">অ্যাক্সেস ডিনাইড! আপনার লেজার দেখার অনুমতি নেই।</h2></div>`;
+        return;
+    }
+
     container.innerHTML = `<div class="flex flex-col gap-5 font-bn">
         <div id="ledger-form-card" class="m3-card bg-slate-900/60 border border-slate-800/80 p-4 md:p-5 rounded-2xl shadow-xl flex flex-col gap-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">

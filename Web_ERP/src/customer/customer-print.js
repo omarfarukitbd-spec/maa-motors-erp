@@ -5,8 +5,8 @@ import Swal from 'sweetalert2';
 import { cachedCustomers } from './customer-state.js';
 
 export async function printFilteredCustomerList() {
-    if (window.AppState.currentUserRole !== 'Admin') {
-        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'শুধুমাত্র অ্যাডমিন কাস্টমার লিস্ট প্রিন্ট করতে পারবেন।', 'error');
+    if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.printCustList === false) {
+        return Swal.fire('অ্যাক্সেস ডিনাইড!', 'আপনার কাস্টমার লিস্ট প্রিন্ট করার অনুমতি নেই।', 'error');
     }
 
     const isPinValid = await promptSecurityPin("কাস্টমার লিস্ট প্রিন্ট (Full Report)");

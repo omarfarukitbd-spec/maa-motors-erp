@@ -6,6 +6,11 @@ import { formatAmountWithComma, escapeHTML, safeRound } from '../utils.js';
  * Render Main Zone Select List View Container
  */
 export async function renderZoneReports(container) {
+    if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.viewZoneReports === false) {
+        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-bold text-red-500">অ্যাক্সেস ডিনাইড! আপনার জোন রিপোর্ট দেখার অনুমতি নেই।</h2></div>`;
+        return;
+    }
+
     container.innerHTML = `
         <div class="flex flex-col gap-6 pb-28 font-bn max-w-7xl mx-auto">
             <!-- Header Bar -->
