@@ -36,3 +36,5 @@
     - **Notifications**: ALWAYS use `showToast('Message', 'success|error')` for non-blocking feedback after an action completes.
 
 13. **Strict Bengali Language for Artifacts**: ALWAYS write `implementation_plan.md`, `task.md`, and `walkthrough.md` artifacts entirely in Bengali. The user prefers to review plans and understand technical walkthroughs in their native language (Bengali). This applies to all future interactions and feature implementations.
+
+14. **Mandatory Post-Task Explanation & Walkthrough (Bengali)**: After successfully completing any code modifications, bug fixes, or feature additions, you MUST ALWAYS provide a clear, concise "Before vs After" explanation (in Bengali) explaining what the problem/logic was BEFORE the edit, and how it works NOW AFTER the edit. Additionally, ensure the `walkthrough.md` artifact is updated with this summary. NEVER finish a task silently without explaining the changes.
