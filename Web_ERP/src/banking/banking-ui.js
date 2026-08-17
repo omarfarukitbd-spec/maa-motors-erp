@@ -5,6 +5,7 @@ import { getBankingSummary } from './banking-analytics.js';
 import { formatAmountWithComma, promptSecurityPin, showToast, parseAmount } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { firebase } from '../firebase-config.js';
+import { openAccountLedger, loadLedgerTable, printLedger, exportLedgerExcel, deleteBankingTransaction, shareLedgerWhatsApp } from './banking-ledger-ui.js';
 
 let activeAccounts = []; // mixed banks and cash
 
@@ -20,18 +21,18 @@ export async function renderBankingLedger(container) {
                 <h2 class="text-2xl font-black text-white flex items-center gap-3">
                     <div class="w-1.5 h-8 bg-purple-600 rounded-full"></div>
                     ব্যাংকিং লেজার <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">(Banking & Cash)</span>
-                    <button class="w-8 h-8 rounded-full hover:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-purple-400 transition-all" onclick="window.renderBankingLedger(document.getElementById('main-content'))">
+                    <button class="w-8 h-8 rounded-full hover:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-purple-400 transition-all cursor-pointer" onclick="window.renderBankingLedger(document.getElementById('main-content'))" title="রিফ্রেশ">
                         <i class="fa-solid fa-rotate text-sm"></i>
                     </button>
                 </h2>
                 <div class="flex items-center gap-2">
-                    <button data-perm="addBankDeposit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('DEPOSIT')">
+                    <button data-perm="addBankDeposit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer" onclick="window.bankingApp.openTransactionModal('DEPOSIT')">
                         <i class="fa-solid fa-arrow-down"></i> ম্যানুয়াল জমা
                     </button>
-                    <button data-perm="addBankWithdrawal" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-red-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('WITHDRAWAL')">
+                    <button data-perm="addBankWithdrawal" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-red-600/20 flex items-center gap-2 cursor-pointer" onclick="window.bankingApp.openTransactionModal('WITHDRAWAL')">
                         <i class="fa-solid fa-arrow-up"></i> টাকা উত্তোলন
                     </button>
-                    <button data-perm="addBankTransfer" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/20 flex items-center gap-2" onclick="window.bankingApp.openTransactionModal('TRANSFER')">
+                    <button data-perm="addBankTransfer" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/20 flex items-center gap-2 cursor-pointer" onclick="window.bankingApp.openTransactionModal('TRANSFER')">
                         <i class="fa-solid fa-right-left"></i> ট্রান্সফার
                     </button>
                 </div>
@@ -68,25 +69,34 @@ async function loadAndRenderAccounts() {
             activeAccounts.forEach((acc, index) => {
                 const balance = balances[index];
                 acc.balance = balance; // Fix: Save balance so dashboard can sum it up
+                const isOverdrawn = balance < 0;
                 const icon = acc.isCash ? '<i class="fa-solid fa-wallet text-emerald-400 text-2xl"></i>' : '<i class="fa-solid fa-building-columns text-blue-400 text-2xl"></i>';
                 const typeLabel = acc.isCash ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CASH</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">BANK</span>';
+                const overdrawnBadge = isOverdrawn ? '<span class="px-2 py-0.5 rounded text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-[9px]"></i> ওভারড্রন</span>' : '';
+                const cardBorder = isOverdrawn ? 'border-red-500/50 bg-red-950/10 hover:border-red-500 shadow-red-900/10' : 'border-slate-800 hover:border-purple-500/50';
                 
                 html += `
-                    <div class="m3-card relative overflow-hidden group cursor-pointer hover:border-purple-500/50 transition-colors" onclick="window.bankingApp.viewAccountLedger('${acc.name}', ${acc.isCash})">
+                    <div class="m3-card relative overflow-hidden group cursor-pointer ${cardBorder} transition-all duration-300 shadow-lg" onclick="window.bankingApp.viewAccountLedger('${acc.name}', ${acc.isCash})">
                         <div class="flex items-start justify-between mb-4">
                             <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center">
                                 ${icon}
                             </div>
-                            <div>${typeLabel}</div>
+                            <div class="flex items-center gap-1.5">
+                                ${overdrawnBadge}
+                                ${typeLabel}
+                            </div>
                         </div>
                         <div>
                             <h3 class="text-lg font-black text-slate-200 truncate">${acc.name}</h3>
-                            <div class="text-sm font-bold text-slate-500 mb-1">বর্তমান ব্যালেন্স</div>
-                            <div class="text-3xl font-black ${balance < 0 ? 'text-red-400' : 'text-white'}">৳ ${formatAmountWithComma(balance)}</div>
+                            <div class="text-xs font-bold text-slate-400 mb-1 flex items-center justify-between">
+                                <span>বর্তমান ব্যালেন্স</span>
+                                ${isOverdrawn ? '<span class="text-[10px] text-red-400 font-bold">ঋণাত্মক ঘাটতি</span>' : ''}
+                            </div>
+                            <div class="text-3xl font-black font-mono ${isOverdrawn ? 'text-red-400' : 'text-white'}">৳ ${formatAmountWithComma(balance)}</div>
                         </div>
                         
                         <div class="absolute bottom-0 left-0 w-full h-1 bg-slate-800">
-                            <div class="h-full bg-gradient-to-r from-purple-500 to-blue-500 w-0 group-hover:w-full transition-all duration-500"></div>
+                            <div class="h-full bg-gradient-to-r ${isOverdrawn ? 'from-red-500 to-rose-600' : 'from-purple-500 to-blue-500'} w-0 group-hover:w-full transition-all duration-500"></div>
                         </div>
                     </div>
                 `;
@@ -151,101 +161,104 @@ async function openTransactionModal(type) {
     `;
 
     const { value: formValues } = await Swal.fire({
-        title: `<div class="font-bn font-black text-white text-xl">${title}</div>`,
+        title: `<span class="font-bn font-black">${title}</span>`,
         html: html,
+        focusConfirm: false,
         showCancelButton: true,
         confirmButtonText: btnText,
-        confirmButtonColor: btnColor,
         cancelButtonText: 'বাতিল',
+        confirmButtonColor: btnColor,
         customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
         preConfirm: () => {
-            const acc = document.getElementById('banking-txn-acc').value;
-            const targetAcc = type === 'TRANSFER' ? document.getElementById('banking-txn-target-acc').value : null;
-            const amount = parseAmount(document.getElementById('banking-txn-amount').value);
+            const bankName = document.getElementById('banking-txn-acc').value;
+            const targetBankName = type === 'TRANSFER' ? document.getElementById('banking-txn-target-acc').value : null;
+            const rawAmount = document.getElementById('banking-txn-amount').value;
+            const amount = parseAmount(rawAmount);
             const note = document.getElementById('banking-txn-note').value.trim();
             const date = document.getElementById('banking-txn-date').value;
 
-            if (!acc) return Swal.showValidationMessage('অ্যাকাউন্ট নির্বাচন করুন');
-            if (type === 'TRANSFER' && !targetAcc) return Swal.showValidationMessage('টার্গেট অ্যাকাউন্ট নির্বাচন করুন');
-            if (type === 'TRANSFER' && acc === targetAcc) return Swal.showValidationMessage('একই অ্যাকাউন্টে ট্রান্সফার সম্ভব নয়');
-            if (!amount || amount <= 0) return Swal.showValidationMessage('সঠিক পরিমাণ দিন');
-            if (!date) return Swal.showValidationMessage('তারিখ আবশ্যক');
+            if (!bankName) return Swal.showValidationMessage('অনুগ্রহ করে একটি অ্যাকাউন্ট নির্বাচন করুন!');
+            if (type === 'TRANSFER' && !targetBankName) return Swal.showValidationMessage('অনুগ্রহ করে টার্গেট অ্যাকাউন্ট নির্বাচন করুন!');
+            if (type === 'TRANSFER' && bankName === targetBankName) return Swal.showValidationMessage('একই অ্যাকাউন্টে ট্রান্সফার সম্ভব নয়!');
+            if (!amount || isNaN(amount) || amount <= 0) return Swal.showValidationMessage('সঠিক টাকার পরিমাণ লিখুন!');
+            if (!date) return Swal.showValidationMessage('তারিখ নির্বাচন করুন!');
 
-            return { acc, targetAcc, amount, note, date, type };
+            return { bankName, targetBankName, amount, note, date };
         }
     });
 
     if (formValues) {
-        // Master PIN validation for security
-        const isPinValid = await promptSecurityPin(`${title} (Master PIN)`);
-        if (!isPinValid) return;
-
-        Swal.fire({ title: 'প্রসেস করা হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'সংরক্ষণ করা হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
-            const payload = {
-                type: formValues.type,
-                bankName: formValues.acc,
-                targetBankName: formValues.targetAcc,
+            const txnData = {
+                type: type,
+                bankName: formValues.bankName,
                 amount: formValues.amount,
                 note: formValues.note,
                 date: formValues.date,
+                createdBy: firebase.auth().currentUser?.email || 'Admin',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
+            if (type === 'TRANSFER') {
+                txnData.targetBankName = formValues.targetBankName;
+            }
 
-            await BankTransactionDAO.add(payload);
-            auditLog('BANKING_TXN', 'Admin', 'BankingLedger', `${formValues.type} of ${formValues.amount} on ${formValues.acc}. Note: ${formValues.note}`);
+            await BankTransactionDAO.create(txnData);
+            auditLog('BANKING_TXN_CREATE', 'Admin', 'BankingLedger', `Created ${type} of ৳${formValues.amount} on ${formValues.bankName}`);
             
-            Swal.fire({ title: 'সফল!', text: 'ট্রানজাকশন সফলভাবে সম্পন্ন হয়েছে।', icon: 'success', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }});
+            showToast('সফলভাবে সম্পন্ন হয়েছে!', 'success');
             await loadAndRenderAccounts();
         } catch (e) {
             console.error(e);
-            Swal.fire('ত্রুটি', 'ট্রানজাকশন সেভ করতে সমস্যা হয়েছে।', 'error');
+            Swal.fire('ত্রুটি', 'ডাটাবেজে সেভ করতে সমস্যা হয়েছে!', 'error');
         }
     }
 }
 
-import { openAccountLedger, loadLedgerTable, printLedger, exportLedgerExcel, deleteBankingTransaction } from './banking-ledger-ui.js';
-
 async function loadBankingDashboard(timeFilter = 'month') {
     const container = document.getElementById('banking-dashboard-container');
     if (!container) return;
-    
-    container.innerHTML = `<div class="text-center py-8 text-slate-400 font-bold italic"><i class="fa-solid fa-spinner fa-spin mr-2"></i>সামারি লোড হচ্ছে...</div>`;
 
     try {
-        const totalBankBalance = activeAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
         const summary = await getBankingSummary(timeFilter);
+        const totalBankBalance = activeAccounts.filter(a => !a.isCash).reduce((sum, a) => sum + (a.balance || 0), 0);
+        const totalCashBalance = activeAccounts.filter(a => a.isCash).reduce((sum, a) => sum + (a.balance || 0), 0);
         
         container.innerHTML = `
-            <div class="p-5 bg-slate-900 border border-slate-700 rounded-2xl shadow-xl">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
-                    <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-chart-pie text-purple-400"></i> ব্যাংকিং সামারি</h3>
+            <div class="m3-card bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-4 font-bn">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3 mb-4">
+                    <div>
+                        <h3 class="text-lg font-black text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-purple-400"></i>
+                            ব্যাংকিং সারাংশ ও লিকুইডিটি
+                        </h3>
+                    </div>
                     <div class="flex items-center gap-2">
                         <input type="text" id="banking-custom-range" class="${timeFilter.includes('to') ? '' : 'hidden'} bg-slate-950 border border-slate-700 text-white text-sm font-bold rounded-lg px-3 py-1.5 outline-none focus:border-purple-500 w-52 datepicker text-center" data-mode="range" placeholder="DD/MM/YYYY to DD/MM/YYYY" value="${timeFilter.includes('to') ? timeFilter : ''}" onchange="if(this.value.includes(' to ')) window.bankingApp.loadBankingDashboard(this.value)">
-                        
                         <select id="banking-summary-filter" class="bg-slate-950 border border-slate-700 text-white text-sm font-bold rounded-lg px-3 py-1.5 outline-none focus:border-purple-500 cursor-pointer transition-colors" onchange="if(this.value === 'custom') { document.getElementById('banking-custom-range').classList.remove('hidden'); document.getElementById('banking-custom-range').focus(); } else { document.getElementById('banking-custom-range').classList.add('hidden'); window.bankingApp.loadBankingDashboard(this.value); }">
-                            <option value="today" ${timeFilter === 'today' ? 'selected' : ''}>আজকে</option>
-                            <option value="week" ${timeFilter === 'week' ? 'selected' : ''}>এই সপ্তাহ</option>
-                            <option value="month" ${timeFilter === 'month' ? 'selected' : ''}>এই মাস</option>
-                            <option value="year" ${timeFilter === 'year' ? 'selected' : ''}>এই বছর</option>
-                            <option value="all" ${timeFilter === 'all' ? 'selected' : ''}>আজীবন</option>
-                            <option value="custom" ${timeFilter.includes('to') ? 'selected' : ''}>কাস্টম তারিখ</option>
+                            <option value="today" ${timeFilter === 'today' ? 'selected' : ''}>আজকের সামারি (Today)</option>
+                            <option value="month" ${timeFilter === 'month' ? 'selected' : ''}>চলতি মাস (This Month)</option>
+                            <option value="lastMonth" ${timeFilter === 'lastMonth' ? 'selected' : ''}>গত মাস (Last Month)</option>
+                            <option value="year" ${timeFilter === 'year' ? 'selected' : ''}>চলতি বছর (This Year)</option>
+                            <option value="all" ${timeFilter === 'all' ? 'selected' : ''}>সর্বমোট (All Time)</option>
+                            <option value="custom" ${timeFilter.includes('to') ? 'selected' : ''}>তারিখ অনুযায়ী ফিল্টার...</option>
                         </select>
                     </div>
                 </div>
-                
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">মোট জমা (IN)</p>
-                        <h4 class="text-emerald-400 font-black text-xl">৳ ${formatAmountWithComma(summary.totalIn)}</h4>
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">মোট কালেকশন জমা</p>
+                        <h4 class="text-emerald-400 font-black text-xl">৳ ${formatAmountWithComma(summary.totalCustomerCollections)}</h4>
                     </div>
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">মোট উত্তোলন (OUT)</p>
-                        <h4 class="text-red-400 font-black text-xl">৳ ${formatAmountWithComma(summary.totalOut)}</h4>
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">ম্যানুয়াল উত্তোলন</p>
+                        <h4 class="text-red-400 font-black text-xl">৳ ${formatAmountWithComma(summary.totalWithdrawals)}</h4>
                     </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">নিট ফ্লো (NET)</p>
-                        <h4 class="${summary.netFlow >= 0 ? 'text-emerald-400' : 'text-red-400'} font-black text-xl">৳ ${formatAmountWithComma(summary.netFlow)}</h4>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-emerald-900/50 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-600/20 rounded-full blur-xl"></div>
+                        <p class="text-emerald-300 text-[10px] font-bold uppercase tracking-wider mb-1">সর্বমোট ক্যাশ ব্যালেন্স</p>
+                        <h4 class="text-emerald-400 font-black text-xl relative z-10">৳ ${formatAmountWithComma(totalCashBalance)}</h4>
                     </div>
                     <div class="bg-slate-950 p-4 rounded-xl border border-purple-900/50 relative overflow-hidden">
                         <div class="absolute -right-4 -top-4 w-16 h-16 bg-purple-600/20 rounded-full blur-xl"></div>
@@ -274,6 +287,7 @@ export const bankingApp = {
     loadLedgerTable,
     printLedger,
     exportLedgerExcel,
+    shareLedgerWhatsApp,
     deleteBankingTransaction,
     refreshCards: loadAndRenderAccounts
 };
