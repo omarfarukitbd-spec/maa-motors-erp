@@ -46,7 +46,6 @@ export async function managePermissions(userId, email) {
 
                     <div class="text-xs font-black text-amber-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-book mr-1.5"></i>খতিয়ান ও লেনদেন (Ledger & Icons):</div>
 
-                    <label class="flex items-center gap-3 text-white cursor-pointer hover:bg-slate-800/50 p-1.5 rounded-lg transition-colors">
                     ${createToggle('perm-viewLedger', 'লেজার খতিয়ান দেখার অনুমতি', 'View Ledger', perms.viewLedger !== false)}
                     ${createToggle('perm-addLedgerEntry', 'নতুন এন্ট্রি করা (বিল/জমা)', 'Add Ledger Entry', perms.addLedgerEntry !== false)}
                     ${createToggle('perm-editLedger', 'এন্ট্রি এডিট করা', 'Edit Entry', perms.editLedger !== false && perms.manageLedger !== false)}
@@ -55,6 +54,13 @@ export async function managePermissions(userId, email) {
                     ${createToggle('perm-printLedgerReceipt', 'ট্রানজেকশন রিসিপ্ট প্রিন্ট করা', 'Print Receipt', perms.printLedgerReceipt !== false)}
                     ${createToggle('perm-sendLedgerWhatsApp', 'ট্রানজেকশন WhatsApp মেসেজ', 'WhatsApp Alert', perms.sendLedgerWhatsApp !== false)}
                     ${createToggle('perm-sendLedgerSMS', 'ট্রানজেকশন SMS', 'SMS Alert', perms.sendLedgerSMS !== false)}
+
+                    <div class="text-xs font-black text-amber-500 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-map-location-dot mr-1.5"></i>জোন রিপোর্ট (Zone Reports):</div>
+                    ${createToggle('perm-viewZoneReports', 'জোন রিপোর্ট দেখার অনুমতি', 'View Zone Reports', perms.viewZoneReports !== false)}
+                    ${createToggle('perm-printZoneReport', 'PDF ও প্রিন্ট ভিউ বাটন', 'Print PDF View', perms.printZoneReport !== false)}
+                    ${createToggle('perm-printTagadaSheet', 'তাগাদা শিট প্রিন্ট বাটন', 'Print Tagada Sheet', perms.printTagadaSheet !== false)}
+                    ${createToggle('perm-exportZoneReport', 'এক্সেল ডাউনলোড বাটন', 'Export Excel', perms.exportZoneReport !== false)}
+                    ${createToggle('perm-viewZoneCustLedgerBtn', 'কাস্টমার লেজার বাটন (টেবিলের ভেতর)', 'Row Ledger Icon', perms.viewZoneCustLedgerBtn !== false)}
 
                     <div class="text-xs font-black text-purple-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-bolt mr-1.5"></i>দ্রুত এন্ট্রি ও ইনভয়েস (Bulk & Invoices):</div>
 
@@ -149,6 +155,12 @@ export async function managePermissions(userId, email) {
                     sendLedgerWhatsApp: document.getElementById('perm-sendLedgerWhatsApp').checked,
                     sendLedgerSMS: document.getElementById('perm-sendLedgerSMS').checked,
                     exportLedger: document.getElementById('perm-exportLedger').checked,
+
+                    viewZoneReports: document.getElementById('perm-viewZoneReports').checked,
+                    printZoneReport: document.getElementById('perm-printZoneReport').checked,
+                    printTagadaSheet: document.getElementById('perm-printTagadaSheet').checked,
+                    exportZoneReport: document.getElementById('perm-exportZoneReport').checked,
+                    viewZoneCustLedgerBtn: document.getElementById('perm-viewZoneCustLedgerBtn').checked,
 
                     viewBulkEntry: document.getElementById('perm-viewBulkEntry').checked,
                     viewInvoice: document.getElementById('perm-viewInvoice').checked,

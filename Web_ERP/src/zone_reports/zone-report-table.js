@@ -18,7 +18,7 @@ export function renderZoneTableRows(customers) {
             <td class="p-3.5 text-center"><span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-800 text-indigo-300 border border-slate-700">${escapeHTML(c.zone || 'N/A')}</span></td>
             <td class="p-3.5 text-right font-black ${c.totalDue > 0 ? 'text-emerald-400' : (c.totalDue < 0 ? 'text-rose-400' : 'text-slate-400')}">৳ ${formatAmountWithComma(c.totalDue || 0)}</td>
             <td class="p-3.5 text-center">
-                <button onclick="if(window.navigateTo) window.navigateTo('ledger', { customerId: '${c.id}' })" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-bold transition-all border border-indigo-500/30 cursor-pointer">লেজার</button>
+                <button data-perm="viewZoneCustLedgerBtn" onclick="if(window.navigateTo) window.navigateTo('ledger', { customerId: '${c.id}' })" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-bold transition-all border border-indigo-500/30 cursor-pointer">লেজার</button>
             </td>
         </tr>
     `).join('');
