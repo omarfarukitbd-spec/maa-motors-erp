@@ -25,3 +25,5 @@ export * from './utils/ui-helpers.js';
 export * from './utils/omnisearch.js';
 export * from './utils/address-suggestions.js';
 
+// 7. Phone Dialer & Communication
+export * from './utils/phone-dialer.js';

@@ -5,13 +5,10 @@ import 'clusterize.js/clusterize.css';
 
 export function renderCustomers(container, params) {
     if (initCustomerHotkeys) initCustomerHotkeys();
-    if(window.AppState.currentUserRole === 'Staff' && window.AppState.permissions.viewCustomers === false) {
+    if (window.AppState.currentUserRole === 'Staff' && window.AppState.permissions.viewCustomers === false) {
         container.innerHTML = `<div class="m3-card text-center"><h2 class="text-xl font-bold text-red-500 font-bn">অ্যাক্সেস ডিনাইড! আপনার কাস্টমার লিস্ট দেখার অনুমতি নেই।</h2></div>`;
         return;
     }
-
-    const isBoss = window.AppState?.currentUserRole === 'Boss';
-    const canManageCust = !isBoss && (window.AppState?.currentUserRole === 'Admin' || window.AppState?.permissions?.manageCustomers !== false);
 
     container.innerHTML = `
         <div class="flex flex-col gap-6">
@@ -123,8 +120,7 @@ export function renderCustomers(container, params) {
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800/80">
                     <button class="h-9 px-5 rounded-xl bg-slate-800/90 border border-slate-700/80 hover:bg-slate-700/80 text-slate-300 text-xs font-bold transition-all cursor-pointer" onclick="window.toggleAddCustomerForm()">বাতিল</button>
                     <button class="h-9 px-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center gap-2 cursor-pointer" id="save-cust-btn" onclick="window.saveNewCustomer()">
-                        <i class="fa-solid fa-check text-xs"></i>
-                        <span>সেভ করুন</span>
+                        <i class="fa-solid fa-check text-xs"></i><span>সেভ করুন</span>
                     </button>
                 </div>
             </div>
@@ -160,6 +156,7 @@ export function renderCustomers(container, params) {
                 <button id="cust-next-page" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl border border-slate-700 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all" onclick="window.changeCustomerPage('next')">পরবর্তী <i class="fa-solid fa-chevron-right ml-2"></i></button>
             </div>
         </div>`;
+
     if (window.loadCustomers) window.loadCustomers();
     if (document.getElementById('cust-date')) {
         document.getElementById('cust-date').value = (window.getTodayLocalDateString ? window.getTodayLocalDateString() : new Date().toISOString().split('T')[0]);
@@ -175,10 +172,7 @@ export function renderCustomers(container, params) {
 export function renderCustomerRows(customers) {
     const tbody = document.getElementById('customer-list');
     const mobileContainer = document.getElementById('customer-list-mobile');
-    if(!tbody) return;
-
-    const isBoss = String(window.AppState?.currentUserRole || '').toLowerCase() === 'boss';
-    const isAdmin = String(window.AppState?.currentUserRole || '').toLowerCase() === 'admin';
+    if (!tbody) return;
 
     let rows = [];
     let mobileHtml = '';
@@ -192,7 +186,7 @@ export function renderCustomerRows(customers) {
                     if (!openingDate) openingDate = dt.toISOString().split('T')[0];
                     entryTime = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                 }
-            } catch(e) { console.error(e); }
+            } catch (e) { console.error(e); }
         }
         if (!openingDate) openingDate = getTodayLocalDateString();
 
@@ -203,6 +197,13 @@ export function renderCustomerRows(customers) {
         const sPhone = String(d.phone || '-').replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const sAddr = String(d.address || '-').replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const sZone = String(d.zone || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+        const phoneBtn = d.phone && d.phone !== '-' ? `
+            <button type="button" onclick="event.stopPropagation(); window.handleCustomerCall('${sName}', '${sPhone}')" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all font-mono text-xs cursor-pointer active:scale-95 group/call" title="সরাসরি কল করুন">
+                <i class="fa-solid fa-phone text-[11px] group-hover/call:animate-bounce"></i>
+                <span class="font-bold">${d.phone}</span>
+            </button>
+        ` : '<span class="text-slate-500 text-xs font-mono">-</span>';
 
         rows.push(`<tr class="hover:bg-white/[0.04] transition-colors border-b border-slate-800/60 cursor-pointer group" onclick="window.openCustomerLedger('${sId}')">
             <td class="py-2.5 px-3 text-xs font-bold text-slate-200 whitespace-nowrap align-top">
@@ -224,7 +225,7 @@ export function renderCustomerRows(customers) {
                     <span class="truncate text-slate-400">${d.address || '-'}</span>
                 </div>
             </td>
-            <td class="py-2.5 px-3 text-xs text-slate-300 font-bold whitespace-nowrap align-top">${d.phone || '-'}</td>
+            <td class="py-2.5 px-3 align-top whitespace-nowrap" onclick="event.stopPropagation()">${phoneBtn}</td>
             <td class="py-2.5 px-3 text-right whitespace-nowrap align-top">
                 <div class="flex items-center justify-end gap-1.5">
                     <span class="font-black text-sm ${dueColorClass}">৳ ${formatAmountWithComma(Math.abs(due))}</span>
@@ -233,6 +234,7 @@ export function renderCustomerRows(customers) {
             </td>
             <td class="py-2.5 px-3 text-center whitespace-nowrap sticky-action-col align-top" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-center gap-1">
+                    <button data-perm="callCustomer" class="m3-btn-icon hover:bg-emerald-500/20 hover:text-emerald-400" onclick="window.handleCustomerCall('${sName}', '${sPhone}')" title="সরাসরি কল"><i class="fa-solid fa-phone text-emerald-400"></i></button>
                     <button data-perm="viewCustLedgerBtn" class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান দেখুন"><i class="fa-solid fa-book text-blue-400"></i></button>
                     <button data-perm="viewCustStatementBtn" class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
                     <button data-perm="sendCustWhatsApp" class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
@@ -258,9 +260,10 @@ export function renderCustomerRows(customers) {
                 </div>
             </div>
             <div class="mobile-card-row"><span class="mobile-card-label">তারিখ:</span><span class="mobile-card-value">${formatAppDate(openingDate)}${entryTime ? ` (${entryTime})` : ''}</span></div>
-            <div class="mobile-card-row"><span class="mobile-card-label">মোবাইল:</span><span class="mobile-card-value">${d.phone || '-'}</span></div>
+            <div class="mobile-card-row" onclick="event.stopPropagation(); window.handleCustomerCall('${sName}', '${sPhone}')"><span class="mobile-card-label">মোবাইল:</span><span class="mobile-card-value text-emerald-400 font-black font-mono flex items-center gap-1.5 cursor-pointer underline"><i class="fa-solid fa-phone text-xs"></i> ${d.phone || '-'}</span></div>
             <div class="mobile-card-row"><span class="mobile-card-label">ঠিকানা:</span><span class="mobile-card-value">${d.address || '-'}</span></div>
             <div class="mobile-card-actions" onclick="event.stopPropagation()">
+                <button data-perm="callCustomer" class="m3-btn-icon hover:bg-emerald-500/20 hover:text-emerald-400" onclick="window.handleCustomerCall('${sName}', '${sPhone}')" title="কল"><i class="fa-solid fa-phone text-emerald-400"></i></button>
                 <button data-perm="viewCustLedgerBtn" class="m3-btn-icon" onclick="window.openCustomerLedger('${sId}')" title="খতিয়ান"><i class="fa-solid fa-book text-blue-400"></i></button>
                 <button data-perm="viewCustStatementBtn" class="m3-btn-icon" onclick="window.openCustomerStatement('${sId}', '${sName}', '${d.accountNo || ''}', '${sPhone}', '${sAddr}')" title="স্টেটমেন্ট"><i class="fa-solid fa-file-invoice text-purple-400"></i></button>
                 <button data-perm="sendCustWhatsApp" class="m3-btn-icon" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>

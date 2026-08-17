@@ -30,6 +30,10 @@ export function renderTopDueCustomers() {
         const sName = (c.name || 'Unknown').replace(/'/g, "\\'");
         const sPhone = c.phone || '';
 
+        const callBtn = sPhone && sPhone !== '-' ? `<button class="w-7 h-7 rounded-lg bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.handleCustomerCall('${sName}', '${sPhone}')" title="সরাসরি কল">
+                        <i class="fa-solid fa-phone text-[11px]"></i>
+                    </button>` : '';
+
         const whatsappBtn = canWhatsApp ? `<button class="w-7 h-7 rounded-lg bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.sendDashWhatsAppReminder('${sPhone}', ${due}, '${sName}')" title="WhatsApp তাগাদা">
                         <i class="fa-brands fa-whatsapp text-[12px]"></i>
                     </button>` : '';
@@ -38,17 +42,20 @@ export function renderTopDueCustomers() {
                         <i class="fa-solid fa-comment-sms text-[11px]"></i>
                     </button>` : '';
 
+        const phoneDisplay = sPhone && sPhone !== '-' ? `<button type="button" onclick="window.handleCustomerCall('${sName}', '${sPhone}')" class="text-[10px] text-emerald-400 font-bold hover:underline font-mono flex items-center gap-1 cursor-pointer"><i class="fa-solid fa-phone text-[9px]"></i><span>${sPhone}</span></button>` : `<p class="text-[10px] text-slate-400 font-bold">-</p>`;
+
         html += `
             <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60 hover:border-red-500/30 transition-all">
                 <div class="flex items-center gap-2.5">
                     <span class="w-6 h-6 rounded-lg bg-red-500/10 text-red-400 font-black text-xs flex items-center justify-center">${idx + 1}</span>
                     <div>
                         <p class="text-xs font-black text-white truncate max-w-[120px]">${c.name || 'Unknown'}</p>
-                        <p class="text-[10px] text-slate-400 font-bold">${c.phone || '-'}</p>
+                        ${phoneDisplay}
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <span class="text-xs font-black text-red-400 mr-1">৳ ${formatAmountWithComma(due)}</span>
+                    ${callBtn}
                     ${whatsappBtn}
                     ${smsBtn}
                 </div>
