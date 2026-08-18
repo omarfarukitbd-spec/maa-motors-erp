@@ -1,6 +1,7 @@
 import Swal from 'sweetalert2';
 import { parseAmount, handleNumberInput } from '../utils.js';
 import { executeBulkSave } from './bulk-save-engine.js';
+import './grid-autocomplete.js';
 
 /**
  * Manual Entry Spreadsheet Grid Logic
@@ -22,7 +23,10 @@ export function addSpreadsheetRow() {
         <td class="!px-1 !py-1 border-b border-slate-800/50">
             <input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs datepicker" value="${workingDate}" onchange="if(this.value) localStorage.setItem('workingDate', this.value)">
         </td>
-        <td class="!px-1 !py-1 border-b border-slate-800/50"><input type="text" list="customer-datalist" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs" placeholder="নাম / অ্যাকাউন্ট নং / ফোন"></td>
+        <td class="!px-1 !py-1 border-b border-slate-800/50 relative">
+            <input type="text" class="grid-input grid-cust-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs" placeholder="নাম / অ্যাকাউন্ট নং / ফোন / ঠিকানা" autocomplete="off" oninput="window.handleGridCustomerSearch(this, ${rowIndex})" onfocus="window.handleGridCustomerSearch(this, ${rowIndex})" onkeydown="window.handleGridCustomerKey(event, this, ${rowIndex})">
+            <div id="grid-cust-dropdown-${rowIndex}" class="hidden absolute left-0 top-full mt-1.5 w-[420px] max-w-[90vw] bg-slate-900/95 border border-slate-700/90 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-[100] max-h-72 overflow-y-auto custom-scrollbar p-1.5 flex flex-col gap-1 backdrop-blur-2xl text-left"></div>
+        </td>
         <td class="!px-1 !py-1 border-b border-slate-800/50"><input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs" placeholder="ভাউচার"></td>
         <td class="!px-1 !py-1 border-b border-slate-800/50">
             <input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold text-red-400" placeholder="0" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'grid-b-words-${rowIndex}')">
