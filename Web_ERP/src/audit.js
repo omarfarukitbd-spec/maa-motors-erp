@@ -121,11 +121,11 @@ export async function renderAuditLogs(container) {
                     </div>
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">শুরুর তারিখ (From)</label>
-                        <input type="date" id="audit-start-date" onchange="window.applyAuditFilters()" class="m3-field text-xs">
+                        <input type="text" id="audit-start-date" onchange="window.applyAuditFilters()" class="m3-field text-xs datepicker" placeholder="DD/MM/YYYY">
                     </div>
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">শেষ তারিখ (To)</label>
-                        <input type="date" id="audit-end-date" onchange="window.applyAuditFilters()" class="m3-field text-xs">
+                        <input type="text" id="audit-end-date" onchange="window.applyAuditFilters()" class="m3-field text-xs datepicker" placeholder="DD/MM/YYYY">
                     </div>
                 </div>
             </div>
