@@ -131,9 +131,14 @@ export function renderInvoiceUI(container, params = null, callbacks = {}) {
 
     document.getElementById('inv-date').value = getTodayLocalDateString();
     setInvoiceItems([{ desc: '', qty: 1, unit: 'Pcs', rate: 0, total: 0 }]);
-    Promise.all([loadBankOptions(), loadCashCollectorOptions()]).then(() => {
-        window.setInvoiceRecvType(document.getElementById('inv-recv-bank-btn')?.classList.contains('bg-blue-600') ? 'Bank' : 'Cash');
-    }).catch(console.error);
+    (async () => {
+        try {
+            await Promise.all([loadBankOptions(), loadCashCollectorOptions()]);
+            window.setInvoiceRecvType(document.getElementById('inv-recv-bank-btn')?.classList.contains('bg-blue-600') ? 'Bank' : 'Cash');
+        } catch (e) {
+            console.error('Failed to init bank/cash options in invoice UI:', e);
+        }
+    })();
     if (callbacks.loadInvoiceCustomers) callbacks.loadInvoiceCustomers(params?.customerId);
     if (callbacks.renderInvoiceItems) callbacks.renderInvoiceItems();
 }
