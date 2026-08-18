@@ -191,6 +191,17 @@ export function setStmtPresetDate(type, callbacks = {}) {
 
 export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {}) {
     const { currentCustomerInfo } = stateRef;
+    window.updateStmtRecvDropdown = function(val) {
+        const r = document.getElementById('stmt-recv-ref');
+        if(!r) return;
+        if (val === 'Less') {
+            r.outerHTML = '<input id="stmt-recv-ref" type="text" class="m3-field" placeholder="মন্তব্য (ঐচ্ছিক)...">';
+        } else if (val === 'Bank') {
+            r.outerHTML = '<select id="stmt-recv-ref" class="m3-field cursor-pointer">' + (window.cachedBanksHtml || '<option value="">-- নির্বাচন করুন --</option>') + '</select>';
+        } else {
+            r.outerHTML = '<select id="stmt-recv-ref" class="m3-field cursor-pointer">' + (window.cachedCashHtml || '<option value="">-- নির্বাচন করুন --</option>') + '</select>';
+        }
+    };
     const { value: formValues } = await Swal.fire({
         title: '<i class="fa-solid fa-credit-card text-emerald-400 mr-2"></i>জমা গ্রহণ করুন',
         html: `
@@ -201,8 +212,8 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
                     <input id="stmt-recv-amt" type="text" class="m3-field text-lg font-black text-emerald-400" placeholder="০.০০" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'stmt-recv-words');">
                     <div id="stmt-recv-words" class="text-[10px] font-black text-emerald-400 mt-1 hidden italic truncate"></div>
                 </div>
-                <div><label class="block text-xs font-bold text-slate-400 mb-1">পেমেন্ট মাধ্যম</label><select id="stmt-recv-type" class="m3-field"><option value="Cash">Cash (নগদ)</option><option value="Bank">Bank (ব্যাংক/বিকাশ)</option><option value="Less">Less (ছাড়/কমিশন)</option></select></div>
-                <div><label class="block text-xs font-bold text-slate-400 mb-1">বিবরণ / ব্যাংক নাম (ঐচ্ছিক)</label><input id="stmt-recv-ref" type="text" class="m3-field" placeholder="মন্তব্য..."></div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">পেমেন্ট মাধ্যম</label><select id="stmt-recv-type" class="m3-field" onchange="window.updateStmtRecvDropdown && window.updateStmtRecvDropdown(this.value)"><option value="Cash">Cash (নগদ)</option><option value="Bank">Bank (ব্যাংক/বিকাশ)</option><option value="Less">Less (ছাড়/কমিশন)</option></select></div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">অ্যাকাউন্ট / বিবরণ</label><select id="stmt-recv-ref" class="m3-field cursor-pointer">${window.cachedCashHtml || '<option value="">-- নির্বাচন করুন --</option>'}</select></div>
             </div>`,
         showCancelButton: true, 
         confirmButtonText: '<i class="fa-solid fa-circle-check mr-2"></i>জমা সেভ করুন', 

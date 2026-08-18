@@ -192,8 +192,21 @@ export function toggleInvoiceRecvSection() {
 
 export function setInvoiceRecvType(type) {
     const b = document.getElementById('inv-recv-bank-btn'); const c = document.getElementById('inv-recv-cash-btn');
+    const r = document.getElementById('inv-received-from');
     if(b && c) {
-        if(type==='Bank'){ b.className = 'px-3 py-1 rounded-md bg-blue-600 text-white font-bold'; c.className = 'px-3 py-1 rounded-md text-slate-400 font-bold'; }
-        else { c.className = 'px-3 py-1 rounded-md bg-emerald-600 text-white font-bold'; b.className = 'px-3 py-1 rounded-md text-slate-400 font-bold'; }
+        if(type==='Bank'){ 
+            b.className = 'px-3 py-1 rounded-md bg-blue-600 text-white font-bold'; 
+            c.className = 'px-3 py-1 rounded-md text-slate-400 font-bold'; 
+            if(r) {
+                r.outerHTML = '<select id="inv-received-from" class="w-full bg-slate-950/90 border border-slate-700/60 rounded-xl h-8 px-3 text-xs text-white outline-none cursor-pointer">' + (window.cachedBanksHtml || '<option value="">-- নির্বাচন করুন --</option>') + '</select>';
+            }
+        }
+        else { 
+            c.className = 'px-3 py-1 rounded-md bg-emerald-600 text-white font-bold'; 
+            b.className = 'px-3 py-1 rounded-md text-slate-400 font-bold'; 
+            if(r) {
+                r.outerHTML = '<select id="inv-received-from" class="w-full bg-slate-950/90 border border-slate-700/60 rounded-xl h-8 px-3 text-xs text-white outline-none cursor-pointer">' + (window.cachedCashHtml || '<option value="">-- নির্বাচন করুন --</option>') + '</select>';
+            }
+        }
     }
 }
