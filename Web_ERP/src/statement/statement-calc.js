@@ -192,10 +192,10 @@ export function setStmtPresetDate(type, callbacks = {}) {
 export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {}) {
     const { currentCustomerInfo } = stateRef;
     const { value: formValues } = await Swal.fire({
-        title: '<i class="fa-solid fa-credit-card text-blue-400 mr-2"></i>জমা গ্রহণ করুন',
+        title: '<i class="fa-solid fa-credit-card text-emerald-400 mr-2"></i>জমা গ্রহণ করুন',
         html: `
             <div class="flex flex-col gap-3 text-left font-bn p-2">
-                <div class="text-xs text-blue-400 font-bold">কাস্টমার: ${currentCustomerInfo?.name || 'Customer'}</div>
+                <div class="text-xs text-emerald-400 font-bold">কাস্টমার: ${currentCustomerInfo?.name || 'Customer'}</div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">জমার পরিমাণ (৳)</label>
                     <input id="stmt-recv-amt" type="text" class="m3-field text-lg font-black text-emerald-400" placeholder="০.০০" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'stmt-recv-words');">
