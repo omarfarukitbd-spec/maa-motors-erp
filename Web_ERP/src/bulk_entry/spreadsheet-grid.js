@@ -40,7 +40,7 @@ export function addSpreadsheetRow() {
             </select>
         </td>
         <td class="!px-1 !py-1 border-b border-slate-800/50" id="bank-cell-${rowIndex}">
-            <select class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold cursor-pointer text-slate-300">
+            <select class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold cursor-pointer text-slate-300" onkeydown="window.handleGridKey(event, this)">
                 ${window.cachedBanksHtml || '<option value="" class="!bg-slate-900 !text-slate-400">-- ব্যাংক নির্বাচন করুন --</option>'}
             </select>
         </td>

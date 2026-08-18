@@ -12,15 +12,19 @@ export function renderBulkEntry(container) {
     const loadData = async () => {
         try {
             await Promise.all([loadBankOptions(), loadCashCollectorOptions()]);
-            const firstSelect = document.getElementById('grid-bank-name-1');
-            if (firstSelect && window.cachedBanksHtml) {
-                const typeSelect = firstSelect.closest('tr').querySelector('select');
-                if (typeSelect && typeSelect.value === 'Bank') {
-                    firstSelect.innerHTML = window.cachedBanksHtml;
+            const bankCells = document.querySelectorAll('[id^="bank-cell-"]');
+            bankCells.forEach(cell => {
+                const row = cell.closest('tr');
+                const typeSelect = row ? row.querySelector('select') : null;
+                const bankSelect = cell.querySelector('select');
+                if (bankSelect && (!typeSelect || typeSelect.value === 'Bank') && window.cachedBanksHtml) {
+                    const curVal = bankSelect.value;
+                    bankSelect.innerHTML = window.cachedBanksHtml;
+                    if (curVal) bankSelect.value = curVal;
                 }
-            }
+            });
         } catch (e) {
-            console.error(e);
+            console.error('Error loading bank/cash options in bulk entry:', e);
         }
     };
     loadData();
