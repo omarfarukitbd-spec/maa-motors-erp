@@ -106,8 +106,11 @@ export function quickSelectSpreadsheetAccount(type, accountName) {
         const bankSelect = document.getElementById(`bank-cell-${rowIndex}`)?.querySelector('select');
         if (bankSelect) bankSelect.value = accountName;
     }
-    const inputs = targetRow.querySelectorAll('input');
-    if (inputs && inputs[4]) inputs[4].focus(); // 5th input is Paid/Credit
+    const tds = targetRow.querySelectorAll('td');
+    if (tds && tds[4]) {
+        const paidInput = tds[4].querySelector('input');
+        if (paidInput) paidInput.focus();
+    }
 }
 window.quickSelectSpreadsheetAccount = quickSelectSpreadsheetAccount;
 window.updateGridBankOptions = updateGridBankOptions;
@@ -118,37 +121,48 @@ export async function saveSpreadsheetData() {
     const dataToSave = [];
 
     rows.forEach(row => {
-        const inputs = row.querySelectorAll('input, select');
-        const date = inputs[0].value;
-        let nameRaw = inputs[1].value.trim();
-        let name = nameRaw;
-        let phone = '';
+        const tds = row.querySelectorAll('td');
+        if (!tds || tds.length < 7) return;
 
-        if (nameRaw.startsWith('[')) {
-            const matchName = nameRaw.match(/^\[.*?\]\s*([^(]+)/);
-            if (matchName) name = matchName[1].trim();
-            const matchPhone = nameRaw.match(/\b(01\d{9})\b/);
-            if (matchPhone) phone = matchPhone[1].trim();
-        } else if (nameRaw.includes('(')) {
-            const matchName = nameRaw.match(/^([^(]+)/);
-            if (matchName) name = matchName[1].trim();
+        const dateInput = tds[0].querySelector('input.datepicker') || tds[0].querySelector('input');
+        const date = dateInput ? dateInput.value : '';
+
+        const custInput = tds[1].querySelector('input');
+        const nameRaw = custInput ? custInput.value.trim() : '';
+
+        let phone = '';
+        if (nameRaw.includes('(')) {
             const matchPhone = nameRaw.match(/\b(01\d{9})\b/);
             if (matchPhone) phone = matchPhone[1].trim();
         }
 
-        const voucher = inputs[2].value.trim();
-        const bill = parseAmount(inputs[3].value);
-        const paid = parseAmount(inputs[4].value);
-        const receivedType = inputs[5].value || 'Bank';
-        const receivedFrom = inputs[6].value.trim();
+        const voucherInput = tds[2].querySelector('input');
+        const voucher = voucherInput ? voucherInput.value.trim() : '';
 
-        if (name && (bill > 0 || paid > 0)) {
-            dataToSave.push({ date, name, phone, voucher, bill, paid, receivedType, receivedFrom });
+        const billInput = tds[3].querySelector('input');
+        const bill = parseAmount(billInput ? billInput.value : 0);
+
+        const paidInput = tds[4].querySelector('input');
+        const paid = parseAmount(paidInput ? paidInput.value : 0);
+
+        const typeSelect = tds[5].querySelector('select');
+        const receivedType = typeSelect ? typeSelect.value : 'Bank';
+
+        const bankInputOrSelect = tds[6].querySelector('select, input');
+        const receivedFrom = bankInputOrSelect ? bankInputOrSelect.value.trim() : '';
+
+        if (nameRaw && (bill > 0 || paid > 0)) {
+            dataToSave.push({ date, name: nameRaw, phone, voucher, bill, paid, receivedType, receivedFrom });
         }
     });
 
     if (dataToSave.length === 0) {
-        Swal.fire('খালি ফর্ম', 'সেভ করার মতো কোনো ডাটা পাওয়া যায়নি।', 'warning');
+        Swal.fire({
+            title: 'খালি ফর্ম',
+            text: 'সেভ করার মতো কোনো ডাটা পাওয়া যায়নি। অনুগ্রহ করে কাস্টমার নাম ও বিল বা জমার পরিমাণ লিখুন।',
+            icon: 'warning',
+            customClass: { popup: '!bg-slate-900 !text-white' }
+        });
         return;
     }
 
