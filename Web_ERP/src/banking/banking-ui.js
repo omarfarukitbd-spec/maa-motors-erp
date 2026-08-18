@@ -1,7 +1,7 @@
 import { BankDAO, CashCollectorDAO } from '../dao.js';
 import { calculateAccountBalance } from './banking-calc.js';
 import { getBankingSummary } from './banking-analytics.js';
-import { formatAmountWithComma } from '../utils.js';
+import { formatAmountWithComma, numberToBanglaWords } from '../utils.js';
 import { openAccountLedger, loadLedgerTable, printLedger, exportLedgerExcel, deleteBankingTransaction, shareLedgerWhatsApp } from './banking-ledger-ui.js';
 import { openTransactionModal } from './banking-txn-modal.js';
 
@@ -127,21 +127,17 @@ function renderAccountCards() {
         const balance = acc.balance || 0;
         const isOverdrawn = balance < 0;
         const isCash = acc.isCash;
-        const icon = isCash 
-            ? '<i class="fa-solid fa-wallet text-emerald-400 text-xl"></i>' 
-            : '<i class="fa-solid fa-building-columns text-blue-400 text-xl"></i>';
+        const icon = isCash ? '<i class="fa-solid fa-wallet text-emerald-400 text-xl"></i>' : '<i class="fa-solid fa-building-columns text-blue-400 text-xl"></i>';
         const iconBg = isCash ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-blue-500/10 border-blue-500/20';
         const typeBadge = isCash 
             ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">CASH BOX</span>' 
             : '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">BANK</span>';
-        const overdrawnBadge = isOverdrawn 
-            ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-[9px]"></i> ঘাটতি</span>' 
-            : '';
-        const cardBorder = isOverdrawn 
-            ? 'border-red-500/50 bg-gradient-to-br from-red-950/20 to-slate-900/90 shadow-red-950/20' 
-            : 'border-slate-800/90 bg-slate-900/80 hover:border-purple-500/50 hover:shadow-purple-950/20';
+        const overdrawnBadge = isOverdrawn ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-[9px]"></i> ঘাটতি</span>' : '';
+        const cardBorder = isOverdrawn ? 'border-red-500/50 bg-gradient-to-br from-red-950/20 to-slate-900/90 shadow-red-950/20' : 'border-slate-800/90 bg-slate-900/80 hover:border-purple-500/50 hover:shadow-purple-950/20';
 
         const jsName = acc.name.replace(/'/g, "\\'");
+        const rawWords = Math.abs(balance) > 0 ? numberToBanglaWords(Math.abs(balance)) : 'শূন্য টাকা';
+        const wordsDisplay = isOverdrawn ? `(ঘাটতি: ${rawWords})` : `(${rawWords})`;
 
         return `
             <div class="m3-card relative overflow-hidden group cursor-pointer ${cardBorder} transition-all duration-300 shadow-xl rounded-2xl p-5 hover:translate-y-[-2px]" onclick="window.bankingApp.viewAccountLedger('${jsName}', ${isCash})">
@@ -156,8 +152,9 @@ function renderAccountCards() {
                 </div>
                 <div>
                     <h3 class="text-base font-black text-white truncate group-hover:text-purple-300 transition-colors">${acc.name}</h3>
-                    <div class="text-[11px] font-bold text-slate-400 mt-0.5 mb-1.5">বর্তমান ব্যালেন্স</div>
+                    <div class="text-[11px] font-bold text-slate-400 mt-0.5 mb-1">বর্তমান ব্যালেন্স</div>
                     <div class="text-2xl lg:text-3xl font-black font-mono ${isOverdrawn ? 'text-red-400' : 'text-white'} tracking-tight">৳ ${formatAmountWithComma(balance)}</div>
+                    <div class="text-[11px] font-bold italic ${isOverdrawn ? 'text-red-400/90' : 'text-emerald-400'} mt-1 truncate" title="${wordsDisplay}">${wordsDisplay}</div>
                 </div>
                 
                 <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-purple-300">
@@ -215,6 +212,7 @@ async function loadBankingDashboard(timeFilter = 'month') {
                             <i class="fa-solid fa-arrow-down text-emerald-400 text-xs"></i>
                         </div>
                         <h4 class="text-emerald-400 font-black text-xl font-mono">৳ ${formatAmountWithComma(summary.totalCustomerCollections || 0)}</h4>
+                        <div class="text-[10px] font-bold text-emerald-400/80 italic mt-0.5 truncate" title="${numberToBanglaWords(summary.totalCustomerCollections || 0) || 'শূন্য টাকা'}">(${numberToBanglaWords(summary.totalCustomerCollections || 0) || 'শূন্য টাকা'})</div>
                     </div>
                     <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 shadow-inner">
                         <div class="flex items-center justify-between mb-1">
@@ -222,6 +220,7 @@ async function loadBankingDashboard(timeFilter = 'month') {
                             <i class="fa-solid fa-arrow-up text-red-400 text-xs"></i>
                         </div>
                         <h4 class="text-red-400 font-black text-xl font-mono">৳ ${formatAmountWithComma(summary.totalWithdrawals || 0)}</h4>
+                        <div class="text-[10px] font-bold text-red-400/80 italic mt-0.5 truncate" title="${numberToBanglaWords(summary.totalWithdrawals || 0) || 'শূন্য টাকা'}">(${numberToBanglaWords(summary.totalWithdrawals || 0) || 'শূন্য টাকা'})</div>
                     </div>
                     <div class="bg-slate-950/80 p-4 rounded-xl border border-emerald-900/40 relative overflow-hidden shadow-inner">
                         <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-600/20 rounded-full blur-xl"></div>
@@ -230,6 +229,7 @@ async function loadBankingDashboard(timeFilter = 'month') {
                             <i class="fa-solid fa-wallet text-emerald-400 text-xs"></i>
                         </div>
                         <h4 class="text-emerald-400 font-black text-xl font-mono relative z-10">৳ ${formatAmountWithComma(totalCashBalance)}</h4>
+                        <div class="text-[10px] font-bold text-emerald-400/80 italic mt-0.5 truncate relative z-10" title="${numberToBanglaWords(totalCashBalance) || 'শূন্য টাকা'}">(${numberToBanglaWords(totalCashBalance) || 'শূন্য টাকা'})</div>
                     </div>
                     <div class="bg-slate-950/80 p-4 rounded-xl border border-purple-900/40 relative overflow-hidden shadow-inner">
                         <div class="absolute -right-4 -top-4 w-16 h-16 bg-purple-600/20 rounded-full blur-xl"></div>
@@ -238,12 +238,16 @@ async function loadBankingDashboard(timeFilter = 'month') {
                             <i class="fa-solid fa-building-columns text-purple-400 text-xs"></i>
                         </div>
                         <h4 class="text-purple-400 font-black text-xl font-mono relative z-10">৳ ${formatAmountWithComma(totalBankBalance)}</h4>
+                        <div class="text-[10px] font-bold text-purple-300/80 italic mt-0.5 truncate relative z-10" title="${numberToBanglaWords(totalBankBalance) || 'শূন্য টাকা'}">(${numberToBanglaWords(totalBankBalance) || 'শূন্য টাকা'})</div>
                     </div>
                 </div>
 
-                <div class="mt-3.5 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs">
+                <div class="mt-3.5 pt-3 border-t border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
                     <span class="text-slate-400 font-bold">ব্যবসায়ের সর্বমোট চলতি তহবিল (Liquid Capital):</span>
-                    <span class="text-sm font-black font-mono text-white bg-slate-800/80 px-3 py-1 rounded-xl border border-slate-700">৳ ${formatAmountWithComma(totalCapital)}</span>
+                    <div class="text-right flex items-center gap-2">
+                        <span class="text-sm font-black font-mono text-white bg-slate-800/80 px-3 py-1 rounded-xl border border-slate-700">৳ ${formatAmountWithComma(totalCapital)}</span>
+                        <span class="text-[11px] font-bold text-purple-300/90 italic">(${numberToBanglaWords(totalCapital) || 'শূন্য টাকা'})</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -258,9 +262,7 @@ export const bankingApp = {
     openTransactionModal: (type) => openTransactionModal(type, activeAccounts, loadAndRenderAccounts),
     loadBankingDashboard,
     viewAccountLedger: (acc, isCash) => {
-        if (typeof window !== 'undefined' && window.bankingApp) {
-            window.bankingApp.isCurrentAccountCash = isCash;
-        }
+        if (typeof window !== 'undefined' && window.bankingApp) window.bankingApp.isCurrentAccountCash = isCash;
         openAccountLedger(acc, isCash);
     },
     setCategoryFilter: (cat) => {
@@ -273,10 +275,7 @@ export const bankingApp = {
         });
         renderAccountCards();
     },
-    handleSearch: (val) => {
-        currentSearchQuery = val || '';
-        renderAccountCards();
-    },
+    handleSearch: (val) => { currentSearchQuery = val || ''; renderAccountCards(); },
     loadLedgerTable,
     printLedger,
     exportLedgerExcel,
