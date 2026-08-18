@@ -15,22 +15,12 @@ window.cachedCashHtml = '<option value="">-- ক্যাশ রিসিভা�
 export async function loadBankOptions() {
     try {
         let banks = await BankDAO.getAllBanks();
-        const allTxns = await TransactionDAO.getAll();
-        const existingTxnBanks = new Set();
-        allTxns.forEach(t => {
-            if (t.receivedType === 'Bank' && t.receivedFrom) existingTxnBanks.add(t.receivedFrom.trim());
-        });
-        existingTxnBanks.add('OneBank (IFRAT)');
-        existingTxnBanks.add('IBBL (IFRAT)');
 
         const currentBankNames = new Set(banks.map(b => b.name));
         let addedNew = false;
-        for (const bName of existingTxnBanks) {
-            if (!currentBankNames.has(bName) && bName.length > 0) {
-                await BankDAO.add({ name: bName, status: 'active' });
-                addedNew = true;
-            }
-        }
+        if (!currentBankNames.has('OneBank (IFRAT)')) { await BankDAO.add({ name: 'OneBank (IFRAT)', status: 'active' }); addedNew = true; }
+        if (!currentBankNames.has('IBBL (IFRAT)')) { await BankDAO.add({ name: 'IBBL (IFRAT)', status: 'active' }); addedNew = true; }
+        
         if (addedNew) banks = await BankDAO.getAllBanks();
 
         cachedBanks = banks;
@@ -53,22 +43,12 @@ export async function loadBankOptions() {
 export async function loadCashCollectorOptions() {
     try {
         let collectors = await CashCollectorDAO.getAllCollectors();
-        const allTxns = await TransactionDAO.getAll();
-        const existingTxnCash = new Set();
-        allTxns.forEach(t => {
-            if (t.receivedType === 'Cash' && t.receivedFrom) existingTxnCash.add(t.receivedFrom.trim());
-        });
-        existingTxnCash.add('শোরুম ক্যাশ');
-        existingTxnCash.add('ইফরাত');
 
         const currentCollectorNames = new Set(collectors.map(c => c.name));
         let addedNew = false;
-        for (const cName of existingTxnCash) {
-            if (!currentCollectorNames.has(cName) && cName.length > 0) {
-                await CashCollectorDAO.add({ name: cName, status: 'active' });
-                addedNew = true;
-            }
-        }
+        if (!currentCollectorNames.has('শোরুম ক্যাশ')) { await CashCollectorDAO.add({ name: 'শোরুম ক্যাশ', status: 'active' }); addedNew = true; }
+        if (!currentCollectorNames.has('ইফরাত')) { await CashCollectorDAO.add({ name: 'ইফরাত', status: 'active' }); addedNew = true; }
+
         if (addedNew) collectors = await CashCollectorDAO.getAllCollectors();
 
         cachedCollectors = collectors;

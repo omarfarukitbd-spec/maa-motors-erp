@@ -1,6 +1,6 @@
 import { getTodayLocalDateString } from '../utils.js';
 import { getHoldBills, setInvoiceItems } from './invoice-logic.js';
-
+import { loadBankOptions, loadCashCollectorOptions } from '../ledger/ledger-bank-cash.js';
 export function renderInvoiceUI(container, params = null, callbacks = {}) {
     if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.viewInvoice === false) {
         container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-black text-red-500">অ্যাক্সেস ডিনাইড!</h2></div>`;
@@ -131,6 +131,9 @@ export function renderInvoiceUI(container, params = null, callbacks = {}) {
 
     document.getElementById('inv-date').value = getTodayLocalDateString();
     setInvoiceItems([{ desc: '', qty: 1, unit: 'Pcs', rate: 0, total: 0 }]);
+    Promise.all([loadBankOptions(), loadCashCollectorOptions()]).then(() => {
+        window.setInvoiceRecvType(document.getElementById('inv-recv-bank-btn')?.classList.contains('bg-blue-600') ? 'Bank' : 'Cash');
+    }).catch(console.error);
     if (callbacks.loadInvoiceCustomers) callbacks.loadInvoiceCustomers(params?.customerId);
     if (callbacks.renderInvoiceItems) callbacks.renderInvoiceItems();
 }
