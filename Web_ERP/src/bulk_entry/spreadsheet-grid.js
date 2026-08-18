@@ -124,7 +124,12 @@ export async function saveSpreadsheetData() {
         if (nameRaw.startsWith('[')) {
             const matchName = nameRaw.match(/^\[.*?\]\s*([^(]+)/);
             if (matchName) name = matchName[1].trim();
-            const matchPhone = nameRaw.match(/\(([^)]+)\)/);
+            const matchPhone = nameRaw.match(/\b(01\d{9})\b/);
+            if (matchPhone) phone = matchPhone[1].trim();
+        } else if (nameRaw.includes('(')) {
+            const matchName = nameRaw.match(/^([^(]+)/);
+            if (matchName) name = matchName[1].trim();
+            const matchPhone = nameRaw.match(/\b(01\d{9})\b/);
             if (matchPhone) phone = matchPhone[1].trim();
         }
 

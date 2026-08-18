@@ -148,7 +148,9 @@ export async function loadCustomerDatalist() {
         if (!listEl) { listEl = document.createElement('datalist'); listEl.id = 'customer-datalist'; document.body.appendChild(listEl); }
         listEl.innerHTML = customers.map(c => {
             const acc = c.accountNo ? `[${c.accountNo}] ` : '';
-            return `<option value="${acc}${c.name}${c.phone ? ' ('+c.phone+')' : ''}">${acc}${c.name}</option>`;
+            const details = [c.phone, c.address, c.zone].filter(Boolean).map(s => String(s).trim()).filter(s => s.length > 0).join(' - ');
+            const detailsStr = details ? ` (${details})` : '';
+            return `<option value="${acc}${c.name}${detailsStr}">${acc}${c.name}${detailsStr}</option>`;
         }).join('');
     } catch(e) { console.error(e); }
 }
