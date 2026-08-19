@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
-import { BankDAO, CashCollectorDAO, TransactionDAO } from '../dao.js';
+import { BankDAO, CashCollectorDAO, TransactionDAO, BankTransactionDAO } from '../dao.js';
 import { promptSecurityPin, showToast } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { loadBankOptions, loadCashCollectorOptions } from '../ledger/ledger-bank-cash.js';
@@ -206,19 +206,26 @@ export async function editBankingItem(id, oldName, type) {
                 await BankDAO.update(id, { name: formValues });
             }
 
-            // 2. Global Rename in Transactions
-            // Cash uses receivedType: 'Cash' and receivedFrom: 'CollectorName'
-            // Bank uses receivedType: 'Bank' and receivedFrom: 'BankName'
+            // 2. Global Rename in Transactions & Bank Transactions
             let updatedCount = 0;
             const rType = isCash ? 'Cash' : 'Bank';
             
-            const snap = await TransactionDAO.collection.where('receivedType', '==', rType).where('receivedFrom', '==', oldName).get();
-            const docs = []; snap.forEach(doc => docs.push(doc.ref));
+            const [txnSnap, bTxnSnap, bTargetSnap] = await Promise.all([
+                TransactionDAO.collection.where('receivedType', '==', rType).where('receivedFrom', '==', oldName).get(),
+                BankTransactionDAO.collection.where('bankName', '==', oldName).get(),
+                BankTransactionDAO.collection.where('targetBankName', '==', oldName).get()
+            ]);
+            
+            const allDocs = [];
+            txnSnap.forEach(d => allDocs.push({ ref: d.ref, data: { receivedFrom: formValues } }));
+            bTxnSnap.forEach(d => allDocs.push({ ref: d.ref, data: { bankName: formValues } }));
+            bTargetSnap.forEach(d => allDocs.push({ ref: d.ref, data: { targetBankName: formValues } }));
+
             const CHUNK_SIZE = 400;
-            for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+            for (let i = 0; i < allDocs.length; i += CHUNK_SIZE) {
                 const b = db.batch();
-                docs.slice(i, i + CHUNK_SIZE).forEach(ref => {
-                    b.update(ref, { receivedFrom: formValues, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                allDocs.slice(i, i + CHUNK_SIZE).forEach(item => {
+                    b.update(item.ref, { ...item.data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
                     updatedCount++;
                 });
                 await b.commit();

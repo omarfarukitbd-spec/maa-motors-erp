@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { BankTransactionDAO } from '../dao.js';
-import { parseAmount, showToast } from '../utils.js';
+import { parseAmount, showToast, toDBDate, getTodayLocalDateString } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { firebase } from '../firebase-config.js';
 
@@ -43,7 +43,7 @@ export async function openTransactionModal(type, activeAccounts, refreshCallback
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-300 mb-1">তারিখ</label>
-                <input type="text" id="banking-txn-date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-mono outline-none datepicker cursor-pointer" value="${new Date().toISOString().split('T')[0]}">
+                <input type="text" id="banking-txn-date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-mono outline-none datepicker cursor-pointer" value="${getTodayLocalDateString()}">
             </div>
         </div>
     `;
@@ -63,7 +63,7 @@ export async function openTransactionModal(type, activeAccounts, refreshCallback
             const rawAmount = document.getElementById('banking-txn-amount').value;
             const amount = parseAmount(rawAmount);
             const note = document.getElementById('banking-txn-note').value.trim();
-            const date = document.getElementById('banking-txn-date').value;
+            const date = toDBDate(document.getElementById('banking-txn-date').value);
 
             if (!bankName) return Swal.showValidationMessage('অনুগ্রহ করে একটি অ্যাকাউন্ট নির্বাচন করুন!');
             if (type === 'TRANSFER' && !targetBankName) return Swal.showValidationMessage('অনুগ্রহ করে টার্গেট অ্যাকাউন্ট নির্বাচন করুন!');

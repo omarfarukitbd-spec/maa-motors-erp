@@ -1,5 +1,5 @@
 import { TransactionDAO, BankTransactionDAO } from '../dao.js';
-import { safeRound } from '../utils.js';
+import { safeRound, toDBDate } from '../utils.js';
 
 /**
  * Calculate dynamic balance for a specific bank or cash account
@@ -116,9 +116,7 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
 
     // Normalize dates for sorting
     allTxns.forEach(t => {
-        if (!t.dateStr && t.createdAt) {
-            t.dateStr = new Date(t.createdAt).toISOString().split('T')[0];
-        }
+        t.dateStr = toDBDate(t.dateStr || t.createdAt);
         t.sortTime = t.createdAt || (new Date(t.dateStr).getTime() || 0);
     });
 
@@ -132,19 +130,16 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
     let openingBalance = 0;
     const filteredTxns = [];
 
-    const fromDate = fromDateStr ? new Date(fromDateStr) : null;
-    if (fromDate) fromDate.setHours(0, 0, 0, 0);
-    const toDate = toDateStr ? new Date(toDateStr) : null;
-    if (toDate) toDate.setHours(23, 59, 59, 999);
+    const fromDate = fromDateStr ? toDBDate(fromDateStr) : '';
+    const toDate = toDateStr ? toDBDate(toDateStr) : '';
 
     allTxns.forEach(t => {
-        const tDate = new Date(t.dateStr);
-        tDate.setHours(12, 0, 0, 0); 
+        const dbDate = toDBDate(t.dateStr);
 
-        if (fromDate && tDate < fromDate) {
+        if (fromDate && dbDate < fromDate) {
             if (t.isCredit) openingBalance += t.amount;
             if (t.isDebit) openingBalance -= t.amount;
-        } else if (toDate && tDate > toDate) {
+        } else if (toDate && dbDate > toDate) {
             // After To Date -> ignore
         } else {
             // Inside Date Range -> add to filtered list

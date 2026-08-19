@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { getAccountLedgerTransactions } from './banking-calc.js';
-import { formatAmountWithComma } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getTodayLocalDateString } from '../utils.js';
 import { openWhatsAppShareModal } from './banking-ledger-share.js';
 import * as xlsx from 'xlsx';
 
@@ -13,17 +13,19 @@ export async function openAccountLedger(accountName, isCash) {
     isCurrentAccountCash = isCash;
     const defaultFromDate = new Date();
     defaultFromDate.setDate(1); 
+    const fromDateVal = defaultFromDate.toISOString().split('T')[0];
+    const toDateVal = getTodayLocalDateString();
     
     const html = `
         <div class="font-bn space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 text-left">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 mb-1">হতে (From Date)</label>
-                    <input type="text" id="bl-from-date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs font-mono outline-none datepicker cursor-pointer" value="${defaultFromDate.toISOString().split('T')[0]}">
+                    <input type="text" id="bl-from-date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs font-mono outline-none datepicker cursor-pointer" value="${fromDateVal}">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 mb-1">পর্যন্ত (To Date)</label>
-                    <input type="text" id="bl-to-date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs font-mono outline-none datepicker cursor-pointer" value="${new Date().toISOString().split('T')[0]}">
+                    <input type="text" id="bl-to-date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs font-mono outline-none datepicker cursor-pointer" value="${toDateVal}">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 mb-1">লেনদেনের ধরন</label>
@@ -144,7 +146,7 @@ export async function loadLedgerTable(accountName, isCash) {
             const depositStr = t.isCredit ? `<span class="text-emerald-400 font-bold font-mono">+ ৳ ${formatAmountWithComma(t.amount)}</span>` : '<span class="text-slate-600">-</span>';
             const withdrawStr = t.isDebit ? `<span class="text-red-400 font-bold font-mono">- ৳ ${formatAmountWithComma(t.amount)}</span>` : '<span class="text-slate-600">-</span>';
             const balColor = t.runningBalance < 0 ? 'text-red-400' : 'text-slate-200';
-            const formattedDate = new Date(t.dateStr).toLocaleDateString('en-GB');
+            const formattedDate = formatAppDate(t.dateStr);
             
             const deleteBtn = t.type !== 'CUSTOMER_PAYMENT' 
                 ? `<button data-perm="deleteBankTransaction" onclick="window.bankingApp.deleteBankingTransaction('${t.id}')" class="text-slate-500 hover:text-red-400 p-1 rounded transition-colors cursor-pointer" title="ডিলিট করুন"><i class="fa-solid fa-trash-can text-xs"></i></button>`
@@ -215,7 +217,7 @@ export function printLedger() {
     let rowsHtml = `<tr><td colspan="2" style="padding: 8px; font-weight: bold;">প্রারম্ভিক ব্যালেন্স (Opening Balance)</td><td></td><td></td><td style="padding: 8px; text-align: right; font-weight: bold;">৳ ${formatAmountWithComma(currentLedgerData.openingBalance)}</td></tr>`;
     
     currentLedgerData.transactions.forEach(t => {
-        const formattedDate = new Date(t.dateStr).toLocaleDateString('en-GB');
+        const formattedDate = formatAppDate(t.dateStr);
         rowsHtml += `<tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">${formattedDate}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>${t.type}</strong><br><small>${t.note}</small></td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${t.isCredit ? '৳ ' + formatAmountWithComma(t.amount) : '-'}</td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${t.isDebit ? '৳ ' + formatAmountWithComma(t.amount) : '-'}</td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">৳ ${formatAmountWithComma(t.runningBalance)}</td></tr>`;
     });
     
@@ -232,7 +234,7 @@ export function exportLedgerExcel() {
     
     const rows = [['Date', 'Description / Note', 'Deposit (+)', 'Withdrawal (-)', 'Balance'], ['', 'Opening Balance', '', '', currentLedgerData.openingBalance]];
     currentLedgerData.transactions.forEach(t => {
-        const formattedDate = new Date(t.dateStr).toLocaleDateString('en-GB');
+        const formattedDate = formatAppDate(t.dateStr);
         rows.push([formattedDate, `${t.type} - ${t.note}`, t.isCredit ? t.amount : 0, t.isDebit ? t.amount : 0, t.runningBalance]);
     });
     rows.push(['', 'Closing Balance', '', '', currentLedgerData.closingBalance]);
