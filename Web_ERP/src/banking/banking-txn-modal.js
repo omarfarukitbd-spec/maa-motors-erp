@@ -94,6 +94,7 @@ export async function openTransactionModal(type, activeAccounts, refreshCallback
             await BankTransactionDAO.add(txnData);
             auditLog('BANKING_TXN_CREATE', 'Admin', 'BankingLedger', `Created ${type} of ৳${formValues.amount} on ${formValues.bankName}`);
             
+            Swal.close();
             showToast('সফলভাবে সম্পন্ন হয়েছে!', 'success');
             if (typeof refreshCallback === 'function') await refreshCallback();
         } catch (e) {
