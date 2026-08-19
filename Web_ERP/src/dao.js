@@ -55,6 +55,10 @@ class BaseDAO {
         return docRef.id;
     }
 
+    async create(data) {
+        return await this.add(data);
+    }
+
     async update(id, data) {
         await this.collection.doc(id).update({ ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     }
@@ -249,10 +253,7 @@ export const AuditDAO = new class extends BaseDAO {
 
 export const BankDAO = new class extends BaseDAO {
     constructor() { super('bank_accounts'); }
-
-    async getAllBanks() {
-        return await this.getAll('name', 'asc');
-    }
+    async getAllBanks() { return await this.getAll('name', 'asc'); }
 
     async getActiveBanks() {
         const results = await this.getAllBanks();
@@ -262,10 +263,7 @@ export const BankDAO = new class extends BaseDAO {
 
 export const CashCollectorDAO = new class extends BaseDAO {
     constructor() { super('cash_collectors'); }
-
-    async getAllCollectors() {
-        return await this.getAll('name', 'asc');
-    }
+    async getAllCollectors() { return await this.getAll('name', 'asc'); }
 
     async getActiveCollectors() {
         const results = await this.getAllCollectors();

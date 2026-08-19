@@ -91,7 +91,7 @@ export async function openTransactionModal(type, activeAccounts, refreshCallback
                 txnData.targetBankName = formValues.targetBankName;
             }
 
-            await BankTransactionDAO.create(txnData);
+            await BankTransactionDAO.add(txnData);
             auditLog('BANKING_TXN_CREATE', 'Admin', 'BankingLedger', `Created ${type} of ৳${formValues.amount} on ${formValues.bankName}`);
             
             showToast('সফলভাবে সম্পন্ন হয়েছে!', 'success');
