@@ -1,5 +1,5 @@
 import { CustomerDAO, ZoneDAO, SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, formatSmsCounterText, sendSMS, promptSecurityPin, renderSkeletonRows, safeRound } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, formatSmsCounterText, buildSmsMessage, sendSMS, promptSecurityPin, renderSkeletonRows, safeRound } from '../utils.js';
 import Swal from 'sweetalert2';
 import { cachedCustomers, lastVisibleCust, pageStackCust, currentCustPage, custPageSize, setLastVisibleCust, setIsSearchingCust, setCachedZones } from './customer-state.js';
 import { renderCustomerRows } from './customer-ui.js';
@@ -109,18 +109,15 @@ export async function sendReminderSMS(phone, dueAmt, name, accountNo = '') {
         const settings = await SettingsDAO.getAppSettings();
         const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(name) : name) || 'Customer';
         const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
-        const todayDate = (window.formatAppDate && window.getTodayLocalDateString) ? window.formatAppDate(window.getTodayLocalDateString()) : 'Today';
+        const todayDate = formatAppDate(getTodayLocalDateString());
 
-        const accStr = accountNo ? `(A/C: ${accountNo})` : '';
-
-        let tpl = settings.smsTemplateReminder || 'Reminder: Dear [Name] [AccNo], your due is Tk [Due] on [Date]. Kindly clear payment soon. Thanks! - [Shop]';
-        let msg = tpl.replace(/\[Name\]/g, englishName)
-            .replace(/\[AccNo\]/g, accStr)
-            .replace(/\[Shop\]/g, shopName)
-            .replace(/\[Date\]/g, todayDate)
-            .replace(/\[Due\]/g, formatAmountWithComma(Math.abs(dueAmt)));
-
-        msg = msg.replace(/\s+/g, ' ');
+        const msg = buildSmsMessage(settings.smsTemplateReminder, 'Reminder: Dear [Name] [AccNo], your due is Tk [Due] on [Date]. Kindly clear payment soon. Thanks! - [Shop]', {
+            name: englishName,
+            accountNo,
+            shopName,
+            date: todayDate,
+            due: formatAmountWithComma(Math.abs(dueAmt))
+        });
 
         const { value: text } = await Swal.fire({
             title: '<i class="fa-solid fa-comment-sms text-blue-400 mr-2"></i>Send Reminder SMS',

@@ -67,8 +67,9 @@ export function renderTopDueCustomers() {
 
 export function sendDashWhatsAppReminder(phone, due, name) {
     const formattedDue = formatAmountWithComma(Math.abs(due));
+    const todayDate = formatAppDate(getTodayLocalDateString());
     const dueText = due < 0 ? `অ্যাডভান্স জমা: ৳ ${formattedDue}` : `বর্তমান মোট বকেয়া: ৳ ${formattedDue}`;
-    const msg = `আসসালামু আলাইকুম ${name},\nমেসার্স মা মোটরস্ থেকে আপনার হিসাব বিবরণী:\n\n${dueText}\n\n*বিশেষ অনুরোধ: আপনার বকেয়া টাকাটি দ্রুত পরিশোধ করার অনুরোধ রইল।*\n\nযোগাযোগ: 01819-397669\nধন্যবাদ! — মেসার্স মা মোটরস্`;
+    const msg = `আসসালামু আলাইকুম ${name},\nমেসার্স মা মোটরস্ থেকে আপনার হিসাব বিবরণী:\n\nতারিখ: ${todayDate}\n${dueText}\n\n*বিশেষ অনুরোধ: আপনার বকেয়া টাকাটি দ্রুত পরিশোধ করার অনুরোধ রইল।*\n\nযোগাযোগ: 01819-397669\nধন্যবাদ! — মেসার্স মা মোটরস্`;
     if (window.sendWhatsApp) window.sendWhatsApp(phone, msg);
 }
 

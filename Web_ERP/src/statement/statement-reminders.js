@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2';
-import { formatAmountWithComma, showToast, formatSmsCounterText } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, showToast, formatSmsCounterText } from '../utils.js';
 
 export async function sendStmtReminderSMS(stateRef = {}) {
     const { currentCustomerInfo, currentFinalBalance } = stateRef;
@@ -9,7 +9,11 @@ export async function sendStmtReminderSMS(stateRef = {}) {
     const dueLabel = dueAmount < 0 ? 'advance' : 'pending due';
     const formattedDue = formatAmountWithComma(Math.abs(dueAmount));
     const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(currentCustomerInfo.name) : currentCustomerInfo.name) || 'Customer';
-    const msg = `Dear ${englishName}, Your total ${dueLabel} at M/S. Maa Motors is Tk ${formattedDue}. Kindly clear payment. Contact: 01819-397669. Thank you! - M/S. Maa Motors`.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
+    const accStr = currentCustomerInfo.accountNo ? `(A/C: ${currentCustomerInfo.accountNo})` : '';
+    const stmtEndDate = document.getElementById('stmt-end-date')?.value;
+    const stmtDateStr = stmtEndDate ? formatAppDate(stmtEndDate) : formatAppDate(getTodayLocalDateString());
+
+    const msg = `Dear ${englishName} ${accStr}, Your total ${dueLabel} at M/S. Maa Motors is Tk ${formattedDue} on ${stmtDateStr}. Kindly clear payment soon. Thanks! - M/S. Maa Motors`.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
     const { value: text } = await Swal.fire({
         title: '<i class="fa-solid fa-comment-sms text-blue-400 mr-2"></i>Send Reminder SMS',
         html: `<div class="text-left space-y-1 mb-2 font-bn"><div class="text-xs text-slate-400">Recipient: <strong class="text-white">${phone}</strong></div><div id="stmt-sms-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(msg)}</div></div>`,
@@ -39,9 +43,15 @@ export async function sendStmtReminderWhatsApp(stateRef = {}) {
     const lessSum = document.getElementById('stmt-total-less')?.innerText || '৳ 0';
     const accNo = currentCustomerInfo.accountNo ? `#${currentCustomerInfo.accountNo}` : '-';
 
+    const stmtStartDate = document.getElementById('stmt-start-date')?.value;
+    const stmtEndDate = document.getElementById('stmt-end-date')?.value;
+    const dateStr = (stmtStartDate && stmtEndDate) 
+        ? `${formatAppDate(stmtStartDate)} থেকে ${formatAppDate(stmtEndDate)}` 
+        : (stmtEndDate ? formatAppDate(stmtEndDate) : formatAppDate(getTodayLocalDateString()));
+
     const shareLink = `${window.location.origin}${window.location.pathname}?view=public-stmt&id=${currentCustomerInfo.id}`;
 
-    let msg = `আসসালামু আলাইকুম ${currentCustomerInfo.name || 'কাস্টমার'},\nমেসার্স মা মোটরস্ থেকে আপনার মোট হিসাবের সামারি:\n\nহিসাব নং: ${accNo}\nমোট কেনাকাটা/বিল: ${billSum}\nমোট জমা: ${paidSum}\nমোট ছাড়: ${lessSum}\n---------------------------------\n`;
+    let msg = `আসসালামু আলাইকুম ${currentCustomerInfo.name || 'কাস্টমার'},\nমেসার্স মা মোটরস্ থেকে আপনার মোট হিসাবের সামারি:\n\nহিসাব নং: ${accNo}\nবিবরণীর সময়কাল: ${dateStr}\nমোট কেনাকাটা/বিল: ${billSum}\nমোট জমা: ${paidSum}\nমোট ছাড়: ${lessSum}\n---------------------------------\n`;
 
     if (dueAmount < 0) {
         msg += `অ্যাডভান্স জমা: ৳ ${formattedDue}\n\n`;

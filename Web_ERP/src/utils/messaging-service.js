@@ -156,3 +156,45 @@ export function sendWhatsApp(phone, message) {
     window.open(waUrl, '_blank');
     return true;
 }
+
+/**
+ * Centralized SMS Message Builder with Guaranteed Date Binding
+ * @param {string} template - The SMS template or empty string to use default
+ * @param {string} defaultTemplate - The standard fallback template
+ * @param {object} params - Replacement tokens: { name, accountNo, shopName, date, bill, paid, due, memo, type }
+ * @returns {string} - Clean formatted SMS string
+ */
+export function buildSmsMessage(template, defaultTemplate, params = {}) {
+    let tpl = (template && template.trim()) ? template.trim() : defaultTemplate;
+    const name = params.name || 'Customer';
+    const accStr = params.accountNo ? `(A/C: ${params.accountNo})` : '';
+    const shop = params.shopName || 'M/S. Maa Motors';
+    const date = params.date || '';
+    const bill = params.bill !== undefined ? String(params.bill) : '';
+    const paid = params.paid !== undefined ? String(params.paid) : '';
+    const due = params.due !== undefined ? String(params.due) : '';
+    const memo = params.memo || '1';
+    const type = params.type || 'Cash';
+
+    let msg = tpl
+        .replace(/\[Name\]/g, name)
+        .replace(/\[AccNo\]/g, accStr)
+        .replace(/\[Shop\]/g, shop)
+        .replace(/\[Date\]/g, date)
+        .replace(/\[Memo\]/g, memo)
+        .replace(/\[Bill\]/g, bill)
+        .replace(/\[Paid\]/g, paid)
+        .replace(/\[Type\]/g, type)
+        .replace(/\[Due\]/g, due);
+
+    // Fail-safe date injection: if custom template lacks [Date] and date is provided
+    if (tpl.indexOf('[Date]') === -1 && date) {
+        if (msg.includes(' - ')) {
+            msg = msg.replace(/ - [^-]+$/, ` (${date})$&`);
+        } else {
+            msg = `${msg} (${date})`;
+        }
+    }
+
+    return msg.replace(/\s+/g, ' ').trim();
+}

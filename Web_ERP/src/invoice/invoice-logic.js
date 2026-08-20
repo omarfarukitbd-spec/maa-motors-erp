@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { TransactionDAO, CustomerDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, numberToBanglaWords, toDBDate, safeRound } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, numberToBanglaWords, toDBDate, safeRound } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { renderInvoice, renderInvoiceItems, calcItemTotals, loadInvoiceCustomers, updateCashTenderUI } from './invoice-ui.js';
 
@@ -242,7 +242,9 @@ export async function saveAndPrintInvoice(layoutType) {
             const formattedDue = formatAmountWithComma(Math.abs(currentDue));
             const dueText = currentDue < 0 ? `অ্যাডভান্স জমা: ৳ ${formattedDue}` : `বর্তমান মোট বকেয়া: ৳ ${formattedDue}`;
             const directMemoLink = `${window.location.origin}${window.location.pathname}?view=public-memo&id=${txnRef.id}`;
-            const msg = `আসসালামু আলাইকুম ${customerName},\nমেসার্স মা মোটরস্ থেকে আপনার মেমো সেভ হয়েছে।\n\nআজকের বিল: ৳ ${formatAmountWithComma(bill)}\nআজকের জমা: ৳ ${formatAmountWithComma(paid)}\n---------------------------------\n${dueText}\n\nআপনার ডিজিটাল মেমোর PDF দেখতে নিচের লিংকে ক্লিক করুন:\n${directMemoLink}\n\nধন্যবাদ! — মেসার্স মা মোটরস্`;
+            const formattedDate = formatAppDate(date);
+            const memoStr = voucherNo ? `মেমো #${voucherNo}\n` : '';
+            const msg = `আসসালামু আলাইকুম ${customerName},\nমেসার্স মা মোটরস্ থেকে আপনার মেমো সেভ হয়েছে।\n\n${memoStr}তারিখ: ${formattedDate}\nআজকের বিল: ৳ ${formatAmountWithComma(bill)}\nআজকের জমা: ৳ ${formatAmountWithComma(paid)}\n---------------------------------\n${dueText}\n\nআপনার ডিজিটাল মেমোর PDF দেখতে নিচের লিংকে ক্লিক করুন:\n${directMemoLink}\n\nধন্যবাদ! — মেসার্স মা মোটরস্`;
             window.sendWhatsApp(customerPhone, msg);
         };
 

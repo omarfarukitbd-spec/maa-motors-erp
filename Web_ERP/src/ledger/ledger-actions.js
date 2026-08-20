@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, formatSmsCounterText, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, formatSmsCounterText, buildSmsMessage, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords } from '../utils.js';
 import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
@@ -107,29 +107,27 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
 
                 let autoMsg = '';
                 if (b > 0) {
-                    let tpl = settings.smsTemplateNew || 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]';
-                    autoMsg = tpl.replace(/\[Name\]/g, englishName)
-                        .replace(/\[AccNo\]/g, accStr)
-                        .replace(/\[Shop\]/g, shopName)
-                        .replace(/\[Date\]/g, formattedDate)
-                        .replace(/\[Memo\]/g, v || '1')
-                        .replace(/\[Bill\]/g, formatAmountWithComma(b))
-                        .replace(/\[Paid\]/g, formatAmountWithComma(p))
-                        .replace(/\[Due\]/g, formattedDue);
+                    autoMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', {
+                        name: englishName,
+                        accountNo,
+                        shopName,
+                        date: formattedDate,
+                        memo: v || '1',
+                        bill: formatAmountWithComma(b),
+                        paid: formatAmountWithComma(p),
+                        due: formattedDue
+                    });
                 } else {
-                    let tpl = settings.smsTemplatePaid || 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]';
-                    autoMsg = tpl.replace(/\[Name\]/g, englishName)
-                        .replace(/\[AccNo\]/g, accStr)
-                        .replace(/\[Shop\]/g, shopName)
-                        .replace(/\[Date\]/g, formattedDate)
-                        .replace(/\[Paid\]/g, formatAmountWithComma(p))
-                        .replace(/\[Type\]/g, receivedType || 'Cash')
-                        .replace(/\[Due\]/g, formattedDue);
-                    if (tpl.indexOf('[Date]') === -1 && formattedDate) {
-                        autoMsg = autoMsg.replace(/ - [^-]+$/, ` (${formattedDate})$&`);
-                    }
+                    autoMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', {
+                        name: englishName,
+                        accountNo,
+                        shopName,
+                        date: formattedDate,
+                        paid: formatAmountWithComma(p),
+                        type: receivedType || 'Cash',
+                        due: formattedDue
+                    });
                 }
-                autoMsg = autoMsg.replace(/\s+/g, ' ');
 
                 const { value: text, isConfirmed } = await Swal.fire({
                     title: '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-comment-sms text-emerald-400 text-3xl mb-1"></i><span class="font-bn font-black text-xl text-white">Transaction SMS Preview</span></div>',

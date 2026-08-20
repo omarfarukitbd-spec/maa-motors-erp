@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, formatSmsCounterText, promptSecurityPin, sendSMS, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, formatSmsCounterText, buildSmsMessage, promptSecurityPin, sendSMS, showToast } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 
 export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, stateRefs = {}) {
@@ -44,43 +44,38 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
         const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
 
         const accountNo = currentCust?.accountNo || txn?.customerAccountNo || txn?.accountNo || '';
-        const accStr = accountNo ? `(A/C: ${accountNo})` : '';
 
         let defaultMsg = '';
         if (isOpening) {
-            let tpl = settings.smsTemplateOpening || 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!';
-            defaultMsg = tpl.replace(/\[Name\]/g, englishName)
-                .replace(/\[AccNo\]/g, accStr)
-                .replace(/\[Shop\]/g, shopName)
-                .replace(/\[Date\]/g, formattedDate)
-                .replace(/\[Due\]/g, formattedDue);
+            defaultMsg = buildSmsMessage(settings.smsTemplateOpening, 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!', {
+                name: englishName,
+                accountNo,
+                shopName,
+                date: formattedDate,
+                due: formattedDue
+            });
         } else if (targetBill > 0) {
-            let tpl = settings.smsTemplateNew || 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]';
-            defaultMsg = tpl.replace(/\[Name\]/g, englishName)
-                .replace(/\[AccNo\]/g, accStr)
-                .replace(/\[Shop\]/g, shopName)
-                .replace(/\[Date\]/g, formattedDate)
-                .replace(/\[Memo\]/g, targetVoucher || '1')
-                .replace(/\[Bill\]/g, formattedBill)
-                .replace(/\[Paid\]/g, formattedPaid)
-                .replace(/\[Due\]/g, formattedDue);
+            defaultMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', {
+                name: englishName,
+                accountNo,
+                shopName,
+                date: formattedDate,
+                memo: targetVoucher || '1',
+                bill: formattedBill,
+                paid: formattedPaid,
+                due: formattedDue
+            });
         } else {
-            let tpl = settings.smsTemplatePaid || 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]';
-            let recvType = txn?.receivedType || 'Cash';
-            defaultMsg = tpl.replace(/\[Name\]/g, englishName)
-                .replace(/\[AccNo\]/g, accStr)
-                .replace(/\[Shop\]/g, shopName)
-                .replace(/\[Date\]/g, formattedDate)
-                .replace(/\[Paid\]/g, formattedPaid)
-                .replace(/\[Type\]/g, recvType)
-                .replace(/\[Due\]/g, formattedDue);
-            // If template has no [Date] placeholder, auto-append date at the end before shop name
-            if (tpl.indexOf('[Date]') === -1 && formattedDate) {
-                defaultMsg = defaultMsg.replace(/ - [^-]+$/, ` (${formattedDate})$&`);
-            }
+            defaultMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', {
+                name: englishName,
+                accountNo,
+                shopName,
+                date: formattedDate,
+                paid: formattedPaid,
+                type: txn?.receivedType || 'Cash',
+                due: formattedDue
+            });
         }
-
-        defaultMsg = defaultMsg.replace(/\s+/g, ' ');
 
         const { value: text } = await Swal.fire({
             title: '<i class="fa-solid fa-comment-sms text-blue-400 mr-2"></i>Send Transaction SMS',

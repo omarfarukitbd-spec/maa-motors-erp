@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO, ZoneDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, getTodayLocalDateString, toDBDate, numberToBanglaWords, resetLiveWords, handleError, safeRound, sendSMS, showToast } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, getTodayLocalDateString, toDBDate, numberToBanglaWords, resetLiveWords, handleError, safeRound, sendSMS, showToast, buildSmsMessage } from '../utils.js';
 import { populateAddressSuggestions } from '../utils/address-suggestions.js';
 import { loadAllZones } from '../customer/customer-handlers.js';
 import { auditLog } from '../audit.js';
@@ -151,16 +151,15 @@ export async function saveDashCustomer() {
                 const settings = await SettingsDAO.getAppSettings();
                 const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(n) : n) || 'Customer';
                 const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
-                const todayDate = (window.formatAppDate && window.getTodayLocalDateString) ? window.formatAppDate(window.getTodayLocalDateString()) : 'Today';
+                const formattedOpeningDate = formatAppDate(d);
 
-                let tpl = settings.smsTemplateOpening || 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!';
-                let msg = tpl.replace(/\[Name\]/g, englishName)
-                    .replace(/\[AccNo\]/g, `(A/C: ${accountNo})`)
-                    .replace(/\[Shop\]/g, shopName)
-                    .replace(/\[Date\]/g, todayDate)
-                    .replace(/\[Due\]/g, formatAmountWithComma(Math.abs(initialBalance)));
-
-                msg = msg.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
+                const msg = buildSmsMessage(settings.smsTemplateOpening, 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!', {
+                    name: englishName,
+                    accountNo,
+                    shopName,
+                    date: formattedOpeningDate,
+                    due: formatAmountWithComma(Math.abs(initialBalance))
+                });
 
                 const { value: text, isConfirmed } = await Swal.fire({
                     title: '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-comment-sms text-emerald-400 text-3xl mb-1"></i><span class="font-bn font-black text-xl text-white">Welcome SMS</span></div>',
