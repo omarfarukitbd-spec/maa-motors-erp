@@ -209,10 +209,19 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
 
     // Fail-safe date injection: if custom template lacks [Date] and date is provided
     if (tpl.indexOf('[Date]') === -1 && date) {
-        if (msg.includes(' - ')) {
-            msg = msg.replace(/ - [^-]+$/, ` (${date})$&`);
+        if (bill && msg.includes(`of Tk ${bill}`)) {
+            msg = msg.replace(`of Tk ${bill}`, `of Tk ${bill} on ${date}`);
+        } else if (paid && msg.includes(`of Tk ${paid}`)) {
+            msg = msg.replace(`of Tk ${paid}`, `of Tk ${paid} on ${date}`);
+        } else if (due && msg.includes(`due is Tk ${due}`)) {
+            msg = msg.replace(`due is Tk ${due}`, `due is Tk ${due} on ${date}`);
         } else {
-            msg = `${msg} (${date})`;
+            const lastDash = msg.lastIndexOf(' - ');
+            if (lastDash !== -1) {
+                msg = `${msg.slice(0, lastDash)} on ${date}${msg.slice(lastDash)}`;
+            } else {
+                msg = `${msg} on ${date}`;
+            }
         }
     }
 
