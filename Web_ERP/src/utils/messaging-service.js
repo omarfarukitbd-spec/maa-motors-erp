@@ -173,15 +173,35 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
     const bill = params.bill !== undefined ? String(params.bill) : '';
     const paid = params.paid !== undefined ? String(params.paid) : '';
     const due = params.due !== undefined ? String(params.due) : '';
-    const memo = params.memo || '1';
+    const memo = params.memo ? String(params.memo).trim() : '';
     const type = params.type || 'Cash';
 
-    let msg = tpl
+    let msg = tpl;
+
+    // Handle Memo / Voucher replacement
+    if (memo) {
+        if (msg.includes('[Memo]')) {
+            msg = msg.replace(/\[Memo\]/g, memo);
+        } else if (tpl.indexOf('[Memo]') === -1 && bill) {
+            if (msg.includes('purchase of Tk')) {
+                msg = msg.replace(/purchase of Tk/g, `purchase (Memo #${memo}) of Tk`);
+            } else if (msg.includes('Bill of Tk')) {
+                msg = msg.replace(/Bill of Tk/g, `Memo #${memo} of Tk`);
+            }
+        }
+    } else {
+        // Cleanly remove Memo #[Memo] when voucher field is empty
+        msg = msg
+            .replace(/Memo\s*#\s*\[Memo\]\s*of\s*/gi, 'Bill of ')
+            .replace(/Memo\s*#\s*\[Memo\]\s*,?\s*/gi, '')
+            .replace(/\[Memo\]/g, '');
+    }
+
+    msg = msg
         .replace(/\[Name\]/g, name)
         .replace(/\[AccNo\]/g, accStr)
         .replace(/\[Shop\]/g, shop)
         .replace(/\[Date\]/g, date)
-        .replace(/\[Memo\]/g, memo)
         .replace(/\[Bill\]/g, bill)
         .replace(/\[Paid\]/g, paid)
         .replace(/\[Type\]/g, type)

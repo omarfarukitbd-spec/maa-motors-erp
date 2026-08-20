@@ -60,7 +60,7 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 accountNo,
                 shopName,
                 date: formattedDate,
-                memo: targetVoucher || '1',
+                memo: targetVoucher,
                 bill: formattedBill,
                 paid: formattedPaid,
                 due: formattedDue

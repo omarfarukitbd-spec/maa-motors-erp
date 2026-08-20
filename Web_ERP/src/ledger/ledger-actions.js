@@ -112,7 +112,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
                         accountNo,
                         shopName,
                         date: formattedDate,
-                        memo: v || '1',
+                        memo: v,
                         bill: formatAmountWithComma(b),
                         paid: formatAmountWithComma(p),
                         due: formattedDue
