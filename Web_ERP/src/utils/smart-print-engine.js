@@ -2,29 +2,18 @@
  * Smart Print Engine — DOM-Measured Auto-Paginator
  * 1. Hidden 794px probe → real pixel heights via getBoundingClientRect().
  * 2. @page { margin: 0 } in iframe → Chrome URL/date header+footer removed.
- * 3. table-layout: auto → columns auto-fit content.
- * 4. Cross-browser: Chrome, Edge, Firefox, mobile.
+ * 3. Dynamic document.title update ensures automatic exact filename in "Save as PDF".
  */
 
-/** A4 at 96 CSS px/inch */
 const A4_W = 794;
 const A4_H = 1123;
 
 import { IFRAME_PRINT_CSS } from './print-iframe-css.js';
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DOM MEASUREMENT UTILITIES
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Creates a hidden A4-width probe div, renders all rows in a table,
- * measures each row's actual rendered pixel height, then removes the probe.
- *
- * @param {Array<string|{html:string}>} rowsArray
- * @param {string} tableColHeaderHtml - <thead> HTML
- * @returns {Promise<number[]>} Real pixel height for every row
- */
 export function measureRowHeights(rowsArray, tableColHeaderHtml) {
     return new Promise(resolve => {
         const probe = document.createElement('div');
@@ -39,7 +28,6 @@ export function measureRowHeights(rowsArray, tableColHeaderHtml) {
         const table = document.createElement('table');
         table.style.cssText = 'width:100%;border-collapse:collapse;table-layout:auto;';
         table.innerHTML = tableColHeaderHtml;
-
         const tbody = document.createElement('tbody');
 
         rowsArray.forEach(item => {
@@ -54,23 +42,15 @@ export function measureRowHeights(rowsArray, tableColHeaderHtml) {
         probe.appendChild(table);
         document.body.appendChild(probe);
 
-        // Wait for layout paint then measure
         requestAnimationFrame(() => {
             const trs = tbody.querySelectorAll('tr');
-            const heights = Array.from(trs).map(tr =>
-                Math.ceil(tr.getBoundingClientRect().height) + 1 // +1px safety
-            );
+            const heights = Array.from(trs).map(tr => Math.ceil(tr.getBoundingClientRect().height));
             document.body.removeChild(probe);
-            resolve(heights);
+            resolve(heights.length ? heights : rowsArray.map(() => 24));
         });
     });
 }
 
-/**
- * Measures actual rendered pixel height of any HTML block at A4 width.
- * @param {string} html
- * @returns {Promise<number>}
- */
 export function measureBlockHeight(html) {
     if (!html || !html.trim()) return Promise.resolve(0);
     return new Promise(resolve => {
@@ -95,38 +75,18 @@ export function measureBlockHeight(html) {
 // 2. SMART PAGINATORS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Calibrated A4 page constants (empirically tuned for MAA MOTORS header).
- *
- * WHY fixed heights instead of measured?
- * The renderSharedPrintHeader() contains an <img> logo that does NOT load
- * during the DOM probe (image cross-origin / async), so measureBlockHeight()
- * underestimates the page-1 header. Fixed values are more reliable.
- *
- * ROW_SCALE: In the probe, ALL rows are measured together in one table —
- * table-layout:auto gives narrow columns (more wrapping → taller rows).
- * In actual print, each PAGE has only a SUBSET of rows — columns can be
- * wider (less wrapping → shorter rows). Factor ≈ 0.88 corrects for this.
- */
-const PAGE1_HEADER_H = 148; // Measured empirically: gradient header + 20px margin-bottom
-const PAGEN_HEADER_H = 48;  // Repeat "Continued" header height
-const THEAD_H  = 34;        // Column header row
-const FOOTER_H = 36;        // Date + page number footer bar
-const PAD_V    = 16;        // Page div vertical padding (6px top + 6px bottom + 4px gap)
-const ROW_SCALE = 1.0;     // Row height correction: actual print < probe (per-page column widths differ)
-const BUDGET_BONUS = -20;    // Extra buffer so we don't cut a page short
+const PAGE1_HEADER_H = 148;
+const PAGEN_HEADER_H = 48;
+const THEAD_H  = 34;
+const FOOTER_H = 36;
+const PAD_V    = 16;
+const ROW_SCALE = 1.0;
+const BUDGET_BONUS = -20;
 
-/**
- * Smart paginator for zone/customer tabular reports.
- * Uses DOM-measured heights — zero blank pages, perfect fit.
- *
- * @returns {Promise<string>} Complete paginated HTML ready for printing
- */
 export async function smartPaginatePrint({
     rowsArray, page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
     summaryHtml = '', signatureHtml = '', formattedDate
 }) {
-    // Measure row heights AND dynamically measure page1HeaderHtml, summaryHtml, signatureHtml
     const [rawRowHeights, p1HeaderH, sumH, sigH] = await Promise.all([
         measureRowHeights(rowsArray, tableColHeaderHtml),
         page1HeaderHtml ? measureBlockHeight(page1HeaderHtml) : Promise.resolve(PAGE1_HEADER_H),
@@ -134,10 +94,7 @@ export async function smartPaginatePrint({
         signatureHtml ? measureBlockHeight(signatureHtml) : Promise.resolve(0)
     ]);
 
-    // Apply scale factor: actual print rows render shorter than probe measurement
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
-
-    // Dynamic calibrated budget using real measured header height
     const effectiveP1HeaderH = Math.max(p1HeaderH, PAGE1_HEADER_H);
     const page1Budget = A4_H - effectiveP1HeaderH - THEAD_H - FOOTER_H - PAD_V - 20;
     const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - 20;
@@ -167,9 +124,6 @@ export async function smartPaginatePrint({
     });
 }
 
-/**
- * Smart paginator for statement / ledger / খতিয়ান reports.
- */
 export async function smartPaginateStatement({
     rowsArray, page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
     page1ExtraHtml = '', summaryHtml = '', signatureHtml = '', formattedDate
@@ -182,8 +136,6 @@ export async function smartPaginateStatement({
     ]);
 
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
-
-    // Statement page-1 has extra customer info block below header
     const page1Budget = A4_H - PAGE1_HEADER_H - Math.ceil(extraH * ROW_SCALE) - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
     const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
     const totalLastExtra = sumH + sigH;
@@ -213,8 +165,6 @@ export async function smartPaginateStatement({
     });
 }
 
-
-/** Internal: builds final HTML string from paginated row buckets */
 function _buildPageHtml(pages, opts) {
     const {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
@@ -244,17 +194,9 @@ function _buildPageHtml(pages, opts) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. IFRAME-BASED PRINT TRIGGER (Suppresses Chrome Header/Footer)
+// 3. IFRAME-BASED PRINT TRIGGER (Suppresses Chrome Header/Footer + Auto Title)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Prints HTML via an isolated iframe with @page { margin: 0 }.
- * This removes Chrome's built-in URL / date / page-number header+footer.
- * Self-contained CSS — no external stylesheet dependency.
- *
- * @param {string} htmlBody - HTML body content to print
- * @param {string} [extraCss=''] - Any extra CSS to inject into iframe
- */
 export function printViaIframe(htmlBody, extraCss = '', title = 'Maa_Motors_Document') {
     const old = document.getElementById('__spe_iframe__');
     if (old) old.remove();
@@ -275,13 +217,29 @@ export function printViaIframe(htmlBody, extraCss = '', title = 'Maa_Motors_Docu
 </head><body>${htmlBody}</body></html>`);
     doc.close();
 
+    const originalParentTitle = document.title;
+
     const doPrint = () => {
-        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
-        catch (e) { window.print(); }
-        setTimeout(() => { try { iframe.remove(); } catch (e) { console.error("Remove iframe error:", e); } }, 4000);
+        try {
+            if (title) document.title = title;
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        } catch (e) {
+            window.print();
+        }
+
+        const cleanup = () => {
+            document.title = originalParentTitle;
+            try { iframe.remove(); } catch (err) { console.error("Remove iframe error:", err); }
+        };
+
+        window.addEventListener('afterprint', cleanup, { once: true });
+        if (iframe.contentWindow) {
+            iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true });
+        }
+        setTimeout(cleanup, 5000);
     };
 
-    // document.fonts.ready → waits for Bengali + Inter fonts to fully load
     const iDoc = iframe.contentDocument;
     if (iDoc && iDoc.fonts && iDoc.fonts.ready) {
         (async () => {
