@@ -1,4 +1,4 @@
-﻿import { SettingsDAO } from '../dao.js';
+import { SettingsDAO } from '../dao.js';
 import { formatAmountWithComma, escapeHTML, renderPrintHeader, formatAppDate, safeRound, getTodayLocalDateString } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
@@ -24,10 +24,26 @@ export async function printCustomerCollectionRegister(summaryData) {
     const dateTitle = isSingleDay ? `তারিখ: ${formatAppDate(startDate)}` : `সময়কাল: ${formatAppDate(startDate)} থেকে ${formatAppDate(endDate)}`;
     const reportTitle = isSingleDay ? 'দৈনিক কাস্টমার আদায় রেজিস্টার' : 'কাস্টমার আদায় ও কালেকশন রেজিস্টার';
 
-    const page1HeaderHtml = renderPrintHeader(settings, {
-        title: 'CUSTOMER COLLECTION REGISTER',
-        subtitle: `${reportTitle} • ${dateTitle}`
-    });
+    const bankSummaryHtml = summaryData.bankBalances && summaryData.bankBalances.length > 0 ? `
+        <div style="margin-bottom: 10px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; font-family: 'Hind Siliguri', sans-serif;">
+            <div style="font-size: 10.5px; font-weight: 800; color: #0284c7; margin-bottom: 4px;">
+                কোন ব্যাংকে কত টাকা আছে (Live Bank Balances):
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 9.5px; color: #334155;">
+                <span>ক্যাশ: <strong style="color:#0f172a;">৳ ${formatAmountWithComma(cashCollection)}</strong></span>
+                ${summaryData.bankBalances.map(b => `<span>• ${escapeHTML(b.name)}: <strong style="color:#0284c7;">৳ ${formatAmountWithComma(b.balance)}</strong></span>`).join('')}
+                ${summaryData.totalLiquidFund ? `<span style="margin-left: auto; color:#15803d; font-weight:900;">মোট স্থিতি: ৳ ${formatAmountWithComma(summaryData.totalLiquidFund)}</span>` : ''}
+            </div>
+        </div>
+    ` : '';
+
+    const page1HeaderHtml = `
+        ${renderPrintHeader(settings, {
+            title: 'CUSTOMER COLLECTION REGISTER',
+            subtitle: `${reportTitle} • ${dateTitle}`
+        })}
+        ${bankSummaryHtml}
+    `;
 
     const repeatHeaderHtml = `
         <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
@@ -40,6 +56,7 @@ export async function printCustomerCollectionRegister(summaryData) {
         const isEven = idx % 2 === 0;
         const bgStyle = isEven ? 'background: #ffffff;' : 'background: #f8fafc;';
         const methodDisplay = c.receivedType === 'Cash' ? 'ক্যাশ' : (c.receivedFrom || c.receivedType);
+        const dueVal = Number(c.currentDue || 0);
 
         return `
             <tr class="print-row-no-break" style="${bgStyle}">
@@ -53,7 +70,7 @@ export async function printCustomerCollectionRegister(summaryData) {
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10px; font-family: 'Inter', monospace; color: #475569;">${escapeHTML(c.voucherNo || '-')}</td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10px; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; color: #1e293b;">${escapeHTML(methodDisplay)}</td>
                 <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 6px; font-size: 11px; font-weight: 900; color: #16a34a; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(c.amount)}</td>
-                <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 6px; font-size: 10.5px; font-weight: 800; color: #dc2626; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(c.currentDue)}</td>
+                <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 6px; font-size: 10.5px; font-weight: 800; color: ${dueVal > 0 ? '#dc2626' : '#16a34a'}; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(Math.abs(dueVal))} ${dueVal < 0 ? '(Adv)' : ''}</td>
             </tr>
         `;
     });
@@ -68,7 +85,7 @@ export async function printCustomerCollectionRegister(summaryData) {
                 <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 65px;">ভাউচার</th>
                 <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 75px;">পেমেন্ট মেথড</th>
                 <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 85px;">আদায় (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 85px;">অবশিষ্ট বাকি (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 85px;">অবশিষ্ট বকেয়া (৳)</th>
             </tr>
         </thead>
     `;
