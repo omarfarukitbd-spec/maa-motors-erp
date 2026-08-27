@@ -1,4 +1,4 @@
-import Swal from 'sweetalert2';
+﻿import Swal from 'sweetalert2';
 import { UserDAO } from '../dao.js';
 import { auditLog } from '../audit.js';
 import { promptSecurityPin } from '../utils.js';
@@ -56,6 +56,9 @@ export async function managePermissions(userId, email, skipPin = false) {
                     ${createToggle('perm-printLedgerReceipt', 'ট্রানজেকশন রিসিপ্ট প্রিন্ট করা', 'Print Receipt', perms.printLedgerReceipt !== false)}
                     ${createToggle('perm-sendLedgerWhatsApp', 'ট্রানজেকশন WhatsApp মেসেজ', 'WhatsApp Alert', perms.sendLedgerWhatsApp !== false)}
                     ${createToggle('perm-sendLedgerSMS', 'ট্রানজেকশন SMS', 'SMS Alert', perms.sendLedgerSMS !== false)}
+
+                    <div class="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-file-invoice-dollar mr-1.5"></i>আর্থিক বিবরণী ও ক্লোজিং (Financial Summary):</div>
+                    ${createToggle('perm-viewFinancialSummary', 'সার্বিক আর্থিক বিবরণী ও ক্লোজিং দেখার অনুমতি', 'View Financial Summary', perms.viewFinancialSummary !== false)}
 
                     <div class="text-xs font-black text-amber-500 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-map-location-dot mr-1.5"></i>জোন রিপোর্ট (Zone Reports):</div>
                     ${createToggle('perm-viewZoneReports', 'জোন রিপোর্ট দেখার অনুমতি', 'View Zone Reports', perms.viewZoneReports !== false)}
@@ -160,6 +163,7 @@ export async function managePermissions(userId, email, skipPin = false) {
                     sendLedgerSMS: document.getElementById('perm-sendLedgerSMS').checked,
                     exportLedger: document.getElementById('perm-exportLedger').checked,
 
+                    viewFinancialSummary: document.getElementById('perm-viewFinancialSummary') ? document.getElementById('perm-viewFinancialSummary').checked : true,
                     viewZoneReports: document.getElementById('perm-viewZoneReports').checked,
                     printZoneReport: document.getElementById('perm-printZoneReport').checked,
                     printTagadaSheet: document.getElementById('perm-printTagadaSheet').checked,
@@ -222,3 +226,4 @@ export async function managePermissions(userId, email, skipPin = false) {
         Swal.fire('Error', 'Failed to update permissions.', 'error');
     }
 }
+

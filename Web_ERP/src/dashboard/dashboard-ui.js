@@ -1,4 +1,4 @@
-/**
+﻿/**
  * --- DASHBOARD UI MODULE (World-Class Aesthetics) ---
  * Generates HTML layout for Enterprise Dashboard.
  */
@@ -31,6 +31,7 @@ function getDashboardHeaderAndFormHTML() {
                 <button data-perm="dashAddCustomer" class="h-9 px-3.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.toggleDashCustomerForm()">
                     <i class="fa-solid fa-user-plus text-blue-400"></i><span>কাস্টমার</span>
                 </button>
+                <button class="h-9 px-3.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-400 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.navigate('financial-summary')" title="সার্বিক আর্থিক বিবরণী ও ক্লোজিং"><i class="fa-solid fa-file-invoice-dollar"></i><span>আর্থিক রিপোর্ট</span></button>
                 <button data-perm="printExecutiveReport" class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.printExecutiveSummary && window.printExecutiveSummary()" title="১-ক্লিক দৈনিক সারসংক্ষেপ">
                     <i class="fa-solid fa-print"></i><span>রিপোর্ট</span>
                 </button>
@@ -266,3 +267,4 @@ export function getDashboardHTML() {
         </div>
     `;
 }
+

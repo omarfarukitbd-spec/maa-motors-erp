@@ -11,6 +11,8 @@ import { renderInvoice } from '../invoice.js';
 import { renderAuditLogs, unsubscribeAuditLogs } from '../audit.js';
 import { renderRecycleBin, unsubscribeRecycleBinData } from '../admin/recycle-bin.js';
 import { renderZoneReports } from '../zone_reports/index.js';
+import { renderFinancialSummary } from '../financial_summary/index.js';
+import { renderMemoSearch } from '../memo_search/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
 import { initDatePickers } from '../utils/date-logic/date-picker.js';
@@ -127,6 +129,7 @@ export function navigate(view, params = {}) {
         case 'customers': renderCustomers(container); break;
         case 'ledger': renderLedger(container, params); break;
         case 'zone-reports': renderZoneReports(container); break;
+        case 'financial-summary': renderFinancialSummary(container, params); break;
         case 'bulk': renderBulkEntry(container); break;
         case 'invoice': renderInvoice(container, params); break;
         case 'expenses': renderExpenses(container); break;
@@ -135,6 +138,8 @@ export function navigate(view, params = {}) {
         case 'admin': renderAdmin(container); break;
         case 'audit': renderAuditLogs(container); break;
         case 'banking': window.bankingApp.renderBankingLedger(container); break;
+        case 'memo-search':
+        case 'memo_search': renderMemoSearch(container, params); break;
         case 'recycle-bin': renderRecycleBin(container); break;
     }
 

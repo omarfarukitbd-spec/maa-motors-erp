@@ -94,6 +94,7 @@ function handleOmniSearch(query) {
         { title: 'খতিয়ান (F3 / Alt+L)', subtitle: 'কাস্টমার লেনদেন ও জমা-খরচ', icon: 'fa-wallet text-purple-400', action: () => goNav('ledger') },
         { title: 'ফাস্ট এন্ট্রি (F7 / Alt+B)', subtitle: 'দ্রুত ইনভয়েস ও মেমো তৈরি', icon: 'fa-bolt text-amber-400', action: () => goNav('bulk') },
         { title: 'ইনভয়েস / ভাউচার জেনারেটর (F2 / Alt+I)', subtitle: 'সর্বশেষ রসিদ ও ভাউচার', icon: 'fa-receipt text-emerald-400', action: () => goNav('invoice') },
+        { title: 'মেমো / ভাউচার ইনস্ট্যান্ট সার্চ (F9 / Alt+M)', subtitle: 'মেমো নম্বর দিয়ে তাৎক্ষণিক বিবরণ ও প্রিন্ট', icon: 'fa-barcode text-cyan-400', action: () => goNav('memo-search') },
         { title: 'দৈনিক খরচ (F6 / Alt+E)', subtitle: 'দোকানের খরচের তালিকা', icon: 'fa-file-invoice-dollar text-red-400', action: () => goNav('expenses') },
         { title: 'সফটওয়্যার সেটিংস (F8 / Alt+S)', subtitle: 'দোকানের নাম ও সিকিউরিটি পিন', icon: 'fa-gear text-slate-400', action: () => goNav('settings') }
     ];

@@ -165,7 +165,7 @@ export function handleSearchResultClick(type, id, name, accNo) {
             navigate('statement', { customerId: id, customerName: name, accountNo: accNo });
         }
     } else if (type === 'voucher') {
-        navigate('ledger', { filterVoucher: id });
+        navigate('memo-search', { memoNo: id });
     }
 }
 
