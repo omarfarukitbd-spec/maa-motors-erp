@@ -14,7 +14,7 @@ export async function renderMemoSearch(container, params = {}) {
     if (!container) return;
 
     container.innerHTML = `
-        <div class="max-w-6xl mx-auto space-y-5 animate-fade-in font-bn pb-10">
+        <div class="max-w-6xl mx-auto space-y-6 animate-fade-in font-bn pb-10">
             <!-- Header Section -->
             <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/60 p-4 sm:p-5 rounded-3xl border border-slate-800 backdrop-blur-xl">
                 <div class="flex items-center gap-3.5">
@@ -35,32 +35,55 @@ export async function renderMemoSearch(container, params = {}) {
             </div>
 
             <!-- Search Hero Card -->
-            <div class="bg-slate-900/80 border border-slate-700/80 rounded-3xl p-4 sm:p-6 shadow-2xl backdrop-blur-xl space-y-3">
-                <div class="relative max-w-2xl mx-auto">
-                    <i class="fa-solid fa-magnifying-glass absolute left-4.5 top-1/2 -translate-y-1/2 text-cyan-400 text-base pointer-events-none"></i>
-                    <input type="text" id="memo-search-input" placeholder="মেমো বা ভাউচার নম্বর লিখুন (e.g. 76, #105, QC-12)..." autocomplete="off"
-                        class="w-full bg-slate-950 border-2 border-slate-700 focus:border-cyan-500 text-white rounded-2xl pl-12 pr-24 py-3.5 text-base sm:text-lg font-mono font-black outline-none transition-all shadow-inner placeholder:font-bn placeholder:text-slate-500 placeholder:text-sm">
+            <div class="bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/90 rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-2xl space-y-4">
+                <div class="relative max-w-2xl mx-auto group">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-cyan-400 z-10 transition-transform group-focus-within:scale-110">
+                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                    </div>
                     
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                        <button id="memo-voice-btn" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-cyan-600/30 text-cyan-400 flex items-center justify-center transition-all cursor-pointer" onclick="window.triggerMemoVoiceSearch()" title="মুখে বলে সার্চ করুন">
+                    <input type="text" 
+                        id="memo-search-input" 
+                        placeholder="মেমো বা ভাউচার নম্বর লিখুন (যেমন: 76, 105, QC-12)..." 
+                        autocomplete="off"
+                        class="w-full bg-slate-950/90 border-2 border-slate-700/80 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/15 text-white rounded-full pl-14 pr-28 py-4 text-base sm:text-lg font-mono font-black outline-none transition-all shadow-inner placeholder:font-bn placeholder:text-slate-500 placeholder:text-sm placeholder:font-normal">
+                    
+                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <button id="memo-voice-btn" 
+                            class="h-9 px-3 rounded-full bg-slate-800/90 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 flex items-center gap-1.5 text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer" 
+                            onclick="window.triggerMemoVoiceSearch()" 
+                            title="মুখে বলে সার্চ করুন (Voice Search)">
                             <i class="fa-solid fa-microphone text-xs"></i>
+                            <span class="hidden sm:inline text-[11px]">ভয়েস</span>
                         </button>
-                        <button id="memo-search-clear-btn" class="hidden w-8 h-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.clearMemoSearchInput()" title="মুছে ফেলুন">
+                        <button id="memo-search-clear-btn" 
+                            class="hidden w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center transition-all cursor-pointer" 
+                            onclick="window.clearMemoSearchInput()" 
+                            title="মুছে ফেলুন">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
                 </div>
 
-                <div id="memo-recent-chips-container" class="max-w-2xl mx-auto flex items-center gap-2 overflow-x-auto custom-scrollbar py-1 text-xs">
-                    <span class="text-slate-500 font-bold flex items-center gap-1 shrink-0 text-[11px]"><i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> সাম্প্রতিক মেমো:</span>
-                    <div id="memo-recent-chips" class="flex items-center gap-1.5 shrink-0"><span class="text-slate-600 text-xs italic">লোড হচ্ছে...</span></div>
+                <!-- Recent Memos Chips -->
+                <div id="memo-recent-chips-container" class="max-w-2xl mx-auto flex items-center gap-2.5 overflow-x-auto custom-scrollbar pt-1 text-xs">
+                    <span class="text-slate-400 font-bold flex items-center gap-1.5 shrink-0 text-xs">
+                        <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> সাম্প্রতিক মেমো:
+                    </span>
+                    <div id="memo-recent-chips" class="flex items-center gap-2 shrink-0">
+                        <span class="text-slate-600 text-xs italic">লোড হচ্ছে...</span>
+                    </div>
                 </div>
             </div>
 
+            <!-- Matches Selector (if multiple matches) -->
             <div id="memo-multiple-matches" class="hidden max-w-6xl mx-auto"></div>
+
+            <!-- Result Display Container -->
             <div id="memo-search-result-area" class="max-w-6xl mx-auto">
                 <div class="bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-12 text-center text-slate-500 space-y-3">
-                    <div class="w-16 h-16 rounded-3xl bg-slate-800/40 border border-slate-700/40 flex items-center justify-center mx-auto text-slate-600 text-2xl"><i class="fa-solid fa-barcode"></i></div>
+                    <div class="w-16 h-16 rounded-3xl bg-slate-800/40 border border-slate-700/40 flex items-center justify-center mx-auto text-slate-600 text-2xl">
+                        <i class="fa-solid fa-barcode"></i>
+                    </div>
                     <div class="text-sm font-bold text-slate-400">যেকোনো মেমো নম্বর লিখে সার্চ করুন</div>
                     <div class="text-xs text-slate-600">মেমো নম্বর লেখার সাথে সাথে সম্পূর্ণ বিবরণ ও হিসাবের সমীকরণ এখানে প্রদর্শিত হবে</div>
                 </div>
@@ -141,10 +164,10 @@ export async function executeMemoSearch(query) {
                     <div class="text-[11px] font-black text-cyan-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i> <span>একাধিক মেমো পাওয়া গেছে (${list.length}টি):</span></div>
                     <div class="flex flex-wrap gap-2">
                         ${list.map((m, idx) => `
-                            <button onclick="window.selectSpecificMemoMatch(${idx})" class="memo-match-btn px-3 py-1.5 rounded-xl ${idx === 0 ? 'bg-cyan-600 text-white font-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-2 border border-slate-700 transition-all cursor-pointer" data-idx="${idx}">
+                            <button onclick="window.selectSpecificMemoMatch(${idx})" class="memo-match-btn px-3.5 py-1.5 rounded-xl ${idx === 0 ? 'bg-cyan-600 text-white font-black shadow-lg shadow-cyan-900/40' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-2 border border-slate-700 transition-all cursor-pointer" data-idx="${idx}">
                                 <span class="font-mono font-bold">#${escapeHTML(m.voucherNo || m.id.slice(-6).toUpperCase())}</span>
                                 <span>•</span>
-                                <span class="font-bold truncate max-w-[120px]">${escapeHTML(m.customerName)}</span>
+                                <span class="font-bold truncate max-w-[140px]">${escapeHTML(String(m.customerName || '').replace(/^\[.*?\]\s*/, ''))}</span>
                                 <span class="text-[10px] text-slate-400 font-mono">(${formatAppDate(m.date)})</span>
                             </button>
                         `).join('')}
@@ -184,12 +207,16 @@ async function loadRecentMemoChips() {
             container.innerHTML = `<span class="text-slate-600 text-xs">কোনো মেমো নেই</span>`;
             return;
         }
-        container.innerHTML = recent.map(m => `
-            <button onclick="window.searchMemoDirectly('${escapeHTML(m.voucherNo)}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-600/30 hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 border border-slate-700/60 text-[11px] font-mono font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5" title="${escapeHTML(m.customerName)} (${formatAppDate(m.date)})">
-                <span>#${escapeHTML(m.voucherNo)}</span>
-                <span class="text-[10px] text-slate-500 font-sans font-normal">${escapeHTML(m.customerName.slice(0, 10))}</span>
-            </button>
-        `).join('');
+        container.innerHTML = recent.map(m => {
+            const cleanName = String(m.customerName || '').replace(/^\[.*?\]\s*/, '').trim();
+            const displayName = cleanName.length > 12 ? cleanName.slice(0, 11) + '..' : cleanName;
+            return `
+                <button onclick="window.searchMemoDirectly('${escapeHTML(m.voucherNo)}')" class="px-3 py-1 rounded-full bg-slate-800/90 hover:bg-cyan-500/20 hover:border-cyan-500/40 text-slate-200 hover:text-cyan-300 border border-slate-700/70 text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95" title="${escapeHTML(cleanName)} (${formatAppDate(m.date)})">
+                    <span class="font-mono font-black text-cyan-400">#${escapeHTML(m.voucherNo)}</span>
+                    <span class="text-slate-400 font-normal font-bn">${escapeHTML(displayName)}</span>
+                </button>
+            `;
+        }).join('');
     } catch (e) { console.error("loadRecentMemoChips error:", e); }
 }
 
@@ -201,7 +228,7 @@ window.selectSpecificMemoMatch = async function(idx) {
         if (resultArea) resultArea.innerHTML = renderMemoCardHTML(selectedTxn, adjacent);
         document.querySelectorAll('.memo-match-btn').forEach(btn => {
             const isTarget = Number(btn.dataset.idx) === idx;
-            btn.className = `memo-match-btn px-3 py-1.5 rounded-xl ${isTarget ? 'bg-cyan-600 text-white font-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-2 border border-slate-700 transition-all cursor-pointer`;
+            btn.className = `memo-match-btn px-3.5 py-1.5 rounded-xl ${isTarget ? 'bg-cyan-600 text-white font-black shadow-lg shadow-cyan-900/40' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-2 border border-slate-700 transition-all cursor-pointer`;
         });
     }
 };
