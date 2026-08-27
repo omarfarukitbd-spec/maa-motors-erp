@@ -36,9 +36,10 @@ export async function calculateAccountBalance(accountName, isCash = false) {
     
     bankTxns.forEach(tx => {
         const amt = Number(tx.amount || 0);
-        if (tx.type === 'DEPOSIT') manualDeposits += amt;
-        else if (tx.type === 'WITHDRAWAL') manualWithdrawals += amt;
-        else if (tx.type === 'TRANSFER') outgoingTransfers += amt;
+        const rawType = String(tx.type || '').toUpperCase();
+        if (rawType === 'DEPOSIT') manualDeposits += amt;
+        else if (rawType === 'WITHDRAWAL' || rawType === 'WITHDRAW') manualWithdrawals += amt;
+        else if (rawType === 'TRANSFER') outgoingTransfers += amt;
     });
     
     // 3. Process Incoming Transfers
@@ -80,16 +81,20 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
     const bankTxns = await BankTransactionDAO.getByBank(accountName);
     bankTxns.forEach(t => {
         const amt = Number(t.amount || 0);
+        const rawType = String(t.type || '').toUpperCase();
+        const isDep = rawType === 'DEPOSIT';
+        const isWith = rawType === 'WITHDRAWAL' || rawType === 'WITHDRAW';
+        const isTrans = rawType === 'TRANSFER';
         if (amt > 0) {
             allTxns.push({
                 id: t.id,
                 dateStr: t.date || '',
                 createdAt: t.createdAt ? (typeof t.createdAt.toMillis === 'function' ? t.createdAt.toMillis() : t.createdAt) : 0,
-                type: t.type,
+                type: isDep ? 'DEPOSIT' : (isWith ? 'WITHDRAWAL' : 'TRANSFER'),
                 amount: amt,
-                isCredit: t.type === 'DEPOSIT',
-                isDebit: t.type === 'WITHDRAWAL' || t.type === 'TRANSFER',
-                note: t.type === 'TRANSFER' ? `Transfer to ${t.targetBankName}. ${t.note || ''}` : (t.note || '-'),
+                isCredit: isDep,
+                isDebit: isWith || isTrans,
+                note: isTrans ? `Transfer to ${t.targetBankName}. ${t.note || ''}` : (t.note || '-'),
                 targetBank: t.targetBankName || ''
             });
         }
