@@ -98,6 +98,16 @@ export async function loadRecentTransactions(filterVoucher = null, filterCustome
 
 export function filterLedgerByCustomer(custId) {
     lastVisibleDoc = null; pageStack = []; balanceStack = []; currentPage = 1;
+    const phoneInput = document.getElementById('ledger-cust-phone');
+    const addressInput = document.getElementById('ledger-cust-address');
+    if (custId) {
+        const cust = (getCustomerCache() || []).find(c => c.id === custId);
+        if (phoneInput) phoneInput.value = cust?.phone || 'মোবাইল নেই';
+        if (addressInput) addressInput.value = (cust?.zone ? `[${cust.zone}] ` : '') + (cust?.address || 'ঠিকানা নেই');
+    } else {
+        if (phoneInput) phoneInput.value = '';
+        if (addressInput) addressInput.value = '';
+    }
     updateLedgerLiveText(); loadRecentTransactions(null, custId, 'reset');
 }
 
