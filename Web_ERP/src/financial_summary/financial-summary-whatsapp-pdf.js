@@ -1,8 +1,7 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, formatAppDate, showToast } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, formatAppDate } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
-import { generateAutoTablePDF } from '../utils/pdf/pdf-engine.js';
 import Swal from 'sweetalert2';
 
 /**
@@ -242,6 +241,19 @@ export async function printClosingDepositPdfReport(summaryData) {
         </div>
     `;
 
+    const cleanDateForFilename = (dStr) => {
+        if (!dStr) return '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dStr)) {
+            const [y, m, d] = dStr.split('-');
+            return `${d}-${m}-${y}`;
+        }
+        return String(dStr).replace(/\//g, '-');
+    };
+
+    const pdfTitle = isSingleDay 
+        ? `মা_মোটরস_দৈনিক_ক্লোজিং_${cleanDateForFilename(startDate)}`
+        : `মা_মোটরস_সার্বিক_ক্লোজিং_${cleanDateForFilename(startDate)}_থেকে_${cleanDateForFilename(endDate)}`;
+
     const pagesHtml = await smartPaginatePrint({
         page1HeaderHtml,
         repeatHeaderHtml,
@@ -252,48 +264,5 @@ export async function printClosingDepositPdfReport(summaryData) {
         formattedDate: dateTitle
     });
 
-    printViaIframe(pagesHtml);
-}
-
-/**
- * 2. Download Master jsPDF AutoTable Document
- */
-export async function downloadClosingPdf(summaryData) {
-    const { customerCollections, totalCollection, startDate } = summaryData;
-    if (!customerCollections || customerCollections.length === 0) {
-        showToast('কোনো জমার ডাটা নেই', 'warning');
-        return;
-    }
-
-    const settings = await SettingsDAO.getAppSettings();
-    const columns = [
-        { header: 'SL', dataKey: 'sl' },
-        { header: 'A/C', dataKey: 'acc' },
-        { header: 'Customer Name', dataKey: 'name' },
-        { header: 'Method', dataKey: 'method' },
-        { header: 'Paid (Tk)', dataKey: 'paid' },
-        { header: 'Due (Tk)', dataKey: 'due' }
-    ];
-
-    const data = customerCollections.map((c, idx) => ({
-        sl: String(idx + 1),
-        acc: c.customerAccountNo || '-',
-        name: `${c.customerName}\n${c.customerPhone || ''}`,
-        method: c.receivedType === 'Cash' ? 'Cash' : (c.receivedFrom || c.receivedType || 'Bank'),
-        paid: formatAmountWithComma(c.amount),
-        due: formatAmountWithComma(c.currentDue)
-    }));
-
-    await generateAutoTablePDF({
-        settings,
-        options: {
-            title: 'MASTER DAILY CLOSING & AUDIT REPORT',
-            subtitle: `Date: ${formatAppDate(startDate)} • Total Collection: Tk ${formatAmountWithComma(totalCollection)}`
-        },
-        columns,
-        data,
-        filename: `Maa_Motors_Master_Closing_${startDate}.pdf`
-    });
-
-    showToast('মাস্টার PDF ফাইল সফলভাবে ডাউনলোড হয়েছে!', 'success', 'PDF');
+    printViaIframe(pagesHtml, '', pdfTitle);
 }

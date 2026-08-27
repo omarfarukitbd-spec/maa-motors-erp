@@ -255,7 +255,7 @@ function _buildPageHtml(pages, opts) {
  * @param {string} htmlBody - HTML body content to print
  * @param {string} [extraCss=''] - Any extra CSS to inject into iframe
  */
-export function printViaIframe(htmlBody, extraCss = '') {
+export function printViaIframe(htmlBody, extraCss = '', title = 'Maa_Motors_Document') {
     const old = document.getElementById('__spe_iframe__');
     if (old) old.remove();
 
@@ -268,6 +268,7 @@ export function printViaIframe(htmlBody, extraCss = '') {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
     doc.open();
     doc.write(`<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8">
+<title>${title}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/kalpurush/font.css" rel="stylesheet">
 <style>${IFRAME_PRINT_CSS}${extraCss}</style>

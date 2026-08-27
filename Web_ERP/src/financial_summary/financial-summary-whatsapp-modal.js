@@ -3,7 +3,7 @@ import { SettingsDAO } from '../dao.js';
 import { formatAmountWithComma, formatAppDate, showToast } from '../utils.js';
 import { buildDailyClosingTextDigest, sendToSpecificWhatsApp, sendToCustomWhatsApp, copyWaText } from './financial-summary-whatsapp-text.js';
 import { drawFinancialCardCanvas, downloadWaCardImage } from './financial-summary-whatsapp-image.js';
-import { printClosingDepositPdfReport, downloadClosingPdf } from './financial-summary-whatsapp-pdf.js';
+import { printClosingDepositPdfReport } from './financial-summary-whatsapp-pdf.js';
 
 /**
  * Open 3-Tab Daily Closing Modal (Text Digest | Digital Image | PDF Report)
@@ -159,16 +159,10 @@ export async function shareDailyClosingViaWhatsApp(summaryData) {
 
             <!-- PDF Action Buttons -->
             <div class="space-y-2">
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <button type="button" onclick="window.triggerPrintClosingPdf()" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">
-                        <i class="fa-solid fa-print text-sm"></i>
-                        <span>A4 মাস্টার PDF প্রিন্ট / সেভ করুন</span>
-                    </button>
-                    <button type="button" onclick="window.triggerDownloadClosingPdf()" class="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl font-bold text-xs border border-slate-700 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">
-                        <i class="fa-solid fa-file-arrow-down text-sm text-cyan-400"></i>
-                        <span>মাস্টার PDF ডাউনলোড</span>
-                    </button>
-                </div>
+                <button type="button" onclick="window.triggerPrintClosingPdf()" class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-print text-sm"></i>
+                    <span>A4 মাস্টার PDF প্রিন্ট / সেভ করুন</span>
+                </button>
                 <button type="button" onclick="window.sendToSpecificWhatsApp('${primaryPhone}', window._closingFullText)" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer">
                     <i class="fa-brands fa-whatsapp text-sm"></i>
                     <span>হোয়াটসঅ্যাপে পূর্ণ বিবরণী পাঠান (${primaryPhone || 'বসের নম্বর'})</span>
@@ -206,7 +200,6 @@ export async function shareDailyClosingViaWhatsApp(summaryData) {
     window.copyWaText = copyWaText;
     window.downloadWaCardImage = downloadWaCardImage;
     window.triggerPrintClosingPdf = () => printClosingDepositPdfReport(window._closingSummaryData);
-    window.triggerDownloadClosingPdf = () => downloadClosingPdf(window._closingSummaryData);
 
     window.switchWaModalTab = (tab) => {
         const textTabBtn = document.getElementById('wa-tab-btn-text');
