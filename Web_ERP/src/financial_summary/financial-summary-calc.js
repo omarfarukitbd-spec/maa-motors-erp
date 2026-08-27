@@ -52,6 +52,23 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             expSnap.forEach(doc => rawExpenses.push({ id: doc.id, ...doc.data() }));
         }
 
+        // 3. Fetch Banking Ledger Manual Transactions in range
+        let bankTxnSnap;
+        try {
+            if (startDate === endDate) {
+                bankTxnSnap = await BankTransactionDAO.collection.where('date', '==', startDate).get();
+            } else {
+                bankTxnSnap = await BankTransactionDAO.collection.where('date', '>=', startDate).where('date', '<=', endDate).get();
+            }
+        } catch (e) {
+            console.warn('BankTransactionDAO query fallback:', e);
+        }
+
+        const rawBankTxns = [];
+        if (bankTxnSnap && !bankTxnSnap.empty) {
+            bankTxnSnap.forEach(doc => rawBankTxns.push({ id: doc.id, ...doc.data() }));
+        }
+
         // Sort Txns by date desc, createdAt desc
         rawTxns.sort((a, b) => {
             if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
@@ -60,6 +77,12 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
 
         // Sort Expenses by date desc, createdAt desc
         rawExpenses.sort((a, b) => {
+            if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
+            return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+        });
+
+        // Sort Bank Txns
+        rawBankTxns.sort((a, b) => {
             if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
             return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
         });
@@ -215,6 +238,26 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             console.warn('Bank balances summary warning:', bankErr);
         }
 
+        // Process Banking Transactions
+        let manualBankDepositTotal = 0;
+        let manualBankWithdrawTotal = 0;
+        const bankingTransactions = rawBankTxns.map(bt => {
+            const amt = Number(bt.amount) || 0;
+            const type = (bt.type || 'deposit').toLowerCase();
+            if (type === 'deposit') manualBankDepositTotal = safeRound(manualBankDepositTotal + amt);
+            if (type === 'withdraw') manualBankWithdrawTotal = safeRound(manualBankWithdrawTotal + amt);
+            return {
+                id: bt.id,
+                date: bt.date,
+                bankName: bt.bankName || '-',
+                type: bt.type || 'deposit',
+                targetBankName: bt.targetBankName || '',
+                amount: amt,
+                voucherNo: bt.voucherNo || bt.chequeNo || '-',
+                notes: bt.notes || bt.description || ''
+            };
+        });
+
         // Convert DayMap to sorted array (Date Descending)
         const dayByDaySummary = Array.from(dayMap.values()).map(d => ({
             ...d,
@@ -240,6 +283,9 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             expenseCategoryBreakdown,
             bankBalances,
             totalLiquidFund,
+            bankingTransactions,
+            manualBankDepositTotal,
+            manualBankWithdrawTotal,
             dayByDaySummary,
             customerCollections,
             rawExpenses

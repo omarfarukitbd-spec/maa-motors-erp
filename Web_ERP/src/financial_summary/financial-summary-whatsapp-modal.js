@@ -97,7 +97,23 @@ export async function shareDailyClosingViaWhatsApp(summaryData) {
                     </div>
                 </div>
 
-                <!-- Live Bank Balances Matrix -->
+                <!-- 1. Executive KPIs -->
+                <div class="grid grid-cols-3 gap-2 text-center font-bn">
+                    <div class="p-2 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <div class="text-[9.5px] text-slate-400 font-bold">মোট বিক্রয়</div>
+                        <div class="text-xs font-black text-blue-400 font-mono">৳ ${formatAmountWithComma(summaryData.totalSales || 0)}</div>
+                    </div>
+                    <div class="p-2 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <div class="text-[9.5px] text-slate-400 font-bold">মোট খরচ</div>
+                        <div class="text-xs font-black text-rose-400 font-mono">৳ ${formatAmountWithComma(summaryData.totalExpenses || 0)}</div>
+                    </div>
+                    <div class="p-2 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <div class="text-[9.5px] text-slate-400 font-bold">নিট ক্যাশ ফ্লো</div>
+                        <div class="text-xs font-black text-emerald-400 font-mono">৳ ${formatAmountWithComma(summaryData.netCashFlow || 0)}</div>
+                    </div>
+                </div>
+
+                <!-- 2. Live Bank Balances Matrix -->
                 ${summaryData.bankBalances && summaryData.bankBalances.length > 0 ? `
                     <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 text-[11px] space-y-1">
                         <div class="text-[10px] font-bold text-cyan-400 flex items-center gap-1">
@@ -110,7 +126,24 @@ export async function shareDailyClosingViaWhatsApp(summaryData) {
                     </div>
                 ` : ''}
 
-                <!-- Highlights of Deposited Customers -->
+                <!-- 3. Banking Ledger Transactions (if any) -->
+                ${summaryData.bankingTransactions && summaryData.bankingTransactions.length > 0 ? `
+                    <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 text-[11px] space-y-1">
+                        <div class="text-[10px] font-bold text-purple-400 flex items-center gap-1">
+                            <i class="fa-solid fa-money-bill-transfer"></i> ব্যাংকিং লেজার ম্যানুয়াল লেনদেন (${summaryData.bankingTransactions.length}টি):
+                        </div>
+                        <div class="space-y-1">
+                            ${summaryData.bankingTransactions.map(bt => `
+                                <div class="flex justify-between text-[10.5px]">
+                                    <span class="text-slate-300">• ${escapeHTML(bt.bankName)}${bt.targetBankName ? ' ➔ ' + escapeHTML(bt.targetBankName) : ''} <span class="text-slate-500">(${bt.type === 'deposit' ? 'জমা' : 'উত্তোলন'})</span></span>
+                                    <span class="font-mono font-bold ${bt.type === 'deposit' ? 'text-emerald-400' : 'text-rose-400'}">৳ ${formatAmountWithComma(bt.amount)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- 4. Highlights of Deposited Customers -->
                 <div class="text-[11px] text-slate-300 space-y-1">
                     <div class="text-slate-400 font-bold text-[10px]">আদায় প্রদানকারী গ্রাহকদের তালিকা (${summaryData.customerCollections?.length || 0} জন):</div>
                     <div class="max-h-28 overflow-y-auto custom-scrollbar space-y-1 pr-1">
@@ -129,11 +162,11 @@ export async function shareDailyClosingViaWhatsApp(summaryData) {
                 <div class="flex flex-col sm:flex-row gap-2">
                     <button type="button" onclick="window.triggerPrintClosingPdf()" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">
                         <i class="fa-solid fa-print text-sm"></i>
-                        <span>A4 PDF প্রিন্ট / সেভ করুন</span>
+                        <span>A4 মাস্টার PDF প্রিন্ট / সেভ করুন</span>
                     </button>
                     <button type="button" onclick="window.triggerDownloadClosingPdf()" class="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl font-bold text-xs border border-slate-700 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">
                         <i class="fa-solid fa-file-arrow-down text-sm text-cyan-400"></i>
-                        <span>PDF ডাউনলোড (AutoTable)</span>
+                        <span>মাস্টার PDF ডাউনলোড</span>
                     </button>
                 </div>
                 <button type="button" onclick="window.sendToSpecificWhatsApp('${primaryPhone}', window._closingFullText)" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer">

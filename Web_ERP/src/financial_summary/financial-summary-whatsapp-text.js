@@ -27,7 +27,18 @@ export function buildDailyClosingTextDigest(summaryData, shopName = 'M/S. MAA-MO
         }
     }
 
-    // 3. Customer Collection Details List ("তারিখ অনুযায়ী কে কে টাকা দিল")
+    // 3. Banking Ledger Manual Transactions
+    let bankingTxnsText = '';
+    if (summaryData.bankingTransactions && summaryData.bankingTransactions.length > 0) {
+        bankingTxnsText = summaryData.bankingTransactions.map((bt, idx) => {
+            const isDep = (bt.type || '').toLowerCase() === 'deposit';
+            const typeText = isDep ? 'সরাসরি জমা' : ((bt.type || '').toLowerCase() === 'withdraw' ? 'উত্তোলন' : 'ট্রান্সফার');
+            const target = bt.targetBankName ? ` ➔ ${bt.targetBankName}` : '';
+            return `   ${idx + 1}. ${bt.bankName}${target} - ৳ ${formatAmountWithComma(bt.amount)} [${typeText}] ${bt.notes ? `(${bt.notes})` : ''}`;
+        }).join('\n');
+    }
+
+    // 4. Customer Collection Details List ("তারিখ অনুযায়ী কে কে টাকা দিল")
     let custCollectionsText = '';
     if (summaryData.customerCollections && summaryData.customerCollections.length > 0) {
         custCollectionsText = summaryData.customerCollections.map((c, idx) => {
@@ -49,7 +60,7 @@ export function buildDailyClosingTextDigest(summaryData, shopName = 'M/S. MAA-MO
 * আজকের ব্যাংক ও ক্যাশভিত্তিক জমা:
 ${bankDetailsText || '   • কোনো জমার রেকর্ড নেই'}
 ─────────────────────────
-${liveBalancesText ? `* কোন ব্যাংকে কত টাকা আছে (Live Balances):\n${liveBalancesText}\n─────────────────────────\n` : ''}* আজকের কাস্টমার জমার পূর্ণাঙ্গ তালিকা:
+${liveBalancesText ? `* কোন ব্যাংকে কত টাকা আছে (Live Balances):\n${liveBalancesText}\n─────────────────────────\n` : ''}${bankingTxnsText ? `* ব্যাংকিং লেজার ম্যানুয়াল লেনদেন:\n${bankingTxnsText}\n─────────────────────────\n` : ''}* আজকের কাস্টমার জমার পূর্ণাঙ্গ তালিকা:
 ${custCollectionsText || '   • কোনো কাস্টমার জমার রেকর্ড নেই'}
 ─────────────────────────
 _Maa Motors ERP সিস্টেম থেকে স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত_`;
