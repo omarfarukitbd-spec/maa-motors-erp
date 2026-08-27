@@ -6,7 +6,7 @@ import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 
-export async function saveTransaction(editingRef = {}, callbacks = {}) {
+export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs = {}) {
     const mainBtn = document.getElementById('save-txn-btn');
     const sel = document.getElementById('ledger-customer-select');
     if (!sel || !sel.value) return Swal.fire('Error', 'কাস্টমার সিলেক্ট করুন', 'error');
@@ -25,6 +25,76 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
         else receivedType = 'Bank';
         receivedFrom = document.getElementById('ledger-received-from')?.value?.trim() || '';
     }
+
+    // --- DUPLICATE & MULTIPLE ENTRY SHIELD ---
+    let dateTxns = [];
+    try {
+        const snap = await TransactionDAO.collection.where('customerId', '==', id).where('date', '==', date).get();
+        snap.forEach(doc => {
+            if (!editingRef.id || doc.id !== editingRef.id) {
+                dateTxns.push({ id: doc.id, ...doc.data() });
+            }
+        });
+    } catch (err) {
+        console.warn("Date txns fetch error:", err);
+        dateTxns = (stateRefs?.currentLedgerTxns || []).filter(t => {
+            const tDate = toDBDate(t.date || t.createdAt);
+            return tDate === date && String(t.customerId || '') === id && (!editingRef.id || t.id !== editingRef.id);
+        });
+    }
+
+    let duplicateReasons = [];
+    if (dateTxns.length > 0) {
+        if (b > 0) {
+            const sameBill = dateTxns.find(t => Number(t.bill || 0) === b);
+            if (sameBill) {
+                duplicateReasons.push(`এই তারিখে একই অংকের বিল (৳ ${formatAmountWithComma(b)}) ইতিমধ্যে রেকর্ড আছে (ভাউচার: #${sameBill.voucherNo || '-'})${sameBill.notes ? ' - ' + sameBill.notes : ''}।`);
+            }
+        }
+        if (p > 0) {
+            const samePaid = dateTxns.find(t => Number(t.paid || 0) === p);
+            if (samePaid) {
+                duplicateReasons.push(`এই তারিখে একই অংকের জমা (৳ ${formatAmountWithComma(p)}) ইতিমধ্যে রেকর্ড আছে (${samePaid.receivedType || 'পেমেন্ট'} ${samePaid.receivedFrom ? '-' + samePaid.receivedFrom : ''})।`);
+            }
+            const prevDeposits = dateTxns.filter(t => Number(t.paid || 0) > 0);
+            if (prevDeposits.length > 0 && !samePaid) {
+                const totPrevPaid = prevDeposits.reduce((sum, item) => sum + (Number(item.paid) || 0), 0);
+                duplicateReasons.push(`এই তারিখে এই কাস্টমারের পূর্বে আরও ${prevDeposits.length}টি জমা রয়েছে (মোট জমা: ৳ ${formatAmountWithComma(totPrevPaid)})।`);
+            }
+        }
+    }
+
+    if (duplicateReasons.length > 0) {
+        const warnConfirm = await Swal.fire({
+            title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-lg text-amber-400"><i class="fa-solid fa-triangle-exclamation"></i><span>সম্ভাব্য ডাবল এন্ট্রি সতর্কবার্তা!</span></div>',
+            html: `
+                <div class="text-left space-y-2.5 font-bn p-3 bg-slate-900/90 rounded-2xl border border-amber-500/30">
+                    <p class="text-xs text-slate-200 font-bold">এই কাস্টমারের অ্যাকাউন্টে এই তারিখে (<span class="font-mono text-blue-400">${formatAppDate(date)}</span>) লেনদেন পাওয়া গেছে:</p>
+                    <ul class="list-disc list-inside space-y-1 text-xs text-amber-300 font-bold bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        ${duplicateReasons.map(r => `<li>${r}</li>`).join('')}
+                    </ul>
+                    <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 text-xs">
+                        <span class="text-[10px] text-blue-400 font-bold block uppercase">এখন নতুন যা এন্ট্রি করতে যাচ্ছেন:</span>
+                        ${b > 0 ? `<div class="text-red-400 font-bold">বিল: ৳ ${formatAmountWithComma(b)}</div>` : ''}
+                        ${p > 0 ? `<div class="text-emerald-400 font-bold">জমা: ৳ ${formatAmountWithComma(p)} ${receivedType ? '(' + receivedType + (receivedFrom ? ' - ' + receivedFrom : '') + ')' : ''}</div>` : ''}
+                    </div>
+                    <p class="text-xs text-slate-300 font-bold text-center">ভুল এন্ট্রি রোধ করতে নিশ্চিত করুন — আপনি কি এটি সেভ করতে চান?</p>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-circle-check mr-1.5"></i>হ্যাঁ, নিশ্চিতভাবে সেভ করব',
+            cancelButtonText: '<i class="fa-solid fa-pen-to-square mr-1.5"></i>না, সংশোধন করব',
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#64748b',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn' }
+        });
+
+        if (!warnConfirm.isConfirmed) {
+            if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; }
+            return;
+        }
+    }
+
     const confirmPreview = await Swal.fire({
         title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-xl text-white"><i class="fa-solid fa-file-shield text-blue-400"></i><span>লেনদেন যাচাই করুন</span></div>',
         html: `
@@ -107,56 +177,27 @@ export async function saveTransaction(editingRef = {}, callbacks = {}) {
 
                 let autoMsg = '';
                 if (b > 0) {
-                    autoMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', {
-                        name: englishName,
-                        accountNo,
-                        shopName,
-                        date: formattedDate,
-                        memo: v,
-                        bill: formatAmountWithComma(b),
-                        paid: formatAmountWithComma(p),
-                        due: formattedDue
-                    });
+                    autoMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, memo: v, bill: formatAmountWithComma(b), paid: formatAmountWithComma(p), due: formattedDue });
                 } else {
-                    autoMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', {
-                        name: englishName,
-                        accountNo,
-                        shopName,
-                        date: formattedDate,
-                        paid: formatAmountWithComma(p),
-                        type: receivedType || 'Cash',
-                        due: formattedDue
-                    });
+                    autoMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: receivedType || 'Cash', due: formattedDue });
                 }
 
                 const { value: text, isConfirmed } = await Swal.fire({
                     title: '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-comment-sms text-emerald-400 text-3xl mb-1"></i><span class="font-bn font-black text-xl text-white">Transaction SMS Preview</span></div>',
-                    html: `<div class="text-left space-y-2 mb-2 font-bn">
-                            <p class="text-[13px] text-slate-300">কাস্টমারকে কি লেনদেনের মেসেজ পাঠাতে চান? চাইলে নিচের লেখা এডিট করতে পারেন:</p>
-                            <div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${phone}</strong></div><div id="sms-txn-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(autoMsg)}</div></div>
-                           </div>`,
+                    html: `<div class="text-left space-y-2 mb-2 font-bn"><p class="text-[13px] text-slate-300">কাস্টমারকে কি লেনদেনের মেসেজ পাঠাতে চান? চাইলে নিচের লেখা এডিট করতে পারেন:</p><div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${phone}</strong></div><div id="sms-txn-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(autoMsg)}</div></div></div>`,
                     input: 'textarea', inputValue: autoMsg, inputAttributes: { rows: 4, class: 'm3-field text-xs font-mono !mt-0' },
                     showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> পাঠিয়ে দিন', cancelButtonText: 'স্কিপ করুন',
                     customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-700 shadow-2xl', confirmButton: 'm3-btn-primary !bg-emerald-600 hover:!bg-emerald-500 !px-7 !py-2.5 !rounded-xl font-bold shadow-lg shadow-emerald-600/30', cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700' },
                     didOpen: () => {
                         const textarea = Swal.getInput(); const counter = document.getElementById('sms-txn-char-counter');
-                        const updateCount = () => {
-                            if (textarea && counter) {
-                                counter.innerText = formatSmsCounterText(textarea.value);
-                            }
-                        };
-                        if (textarea) {
-                            textarea.oninput = updateCount; updateCount();
-                            setTimeout(() => textarea.focus(), 150);
-                        }
+                        const updateCount = () => { if (textarea && counter) counter.innerText = formatSmsCounterText(textarea.value); };
+                        if (textarea) { textarea.oninput = updateCount; updateCount(); setTimeout(() => textarea.focus(), 150); }
                     }
                 });
 
                 if (isConfirmed && text) {
                     const success = await sendSMS(phone, text, false);
-                    if (success) {
-                        showToast('এসএমএস সফলভাবে পাঠানো হয়েছে', 'success');
-                    }
+                    if (success) showToast('এসএমএস সফলভাবে পাঠানো হয়েছে', 'success');
                 }
             }
         } catch (autoErr) { console.warn('Transaction SMS dispatch error:', autoErr); }

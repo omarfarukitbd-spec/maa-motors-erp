@@ -58,6 +58,29 @@ export function renderLedger(container, params, callbacks = {}) {
                     <div id="ledger-paid-words" class="text-[10px] font-black text-emerald-400 mt-1 hidden italic truncate"></div>
                 </div>
             </div>
+
+            <!-- Locked Customer Auto-Details Strip -->
+            <div id="ledger-cust-details-strip" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                    <label class="m3-label text-slate-400 mb-1 block text-[11px] font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-phone text-blue-400 text-[10px]"></i>
+                        <span>মোবাইল নম্বর</span>
+                        <span class="text-[9px] text-slate-500 font-normal">(অটো / লকড)</span>
+                    </label>
+                    <input type="text" id="ledger-cust-phone" readonly disabled class="w-full bg-slate-950/60 border border-slate-800 rounded-xl h-9 px-3 text-xs text-slate-300 font-mono font-bold cursor-not-allowed select-all" placeholder="মোবাইল নম্বর...">
+                </div>
+                <div>
+                    <label class="m3-label text-slate-400 mb-1 block text-[11px] font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-location-dot text-amber-400 text-[10px]"></i>
+                        <span>ঠিকানা ও জোন</span>
+                        <span class="text-[9px] text-slate-500 font-normal">(অটো / লকড)</span>
+                    </label>
+                    <input type="text" id="ledger-cust-address" readonly disabled class="w-full bg-slate-950/60 border border-slate-800 rounded-xl h-9 px-3 text-xs text-slate-300 font-bold cursor-not-allowed select-all truncate" placeholder="কাস্টমারের ঠিকানা ও জোন...">
+                </div>
+            </div>
+
+            <!-- Live Balance Prediction Math HUD -->
+            <div id="ledger-live-math-hud" class="hidden p-3 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800/90 shadow-inner flex flex-wrap items-center justify-between gap-3 font-bn text-xs transition-all"></div>
             <div data-perm="addLedgerEntry" id="received-section" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-800/60 hide-for-boss">
                 <div>
                     <div class="flex items-center justify-between mb-1">

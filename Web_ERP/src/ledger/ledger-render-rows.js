@@ -8,16 +8,55 @@ export function updateLedgerLiveText() {
     const p = parseAmount(document.getElementById('ledger-paid')?.value || '0');
     const sel = document.getElementById('ledger-customer-select');
     const calc = document.getElementById('live-due-calc');
-    if(!calc) return;
+    const hud = document.getElementById('ledger-live-math-hud');
 
-    if(sel && sel.selectedIndex > 0) {
+    if (sel && sel.selectedIndex > 0) {
         const currentDue = (parseFloat(sel.options[sel.selectedIndex].dataset.due) || 0);
         const nextDue = safeRound(currentDue + b - p);
-        calc.innerText = `বকেয়া: ৳ ${formatAmountWithComma(Math.abs(nextDue))} ${nextDue < 0 ? '(অ্যাড)' : ''}`;
-        calc.className = nextDue > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-1.5 rounded-xl text-xs font-black' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-1.5 rounded-xl text-xs font-black';
+        
+        if (calc) {
+            calc.innerText = `বকেয়া: ৳ ${formatAmountWithComma(Math.abs(nextDue))} ${nextDue < 0 ? '(অ্যাড)' : ''}`;
+            calc.className = nextDue > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-1.5 rounded-xl text-xs font-black' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-1.5 rounded-xl text-xs font-black';
+        }
+
+        if (hud) {
+            hud.classList.remove('hidden');
+            const prevDueBadge = currentDue > 0 
+                ? `<span class="text-red-400 font-mono font-bold">৳ ${formatAmountWithComma(currentDue)} (বকেয়া)</span>`
+                : (currentDue < 0 ? `<span class="text-emerald-400 font-mono font-bold">৳ ${formatAmountWithComma(Math.abs(currentDue))} (অ্যাডভান্স)</span>` : `<span class="text-slate-400 font-mono font-bold">৳ ০.০০</span>`);
+
+            let mathParts = `<span>পূর্বের ব্যালেন্স: ${prevDueBadge}</span>`;
+            if (b > 0) {
+                mathParts += `<span class="text-red-400 font-bold font-mono"> + বিল: ৳ ${formatAmountWithComma(b)}</span>`;
+            }
+            if (p > 0) {
+                mathParts += `<span class="text-emerald-400 font-bold font-mono"> - জমা: ৳ ${formatAmountWithComma(p)}</span>`;
+            }
+
+            const nextDueBadge = nextDue > 0 
+                ? `<span class="text-red-400 font-black font-mono text-sm">৳ ${formatAmountWithComma(nextDue)} (বকেয়া)</span>`
+                : (nextDue < 0 ? `<span class="text-emerald-400 font-black font-mono text-sm">৳ ${formatAmountWithComma(Math.abs(nextDue))} (অ্যাডভান্স)</span>` : `<span class="text-emerald-400 font-black font-mono text-sm">৳ ০.০০ (পরিশোধিত)</span>`);
+
+            hud.innerHTML = `
+                <div class="flex items-center gap-2 flex-wrap text-slate-300 font-bold">
+                    <i class="fa-solid fa-calculator text-purple-400 text-sm"></i>
+                    ${mathParts}
+                </div>
+                <div class="flex items-center gap-1.5 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700/80 shadow-sm">
+                    <span class="text-slate-400 text-[11px] font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-right text-blue-400"></i><span>নতুন অবশিষ্ট ব্যালেন্স:</span></span>
+                    ${nextDueBadge}
+                </div>
+            `;
+        }
     } else {
-        calc.innerText = '৳ ০';
-        calc.className = 'bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700 text-xs font-black text-blue-400 shadow-inner font-bn';
+        if (calc) {
+            calc.innerText = '৳ ০';
+            calc.className = 'bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700 text-xs font-black text-blue-400 shadow-inner font-bn';
+        }
+        if (hud) {
+            hud.classList.add('hidden');
+            hud.innerHTML = '';
+        }
     }
 }
 
