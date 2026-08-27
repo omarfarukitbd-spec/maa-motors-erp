@@ -207,6 +207,8 @@ export async function printClosingDepositPdfReport(summaryData) {
         </div>
     `;
 
+    const printDateStr = isSingleDay ? formatAppDate(startDate) : `${formatAppDate(startDate)} - ${formatAppDate(endDate)}`;
+
     const pagesHtml = await smartPaginatePrint({
         page1HeaderHtml,
         repeatHeaderHtml,
@@ -214,7 +216,7 @@ export async function printClosingDepositPdfReport(summaryData) {
         rowsArray,
         summaryHtml,
         signatureHtml,
-        formattedDate: dateTitle
+        formattedDate: printDateStr
     });
 
     printViaIframe(pagesHtml);
