@@ -126,18 +126,22 @@ export async function smartPaginatePrint({
     rowsArray, page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
     summaryHtml = '', signatureHtml = '', formattedDate
 }) {
-    // Measure ONLY row heights (these need actual measurement for variable-height rows)
-    const [rawRowHeights, sumH] = await Promise.all([
+    // Measure row heights AND dynamically measure page1HeaderHtml, summaryHtml, signatureHtml
+    const [rawRowHeights, p1HeaderH, sumH, sigH] = await Promise.all([
         measureRowHeights(rowsArray, tableColHeaderHtml),
-        summaryHtml ? measureBlockHeight(summaryHtml) : Promise.resolve(0)
+        page1HeaderHtml ? measureBlockHeight(page1HeaderHtml) : Promise.resolve(PAGE1_HEADER_H),
+        summaryHtml ? measureBlockHeight(summaryHtml) : Promise.resolve(0),
+        signatureHtml ? measureBlockHeight(signatureHtml) : Promise.resolve(0)
     ]);
 
     // Apply scale factor: actual print rows render shorter than probe measurement
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
 
-    // Calibrated budgets using fixed header heights
-    const page1Budget = A4_H - PAGE1_HEADER_H - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
-    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
+    // Dynamic calibrated budget using real measured header height
+    const effectiveP1HeaderH = Math.max(p1HeaderH, PAGE1_HEADER_H);
+    const page1Budget = A4_H - effectiveP1HeaderH - THEAD_H - FOOTER_H - PAD_V - 20;
+    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - 20;
+    const totalLastExtra = sumH + sigH;
 
     const pages = [];
     let cur = [], curH = 0, isP1 = true;
@@ -146,7 +150,7 @@ export async function smartPaginatePrint({
         const rh = rowHeights[i] || 24;
         const budget = isP1 ? page1Budget : pageNBudget;
         const isLastRow = i === rowsArray.length - 1;
-        const extra = isLastRow ? sumH : 0;
+        const extra = isLastRow ? totalLastExtra : 0;
 
         if (curH + rh + extra > budget && cur.length > 0) {
             pages.push(cur); cur = []; curH = 0; isP1 = false;
@@ -170,10 +174,11 @@ export async function smartPaginateStatement({
     rowsArray, page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
     page1ExtraHtml = '', summaryHtml = '', signatureHtml = '', formattedDate
 }) {
-    const [rawRowHeights, extraH, sumH] = await Promise.all([
+    const [rawRowHeights, extraH, sumH, sigH] = await Promise.all([
         measureRowHeights(rowsArray, tableColHeaderHtml),
         page1ExtraHtml ? measureBlockHeight(page1ExtraHtml) : Promise.resolve(0),
-        summaryHtml ? measureBlockHeight(summaryHtml) : Promise.resolve(0)
+        summaryHtml ? measureBlockHeight(summaryHtml) : Promise.resolve(0),
+        signatureHtml ? measureBlockHeight(signatureHtml) : Promise.resolve(0)
     ]);
 
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
@@ -181,6 +186,7 @@ export async function smartPaginateStatement({
     // Statement page-1 has extra customer info block below header
     const page1Budget = A4_H - PAGE1_HEADER_H - Math.ceil(extraH * ROW_SCALE) - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
     const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
+    const totalLastExtra = sumH + sigH;
 
     const pages = [];
     let cur = [], curH = 0, isP1 = true;
@@ -189,7 +195,7 @@ export async function smartPaginateStatement({
         const rh = rowHeights[i] || 24;
         const budget = isP1 ? page1Budget : pageNBudget;
         const isLastRow = i === rowsArray.length - 1;
-        const extra = isLastRow ? sumH : 0;
+        const extra = isLastRow ? totalLastExtra : 0;
 
         if (curH + rh + extra > budget && cur.length > 0) {
             pages.push(cur); cur = []; curH = 0; isP1 = false;
@@ -230,7 +236,7 @@ function _buildPageHtml(pages, opts) {
             </table>
             ${isLast ? summaryHtml + signatureHtml : ''}
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#475569;font-weight:700;border-top:1px solid #cbd5e1;padding-top:6px;margin-top:8px;font-family:'Inter','Kalpurush',sans-serif;">
-                <span>তারিখ: ${formattedDate}</span>
+                <span>${formattedDate ? 'তারিখ: ' + formattedDate : ''}</span>
                 <span>পৃষ্ঠা ${num} / ${total}</span>
             </div>
         </div>`;
