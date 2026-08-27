@@ -1,12 +1,12 @@
 import Swal from 'sweetalert2';
-import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
+import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { formatAmountWithComma, formatAppDate, escapeHTML, safeRound } from '../utils.js';
 
 /**
  * Open Inline Customer Ledger Statement Drawer Modal
  */
-export async function openCustomerLedgerDrawer(customerId, customerName = '', accountNo = '') {
-    if (!customerId) return;
+export async function openCustomerLedgerDrawer(targetId, customerName = '', accountNo = '') {
+    if (!targetId) return;
 
     Swal.fire({
         title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-lg text-white"><i class="fa-solid fa-spinner fa-spin text-blue-400"></i><span>খতিয়ান লোড হচ্ছে...</span></div>',
@@ -16,8 +16,20 @@ export async function openCustomerLedgerDrawer(customerId, customerName = '', ac
     });
 
     try {
-        const customer = (await CustomerDAO.getById(customerId)) || {};
-        const rawTxns = await TransactionDAO.getByCustomer(customerId);
+        let customer = await CustomerDAO.getById(targetId);
+        let actualCustId = targetId;
+
+        // If targetId was a transaction ID instead of customer ID
+        if (!customer) {
+            const txn = await TransactionDAO.getById(targetId);
+            if (txn && txn.customerId) {
+                actualCustId = txn.customerId;
+                customer = await CustomerDAO.getById(actualCustId);
+            }
+        }
+
+        customer = customer || {};
+        const rawTxns = await TransactionDAO.getByCustomer(actualCustId);
 
         // Sort chronologically
         const getTxnTime = (t) => {
@@ -66,7 +78,7 @@ export async function openCustomerLedgerDrawer(customerId, customerName = '', ac
 
         const currentNetDue = Number(customer.totalDue || runningBalance);
 
-        Swal.fire({
+        const result = await Swal.fire({
             title: `
                 <div class="flex items-center justify-between gap-3 border-b border-slate-800 pb-3 text-left font-bn w-full">
                     <div class="flex items-center gap-2.5">

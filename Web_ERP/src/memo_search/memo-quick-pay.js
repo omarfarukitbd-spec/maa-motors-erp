@@ -1,15 +1,39 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { TransactionDAO, CustomerDAO, BankDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, numberToBanglaWords, toDBDate, safeRound } from '../utils.js';
+import { parseAmount, formatAmountWithComma, numberToBanglaWords, toDBDate, safeRound, escapeHTML } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 import { auditLog } from '../audit.js';
 
 /**
  * Open Quick Payment Collect Modal directly for a memo
  */
-export async function openMemoQuickPayModal(txnId, voucherNo, customerId, customerName, currentDue = 0) {
-    if (!customerId) return;
+export async function openMemoQuickPayModal(txnId, voucherNo, customerId, currentDue = 0) {
+    let targetTxn = null;
+    if (txnId && (!customerId || !voucherNo)) {
+        try {
+            targetTxn = await TransactionDAO.getById(txnId);
+        } catch (e) {
+            console.error("Error fetching txn for quick pay:", e);
+        }
+    }
+
+    const targetCustId = customerId || targetTxn?.customerId;
+    const targetVoucher = voucherNo || targetTxn?.voucherNo || '';
+    if (!targetCustId) {
+        showToast('কাস্টমার তথ্য পাওয়া যায়নি', 'error');
+        return;
+    }
+
+    let customer = {};
+    try {
+        customer = (await CustomerDAO.getById(targetCustId)) || {};
+    } catch (e) {
+        console.error("Error fetching customer for quick pay:", e);
+    }
+
+    const custName = customer.name || targetTxn?.customerName || 'গ্রাহক';
+    const netDue = currentDue !== undefined ? Number(currentDue) : Number(customer.totalDue || 0);
 
     let activeBanks = [];
     try {
@@ -18,14 +42,14 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, custom
         console.warn("Could not fetch banks:", e);
     }
 
-    const defaultAmount = currentDue > 0 ? currentDue : '';
+    const defaultAmount = netDue > 0 ? netDue : '';
     const today = new Date().toISOString().split('T')[0];
 
     const { value: formValues } = await Swal.fire({
         title: `
             <div class="flex items-center justify-center gap-2 font-bn font-black text-lg text-white">
                 <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i>
-                <span>টাকা জমা নিন (মেমো #${escapeHTML(voucherNo || '')})</span>
+                <span>টাকা জমা নিন (মেমো #${escapeHTML(targetVoucher)})</span>
             </div>
         `,
         html: `
@@ -33,11 +57,11 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, custom
                 <div class="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 flex justify-between items-center">
                     <div>
                         <div class="text-[10px] text-slate-500 font-bold">কাস্টমার</div>
-                        <div class="text-sm font-black text-white">${escapeHTML(customerName)}</div>
+                        <div class="text-sm font-black text-white">${escapeHTML(custName)}</div>
                     </div>
                     <div class="text-right">
                         <div class="text-[10px] text-slate-500 font-bold">বর্তমান বকেয়া</div>
-                        <div class="text-sm font-mono font-black text-red-400">৳ ${formatAmountWithComma(currentDue)}</div>
+                        <div class="text-sm font-mono font-black text-red-400">৳ ${formatAmountWithComma(netDue)}</div>
                     </div>
                 </div>
 
@@ -98,7 +122,7 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, custom
             const pType = document.getElementById('quick-pay-type')?.value || 'Cash';
             const bankName = document.getElementById('quick-pay-bank')?.value || '';
             const date = toDBDate(document.getElementById('quick-pay-date')?.value || today);
-            const notes = document.getElementById('quick-pay-notes')?.value || `মেমো #${voucherNo} বাবদ জমা`;
+            const notes = document.getElementById('quick-pay-notes')?.value || `মেমো #${targetVoucher} বাবদ জমা`;
 
             return { amt, pType, bankName, date, notes };
         }
@@ -111,15 +135,14 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, custom
     try {
         const batch = db.batch();
         const txnRef = TransactionDAO.getRef();
-        const customer = (await CustomerDAO.getById(customerId)) || {};
         const prevDue = Number(customer.totalDue) || 0;
         const newDue = safeRound(prevDue - formValues.amt);
 
         const newTxnData = {
-            customerId,
-            customerName: customer.name || customerName,
+            customerId: targetCustId,
+            customerName: customer.name || custName,
             date: formValues.date,
-            voucherNo: voucherNo || 'COLLECTION',
+            voucherNo: targetVoucher || 'COLLECTION',
             bill: 0,
             paid: formValues.amt,
             receivedType: formValues.pType,
@@ -132,19 +155,19 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, custom
         };
 
         batch.set(txnRef, newTxnData);
-        batch.update(CustomerDAO.getRef(customerId), {
+        batch.update(CustomerDAO.getRef(targetCustId), {
             totalDue: firebase.firestore.FieldValue.increment(-formValues.amt)
         });
 
         await batch.commit();
-        auditLog('QUICK_COLLECT', 'Transaction', txnRef.id, customerName, { paid: formValues.amt, voucherNo });
+        auditLog('QUICK_COLLECT', 'Transaction', txnRef.id, custName, { paid: formValues.amt, voucherNo: targetVoucher });
 
         showToast(`৳ ${formatAmountWithComma(formValues.amt)} জমা সফলভাবে সেভ হয়েছে!`, 'success');
         Swal.close();
 
         // Automatically reload active memo view to reflect updated status & balance!
         if (typeof window.searchMemoDirectly === 'function') {
-            window.searchMemoDirectly(voucherNo);
+            window.searchMemoDirectly(targetVoucher);
         }
     } catch (e) {
         console.error("Memo Quick Pay error:", e);

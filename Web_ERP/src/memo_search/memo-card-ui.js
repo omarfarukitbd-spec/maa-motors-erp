@@ -1,6 +1,6 @@
 import { escapeHTML, formatAmountWithComma, formatAppDate, numberToBanglaWords } from '../utils.js';
-import { showToast } from '../utils/ui-helpers.js';
 import { renderInCardLedgerHistory } from './memo-history-table.js';
+import './memo-actions-bridge.js';
 import './memo-ledger-drawer.js';
 import './memo-quick-pay.js';
 import './memo-edit.js';
@@ -129,21 +129,21 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
 
                     <!-- Action Hub Buttons -->
                     <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="window.printReceiptEngine('${txn.id}', 'a4')" class="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-blue-600/25 active:scale-95 transition-all cursor-pointer" title="A4 সাইজ ইনভয়েস প্রিন্ট">
+                        <button onclick="window.printMemoReceipt('${txn.id}', 'a4')" class="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-blue-600/25 active:scale-95 transition-all cursor-pointer" title="A4 সাইজ ইনভয়েস প্রিন্ট">
                             <i class="fa-solid fa-print"></i><span>A4 প্রিন্ট</span>
                         </button>
-                        <button onclick="window.printReceiptEngine('${txn.id}', 'pos')" class="h-9 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 border border-slate-700 active:scale-95 transition-all cursor-pointer" title="৮০মিমি POS থার্মাল রসিদ">
+                        <button onclick="window.printMemoReceipt('${txn.id}', 'pos')" class="h-9 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 border border-slate-700 active:scale-95 transition-all cursor-pointer" title="৮০মিমি POS থার্মাল রসিদ">
                             <i class="fa-solid fa-receipt"></i><span>POS মেমো</span>
                         </button>
                         ${currentDue > 0 ? `
-                            <button onclick="window.openMemoQuickPayModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', '${escapeHTML(cleanCustName)}', ${currentDue})" class="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-900/30 active:scale-95 transition-all cursor-pointer" title="সরাসরি টাকা জমা নিন">
+                            <button onclick="window.openMemoQuickPayModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', ${currentDue})" class="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-900/30 active:scale-95 transition-all cursor-pointer" title="সরাসরি টাকা জমা নিন">
                                 <i class="fa-solid fa-hand-holding-dollar text-sm"></i><span>টাকা জমা নিন</span>
                             </button>
                         ` : ''}
-                        <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerAccountNo || '')}')" class="h-9 px-3 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-purple-500/30 active:scale-95 transition-all cursor-pointer" title="কাস্টমারের সম্পূর্ণ খতিয়ান দেখুন ও প্রিন্ট করুন">
+                        <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}')" class="h-9 px-3 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-purple-500/30 active:scale-95 transition-all cursor-pointer" title="কাস্টমারের সম্পূর্ণ খতিয়ান দেখুন ও প্রিন্ট করুন">
                             <i class="fa-solid fa-book"></i><span>পূর্ণ খতিয়ান</span>
                         </button>
-                        <button onclick="window.openMemoEditModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}')" class="h-9 px-3 rounded-xl bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-amber-500/30 active:scale-95 transition-all cursor-pointer" title="মেমো সংশোধন করুন">
+                        <button onclick="window.openMemoEditModal('${txn.id}')" class="h-9 px-3 rounded-xl bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-amber-500/30 active:scale-95 transition-all cursor-pointer" title="মেমো সংশোধন করুন">
                             <i class="fa-solid fa-pen-to-square"></i><span>এডিট</span>
                         </button>
                         <button onclick="window.shareMemoOnWhatsApp('${txn.id}')" class="h-9 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-emerald-500/30 active:scale-95 transition-all cursor-pointer" title="WhatsApp মেসেজ">
@@ -165,7 +165,7 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                             <div class="text-[11px] font-black uppercase text-cyan-400 tracking-wider flex items-center gap-1.5">
                                 <i class="fa-solid fa-id-card"></i> <span>কাস্টমার প্রোফাইল</span>
                             </div>
-                            <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerAccountNo || '')}')" class="text-[11px] text-purple-400 hover:text-purple-300 font-black hover:underline cursor-pointer flex items-center gap-1">
+                            <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}')" class="text-[11px] text-purple-400 hover:text-purple-300 font-black hover:underline cursor-pointer flex items-center gap-1">
                                 <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> সব লেনদেন হিস্ট্রি
                             </button>
                         </div>
@@ -257,19 +257,4 @@ window.copyDigitalMemoLink = function(txnId) {
     const url = `${window.location.origin}${window.location.pathname}?view=public-memo&id=${txnId}`;
     navigator.clipboard.writeText(url);
     showToast('ডিজিটাল মেমোর সরাসরি লিংক কপি করা হয়েছে!', 'success');
-};
-
-// Global SMS Helper
-window.sendMemoDueSMS = function(txnId, customerName, phone, currentDue, voucherNo) {
-    if (!phone) {
-        showToast('কাস্টমারের মোবাইল নম্বর নেই', 'warning');
-        return;
-    }
-    const dueText = currentDue > 0 ? `বর্তমান মোট বকেয়া: ৳ ${formatAmountWithComma(currentDue)}` : 'সকল হিসাব পরিশোধিত';
-    const msg = `মেসার্স মা মোটরস্: প্রিয় ${customerName}, আপনার মেমো #${voucherNo} সম্পন্ন হয়েছে। ${dueText}। ধন্যবাদ।`;
-    if (window.sendSingleSMS) {
-        window.sendSingleSMS(phone, msg);
-    } else {
-        window.open(`sms:${phone}?body=${encodeURIComponent(msg)}`, '_blank');
-    }
 };
