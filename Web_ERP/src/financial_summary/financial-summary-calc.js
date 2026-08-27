@@ -243,18 +243,20 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
         let manualBankWithdrawTotal = 0;
         const bankingTransactions = rawBankTxns.map(bt => {
             const amt = Number(bt.amount) || 0;
-            const type = (bt.type || 'deposit').toLowerCase();
-            if (type === 'deposit') manualBankDepositTotal = safeRound(manualBankDepositTotal + amt);
-            if (type === 'withdraw') manualBankWithdrawTotal = safeRound(manualBankWithdrawTotal + amt);
+            const rawType = String(bt.type || 'DEPOSIT').toUpperCase();
+            const isDeposit = rawType === 'DEPOSIT';
+            const isWithdraw = rawType === 'WITHDRAW' || rawType === 'WITHDRAWAL';
+            if (isDeposit) manualBankDepositTotal = safeRound(manualBankDepositTotal + amt);
+            if (isWithdraw) manualBankWithdrawTotal = safeRound(manualBankWithdrawTotal + amt);
             return {
                 id: bt.id,
                 date: bt.date,
                 bankName: bt.bankName || '-',
-                type: bt.type || 'deposit',
+                type: isDeposit ? 'deposit' : (isWithdraw ? 'withdrawal' : 'transfer'),
                 targetBankName: bt.targetBankName || '',
                 amount: amt,
                 voucherNo: bt.voucherNo || bt.chequeNo || '-',
-                notes: bt.notes || bt.description || ''
+                notes: bt.note || bt.notes || bt.description || ''
             };
         });
 

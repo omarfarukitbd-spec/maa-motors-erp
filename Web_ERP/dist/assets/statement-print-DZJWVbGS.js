@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/dao-t3V9h23g.js","assets/rolldown-runtime-Dd_uD5pT.js","assets/vendor-firebase-F_CbrIUB.js","assets/vendor-CmrCKYVr.js","assets/vendor-CwbMEznW.css"])))=>i.map(i=>d[i]);
-import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t}from"./vendor-CmrCKYVr.js";import{s as n}from"./dao-t3V9h23g.js";import{c as r,d as i,h as a,l as o,v as s}from"./ui-helpers-OIqdNIvE.js";import{n as c}from"./vendor-ui-n4g2UPZQ.js";import{r as l,t as u}from"./index-DL-ChrSi.js";var d=e(c());function f(e,t){let n=[],r=e,i=`<tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t}from"./vendor-CmrCKYVr.js";import{s as n}from"./dao-t3V9h23g.js";import{c as r,d as i,h as a,l as o,v as s}from"./ui-helpers-OIqdNIvE.js";import{n as c}from"./vendor-ui-n4g2UPZQ.js";import{r as l,t as u}from"./index-BpTPvxEX.js";var d=e(c());function f(e,t){let n=[],r=e,i=`<tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
         <td colspan="2" style="font-weight:900; color:#0f172a; text-transform:uppercase; font-size:10px; padding: 8px 12px; letter-spacing: 1px;">Opening Balance</td>
         <td style="text-align:right; color:#0f172a; padding: 8px 12px;">-</td>
         <td style="text-align:right; color:#0f172a; padding: 8px 12px;">-</td>
