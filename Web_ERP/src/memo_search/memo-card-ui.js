@@ -1,12 +1,14 @@
 import { escapeHTML, formatAmountWithComma, formatAppDate, numberToBanglaWords } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
+import { renderInCardLedgerHistory } from './memo-history-table.js';
 import './memo-ledger-drawer.js';
 import './memo-quick-pay.js';
+import './memo-edit.js';
 
 /**
  * Render Ultra-Premium Next-Gen Memo Card UI
  */
-export function renderMemoCardHTML(txn, adjacent = {}) {
+export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
     if (!txn) return '';
 
     const bill = Number(txn.bill) || 0;
@@ -44,7 +46,7 @@ export function renderMemoCardHTML(txn, adjacent = {}) {
         paymentMethodHtml = `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 ml-1.5">${escapeHTML(txn.receivedType)}${txn.receivedFrom ? ' • ' + escapeHTML(txn.receivedFrom) : ''}</span>`;
     }
 
-    // Item Table
+    // Item Table (if items exist)
     let itemsTableHtml = '';
     if (txn.hasItems && txn.items && txn.items.length > 0) {
         itemsTableHtml = `
@@ -75,28 +77,26 @@ export function renderMemoCardHTML(txn, adjacent = {}) {
         `;
     }
 
-    // Direct QR Code Link
     const publicUrl = `${window.location.origin}${window.location.pathname}?view=public-memo&id=${txn.id}`;
     const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=2&data=${encodeURIComponent(publicUrl)}`;
 
-    // Bangla Words Badges
     const billWords = bill > 0 ? numberToBanglaWords(bill) : '';
     const dueWords = currentDue !== 0 ? numberToBanglaWords(Math.abs(currentDue)) : '';
 
     return `
         <div class="space-y-4">
-            <!-- Stepper Navigation Bar (Prev / Next Memos) -->
-            <div class="flex items-center justify-between gap-2 px-2 text-xs font-bn">
+            <!-- Stepper Navigation Bar -->
+            <div class="flex items-center justify-between gap-3 px-1 text-xs font-bn">
                 ${adjacent.prevMemo ? `
-                    <button onclick="window.searchMemoDirectly('${escapeHTML(adjacent.prevMemo.voucherNo)}')" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer" title="আগের মেমো: #${adjacent.prevMemo.voucherNo}">
-                        <i class="fa-solid fa-chevron-left text-xs text-cyan-400"></i>
-                        <span>পূর্ববর্তী মেমো: <strong class="font-mono text-cyan-300">#${escapeHTML(adjacent.prevMemo.voucherNo)}</strong></span>
+                    <button onclick="window.searchMemoDirectly('${escapeHTML(adjacent.prevMemo.voucherNo)}')" class="px-4 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 shadow-md transition-all flex items-center gap-2 active:scale-95 cursor-pointer">
+                        <i class="fa-solid fa-arrow-left text-xs text-cyan-400"></i>
+                        <span>পূর্ববর্তী মেমো: <strong class="font-mono text-cyan-300 font-black">#${escapeHTML(adjacent.prevMemo.voucherNo)}</strong></span>
                     </button>
                 ` : '<div></div>'}
                 ${adjacent.nextMemo ? `
-                    <button onclick="window.searchMemoDirectly('${escapeHTML(adjacent.nextMemo.voucherNo)}')" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer ml-auto" title="পরের মেমো: #${adjacent.nextMemo.voucherNo}">
-                        <span>পরবর্তী মেমো: <strong class="font-mono text-cyan-300">#${escapeHTML(adjacent.nextMemo.voucherNo)}</strong></span>
-                        <i class="fa-solid fa-chevron-right text-xs text-cyan-400"></i>
+                    <button onclick="window.searchMemoDirectly('${escapeHTML(adjacent.nextMemo.voucherNo)}')" class="px-4 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 shadow-md transition-all flex items-center gap-2 active:scale-95 cursor-pointer ml-auto">
+                        <span>পরবর্তী মেমো: <strong class="font-mono text-cyan-300 font-black">#${escapeHTML(adjacent.nextMemo.voucherNo)}</strong></span>
+                        <i class="fa-solid fa-arrow-right text-xs text-cyan-400"></i>
                     </button>
                 ` : '<div></div>'}
             </div>
@@ -127,24 +127,30 @@ export function renderMemoCardHTML(txn, adjacent = {}) {
                         </div>
                     </div>
 
-                    <!-- Action Hub Top Buttons -->
+                    <!-- Action Hub Buttons -->
                     <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="window.printReceiptEngine('${txn.id}', 'a4')" class="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 active:scale-95 transition-all cursor-pointer" title="A4 সাইজ ইনভয়েস প্রিন্ট">
-                            <i class="fa-solid fa-print"></i><span>A4 প্রিন্ট / PDF</span>
+                        <button onclick="window.printReceiptEngine('${txn.id}', 'a4')" class="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-blue-600/25 active:scale-95 transition-all cursor-pointer" title="A4 সাইজ ইনভয়েস প্রিন্ট">
+                            <i class="fa-solid fa-print"></i><span>A4 প্রিন্ট</span>
                         </button>
-                        <button onclick="window.printReceiptEngine('${txn.id}', 'pos')" class="h-9 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-2 border border-slate-700 active:scale-95 transition-all cursor-pointer" title="৮০মিমি POS থার্মাল রসিদ">
+                        <button onclick="window.printReceiptEngine('${txn.id}', 'pos')" class="h-9 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 border border-slate-700 active:scale-95 transition-all cursor-pointer" title="৮০মিমি POS থার্মাল রসিদ">
                             <i class="fa-solid fa-receipt"></i><span>POS মেমো</span>
                         </button>
                         ${currentDue > 0 ? `
-                            <button onclick="window.openMemoQuickPayModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', '${escapeHTML(cleanCustName)}', ${currentDue})" class="h-9 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-emerald-900/30 active:scale-95 transition-all cursor-pointer" title="সরাসরি টাকা জমা নিন">
+                            <button onclick="window.openMemoQuickPayModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', '${escapeHTML(cleanCustName)}', ${currentDue})" class="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-900/30 active:scale-95 transition-all cursor-pointer" title="সরাসরি টাকা জমা নিন">
                                 <i class="fa-solid fa-hand-holding-dollar text-sm"></i><span>টাকা জমা নিন</span>
                             </button>
                         ` : ''}
-                        <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerAccountNo || '')}')" class="h-9 px-3.5 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-xs flex items-center gap-2 border border-purple-500/30 active:scale-95 transition-all cursor-pointer" title="কাস্টমারের সম্পূর্ণ খতিয়ান দেখুন ও প্রিন্ট করুন">
+                        <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerAccountNo || '')}')" class="h-9 px-3 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-purple-500/30 active:scale-95 transition-all cursor-pointer" title="কাস্টমারের সম্পূর্ণ খতিয়ান দেখুন ও প্রিন্ট করুন">
                             <i class="fa-solid fa-book"></i><span>পূর্ণ খতিয়ান</span>
                         </button>
-                        <button onclick="window.shareMemoOnWhatsApp('${txn.id}')" class="h-9 px-3.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-xs flex items-center gap-2 border border-emerald-500/30 active:scale-95 transition-all cursor-pointer" title="WhatsApp মেসেজ">
+                        <button onclick="window.openMemoEditModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}')" class="h-9 px-3 rounded-xl bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-amber-500/30 active:scale-95 transition-all cursor-pointer" title="মেমো সংশোধন করুন">
+                            <i class="fa-solid fa-pen-to-square"></i><span>এডিট</span>
+                        </button>
+                        <button onclick="window.shareMemoOnWhatsApp('${txn.id}')" class="h-9 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-emerald-500/30 active:scale-95 transition-all cursor-pointer" title="WhatsApp মেসেজ">
                             <i class="fa-brands fa-whatsapp text-sm"></i><span>WhatsApp</span>
+                        </button>
+                        <button onclick="window.sendMemoDueSMS('${txn.id}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerPhone || '')}', ${currentDue}, '${escapeHTML(txn.voucherNo || '')}')" class="h-9 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-cyan-500/30 active:scale-95 transition-all cursor-pointer" title="এসএমএস তাগাদা পাঠান">
+                            <i class="fa-solid fa-comment-sms"></i><span>SMS</span>
                         </button>
                         <button onclick="window.copyDigitalMemoLink('${txn.id}')" class="h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 active:scale-95 transition-all cursor-pointer" title="মেমো লিংক কপি করুন">
                             <i class="fa-solid fa-link text-xs"></i>
@@ -152,7 +158,7 @@ export function renderMemoCardHTML(txn, adjacent = {}) {
                     </div>
                 </div>
 
-                <!-- Customer Profile Card + Live QR Code Grid -->
+                <!-- Customer Profile Card + QR Grid -->
                 <div class="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
                     <div class="md:col-span-3 bg-slate-950/70 border border-slate-800 rounded-2xl p-4.5 space-y-3">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -185,19 +191,17 @@ export function renderMemoCardHTML(txn, adjacent = {}) {
                         </div>
                     </div>
 
-                    <!-- Live Dynamic QR Code -->
+                    <!-- Dynamic QR Code -->
                     <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
                         <img src="${qrCodeSrc}" alt="Memo QR" class="w-18 h-18 rounded-lg bg-white p-1 border border-slate-700 shadow-md">
                         <span class="text-[9px] font-bold text-slate-400 mt-1.5 flex items-center gap-1"><i class="fa-solid fa-qrcode text-cyan-400"></i> স্ক্যান করে মেমো দেখুন</span>
                     </div>
                 </div>
 
-                <!-- Items Table Section -->
                 ${itemsTableHtml}
 
-                <!-- Financial Calculation Equation & Bengali Words -->
-                <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                    <!-- Left: Notes & Bengali Words -->
+                <!-- Accounting Equation & Bengali Words -->
+                <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 items-start mb-4">
                     <div class="space-y-3">
                         <div class="bg-slate-950/50 border border-slate-800 rounded-2xl p-4">
                             <div class="text-[11px] font-black text-amber-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
@@ -216,21 +220,10 @@ export function renderMemoCardHTML(txn, adjacent = {}) {
                         ` : ''}
                     </div>
 
-                    <!-- Right: Accounting Equation -->
                     <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4.5 space-y-2 text-xs">
                         <div class="text-[11px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-800 pb-1.5 mb-2">
                             হিসাবের বিবরণী (Accounting Summary)
                         </div>
-                        ${txn.subtotal && txn.discount > 0 ? `
-                            <div class="flex justify-between text-slate-400">
-                                <span>সাবটোটাল (Subtotal):</span>
-                                <span class="font-mono font-bold">৳ ${formatAmountWithComma(txn.subtotal)}</span>
-                            </div>
-                            <div class="flex justify-between text-amber-400">
-                                <span>ডিসকাউন্ট / ছাড় (-):</span>
-                                <span class="font-mono font-bold">- ৳ ${formatAmountWithComma(txn.discount)}</span>
-                            </div>
-                        ` : ''}
                         <div class="flex justify-between text-slate-300">
                             <span>পূর্বের বকেয়া:</span>
                             <span class="font-mono font-bold">৳ ${formatAmountWithComma(prevDue)}</span>
@@ -251,6 +244,9 @@ export function renderMemoCardHTML(txn, adjacent = {}) {
                         </div>
                     </div>
                 </div>
+
+                <!-- In-Card Recent Ledger History Table -->
+                ${renderInCardLedgerHistory(txn.customerId, cleanCustName, txn.customerAccountNo, lifetimeStats)}
             </div>
         </div>
     `;
@@ -261,4 +257,19 @@ window.copyDigitalMemoLink = function(txnId) {
     const url = `${window.location.origin}${window.location.pathname}?view=public-memo&id=${txnId}`;
     navigator.clipboard.writeText(url);
     showToast('ডিজিটাল মেমোর সরাসরি লিংক কপি করা হয়েছে!', 'success');
+};
+
+// Global SMS Helper
+window.sendMemoDueSMS = function(txnId, customerName, phone, currentDue, voucherNo) {
+    if (!phone) {
+        showToast('কাস্টমারের মোবাইল নম্বর নেই', 'warning');
+        return;
+    }
+    const dueText = currentDue > 0 ? `বর্তমান মোট বকেয়া: ৳ ${formatAmountWithComma(currentDue)}` : 'সকল হিসাব পরিশোধিত';
+    const msg = `মেসার্স মা মোটরস্: প্রিয় ${customerName}, আপনার মেমো #${voucherNo} সম্পন্ন হয়েছে। ${dueText}। ধন্যবাদ।`;
+    if (window.sendSingleSMS) {
+        window.sendSingleSMS(phone, msg);
+    } else {
+        window.open(`sms:${phone}?body=${encodeURIComponent(msg)}`, '_blank');
+    }
 };

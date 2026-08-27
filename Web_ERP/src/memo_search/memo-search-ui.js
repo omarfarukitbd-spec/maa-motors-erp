@@ -1,4 +1,4 @@
-import { searchMemosByNumber, getRecentMemos, getAdjacentMemos } from './memo-search-engine.js';
+import { searchMemosByNumber, getRecentMemos, getAdjacentMemos, getCustomerLifetimeStats } from './memo-search-engine.js';
 import { renderMemoCardHTML } from './memo-card-ui.js';
 import { startMemoVoiceSearch } from './memo-voice-search.js';
 import { escapeHTML, formatAppDate } from '../utils.js';
@@ -149,7 +149,10 @@ export async function executeMemoSearch(query) {
 
         const activeTxn = list[0];
         _currentVoucherNo = activeTxn.voucherNo || '';
-        const adjacent = await getAdjacentMemos(_currentVoucherNo);
+        const [adjacent, lifetimeStats] = await Promise.all([
+            getAdjacentMemos(_currentVoucherNo),
+            getCustomerLifetimeStats(activeTxn.customerId)
+        ]);
 
         if (list.length > 1 && multipleArea) {
             multipleArea.classList.remove('hidden');
@@ -173,7 +176,7 @@ export async function executeMemoSearch(query) {
             multipleArea.classList.add('hidden');
         }
 
-        resultArea.innerHTML = renderMemoCardHTML(activeTxn, adjacent);
+        resultArea.innerHTML = renderMemoCardHTML(activeTxn, adjacent, lifetimeStats);
     } catch (e) {
         console.error("executeMemoSearch error:", e);
         resultArea.innerHTML = `<div class="p-8 text-center text-red-400 font-bold bg-slate-900/60 rounded-3xl border border-red-500/20">মেমো অনুসন্ধানে সমস্যা হয়েছে</div>`;
@@ -216,9 +219,12 @@ async function loadRecentMemoChips() {
 window.selectSpecificMemoMatch = async function(idx) {
     if (window._currentMemoSearchResults && window._currentMemoSearchResults[idx]) {
         const selectedTxn = window._currentMemoSearchResults[idx];
-        const adjacent = await getAdjacentMemos(selectedTxn.voucherNo);
+        const [adjacent, lifetimeStats] = await Promise.all([
+            getAdjacentMemos(selectedTxn.voucherNo),
+            getCustomerLifetimeStats(selectedTxn.customerId)
+        ]);
         const resultArea = document.getElementById('memo-search-result-area');
-        if (resultArea) resultArea.innerHTML = renderMemoCardHTML(selectedTxn, adjacent);
+        if (resultArea) resultArea.innerHTML = renderMemoCardHTML(selectedTxn, adjacent, lifetimeStats);
         document.querySelectorAll('.memo-match-btn').forEach(btn => {
             const isTarget = Number(btn.dataset.idx) === idx;
             btn.className = `memo-match-btn px-3 py-1.5 rounded-xl ${isTarget ? 'bg-cyan-600 text-white font-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-2 border border-slate-700 transition-all cursor-pointer`;
