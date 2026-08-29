@@ -108,8 +108,8 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
                     <div class="flex flex-col gap-1"><span class="text-[10px] text-amber-400 font-black uppercase tracking-wider">ভাউচার / মেমো নং</span><span class="text-sm text-amber-400 font-bold font-mono">${v || '-'}</span></div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 border-b border-slate-800/80 pb-2">
-                    <div class="flex flex-col gap-1"><span class="text-[10px] text-blue-400 font-black uppercase tracking-wider">বিল / কেনাকাটা</span><span class="text-lg text-blue-400 font-black font-mono">৳ ${formatAmountWithComma(b)}</span></div>
-                    <div class="flex flex-col gap-1"><span class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">জমা প্রাপ্তি</span><span class="text-lg text-emerald-400 font-black font-mono">৳ ${formatAmountWithComma(p)}</span></div>
+                    <div class="flex flex-col gap-1"><span class="text-[10px] text-red-400 font-black uppercase tracking-wider">বিল / কেনাকাটা (Debit)</span><span class="text-lg text-red-400 font-black font-mono">৳ ${formatAmountWithComma(b)}</span></div>
+                    <div class="flex flex-col gap-1"><span class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">জমা প্রাপ্তি (Credit)</span><span class="text-lg text-emerald-400 font-black font-mono">৳ ${formatAmountWithComma(p)}</span></div>
                 </div>
                 ${p > 0 ? `<div class="flex flex-col gap-1 border-b border-slate-800/80 pb-2"><span class="text-[10px] text-purple-400 font-black uppercase tracking-wider">পেমেন্ট মাধ্যম</span><span class="text-xs text-purple-300 font-bold">${receivedType} ${receivedFrom ? '(' + receivedFrom + ')' : ''}</span></div>` : ''}
             </div>
@@ -120,8 +120,8 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         cancelButtonText: '<i class="fa-solid fa-pen-to-square mr-2"></i>সংশোধন করব',
         customClass: {
             popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 shadow-2xl font-bn',
-            confirmButton: 'm3-btn-primary !bg-blue-600 hover:!bg-blue-500 !px-7 !py-2.5 !rounded-xl font-bold shadow-lg shadow-blue-600/30',
-            cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700'
+            confirmButton: '!bg-emerald-600 hover:!bg-emerald-500 !text-white !px-7 !py-2.5 !rounded-xl font-bold shadow-lg shadow-emerald-600/30 cursor-pointer',
+            cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700 cursor-pointer'
         }
     });
     if (!confirmPreview.isConfirmed) { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; } return; }

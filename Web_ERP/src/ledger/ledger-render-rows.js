@@ -10,13 +10,16 @@ export function updateLedgerLiveText() {
     const calc = document.getElementById('live-due-calc');
     const hud = document.getElementById('ledger-live-math-hud');
 
-    if (sel && sel.selectedIndex > 0) {
-        const currentDue = (parseFloat(sel.options[sel.selectedIndex].dataset.due) || 0);
+    const custId = sel?.value;
+    const cust = custId ? (getCustomerCache() || []).find(c => c.id === custId) : null;
+
+    if (cust || (sel && sel.selectedIndex > 0)) {
+        const currentDue = cust ? Number(cust.totalDue || 0) : (parseFloat(sel.options[sel.selectedIndex]?.dataset?.due) || 0);
         const nextDue = safeRound(currentDue + b - p);
         
         if (calc) {
             calc.innerText = `বকেয়া: ৳ ${formatAmountWithComma(Math.abs(nextDue))} ${nextDue < 0 ? '(অ্যাড)' : ''}`;
-            calc.className = nextDue > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-1.5 rounded-xl text-xs font-black' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-1.5 rounded-xl text-xs font-black';
+            calc.className = nextDue > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-1.5 rounded-xl text-xs font-black font-mono' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-1.5 rounded-xl text-xs font-black font-mono';
         }
 
         if (hud) {
@@ -25,7 +28,7 @@ export function updateLedgerLiveText() {
                 ? `<span class="text-red-400 font-mono font-bold">৳ ${formatAmountWithComma(currentDue)} (বকেয়া)</span>`
                 : (currentDue < 0 ? `<span class="text-emerald-400 font-mono font-bold">৳ ${formatAmountWithComma(Math.abs(currentDue))} (অ্যাডভান্স)</span>` : `<span class="text-slate-400 font-mono font-bold">৳ ০.০০</span>`);
 
-            let mathParts = `<span>পূর্বের ব্যালেন্স: ${prevDueBadge}</span>`;
+            let mathParts = `<span>পূর্বের বকেয়া: ${prevDueBadge}</span>`;
             if (b > 0) {
                 mathParts += `<span class="text-red-400 font-bold font-mono"> + বিল: ৳ ${formatAmountWithComma(b)}</span>`;
             }
@@ -39,7 +42,7 @@ export function updateLedgerLiveText() {
 
             hud.innerHTML = `
                 <div class="flex items-center gap-2 flex-wrap text-slate-300 font-bold">
-                    <i class="fa-solid fa-calculator text-purple-400 text-sm"></i>
+                    <i class="fa-solid fa-clock-rotate-left text-purple-400 text-sm"></i>
                     ${mathParts}
                 </div>
                 <div class="flex items-center gap-1.5 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700/80 shadow-sm">
@@ -141,7 +144,8 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
         }
         const rawCustName = d.customerName || cust?.name || 'Unknown';
         const cleanCustName = String(rawCustName).replace(/^\[.*?\]\s*/, '').trim();
-        const custAddress = cust?.address || d.address || '';
+        const isSingleCustView = Boolean(document.getElementById('ledger-customer-select')?.value);
+        const custAddress = (!isSingleCustView && (cust?.address || d.address)) ? (cust?.address || d.address) : '';
 
         rows.push(`<tr class="hover:bg-white/[0.03] transition-colors border-b border-slate-800/50">
             <td class="py-2.5 px-3 text-xs font-bold text-slate-200 whitespace-nowrap align-top">

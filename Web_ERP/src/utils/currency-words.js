@@ -70,42 +70,15 @@ export function updateLiveWords(inputObj, displayId) {
         else if (len > 50) { displayEl.style.fontSize = '10px'; displayEl.style.lineHeight = '1.2'; }
         else { displayEl.style.fontSize = ''; displayEl.style.lineHeight = ''; }
 
-        // Update and show Global Tooltip
-        if (tooltip && tooltipText && inputObj) {
-            tooltipText.innerText = words;
-            const rect = inputObj.getBoundingClientRect();
-            
-            // Absolute position center top
-            tooltip.style.left = `${rect.left + (rect.width / 2)}px`;
-            tooltip.style.top = `${rect.top - 10}px`; 
-            
-            tooltip.style.display = 'flex';
-            
-            // Animate in
-            requestAnimationFrame(() => {
-                tooltip.classList.remove('opacity-0', 'scale-95');
-                tooltip.classList.add('opacity-100', 'scale-100');
-            });
-            
-            // Attach blur listener to auto-hide
-            if (!inputObj._tooltipBlurListener) {
-                inputObj._tooltipBlurListener = () => {
-                    tooltip.classList.remove('opacity-100', 'scale-100');
-                    tooltip.classList.add('opacity-0', 'scale-95');
-                    setTimeout(() => { if (tooltip.classList.contains('opacity-0')) tooltip.style.display = 'none'; }, 200);
-                };
-                inputObj.addEventListener('blur', inputObj._tooltipBlurListener);
-            }
+        // Hide floating tooltip if present to prevent UI blocking
+        if (tooltip) {
+            tooltip.style.display = 'none';
         }
     } else {
         displayEl.innerText = '';
         displayEl.classList.add('hidden');
-        
-        // Hide tooltip
         if (tooltip) {
-            tooltip.classList.remove('opacity-100', 'scale-100');
-            tooltip.classList.add('opacity-0', 'scale-95');
-            setTimeout(() => { if (tooltip.classList.contains('opacity-0')) tooltip.style.display = 'none'; }, 200);
+            tooltip.style.display = 'none';
         }
     }
 }

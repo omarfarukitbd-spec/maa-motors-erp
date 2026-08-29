@@ -174,7 +174,7 @@ async function loadCustomersForDropdown() {
 export function filterLedgerCustomerSearch(query = '') {
     filterCustomerCombobox(query, {
         inputId: 'ledger-cust-search-input',
-        selectId: 'tx-customer',
+        selectId: 'ledger-customer-select',
         dropdownId: 'ledger-cust-dropdown',
         onSelect: (id) => selectLedgerCustomer(id)
     });
@@ -190,17 +190,18 @@ export function selectLedgerCustomer(id) {
 
     if (sel) {
         sel.value = id;
-        filterLedgerByCustomer(id);
-    }
-    if (sel && sel.selectedIndex > 0) {
-        const opt = sel.options[sel.selectedIndex];
-        if (searchInput) searchInput.value = `${opt.dataset.name || opt.text}`;
-        if (clearBtn) clearBtn.classList.remove('hidden');
     }
     const cust = (getCustomerCache() || []).find(c => c.id === id);
+    if (searchInput && cust) {
+        searchInput.value = cust.name || '';
+        if (clearBtn) clearBtn.classList.remove('hidden');
+    }
     if (phoneInput) phoneInput.value = cust?.phone || 'মোবাইল নেই';
     if (addressInput) addressInput.value = (cust?.zone ? `[${cust.zone}] ` : '') + (cust?.address || 'ঠিকানা নেই');
     if (dropdown) dropdown.classList.add('hidden');
+
+    filterLedgerByCustomer(id);
+    updateLedgerLiveText();
 }
 
 export function clearLedgerCustomerSearch() {
@@ -220,23 +221,17 @@ export function clearLedgerCustomerSearch() {
     if (addressInput) addressInput.value = '';
     if (clearBtn) clearBtn.classList.add('hidden');
     if (dropdown) dropdown.classList.add('hidden');
+    updateLedgerLiveText();
 }
 
 // Global API Bindings
 if (typeof window !== 'undefined') {
-    window.loadRecentTransactions = loadRecentTransactions;
-    window.saveTransaction = saveTransaction;
-    window.sendTxnSMS = sendTxnSMS;
-    window.sendTxnWhatsApp = sendTxnWhatsApp;
-    window.updateLedgerLiveText = updateLedgerLiveText;
-    window.filterLedgerByCustomer = filterLedgerByCustomer;
-    window.editTransaction = editTransaction;
-    window.deleteTransaction = deleteTransaction;
-    window.executePrint = executePrint;
-    window.choosePrintType = choosePrintType;
-    window.filterLedgerCustomerSearch = filterLedgerCustomerSearch;
-    window.selectLedgerCustomer = selectLedgerCustomer;
-    window.clearLedgerCustomerSearch = clearLedgerCustomerSearch;
+    Object.assign(window, {
+        loadRecentTransactions, saveTransaction, sendTxnSMS, sendTxnWhatsApp,
+        updateLedgerLiveText, filterLedgerByCustomer, editTransaction,
+        deleteTransaction, executePrint, choosePrintType, filterLedgerCustomerSearch,
+        selectLedgerCustomer, clearLedgerCustomerSearch
+    });
     window.changeLedgerPage = async (dir) => { 
         const prevPage = currentPage; 
         if (dir === 'next') currentPage++; else currentPage--; 
