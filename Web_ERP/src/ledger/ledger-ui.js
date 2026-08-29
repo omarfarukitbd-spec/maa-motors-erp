@@ -25,95 +25,126 @@ export function renderLedger(container, params, callbacks = {}) {
                     <button data-perm="exportLedger" class="h-9 px-3 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0" onclick="window.exportTableToExcel('ledger-table', 'ledger-statement.xlsx')" title="এক্সেল ডাউনলোড"><i class="fa-solid fa-file-excel text-emerald-400"></i><span>এক্সেল</span></button>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
-                <div class="lg:col-span-2 relative z-40">
-                    <label class="m3-label text-slate-400 mb-1.5 block text-xs font-bold truncate">কাস্টমার খুঁজুন <span class="m3-label-sub text-[10px] opacity-70">(Customer Search)</span></label>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
+                <!-- Customer Search (4 cols) -->
+                <div class="col-span-12 md:col-span-4 relative z-40">
+                    <label class="m3-label text-slate-400 mb-1 block text-xs font-bold truncate">কাস্টমার খুঁজুন <span class="m3-label-sub text-[10px] opacity-70">(Customer Search)</span></label>
                     <div class="relative flex items-center">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none z-10"></i>
-                        <input type="text" id="ledger-cust-search-input" class="w-full bg-slate-950/90 border border-slate-700/70 rounded-xl h-10 pr-20 text-xs text-white font-bold outline-none focus:border-purple-500 shadow-inner transition-all" style="padding-left: 48px !important;" placeholder="কাস্টমার নাম, ফোন বা অ্যাকাউন্ট টাইপ করুন..." oninput="window.filterLedgerCustomerSearch(this.value)" onfocus="window.filterLedgerCustomerSearch(this.value)">
+                        <input type="text" id="ledger-cust-search-input" class="w-full bg-slate-950/90 border border-slate-700/70 rounded-xl h-10 pl-9 pr-16 text-xs text-white font-bold outline-none focus:border-purple-500 shadow-inner transition-all" placeholder="কাস্টমার নাম, ফোন বা অ্যাকাউন্ট লিখুন..." oninput="window.filterLedgerCustomerSearch(this.value)" onfocus="window.filterLedgerCustomerSearch(this.value)">
                         <div class="absolute right-1.5 flex items-center gap-1">
                             <button type="button" id="ledger-cust-search-clear" class="hidden w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-[10px] flex items-center justify-center cursor-pointer transition-all" onclick="window.clearLedgerCustomerSearch()"><i class="fa-solid fa-xmark"></i></button>
-                            <button data-perm="addCustomerLedger" type="button" class="h-7 px-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-md cursor-pointer" onclick="window.quickAddCustomer()" title="নতুন কাস্টমার যোগ করুন"><i class="fa-solid fa-plus text-[9px]"></i><span>নতুন</span></button>
+                            <button data-perm="addCustomerLedger" type="button" class="h-7 px-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-md cursor-pointer transition-all active:scale-95" onclick="window.quickAddCustomer()" title="নতুন কাস্টমার যোগ করুন"><i class="fa-solid fa-plus text-[9px]"></i><span>নতুন</span></button>
                         </div>
                     </div>
                     <select id="ledger-customer-select" class="hidden" onchange="window.filterLedgerByCustomer(this.value)"></select>
                     <div id="ledger-cust-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-slate-900 border border-slate-700/90 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] z-[999] max-h-64 overflow-y-auto custom-scrollbar p-1.5 flex flex-col gap-1 backdrop-blur-2xl"></div>
                 </div>
-                <div data-perm="addLedgerEntry" class="relative hide-for-boss">
-                    <label class="m3-label text-slate-400 mb-1.5 block text-xs font-bold truncate">তারিখ <span class="m3-label-sub text-[10px] opacity-70">(Date)</span></label>
+
+                <!-- Date (2 cols) -->
+                <div data-perm="addLedgerEntry" class="col-span-6 md:col-span-2 relative hide-for-boss">
+                    <label class="m3-label text-slate-400 mb-1 block text-xs font-bold truncate">তারিখ <span class="m3-label-sub text-[10px] opacity-70">(Date)</span></label>
                     <input type="text" id="ledger-date" class="m3-field py-1 bg-slate-950/80 h-10 text-xs datepicker">
                 </div>
-                <div data-perm="addLedgerEntry" class="relative hide-for-boss">
-                    <label class="m3-label text-slate-400 mb-1.5 block text-xs font-bold truncate">ভাউচার <span class="m3-label-sub text-[10px] opacity-70">(Voucher)</span></label>
-                    <input type="text" id="ledger-voucher" class="m3-field py-1 bg-slate-950/80 h-10 text-xs">
+
+                <!-- Voucher (2 cols) -->
+                <div data-perm="addLedgerEntry" class="col-span-6 md:col-span-2 relative hide-for-boss">
+                    <label class="m3-label text-slate-400 mb-1 block text-xs font-bold truncate">ভাউচার <span class="m3-label-sub text-[10px] opacity-70">(Voucher)</span></label>
+                    <input type="text" id="ledger-voucher" placeholder="যেমন: #100" class="m3-field py-1 bg-slate-950/80 h-10 text-xs font-mono">
                 </div>
-                <div data-perm="addLedgerEntry" class="flex flex-col relative hide-for-boss">
-                    <label class="m3-label text-red-400 mb-1.5 block text-xs font-bold truncate">বিল <span class="m3-label-sub text-[10px] opacity-70">(Debit)</span></label>
-                    <input type="text" id="ledger-bill" oninput="window.handleNumberInput(this); window.updateLedgerLiveText(); window.updateLiveWords(this, 'ledger-bill-words');" class="m3-field py-1 text-base font-black text-red-400 bg-slate-950/80 h-10 !border-red-500 focus:!border-red-400 focus:!ring-red-500/30">
+
+                <!-- Bill / Debit (2 cols - Red) -->
+                <div data-perm="addLedgerEntry" class="col-span-6 md:col-span-2 flex flex-col relative hide-for-boss">
+                    <label class="m3-label text-red-400 mb-1 block text-xs font-bold truncate">বিল <span class="m3-label-sub text-[10px] opacity-70">(Debit)</span></label>
+                    <input type="text" id="ledger-bill" placeholder="0.00" oninput="window.handleNumberInput(this); window.updateLedgerLiveText(); window.updateLiveWords(this, 'ledger-bill-words');" class="m3-field py-1 text-sm sm:text-base font-black font-mono text-red-400 bg-slate-950/80 h-10 !border-red-500/80 focus:!border-red-400 focus:!ring-red-500/30">
                     <div id="ledger-bill-words" class="text-[10px] font-black text-red-400 mt-1 hidden italic truncate"></div>
                 </div>
-                <div data-perm="addLedgerEntry" class="flex flex-col relative hide-for-boss">
-                    <label class="m3-label text-emerald-400 mb-1.5 block text-xs font-bold truncate">জমা <span class="m3-label-sub text-[10px] opacity-70">(Credit)</span></label>
-                    <input type="text" id="ledger-paid" oninput="window.handleNumberInput(this); window.updateLedgerLiveText(); window.toggleReceivedSection(); window.updateLiveWords(this, 'ledger-paid-words');" class="m3-field py-1 text-base font-black text-emerald-400 bg-slate-950/80 h-10 !border-emerald-500 focus:!border-emerald-400 focus:!ring-emerald-500/30">
+
+                <!-- Paid / Credit (2 cols - Emerald) -->
+                <div data-perm="addLedgerEntry" class="col-span-6 md:col-span-2 flex flex-col relative hide-for-boss">
+                    <label class="m3-label text-emerald-400 mb-1 block text-xs font-bold truncate">জমা <span class="m3-label-sub text-[10px] opacity-70">(Credit)</span></label>
+                    <input type="text" id="ledger-paid" placeholder="0.00" oninput="window.handleNumberInput(this); window.updateLedgerLiveText(); window.toggleReceivedSection(); window.updateLiveWords(this, 'ledger-paid-words');" class="m3-field py-1 text-sm sm:text-base font-black font-mono text-emerald-400 bg-slate-950/80 h-10 !border-emerald-500/80 focus:!border-emerald-400 focus:!ring-emerald-500/30">
                     <div id="ledger-paid-words" class="text-[10px] font-black text-emerald-400 mt-1 hidden italic truncate"></div>
                 </div>
             </div>
 
-            <!-- Locked Customer Auto-Details Strip -->
-            <div id="ledger-cust-details-strip" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
+            <!-- Customer Auto-Fill Details Strip (30% / 70% Balanced Ratio) -->
+            <div id="ledger-cust-details-strip" class="grid grid-cols-12 gap-2.5 pt-0.5">
+                <div class="col-span-12 sm:col-span-4">
                     <label class="m3-label text-slate-400 mb-1 block text-[11px] font-bold flex items-center gap-1.5">
-                        <i class="fa-solid fa-phone text-blue-400 text-[10px]"></i>
+                        <i class="fa-solid fa-phone text-emerald-400 text-[10px]"></i>
                         <span>মোবাইল নম্বর</span>
-                        <span class="text-[9px] text-slate-500 font-normal">(অটো / লকড)</span>
+                        <span class="text-[9px] text-slate-500 font-normal">(অটোফিল)</span>
                     </label>
-                    <input type="text" id="ledger-cust-phone" readonly disabled class="w-full bg-slate-950/60 border border-slate-800 rounded-xl h-9 px-3 text-xs text-slate-300 font-mono font-bold cursor-not-allowed select-all" placeholder="মোবাইল নম্বর...">
+                    <input type="text" id="ledger-cust-phone" readonly disabled class="w-full bg-slate-950/60 border border-slate-800/90 rounded-xl h-9 px-3 text-xs text-slate-300 font-mono font-bold cursor-not-allowed select-all" placeholder="মোবাইল নম্বর...">
                 </div>
-                <div>
+                <div class="col-span-12 sm:col-span-8">
                     <label class="m3-label text-slate-400 mb-1 block text-[11px] font-bold flex items-center gap-1.5">
                         <i class="fa-solid fa-location-dot text-amber-400 text-[10px]"></i>
                         <span>ঠিকানা ও জোন</span>
-                        <span class="text-[9px] text-slate-500 font-normal">(অটো / লকড)</span>
+                        <span class="text-[9px] text-slate-500 font-normal">(অটোফিল)</span>
                     </label>
-                    <input type="text" id="ledger-cust-address" readonly disabled class="w-full bg-slate-950/60 border border-slate-800 rounded-xl h-9 px-3 text-xs text-slate-300 font-bold cursor-not-allowed select-all truncate" placeholder="কাস্টমারের ঠিকানা ও জোন...">
+                    <input type="text" id="ledger-cust-address" readonly disabled class="w-full bg-slate-950/60 border border-slate-800/90 rounded-xl h-9 px-3 text-xs text-slate-300 font-bold cursor-not-allowed select-all truncate" placeholder="কাস্টমারের ঠিকানা ও জোন...">
                 </div>
             </div>
 
             <!-- Live Balance Prediction Math HUD -->
-            <div id="ledger-live-math-hud" class="hidden p-3 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800/90 shadow-inner flex flex-wrap items-center justify-between gap-3 font-bn text-xs transition-all"></div>
-            <div data-perm="addLedgerEntry" id="received-section" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-800/60 hide-for-boss">
-                <div>
+            <div id="ledger-live-math-hud" class="hidden p-2.5 rounded-xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800/90 shadow-inner flex flex-wrap items-center justify-between gap-2.5 font-bn text-xs transition-all"></div>
+
+            <!-- Payment Details & Inline Save Section -->
+            <div data-perm="addLedgerEntry" id="received-section" class="hidden grid grid-cols-1 md:grid-cols-12 gap-2.5 pt-2.5 border-t border-slate-800/60 hide-for-boss items-end">
+                <!-- Payment Method (4 cols) -->
+                <div class="col-span-12 md:col-span-4">
                     <div class="flex items-center justify-between mb-1">
                         <label class="m3-label text-emerald-400 text-xs font-bold">পেমেন্ট মাধ্যম</label>
                         <div class="flex items-center gap-1">
-                            <button type="button" onclick="window.quickSelectPaymentAccount('Bank', 'OneBank (IFRAT)')" class="text-[9px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="OneBank (Alt+1)"><span>OneBank</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+1</kbd></button>
-                            <button type="button" onclick="window.quickSelectPaymentAccount('Bank', 'IBBL (IFRAT)')" class="text-[9px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="IBBL (Alt+2)"><span>IBBL</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+2</kbd></button>
+                            <button type="button" onclick="window.quickSelectPaymentAccount('Bank', 'OneBank (IFRAT)')" class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="OneBank (Alt+1)"><span>OneBank</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+1</kbd></button>
+                            <button type="button" onclick="window.quickSelectPaymentAccount('Bank', 'IBBL (IFRAT)')" class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="IBBL (Alt+2)"><span>IBBL</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+2</kbd></button>
                             <button type="button" onclick="window.quickSelectPaymentAccount('Cash', 'শোরুম ক্যাশ')" class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer" title="শোরুম ক্যাশ (Alt+3)"><span>ক্যাশ</span><kbd class="text-[8px] bg-slate-900 px-1 rounded text-slate-400 font-mono">Alt+3</kbd></button>
                         </div>
                     </div>
                     <div class="flex bg-slate-950 rounded-xl border border-slate-700 h-9 p-1 gap-1">
-                        <button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-blue-600 text-white rounded-lg">Bank</button>
-                        <button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Cash</button>
-                        <button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg">Less</button>
+                        <button type="button" id="recv-bank-btn" onclick="window.setReceivedType('Bank')" class="flex-1 text-[10px] font-bold bg-emerald-600 text-white rounded-lg transition-all">Bank</button>
+                        <button type="button" id="recv-cash-btn" onclick="window.setReceivedType('Cash')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg transition-all">Cash</button>
+                        <button type="button" id="recv-less-btn" onclick="window.setReceivedType('Less')" class="flex-1 text-[10px] font-bold text-slate-400 rounded-lg transition-all">Less</button>
                     </div>
                 </div>
-                <div>
-                    <label id="lbl-recv-from" class="m3-label text-emerald-400">ব্যাংক অ্যাকাউন্ট (Bank Name)</label>
+
+                <!-- Bank Account / Receiver Select (5 cols) -->
+                <div class="col-span-12 md:col-span-5">
+                    <label id="lbl-recv-from" class="m3-label text-emerald-400 mb-1 block text-xs font-bold">ব্যাংক অ্যাকাউন্ট (Bank Name)</label>
                     <div class="flex gap-1.5 items-center" id="recv-input-wrapper">
                         <select id="ledger-received-from" class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1 cursor-pointer">
                             <option value="">-- নির্বাচন করুন --</option>
                         </select>
-                        <button type="button" id="btn-quick-add-recv" onclick="window.quickAddBank && window.quickAddBank()" class="w-9 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নতুন যোগ করুন">
+                        <button type="button" id="btn-quick-edit-recv" onclick="window.quickEditBank && window.quickEditBank()" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নির্বাচিত ব্যাংক এডিট করুন">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button type="button" id="btn-quick-add-recv" onclick="window.quickAddBank && window.quickAddBank()" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নতুন যোগ করুন">
                             <i class="fa-solid fa-plus text-xs"></i>
                         </button>
                     </div>
                 </div>
+
+                <!-- Inline Save Button (3 cols) -->
+                <div class="col-span-12 md:col-span-3 flex items-end">
+                    <button class="w-full h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-900/30 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer" id="save-txn-btn" onclick="window.saveTransaction()">
+                        <i class="fa-solid fa-circle-check text-xs"></i><span>এন্ট্রি সেভ করুন</span>
+                    </button>
+                </div>
             </div>
-            <div data-perm="addLedgerEntry" class="flex justify-end pt-2 hide-for-boss"><button class="m3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20" id="save-txn-btn" onclick="window.saveTransaction()">এন্ট্রি সেভ করুন</button></div>
+
+            <!-- Standalone Save Button (When only Bill/Debit is entered) -->
+            <div data-perm="addLedgerEntry" id="ledger-standalone-save-strip" class="flex justify-end pt-1 hide-for-boss">
+                <button class="rounded-xl h-9 px-7 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-900/30 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer" id="save-txn-btn-standalone" onclick="window.saveTransaction()">
+                    <i class="fa-solid fa-circle-check text-xs"></i><span>এন্ট্রি সেভ করুন</span>
+                </button>
+            </div>
         </div>
+
         <div class="desktop-only m3-table-container clusterize-scroll" id="ledger-scroll-area" style="max-height: 60vh;">
             <table id="ledger-table" class="m3-table min-w-[900px]">
-                <thead><tr class="font-bn"><th>তারিখ</th><th>বিবরণ / ভাউচার</th><th class="text-right">বিল (Debit)</th><th class="text-right">জমা (Credit)</th><th class="text-right text-blue-400">অবশিষ্ট (Balance)</th><th class="text-center sticky-action-col">অ্যাকশন</th></tr></thead>
+                <thead><tr class="font-bn"><th>তারিখ</th><th>বিবরণ / ভাউচার</th><th class="text-right">বিল (Debit)</th><th class="text-right">জমা (Credit)</th><th class="text-right text-slate-200">ব্যালেন্স (Balance)</th><th class="text-center sticky-action-col">অ্যাকশন</th></tr></thead>
                 <tbody id="ledger-list" class="font-bn clusterize-content"></tbody>
                 <tfoot id="ledger-tfoot"></tfoot>
             </table>

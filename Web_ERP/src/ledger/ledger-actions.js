@@ -20,8 +20,8 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
     let receivedType = '', receivedFrom = '';
     if (p > 0) {
         const cashBtn = document.getElementById('recv-cash-btn'); const lessBtn = document.getElementById('recv-less-btn');
-        if (lessBtn?.classList.contains('bg-blue-600')) receivedType = 'Less';
-        else if (cashBtn?.classList.contains('bg-blue-600')) receivedType = 'Cash';
+        if (lessBtn?.classList.contains('bg-emerald-600') || lessBtn?.classList.contains('bg-blue-600')) receivedType = 'Less';
+        else if (cashBtn?.classList.contains('bg-emerald-600') || cashBtn?.classList.contains('bg-blue-600')) receivedType = 'Cash';
         else receivedType = 'Bank';
         receivedFrom = document.getElementById('ledger-received-from')?.value?.trim() || '';
     }

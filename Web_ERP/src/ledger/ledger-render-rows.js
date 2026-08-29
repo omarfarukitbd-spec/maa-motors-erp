@@ -43,7 +43,7 @@ export function updateLedgerLiveText() {
                     ${mathParts}
                 </div>
                 <div class="flex items-center gap-1.5 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700/80 shadow-sm">
-                    <span class="text-slate-400 text-[11px] font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-right text-blue-400"></i><span>নতুন অবশিষ্ট ব্যালেন্স:</span></span>
+                    <span class="text-slate-400 text-[11px] font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-right text-emerald-400 text-xs"></i><span>বর্তমান বকেয়া:</span></span>
                     ${nextDueBadge}
                 </div>
             `;
@@ -51,7 +51,7 @@ export function updateLedgerLiveText() {
     } else {
         if (calc) {
             calc.innerText = '৳ ০';
-            calc.className = 'bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700 text-xs font-black text-blue-400 shadow-inner font-bn';
+            calc.className = 'bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700 text-xs font-black text-slate-300 shadow-inner font-bn';
         }
         if (hud) {
             hud.classList.add('hidden');
@@ -139,6 +139,8 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
                 console.error("Time parsing error:", e);
             }
         }
+        const rawCustName = d.customerName || cust?.name || 'Unknown';
+        const cleanCustName = String(rawCustName).replace(/^\[.*?\]\s*/, '').trim();
         const custAddress = cust?.address || d.address || '';
 
         rows.push(`<tr class="hover:bg-white/[0.03] transition-colors border-b border-slate-800/50">
@@ -148,18 +150,18 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
             </td>
             <td class="font-bold text-slate-200 text-xs align-top py-2.5">
                 <div class="flex items-center flex-wrap gap-1">
-                    <span>${d.customerName || cust?.name || 'Unknown'}</span>
+                    <span>${cleanCustName}</span>
                     ${typeBadge}
                 </div>
                 ${custAddress ? `<div class="text-[9px] text-slate-400 font-normal mt-0.5 truncate max-w-[220px] flex items-center gap-1" title="${custAddress}"><i class="fa-solid fa-location-dot text-[8px] text-slate-500"></i><span>${custAddress}</span></div>` : ''}
-                <div class="flex items-center gap-1.5 mt-0.5">${d.voucherNo ? `<span class="text-[9px] text-blue-400 font-black">#${d.voucherNo}</span>` : ''}${d.notes ? `<span class="text-[9px] text-slate-500 font-medium italic truncate max-w-[180px]" title="${d.notes}">• ${d.notes}</span>` : ''}</div>
+                <div class="flex items-center gap-1.5 mt-0.5">${d.voucherNo ? `<span class="text-[9px] text-cyan-400 font-mono font-black">#${d.voucherNo}</span>` : ''}${d.notes ? `<span class="text-[9px] text-slate-500 font-medium italic truncate max-w-[180px]" title="${d.notes}">• ${d.notes}</span>` : ''}</div>
             </td>
-            <td class="text-right text-red-400 font-black text-sm align-top py-2.5">৳${formatAmountWithComma(b)}</td>
-            <td class="text-right text-emerald-400 font-black text-sm align-top py-2.5">৳${formatAmountWithComma(p)}</td>
-            <td class="text-right text-white font-black text-base bg-white/[0.02] border-l border-slate-800/50 align-top py-2.5">৳${formatAmountWithComma(Math.abs(balanceVal))}<div class="text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</div></td>
+            <td class="text-right text-red-400 font-black text-sm align-top py-2.5 font-mono">৳${formatAmountWithComma(b)}</td>
+            <td class="text-right text-emerald-400 font-black text-sm align-top py-2.5 font-mono">৳${formatAmountWithComma(p)}</td>
+            <td class="text-right text-white font-black text-base bg-white/[0.02] border-l border-slate-800/50 align-top py-2.5 font-mono">৳${formatAmountWithComma(Math.abs(balanceVal))}<div class="text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'} font-sans">${balanceVal > 0 ? 'Due' : 'Adv'}</div></td>
             <td class="text-center sticky-action-col align-top py-2.5"><div class="flex items-center justify-center gap-1.5">
                 <button data-perm="sendLedgerWhatsApp" class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
-                <button data-perm="sendLedgerSMS" class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
+                <button data-perm="sendLedgerSMS" class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-cyan-400"></i></button>
                 <button data-perm="editLedger" class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
                 <button data-perm="deleteLedger" class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>
                 <button data-perm="printLedgerReceipt" class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
@@ -169,9 +171,9 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
         mobileHtml += `<div class="mobile-card">
             <div class="mobile-card-header">
                 <div>
-                    <div class="mobile-card-title">${d.customerName || cust?.name || 'Unknown'}</div>
+                    <div class="mobile-card-title">${cleanCustName}</div>
                     ${custAddress ? `<div class="text-[10px] text-slate-400 font-normal flex items-center gap-1 mt-0.5"><i class="fa-solid fa-location-dot text-[9px] text-slate-500"></i><span>${custAddress}</span></div>` : ''}
-                    <div class="mobile-card-sub text-blue-400 font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo : formatAppDate(d.date)}${entryTime ? ` <span title="আসল এন্ট্রির সময়: ${fullEntryDateTime}" class="cursor-help">(${entryTime})</span>` : ''} ${typeBadge}</div>
+                    <div class="mobile-card-sub text-cyan-400 font-mono font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo : formatAppDate(d.date)}${entryTime ? ` <span title="আসল এন্ট্রির সময়: ${fullEntryDateTime}" class="cursor-help font-sans">(${entryTime})</span>` : ''} ${typeBadge}</div>
                 </div>
                 <div class="text-right"><div class="text-white font-black text-base">৳ ${formatAmountWithComma(Math.abs(balanceVal))}</div><span class="inline-block text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</span></div>
             </div>

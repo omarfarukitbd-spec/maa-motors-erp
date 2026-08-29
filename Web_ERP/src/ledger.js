@@ -247,14 +247,17 @@ if (typeof window !== 'undefined') {
     };
     window.toggleReceivedSection = () => { 
         const p = parseAmount(document.getElementById('ledger-paid')?.value || '0'); 
-        document.getElementById('received-section')?.classList.toggle('hidden', p <= 0); 
+        const recvSec = document.getElementById('received-section');
+        const standaloneSave = document.getElementById('ledger-standalone-save-strip');
+        if (recvSec) recvSec.classList.toggle('hidden', p <= 0);
+        if (standaloneSave) standaloneSave.classList.toggle('hidden', p > 0);
     };
     window.setReceivedType = (type) => { 
         ['Bank', 'Cash', 'Less'].forEach(k => { 
             const el = document.getElementById('recv-' + k.toLowerCase() + '-btn'); 
             if (el) { 
-                if (k === type) { el.classList.add('bg-blue-600', 'text-white'); el.classList.remove('text-slate-400'); } 
-                else { el.classList.remove('bg-blue-600', 'text-white'); el.classList.add('text-slate-400'); } 
+                if (k === type) { el.classList.add('bg-emerald-600', 'text-white'); el.classList.remove('text-slate-400', 'bg-blue-600'); } 
+                else { el.classList.remove('bg-emerald-600', 'bg-blue-600', 'text-white'); el.classList.add('text-slate-400'); } 
             } 
         }); 
         const lbl = document.getElementById('lbl-recv-from');
@@ -264,12 +267,12 @@ if (typeof window !== 'undefined') {
                 lbl.innerText = 'ব্যাংক অ্যাকাউন্ট (Bank Name)';
                 wrapper.innerHTML = `<select id="ledger-received-from" class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1 cursor-pointer">${window.cachedBanksHtml || '<option value="">-- ব্যাংক নির্বাচন করুন --</option>'}</select>
                 <button type="button" id="btn-quick-edit-recv" onclick="window.quickEditBank && window.quickEditBank()" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নির্বাচিত ব্যাংক এডিট করুন"><i class="fa-solid fa-pen text-xs"></i></button>
-                <button type="button" id="btn-quick-add-recv" onclick="window.quickAddBank && window.quickAddBank()" class="w-9 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নতুন ব্যাংক যোগ করুন"><i class="fa-solid fa-plus text-xs"></i></button>`;
+                <button type="button" id="btn-quick-add-recv" onclick="window.quickAddBank && window.quickAddBank()" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নতুন ব্যাংক যোগ করুন"><i class="fa-solid fa-plus text-xs"></i></button>`;
             } else if (type === 'Cash') {
                 lbl.innerText = 'কার মাধ্যমে জমা (Cash Receiver)';
                 wrapper.innerHTML = `<select id="ledger-received-from" class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1 cursor-pointer">${window.cachedCashHtml || '<option value="">-- ক্যাশ রিসিভার নির্বাচন করুন --</option>'}</select>
                 <button type="button" id="btn-quick-edit-recv" onclick="window.quickEditCashCollector && window.quickEditCashCollector()" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নির্বাচিত ক্যাশ সোর্স এডিট করুন"><i class="fa-solid fa-pen text-xs"></i></button>
-                <button type="button" id="btn-quick-add-recv" onclick="window.quickAddCashCollector && window.quickAddCashCollector()" class="w-9 h-9 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নতুন ক্যাশ সোর্স যোগ করুন"><i class="fa-solid fa-plus text-xs"></i></button>`;
+                <button type="button" id="btn-quick-add-recv" onclick="window.quickAddCashCollector && window.quickAddCashCollector()" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নতুন ক্যাশ সোর্স যোগ করুন"><i class="fa-solid fa-plus text-xs"></i></button>`;
             } else {
                 lbl.innerText = 'ছাড়ের কারণ (Reason)';
                 wrapper.innerHTML = `<input type="text" id="ledger-received-from" placeholder="যেমন: সম্মানিতে ছাড়..." class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1">`;
