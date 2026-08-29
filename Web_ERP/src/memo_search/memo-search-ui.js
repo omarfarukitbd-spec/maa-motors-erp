@@ -6,6 +6,7 @@ import { showToast } from '../utils/ui-helpers.js';
 
 let _searchDebounceTimer;
 let _currentVoucherNo = '';
+let _currentSearchRequestId = 0;
 
 /**
  * Main View Renderer for Memo Search Section
@@ -118,28 +119,32 @@ function setupMemoSearchEvents(params = {}) {
 }
 
 export async function executeMemoSearch(query) {
+    const searchId = ++_currentSearchRequestId;
     const resultArea = document.getElementById('memo-search-result-area');
     const multipleArea = document.getElementById('memo-multiple-matches');
     if (!resultArea) return;
 
-    if (!query || !query.trim()) { resetMemoResultArea(); return; }
+    const cleanQ = (query || '').trim();
+    if (!cleanQ) { resetMemoResultArea(); return; }
 
     resultArea.innerHTML = `
-        <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 space-y-3">
-            <i class="fa-solid fa-spinner fa-spin text-3xl text-cyan-400 mb-2"></i>
-            <div class="text-sm font-bold">মেমো তথ্য লোড করা হচ্ছে...</div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-400 space-y-2">
+            <i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400 mb-1"></i>
+            <div class="text-xs font-bold">মেমো তথ্য লোড করা হচ্ছে...</div>
         </div>
     `;
 
     try {
-        const list = await searchMemosByNumber(query);
+        const list = await searchMemosByNumber(cleanQ);
+        if (searchId !== _currentSearchRequestId) return; // Discard stale async response if newer query exists
+
         if (!list || list.length === 0) {
             if (multipleArea) multipleArea.classList.add('hidden');
             resultArea.innerHTML = `
-                <div class="bg-slate-900/60 border border-red-500/20 rounded-3xl p-10 text-center text-slate-400 space-y-2">
-                    <div class="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400 text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div class="text-base font-bold text-white">মেমো পাওয়া যায়নি!</div>
-                    <div class="text-xs text-slate-500 font-mono">"#${escapeHTML(query)}" নম্বরে কোনো লেনদেন ডাটাবেসে নেই</div>
+                <div class="bg-slate-900/60 border border-red-500/20 rounded-2xl p-8 text-center text-slate-400 space-y-2">
+                    <div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400 text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="text-sm font-bold text-white">মেমো পাওয়া যায়নি!</div>
+                    <div class="text-xs text-slate-500 font-mono">"#${escapeHTML(cleanQ)}" নম্বরে কোনো লেনদেন ডাটাবেসে নেই</div>
                 </div>
             `;
             return;
@@ -152,20 +157,25 @@ export async function executeMemoSearch(query) {
             getCustomerLifetimeStats(activeTxn.customerId)
         ]);
 
+        if (searchId !== _currentSearchRequestId) return;
+
         if (list.length > 1 && multipleArea) {
             multipleArea.classList.remove('hidden');
             multipleArea.innerHTML = `
-                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-3 mb-4">
-                    <div class="text-[11px] font-black text-cyan-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i> <span>একাধিক মেমো পাওয়া গেছে (${list.length}টি):</span></div>
-                    <div class="flex flex-wrap gap-2">
-                        ${list.map((m, idx) => `
-                            <button onclick="window.selectSpecificMemoMatch(${idx})" class="memo-match-btn px-3 py-1.5 rounded-xl ${idx === 0 ? 'bg-cyan-600 text-white font-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-2 border border-slate-700 transition-all cursor-pointer" data-idx="${idx}">
-                                <span class="font-mono font-bold">#${escapeHTML(m.voucherNo || m.id.slice(-6).toUpperCase())}</span>
-                                <span>•</span>
-                                <span class="font-bold truncate max-w-[120px]">${escapeHTML(m.customerName)}</span>
-                                <span class="text-[10px] text-slate-400 font-mono">(${formatAppDate(m.date)})</span>
-                            </button>
-                        `).join('')}
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-2.5 mb-3 font-bn">
+                    <div class="text-[10px] font-black text-cyan-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i> <span>একাধিক মেমো পাওয়া গেছে (${list.length}টি):</span></div>
+                    <div class="flex flex-wrap gap-1.5">
+                        ${list.map((m, idx) => {
+                            const cleanName = String(m.customerName || 'গ্রাহক').replace(/^\[.*?\]\s*/, '').trim();
+                            return `
+                                <button onclick="window.selectSpecificMemoMatch(${idx})" class="memo-match-btn px-2.5 py-1 rounded-xl ${idx === 0 ? 'bg-cyan-600 text-white font-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer" data-idx="${idx}">
+                                    <span class="font-mono font-bold">#${escapeHTML(m.voucherNo || m.id.slice(-6).toUpperCase())}</span>
+                                    <span>•</span>
+                                    <span class="font-bold truncate max-w-[130px]">${escapeHTML(cleanName)}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">(${formatAppDate(m.date)})</span>
+                                </button>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             `;
@@ -176,8 +186,9 @@ export async function executeMemoSearch(query) {
 
         resultArea.innerHTML = renderMemoCardHTML(activeTxn, adjacent, lifetimeStats);
     } catch (e) {
+        if (searchId !== _currentSearchRequestId) return;
         console.error("executeMemoSearch error:", e);
-        resultArea.innerHTML = `<div class="p-8 text-center text-red-400 font-bold bg-slate-900/60 rounded-3xl border border-red-500/20">মেমো অনুসন্ধানে সমস্যা হয়েছে</div>`;
+        resultArea.innerHTML = `<div class="p-6 text-center text-red-400 font-bold bg-slate-900/60 rounded-2xl border border-red-500/20">মেমো অনুসন্ধানে সমস্যা হয়েছে</div>`;
     }
 }
 

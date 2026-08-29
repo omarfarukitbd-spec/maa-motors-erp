@@ -1,5 +1,6 @@
 import { escapeHTML, formatAmountWithComma, formatAppDate, numberToBanglaWords } from '../utils.js';
 import { renderInCardLedgerHistory } from './memo-history-table.js';
+import { renderMemoItemsTable, renderCustomerAllMemosBar } from './memo-items-table.js';
 import './memo-actions-bridge.js';
 import './memo-ledger-drawer.js';
 import './memo-quick-pay.js';
@@ -46,37 +47,6 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
         paymentMethodHtml = `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 ml-1.5">${escapeHTML(txn.receivedType)}${txn.receivedFrom ? ' • ' + escapeHTML(txn.receivedFrom) : ''}</span>`;
     }
 
-    // Item Table (if items exist)
-    let itemsTableHtml = '';
-    if (txn.hasItems && txn.items && txn.items.length > 0) {
-        itemsTableHtml = `
-            <div class="overflow-x-auto custom-scrollbar border border-slate-700/60 rounded-2xl mb-4 bg-slate-950/40">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                        <tr class="bg-slate-900/90 text-slate-300 border-b border-slate-700/60 font-black">
-                            <th class="py-2.5 px-3 text-center w-12">#</th>
-                            <th class="py-2.5 px-3">পণ্যের বিবরণ / আইটেম</th>
-                            <th class="py-2.5 px-3 text-center">পরিমাণ</th>
-                            <th class="py-2.5 px-3 text-right">একক দর</th>
-                            <th class="py-2.5 px-3 text-right">মোট টাকা</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-800/60">
-                        ${txn.items.map((it, idx) => `
-                            <tr class="hover:bg-slate-800/30 transition-colors">
-                                <td class="py-2 px-3 text-center font-mono text-slate-500">${String(idx + 1).padStart(2, '0')}</td>
-                                <td class="py-2 px-3 font-bold text-slate-200">${escapeHTML(it.desc || '-')}</td>
-                                <td class="py-2 px-3 text-center font-mono text-slate-300">${it.qty || 1} ${it.unit || 'Pcs'}</td>
-                                <td class="py-2 px-3 text-right font-mono text-slate-300">৳${formatAmountWithComma(it.rate || 0)}</td>
-                                <td class="py-2 px-3 text-right font-mono font-black text-white">৳${formatAmountWithComma(it.total || 0)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-
     const publicUrl = `${window.location.origin}${window.location.pathname}?view=public-memo&id=${txn.id}`;
     const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=2&data=${encodeURIComponent(publicUrl)}`;
 
@@ -88,7 +58,7 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
             <!-- Above-the-Fold Zero-Scroll Hero Voucher Card -->
             <div class="relative overflow-hidden bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-2xl animate-fade-in">
                 <!-- Watermark Stamp -->
-                <div class="absolute right-6 top-16 pointer-events-none select-none opacity-10 sm:opacity-15 transform -rotate-12 border-4 sm:border-8 border-dashed rounded-2xl px-5 py-1 text-center text-3xl sm:text-5xl font-black font-sans uppercase tracking-widest z-0" style="color: ${watermarkColor}; border-color: ${watermarkColor};">
+                <div class="absolute right-4 top-2 pointer-events-none select-none opacity-5 sm:opacity-10 transform -rotate-12 border-2 sm:border-4 border-dashed rounded-xl px-4 py-0.5 text-center text-2xl sm:text-4xl font-black font-sans uppercase tracking-widest z-0" style="color: ${watermarkColor}; border-color: ${watermarkColor};">
                     ${watermarkText}
                 </div>
 
@@ -164,33 +134,33 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                             </div>
                         </div>
 
-                        <!-- Compact Action Toolbar -->
-                        <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
-                            <button onclick="window.printMemoReceipt('${txn.id}', 'a4')" class="h-8.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/20 active:scale-95 transition-all cursor-pointer" title="A4 সাইজ ইনভয়েস প্রিন্ট">
+                        <!-- Compact Single-Line Action Toolbar -->
+                        <div class="flex items-center gap-1.5 pt-0.5 overflow-x-auto custom-scrollbar no-scrollbar">
+                            <button onclick="window.printMemoReceipt('${txn.id}', 'a4')" class="h-8 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-[11px] flex items-center gap-1 shadow-sm shrink-0 active:scale-95 transition-all cursor-pointer" title="A4 সাইজ ইনভয়েস প্রিন্ট">
                                 <i class="fa-solid fa-print"></i><span>A4 প্রিন্ট</span>
                             </button>
-                            <button onclick="window.printMemoReceipt('${txn.id}', 'pos')" class="h-8.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 border border-slate-700 active:scale-95 transition-all cursor-pointer" title="৮০মিমি POS থার্মাল রসিদ">
-                                <i class="fa-solid fa-receipt"></i><span>POS মেমো</span>
+                            <button onclick="window.printMemoReceipt('${txn.id}', 'pos')" class="h-8 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] flex items-center gap-1 border border-slate-700 shrink-0 active:scale-95 transition-all cursor-pointer" title="৮০মিমি POS থার্মাল রসিদ">
+                                <i class="fa-solid fa-receipt"></i><span>POS</span>
                             </button>
                             ${currentDue > 0 ? `
-                                <button onclick="window.openMemoQuickPayModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', ${currentDue})" class="h-8.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-900/30 active:scale-95 transition-all cursor-pointer" title="সরাসরি টাকা জমা নিন">
-                                    <i class="fa-solid fa-hand-holding-dollar text-xs"></i><span>টাকা জমা নিন</span>
+                                <button onclick="window.openMemoQuickPayModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', ${currentDue})" class="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] flex items-center gap-1 shadow-sm shrink-0 active:scale-95 transition-all cursor-pointer" title="সরাসরি টাকা জমা নিন">
+                                    <i class="fa-solid fa-hand-holding-dollar text-xs"></i><span>জমা নিন</span>
                                 </button>
                             ` : ''}
-                            <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerAccountNo || '')}')" class="h-8.5 px-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-purple-500/30 active:scale-95 transition-all cursor-pointer" title="কাস্টমারের সম্পূর্ণ খতিয়ান">
-                                <i class="fa-solid fa-book"></i><span>পূর্ণ খতিয়ান</span>
+                            <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerAccountNo || '')}')" class="h-8 px-2 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-purple-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="কাস্টমারের সম্পূর্ণ খতিয়ান">
+                                <i class="fa-solid fa-book"></i><span>খতিয়ান</span>
                             </button>
-                            <button onclick="window.openMemoEditModal('${txn.id}')" class="h-8.5 px-2.5 rounded-xl bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-amber-500/30 active:scale-95 transition-all cursor-pointer" title="মেমো এডিট করুন">
+                            <button onclick="window.openMemoEditModal('${txn.id}')" class="h-8 px-2 rounded-xl bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-amber-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="মেমো এডিট">
                                 <i class="fa-solid fa-pen-to-square"></i><span>এডিট</span>
                             </button>
-                            <button onclick="window.shareMemoOnWhatsApp('${txn.id}')" class="h-8.5 px-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-emerald-500/30 active:scale-95 transition-all cursor-pointer" title="WhatsApp বার্তা">
+                            <button onclick="window.shareMemoOnWhatsApp('${txn.id}')" class="h-8 px-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-emerald-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="WhatsApp বার্তা">
                                 <i class="fa-brands fa-whatsapp text-xs"></i><span>WhatsApp</span>
                             </button>
-                            <button onclick="window.sendMemoDueSMS('${txn.id}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerPhone || '')}', ${currentDue}, '${escapeHTML(txn.voucherNo || '')}')" class="h-8.5 px-2.5 rounded-xl bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-cyan-500/30 active:scale-95 transition-all cursor-pointer" title="SMS পাঠান">
+                            <button onclick="window.sendMemoDueSMS('${txn.id}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerPhone || '')}', ${currentDue}, '${escapeHTML(txn.voucherNo || '')}')" class="h-8 px-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-cyan-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="SMS পাঠান">
                                 <i class="fa-solid fa-comment-sms"></i><span>SMS</span>
                             </button>
-                            <button onclick="window.copyDigitalMemoLink('${txn.id}')" class="h-8.5 w-8.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 active:scale-95 transition-all cursor-pointer" title="মেমো লিংক কপি">
-                                <i class="fa-solid fa-link text-[11px]"></i>
+                            <button onclick="window.copyDigitalMemoLink('${txn.id}')" class="h-8 w-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 shrink-0 active:scale-95 transition-all cursor-pointer" title="মেমো লিংক কপি">
+                                <i class="fa-solid fa-link text-[10px]"></i>
                             </button>
                         </div>
                     </div>
@@ -239,8 +209,11 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                 </div>
             </div>
 
+            <!-- Customer All Memos Navigator Bar -->
+            ${renderCustomerAllMemosBar(txn.voucherNo, lifetimeStats)}
+
             <!-- Below-The-Fold Secondary Sections (Scrollable) -->
-            ${itemsTableHtml}
+            ${renderMemoItemsTable(txn)}
 
             <!-- Notes & QR Code Grid -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-stretch">
