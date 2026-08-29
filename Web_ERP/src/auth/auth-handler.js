@@ -15,20 +15,29 @@ export async function login() {
 
 export async function loginWithGoogle() {
     const errEl = document.getElementById('login-error');
-    if (errEl) errEl.innerText = "গুগল লগইন প্রসেস করা হচ্ছে...";
-    
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (errEl) errEl.innerText = "গুগল লগইন উইন্ডো খোলা হচ্ছে...";
     
     try {
-        if (isMobile) {
-            await auth.signInWithRedirect(googleProvider);
-        } else {
-            await auth.signInWithPopup(googleProvider);
-        }
+        // Use signInWithPopup across both mobile and desktop (avoids Chrome mobile cookie partitioning issues)
+        await auth.signInWithPopup(googleProvider);
+        if (errEl) errEl.innerText = "";
     } catch (e) {
-        console.warn("Popup blocked or failed, trying redirect fallback:", e);
-        try { await auth.signInWithRedirect(googleProvider); }
-        catch(err) { if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ!"; }
+        console.warn("Popup sign-in issue or blocked:", e);
+        if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+            if (errEl) errEl.innerText = "লগইন উইন্ডো বন্ধ করা হয়েছে।";
+            return;
+        }
+        if (e.code === 'auth/popup-blocked') {
+            if (errEl) errEl.innerText = "পপআপ ব্লক হয়েছে! রিডাইরেক্ট দিয়ে চেষ্টা করা হচ্ছে...";
+            try {
+                await auth.signInWithRedirect(googleProvider);
+            } catch (err) {
+                console.error("Redirect fallback error:", err);
+                if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ: " + (err.message || "ত্রুটি হয়েছে");
+            }
+            return;
+        }
+        if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ: " + (e.message || "ত্রুটি হয়েছে");
     }
 }
 
@@ -44,8 +53,15 @@ export function logout() {
 }
 
 let userStatusUnsubscribe = null;
-export function initAuthListener() {
-    auth.getRedirectResult().catch(err => console.warn("Redirect result handled:", err));
+export async function initAuthListener() {
+    try {
+        const redirectRes = await auth.getRedirectResult();
+        if (redirectRes && redirectRes.user) {
+            console.log("Redirect login successful:", redirectRes.user.email);
+        }
+    } catch (err) {
+        console.warn("Redirect result error:", err);
+    }
 
     // Check portal mode from URL
     const urlParams = new URLSearchParams(window.location.search);

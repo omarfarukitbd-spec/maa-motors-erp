@@ -19,6 +19,7 @@ if (!firebase.apps.length) {
 export const db = firebase.firestore();
 export const auth = firebase.auth();
 export const googleProvider = new firebase.auth.GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 // Enable Persistence with Multi-Tab Synchronization
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
