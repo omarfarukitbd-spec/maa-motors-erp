@@ -14,54 +14,52 @@ export async function renderMemoSearch(container, params = {}) {
     if (!container) return;
 
     container.innerHTML = `
-        <div class="max-w-6xl mx-auto space-y-5 animate-fade-in font-bn pb-10">
-            <!-- Header Section -->
-            <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/60 p-4 sm:p-5 rounded-3xl border border-slate-800/80 backdrop-blur-xl">
-                <div class="flex items-center gap-3.5">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600/30 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl shadow-inner">
-                        <i class="fa-solid fa-receipt"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                            <span>মেমো / ভাউচার ইনস্ট্যান্ট সার্চ</span>
-                            <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Next-Gen Hub</span>
-                        </h1>
-                        <p class="text-xs text-slate-400 mt-0.5">মেমো নম্বর লিখলেই সাথে সাথে আইটেম তালিকা, পূর্বের ও বর্তমান বকেয়া এবং প্রিন্ট অপশন চলে আসবে</p>
-                    </div>
-                </div>
-                <kbd class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 bg-slate-800/80 border border-slate-700/70 px-3 py-1 rounded-xl">
-                    <span class="text-cyan-400 font-mono">F9</span> বা <span class="text-cyan-400 font-mono">Alt+M</span>
-                </kbd>
-            </div>
-
-            <!-- Search Hero Card (Pixel-Perfect Clean Capsule) -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl backdrop-blur-xl space-y-3.5">
-                <div class="relative max-w-2xl mx-auto flex items-center bg-slate-950 border border-slate-700/60 hover:border-slate-600 focus-within:!border-cyan-500 focus-within:ring-4 focus-within:ring-cyan-500/15 rounded-2xl shadow-inner transition-all">
-                    <!-- Left Search Icon -->
-                    <div class="pl-4.5 pr-1.5 text-cyan-400 flex items-center justify-center pointer-events-none">
-                        <i class="fa-solid fa-magnifying-glass text-base"></i>
+        <div class="max-w-6xl mx-auto space-y-3.5 animate-fade-in font-bn pb-10">
+            <!-- Compact Unified Command & Search Hub -->
+            <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-3 sm:p-4 shadow-xl backdrop-blur-xl space-y-2.5">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <!-- Left Title Badge -->
+                    <div class="flex items-center gap-2.5 shrink-0">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600/30 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-base shadow-sm">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
+                                <span>মেমো ইনস্ট্যান্ট সার্চ</span>
+                                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Next-Gen</span>
+                            </h1>
+                            <p class="text-[11px] text-slate-400">মেমো নং লিখলেই সাথে সাথে কাস্টমার ও সম্পূর্ণ হিসাব প্রদর্শিত হবে</p>
+                        </div>
                     </div>
 
-                    <!-- Main Input Field -->
-                    <input type="text" 
-                        id="memo-search-input" 
-                        placeholder="মেমো বা ভাউচার নম্বর লিখুন (e.g. 76, #105, QC-12)..." 
-                        autocomplete="off"
-                        class="w-full bg-transparent text-white px-2 py-3.5 text-base sm:text-lg font-mono font-black outline-none placeholder:font-bn placeholder:text-slate-500 placeholder:text-sm placeholder:font-medium">
-                    
-                    <!-- Right Actions Hub (Integrated Mic & Clear Buttons) -->
-                    <div class="pr-2 flex items-center gap-1.5 shrink-0">
-                        <button id="memo-search-clear-btn" class="hidden w-8 h-8 rounded-xl bg-slate-800/70 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.clearMemoSearchInput()" title="মুছে ফেলুন">
-                            <i class="fa-solid fa-xmark text-xs"></i>
-                        </button>
-                        <button id="memo-voice-btn" class="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 flex items-center justify-center border border-slate-700/60 hover:border-cyan-500/40 active:scale-95 transition-all cursor-pointer" onclick="window.triggerMemoVoiceSearch()" title="মুখে বলে সার্চ করুন">
-                            <i class="fa-solid fa-microphone text-xs"></i>
-                        </button>
+                    <!-- Right Search Capsule -->
+                    <div class="relative w-full md:w-auto md:min-w-[380px] lg:min-w-[440px] flex items-center bg-slate-950 border border-slate-700/80 hover:border-slate-600 focus-within:!border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20 rounded-xl shadow-inner transition-all px-3 py-1">
+                        <!-- Left Search Icon -->
+                        <div class="text-cyan-400 flex items-center justify-center pointer-events-none mr-2">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </div>
+
+                        <!-- Main Input Field -->
+                        <input type="text" 
+                            id="memo-search-input" 
+                            placeholder="মেমো বা ভাউচার নম্বর লিখুন (e.g. 100, #105)..." 
+                            autocomplete="off"
+                            class="w-full bg-transparent text-white py-1.5 text-sm font-mono font-black outline-none placeholder:font-bn placeholder:text-slate-500 placeholder:text-xs">
+                        
+                        <!-- Right Actions Hub (Integrated Mic & Clear Buttons) -->
+                        <div class="flex items-center gap-1 shrink-0 ml-1">
+                            <button id="memo-search-clear-btn" class="hidden w-6 h-6 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.clearMemoSearchInput()" title="মুছে ফেলুন">
+                                <i class="fa-solid fa-xmark text-[10px]"></i>
+                            </button>
+                            <button id="memo-voice-btn" class="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 flex items-center justify-center border border-slate-700/60 hover:border-cyan-500/40 active:scale-95 transition-all cursor-pointer" onclick="window.triggerMemoVoiceSearch()" title="মুখে বলে সার্চ করুন">
+                                <i class="fa-solid fa-microphone text-[10px]"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Recent Memos Chips -->
-                <div id="memo-recent-chips-container" class="max-w-2xl mx-auto flex items-center gap-2 overflow-x-auto custom-scrollbar py-1 text-xs">
+                <!-- Recent Memos Inline Chips -->
+                <div id="memo-recent-chips-container" class="flex items-center gap-2 overflow-x-auto custom-scrollbar pt-1.5 text-xs border-t border-slate-800/60">
                     <span class="text-slate-500 font-bold flex items-center gap-1 shrink-0 text-[11px]">
                         <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> সাম্প্রতিক মেমো:
                     </span>
@@ -76,10 +74,10 @@ export async function renderMemoSearch(container, params = {}) {
 
             <!-- Result Display Container -->
             <div id="memo-search-result-area" class="max-w-6xl mx-auto">
-                <div class="bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-12 text-center text-slate-500 space-y-3">
-                    <div class="w-16 h-16 rounded-3xl bg-slate-800/40 border border-slate-700/40 flex items-center justify-center mx-auto text-slate-600 text-2xl"><i class="fa-solid fa-barcode"></i></div>
+                <div class="bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl p-8 text-center text-slate-500 space-y-2">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-800/40 border border-slate-700/40 flex items-center justify-center mx-auto text-slate-600 text-xl"><i class="fa-solid fa-barcode"></i></div>
                     <div class="text-sm font-bold text-slate-400">যেকোনো মেমো নম্বর লিখে সার্চ করুন</div>
-                    <div class="text-xs text-slate-600">মেমো নম্বর লেখার সাথে সাথে সম্পূর্ণ বিবরণ ও হিসাবের সমীকরণ এখানে প্রদর্শিত হবে</div>
+                    <div class="text-xs text-slate-600">মেমো নম্বর লেখার সাথে সাথে সম্পূর্ণ বিবরণ ও হিসাবের সমীকরণ কোনো স্ক্রোল ছাড়াই দৃশ্যমান হবে</div>
                 </div>
             </div>
         </div>
