@@ -5,6 +5,7 @@ import { parseAmount, formatAmountWithComma, formatAppDate, formatSmsCounterText
 import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
+import { showTransactionConfirmModal } from './ledger-confirm-modal.js';
 
 export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs = {}) {
     const mainBtn = document.getElementById('save-txn-btn');
@@ -95,43 +96,31 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         }
     }
 
-    const confirmPreview = await Swal.fire({
-        title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-xl text-white"><i class="fa-solid fa-file-shield text-blue-400"></i><span>লেনদেন যাচাই করুন</span></div>',
-        html: `
-            <div class="text-left space-y-3 font-bn p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner">
-                <div class="flex flex-col gap-1 border-b border-slate-800/80 pb-2">
-                    <span class="text-[10px] text-blue-400 font-black uppercase tracking-wider">কাস্টমারের নাম</span>
-                    <span class="text-base text-white font-black">${name}</span>
-                </div>
-                <div class="grid grid-cols-2 gap-4 border-b border-slate-800/80 pb-2">
-                    <div class="flex flex-col gap-1"><span class="text-[10px] text-blue-400 font-black uppercase tracking-wider">তারিখ</span><span class="text-sm text-slate-200 font-bold font-mono">${formatAppDate(date)}</span></div>
-                    <div class="flex flex-col gap-1"><span class="text-[10px] text-amber-400 font-black uppercase tracking-wider">ভাউচার / মেমো নং</span><span class="text-sm text-amber-400 font-bold font-mono">${v || '-'}</span></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 border-b border-slate-800/80 pb-2">
-                    <div class="flex flex-col gap-1"><span class="text-[10px] text-red-400 font-black uppercase tracking-wider">বিল / কেনাকাটা (Debit)</span><span class="text-lg text-red-400 font-black font-mono">৳ ${formatAmountWithComma(b)}</span></div>
-                    <div class="flex flex-col gap-1"><span class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">জমা প্রাপ্তি (Credit)</span><span class="text-lg text-emerald-400 font-black font-mono">৳ ${formatAmountWithComma(p)}</span></div>
-                </div>
-                ${p > 0 ? `<div class="flex flex-col gap-1 border-b border-slate-800/80 pb-2"><span class="text-[10px] text-purple-400 font-black uppercase tracking-wider">পেমেন্ট মাধ্যম</span><span class="text-xs text-purple-300 font-bold">${receivedType} ${receivedFrom ? '(' + receivedFrom + ')' : ''}</span></div>` : ''}
-            </div>
-            <p class="text-xs text-amber-400 font-bold mt-3 text-center">সব তথ্য সঠিক থাকলে "কনফার্ম করুন" বাটনে ক্লিক করুন।</p>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="fa-solid fa-circle-check mr-2"></i>কনফার্ম করুন',
-        cancelButtonText: '<i class="fa-solid fa-pen-to-square mr-2"></i>সংশোধন করব',
-        customClass: {
-            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 shadow-2xl font-bn',
-            confirmButton: '!bg-emerald-600 hover:!bg-emerald-500 !text-white !px-7 !py-2.5 !rounded-xl font-bold shadow-lg shadow-emerald-600/30 cursor-pointer',
-            cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700 cursor-pointer'
-        }
-    });
-    if (!confirmPreview.isConfirmed) { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; } return; }
-    try {
-        let preCommitCust = getCustomerCache().find(c => c.id === id);
-        try { const liveCust = await CustomerDAO.getById(id); if (liveCust) preCommitCust = liveCust; } catch (e) { console.warn('Live fetch failed', e); }
-        const preCommitDue = preCommitCust ? (Number(preCommitCust.totalDue) || 0) : 0;
+    let preCommitCust = getCustomerCache().find(c => c.id === id);
+    try { const liveCust = await CustomerDAO.getById(id); if (liveCust) preCommitCust = liveCust; } catch (e) { console.warn('Live fetch failed', e); }
+    const preCommitDue = preCommitCust ? (Number(preCommitCust.totalDue) || 0) : 0;
 
+    const confirmResult = await showTransactionConfirmModal({
+        customer: preCommitCust || { name, id },
+        date,
+        voucherNo: v,
+        bill: b,
+        paid: p,
+        receivedType,
+        receivedFrom,
+        preCommitDue,
+        editingRef
+    });
+
+    if (!confirmResult.isConfirmed) {
+        if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; }
+        return;
+    }
+
+    try {
         const batch = db.batch(); const balanceDiff = safeRound(b - p);
         let actualDelta = balanceDiff;
+        let txnRef = null;
         if(editingRef.id) {
             const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0));
             const oldCid = editingRef.oldCid || id;
@@ -150,15 +139,24 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
             editingRef.id = null;
             editingRef.oldCid = null;
         } else {
-            const txnRef = TransactionDAO.getRef();
+            txnRef = TransactionDAO.getRef();
             batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
             auditLog('CREATE', 'Ledger', txnRef.id, name, { bill: b, paid: p, type: receivedType || 'Bill' });
         }
         
         const finalSmsDue = safeRound(preCommitDue + actualDelta);
+        const savedTxnId = editingRef.id || txnRef?.id;
         await batch.commit();
         showToast('লেনদেন সফলভাবে সেভ হয়েছে!', 'success');
+
+        // --- INSTANT POST-ACTIONS FROM CONFIRM MODAL ---
+        if (confirmResult.sendWhatsApp && window.sendTxnWhatsApp && savedTxnId) {
+            setTimeout(() => { window.sendTxnWhatsApp(savedTxnId); }, 350);
+        }
+        if (confirmResult.openPrint && window.choosePrintType && savedTxnId) {
+            setTimeout(() => { window.choosePrintType(savedTxnId); }, 650);
+        }
 
         // --- KHATIYAN TRANSACTION SMS WORKFLOW ---
         try {
