@@ -214,11 +214,35 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
 export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}) {
     if (!(await promptSecurityPin("খতিয়ান এডিট (Authorization)"))) return;
     editingRef.id = id; editingRef.oldCid = cid; editingRef.oldBill = b; editingRef.oldPaid = p;
-    if (document.getElementById('ledger-customer-select')) document.getElementById('ledger-customer-select').value = cid;
+    window._ledgerEditingRef = editingRef;
+
+    const cust = (getCustomerCache() || []).find(c => c.id === cid);
+    const sel = document.getElementById('ledger-customer-select');
+    const searchInput = document.getElementById('ledger-cust-search-input');
+    const clearBtn = document.getElementById('ledger-cust-search-clear');
+    const phoneInput = document.getElementById('ledger-cust-phone');
+    const addressInput = document.getElementById('ledger-cust-address');
+
+    if (sel) sel.value = cid;
+    if (searchInput) searchInput.value = cust ? `${cust.name} (${cust.accountNo || ''})`.trim() : (cid || '');
+    if (clearBtn) clearBtn.classList.remove('hidden');
+    if (phoneInput) phoneInput.value = cust?.phone || 'মোবাইল নেই';
+    if (addressInput) addressInput.value = (cust?.zone ? `[${cust.zone}] ` : '') + (cust?.address || 'ঠিকানা নেই');
+
     if (document.getElementById('ledger-date')) document.getElementById('ledger-date').value = date;
     if (document.getElementById('ledger-voucher')) document.getElementById('ledger-voucher').value = v;
-    if (document.getElementById('ledger-bill')) document.getElementById('ledger-bill').value = b;
-    if (document.getElementById('ledger-paid')) document.getElementById('ledger-paid').value = p;
+    
+    const billInput = document.getElementById('ledger-bill');
+    const paidInput = document.getElementById('ledger-paid');
+    if (billInput) {
+        billInput.value = b > 0 ? formatAmountWithComma(b) : '';
+        if (window.updateLiveWords) window.updateLiveWords(billInput, 'ledger-bill-words');
+    }
+    if (paidInput) {
+        paidInput.value = p > 0 ? formatAmountWithComma(p) : '';
+        if (window.updateLiveWords) window.updateLiveWords(paidInput, 'ledger-paid-words');
+    }
+
     if (window.setReceivedType) window.setReceivedType(rt);
     if (document.getElementById('ledger-received-from')) document.getElementById('ledger-received-from').value = rf;
     if (window.updateLedgerLiveText) window.updateLedgerLiveText();
@@ -230,6 +254,18 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
         btn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md !bg-amber-600 hover:!bg-amber-500'; 
     }
 
+    let cancelBtn = document.getElementById('cancel-edit-txn-btn');
+    if (!cancelBtn && btn && btn.parentNode) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancel-edit-txn-btn';
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'h-10 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ml-2';
+        cancelBtn.innerHTML = '<i class="fa-solid fa-xmark"></i><span>বাতিল</span>';
+        cancelBtn.onclick = () => window.cancelLedgerEdit && window.cancelLedgerEdit();
+        btn.parentNode.insertBefore(cancelBtn, btn.nextSibling);
+    }
+    if (cancelBtn) cancelBtn.classList.remove('hidden');
+
     const viewContainer = document.getElementById('view-container');
     const formCard = document.getElementById('ledger-form-card') || document.getElementById('ledger-customer-select');
     
@@ -237,7 +273,6 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
     if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     setTimeout(() => { 
-        const billInput = document.getElementById('ledger-bill');
         if (billInput) { billInput.focus(); if (billInput.select) billInput.select(); }
     }, 350);
 }

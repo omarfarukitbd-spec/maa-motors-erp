@@ -14,8 +14,14 @@ export function updateLedgerLiveText() {
     const cust = custId ? (getCustomerCache() || []).find(c => c.id === custId) : null;
 
     if (cust || (sel && sel.selectedIndex > 0)) {
-        const currentDue = cust ? Number(cust.totalDue || 0) : (parseFloat(sel.options[sel.selectedIndex]?.dataset?.due) || 0);
-        const nextDue = safeRound(currentDue + b - p);
+        let baseDue = cust ? Number(cust.totalDue || 0) : (parseFloat(sel.options[sel.selectedIndex]?.dataset?.due) || 0);
+        const editRef = window._ledgerEditingRef || {};
+        if (editRef.id && editRef.oldCid === custId) {
+            const oldBill = Number(editRef.oldBill) || 0;
+            const oldPaid = Number(editRef.oldPaid) || 0;
+            baseDue = safeRound(baseDue - (oldBill - oldPaid));
+        }
+        const nextDue = safeRound(baseDue + b - p);
         
         if (calc) {
             calc.innerText = `বকেয়া: ৳ ${formatAmountWithComma(Math.abs(nextDue))} ${nextDue < 0 ? '(অ্যাড)' : ''}`;
@@ -24,11 +30,11 @@ export function updateLedgerLiveText() {
 
         if (hud) {
             hud.classList.remove('hidden');
-            const prevDueBadge = currentDue > 0 
-                ? `<span class="text-red-400 font-mono font-bold">৳ ${formatAmountWithComma(currentDue)} (বকেয়া)</span>`
-                : (currentDue < 0 ? `<span class="text-emerald-400 font-mono font-bold">৳ ${formatAmountWithComma(Math.abs(currentDue))} (অ্যাডভান্স)</span>` : `<span class="text-slate-400 font-mono font-bold">৳ ০.০০</span>`);
+            const prevDueBadge = baseDue > 0 
+                ? `<span class="text-red-400 font-mono font-bold">৳ ${formatAmountWithComma(baseDue)} (বকেয়া)</span>`
+                : (baseDue < 0 ? `<span class="text-emerald-400 font-mono font-bold">৳ ${formatAmountWithComma(Math.abs(baseDue))} (অ্যাডভান্স)</span>` : `<span class="text-slate-400 font-mono font-bold">৳ ০.০০</span>`);
 
-            let mathParts = `<span>পূর্বের বকেয়া: ${prevDueBadge}</span>`;
+            let mathParts = `<span>${editRef.id ? 'ভাউচার ছাড়া মূল বকেয়া' : 'পূর্বের বকেয়া'}: ${prevDueBadge}</span>`;
             if (b > 0) {
                 mathParts += `<span class="text-red-400 font-bold font-mono"> + বিল: ৳ ${formatAmountWithComma(b)}</span>`;
             }
