@@ -24,15 +24,15 @@ export async function showTransactionConfirmModal({
     const zone = customer?.zone || '';
     const areaStr = (zone ? `[${zone}] ` : '') + (address ? address : '');
 
-    // Projected Ledger Balance Impact Math
     const b = Number(bill) || 0;
     const p = Number(paid) || 0;
     const currentDue = Number(preCommitDue) || 0;
+    const isAccountTransfer = Boolean(editingRef?.id && editingRef?.oldCid && editingRef?.oldCid !== customer?.id);
     
     let balanceDiff = safeRound(b - p);
     let projectedDue = 0;
 
-    if (editingRef && editingRef.id) {
+    if (editingRef && editingRef.id && !isAccountTransfer) {
         const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0));
         const netIncrement = safeRound(balanceDiff - oldDiff);
         projectedDue = safeRound(currentDue + netIncrement);
@@ -60,6 +60,12 @@ export async function showTransactionConfirmModal({
 
     const htmlContent = `
         <div class="text-left space-y-3 font-bn">
+            ${isAccountTransfer ? `
+                <div class="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-rotate text-amber-400 text-sm shrink-0"></i>
+                    <span>অ্যাকাউন্ট ট্রান্সফার: এই মেমোটি পূর্বের কাস্টমার থেকে কর্তন হয়ে নতুন কাস্টমারের অ্যাকাউন্টে যোগ হবে।</span>
+                </div>
+            ` : ''}
             <!-- 1. Customer Identity Card -->
             <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner flex flex-col gap-1.5">
                 <div class="flex items-center justify-between gap-2 flex-wrap">
