@@ -53,6 +53,10 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
     const billWords = bill > 0 ? numberToBanglaWords(bill) : '';
     const dueWords = currentDue !== 0 ? numberToBanglaWords(Math.abs(currentDue)) : '';
 
+    const addressStr = txn.customerAddress || txn.address || '';
+    const zoneStr = txn.customerZone || txn.zone || '';
+    const fullAddress = (zoneStr ? `[${zoneStr}] ` : '') + (addressStr || '');
+
     return `
         <div class="space-y-3.5 font-bn">
             <!-- Above-the-Fold Zero-Scroll Hero Voucher Card -->
@@ -112,24 +116,30 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                                     <i class="fa-solid fa-book-open text-[10px]"></i> সম্পূর্ণ খতিয়ান
                                 </button>
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                                <div>
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+                                <div class="sm:col-span-4">
                                     <div class="text-slate-500 font-bold text-[11px]">কাস্টমার নাম:</div>
                                     <div class="text-sm sm:text-base font-black text-white truncate" title="${escapeHTML(cleanCustName)}">${escapeHTML(cleanCustName)}</div>
                                 </div>
-                                <div>
+                                <div class="sm:col-span-3">
                                     <div class="text-slate-500 font-bold text-[11px]">অ্যাকাউন্ট নং:</div>
                                     <div class="text-sm font-mono font-bold text-cyan-400">${escapeHTML(txn.customerAccountNo || '-')}</div>
                                 </div>
-                                <div>
+                                <div class="sm:col-span-5">
                                     <div class="text-slate-500 font-bold text-[11px]">মোবাইল:</div>
                                     <div class="flex items-center gap-1.5 text-xs font-bold text-slate-200">
-                                        <span>${escapeHTML(txn.customerPhone || 'মোবাইল নেই')}</span>
+                                        <span class="font-mono">${escapeHTML(txn.customerPhone || 'মোবাইল নেই')}</span>
                                         ${txn.customerPhone ? `
                                             <a href="tel:${txn.customerPhone}" class="text-emerald-400 hover:text-emerald-300 ml-0.5" title="সরাসরি কল দিন"><i class="fa-solid fa-phone text-[11px]"></i></a>
                                             <a href="https://wa.me/88${txn.customerPhone.replace(/[^0-9]/g,'')}" target="_blank" class="text-emerald-400 hover:text-emerald-300" title="WhatsApp চ্যাট"><i class="fa-brands fa-whatsapp text-sm"></i></a>
                                         ` : ''}
                                     </div>
+                                </div>
+                                <div class="sm:col-span-12 pt-1.5 border-t border-slate-800/80 flex items-center gap-1.5 text-xs">
+                                    <span class="text-slate-500 font-bold text-[11px] shrink-0">ঠিকানা ও জোন:</span>
+                                    <span class="text-slate-300 font-medium truncate flex items-center gap-1" title="${escapeHTML(fullAddress || 'ঠিকানা নেই')}">
+                                        <i class="fa-solid fa-location-dot text-[10px] text-slate-500"></i> ${escapeHTML(fullAddress || 'ঠিকানা নেই')}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -202,7 +212,7 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                         ${dueWords || billWords ? `
                             <div class="pt-1.5 border-t border-slate-800/80 text-[11px] text-amber-300/90 font-medium truncate" title="${dueWords ? 'বকেয়া: ' + dueWords : 'বিল: ' + billWords}">
                                 <i class="fa-solid fa-coins text-[10px] text-amber-400 mr-1"></i>
-                                <span>কথায়: ${dueWords ? dueWords + ' টাকা মাত্র' : billWords + ' টাকা মাত্র'}</span>
+                                <span>কথায়: ${dueWords || billWords}</span>
                             </div>
                         ` : ''}
                     </div>

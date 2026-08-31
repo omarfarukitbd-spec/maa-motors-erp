@@ -1,5 +1,6 @@
 import { TransactionDAO, CustomerDAO } from '../dao.js';
 import { safeRound } from '../utils.js';
+import { getCustomerCache } from '../customer/customer-state.js';
 
 /**
  * Normalize memo/voucher query string
@@ -66,6 +67,15 @@ export async function enrichMemoData(txn) {
             console.warn("Error fetching customer for memo:", e);
         }
     }
+    if (!customer.name && txn.customerId) {
+        const cached = (getCustomerCache() || []).find(c => c.id === txn.customerId);
+        if (cached) customer = cached;
+    }
+    if (!customer.name && txn.customerName) {
+        const cleanName = String(txn.customerName).replace(/^\[.*?\]\s*/, '').trim();
+        const cached = (getCustomerCache() || []).find(c => c.name === txn.customerName || c.name === cleanName);
+        if (cached) customer = cached;
+    }
 
     const bill = Number(txn.bill) || 0;
     const paid = Number(txn.paid) || 0;
@@ -75,10 +85,10 @@ export async function enrichMemoData(txn) {
     return {
         ...txn,
         customerName: txn.customerName || customer.name || 'Unknown Customer',
-        customerPhone: customer.phone || '',
-        customerAccountNo: customer.accountNo || '',
-        customerAddress: customer.address || '',
-        customerZone: customer.zone || '',
+        customerPhone: customer.phone || txn.customerPhone || txn.phone || '',
+        customerAccountNo: customer.accountNo || txn.customerAccountNo || txn.accountNo || '',
+        customerAddress: customer.address || txn.customerAddress || txn.address || '',
+        customerZone: customer.zone || txn.customerZone || txn.zone || '',
         customerTotalDue: customer.totalDue || 0,
         customerInitialDue: customer.initialDue || 0,
         computedPrevDue: safeRound(prevDue),
