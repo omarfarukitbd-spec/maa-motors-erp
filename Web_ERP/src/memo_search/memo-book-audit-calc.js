@@ -134,6 +134,7 @@ export function calculateBookAuditSummary(memos = [], startNo, endNo) {
         uniqueFound: presentNumbers.size,
         missingNumbers,
         duplicateNumbers,
+        voucherCounts,
         totalBill: safeRound(totalBill),
         totalPaid: safeRound(totalPaid),
         totalLess: safeRound(totalLess),

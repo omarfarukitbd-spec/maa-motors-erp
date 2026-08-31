@@ -15,13 +15,10 @@ export function renderMemoBookAuditUI(container) {
 
     container.innerHTML = `
         <div class="space-y-4 animate-fade-in font-bn">
-            <!-- Book Range Selector Capsule -->
             <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur-xl space-y-3">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-2.5">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 text-base shadow-sm">
-                            <i class="fa-solid fa-book-open"></i>
-                        </div>
+                        <div class="w-9 h-9 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 text-base shadow-sm"><i class="fa-solid fa-book-open"></i></div>
                         <div>
                             <h2 class="text-base font-black text-white flex items-center gap-2">
                                 <span>মেমো বুক রেঞ্জ অডিট ও টোটাল সামারি</span>
@@ -32,35 +29,24 @@ export function renderMemoBookAuditUI(container) {
                     </div>
                 </div>
 
-                <!-- Input Controls Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                     <div class="sm:col-span-4">
-                        <label class="block text-slate-400 font-bold text-xs mb-1 flex items-center gap-1">
-                            <i class="fa-solid fa-hashtag text-cyan-400 text-[10px]"></i>
-                            <span>শুরু মেমো নং (Start Memo #):</span>
-                        </label>
+                        <label class="block text-slate-400 font-bold text-xs mb-1 flex items-center gap-1"><i class="fa-solid fa-hashtag text-cyan-400 text-[10px]"></i><span>শুরু মেমো নং (Start Memo #):</span></label>
                         <input type="number" id="memo-audit-start" placeholder="যেমন: 101" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl h-10 px-3.5 text-sm font-mono font-black text-white outline-none focus:border-purple-500 shadow-inner">
                     </div>
                     <div class="sm:col-span-4">
-                        <label class="block text-slate-400 font-bold text-xs mb-1 flex items-center gap-1">
-                            <i class="fa-solid fa-hashtag text-purple-400 text-[10px]"></i>
-                            <span>শেষ মেমো নং (End Memo #):</span>
-                        </label>
+                        <label class="block text-slate-400 font-bold text-xs mb-1 flex items-center gap-1"><i class="fa-solid fa-hashtag text-purple-400 text-[10px]"></i><span>শেষ মেমো নং (End Memo #):</span></label>
                         <input type="number" id="memo-audit-end" placeholder="যেমন: 200" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl h-10 px-3.5 text-sm font-mono font-black text-white outline-none focus:border-purple-500 shadow-inner">
                     </div>
                     <div class="sm:col-span-4">
                         <button onclick="window.runMemoBookAudit()" class="w-full h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">
-                            <i class="fa-solid fa-calculator text-sm"></i>
-                            <span>বই অডিট ও হিসাব করুন</span>
+                            <i class="fa-solid fa-calculator text-sm"></i><span>বই অডিট ও হিসাব করুন</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Quick Presets -->
                 <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pt-1 text-xs">
-                    <span class="text-slate-500 font-bold shrink-0 text-[11px]">
-                        <i class="fa-solid fa-bookmark text-purple-400 mr-1"></i>স্মার্ট প্রিসেট:
-                    </span>
+                    <span class="text-slate-500 font-bold shrink-0 text-[11px]"><i class="fa-solid fa-bookmark text-purple-400 mr-1"></i>স্মার্ট প্রিসেট:</span>
                     <button onclick="window.setAuditBookRange(1, 50)" class="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-[11px] font-mono shrink-0 transition-all cursor-pointer">#1 - #50</button>
                     <button onclick="window.setAuditBookRange(51, 100)" class="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-[11px] font-mono shrink-0 transition-all cursor-pointer">#51 - #100</button>
                     <button onclick="window.setAuditBookRange(101, 150)" class="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-[11px] font-mono shrink-0 transition-all cursor-pointer">#101 - #150</button>
@@ -70,12 +56,9 @@ export function renderMemoBookAuditUI(container) {
                 </div>
             </div>
 
-            <!-- Results Output Area -->
             <div id="memo-audit-results-area">
                 <div class="bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl p-8 text-center text-slate-500 space-y-2">
-                    <div class="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mx-auto text-purple-400 text-xl">
-                        <i class="fa-solid fa-receipt"></i>
-                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mx-auto text-purple-400 text-xl"><i class="fa-solid fa-receipt"></i></div>
                     <div class="text-sm font-bold text-slate-300">মেমো বইয়ের শুরু ও শেষ নম্বর দিন</div>
                     <div class="text-xs text-slate-500">বইয়ের মোট বিল, নগদ ও ব্যাংক জমা, মোট ছাড় (Less), অবশিষ্ট বকেয়া এবং কোনো মেমো মিসিং থাকলে তা স্বয়ংক্রিয়ভাবে শনাক্ত হবে</div>
                 </div>
@@ -96,19 +79,13 @@ export function renderMemoBookAuditUI(container) {
     window.runMemoBookAudit = async () => {
         const startVal = parseInt(document.getElementById('memo-audit-start')?.value, 10);
         const endVal = parseInt(document.getElementById('memo-audit-end')?.value, 10);
-
         if (isNaN(startVal) || isNaN(endVal) || startVal <= 0 || endVal <= 0) {
             return Swal.fire('সতর্কতা', 'সঠিক শুরু ও শেষ মেমো নম্বর লিখুন!', 'warning');
         }
 
         const resArea = document.getElementById('memo-audit-results-area');
         if (resArea) {
-            resArea.innerHTML = `
-                <div class="p-8 text-center bg-slate-900/60 rounded-2xl border border-slate-800 space-y-3">
-                    <div class="inline-block animate-spin text-purple-400 text-2xl"><i class="fa-solid fa-circle-notch"></i></div>
-                    <div class="text-sm font-bold text-white">মেমো #${Math.min(startVal, endVal)} হতে #${Math.max(startVal, endVal)} অডিট করা হচ্ছে...</div>
-                </div>
-            `;
+            resArea.innerHTML = `<div class="p-8 text-center bg-slate-900/60 rounded-2xl border border-slate-800 space-y-3"><div class="inline-block animate-spin text-purple-400 text-2xl"><i class="fa-solid fa-circle-notch"></i></div><div class="text-sm font-bold text-white">মেমো #${Math.min(startVal, endVal)} হতে #${Math.max(startVal, endVal)} অডিট করা হচ্ছে...</div></div>`;
         }
 
         const res = await fetchMemosByRange(startVal, endVal);
@@ -120,7 +97,6 @@ export function renderMemoBookAuditUI(container) {
         const summary = calculateBookAuditSummary(res.memos, startVal, endVal);
         _currentAuditSummary = summary;
         _currentAuditMemos = res.memos;
-
         renderAuditResultsContent(resArea, summary, res.memos);
     };
 
@@ -134,30 +110,40 @@ export function renderMemoBookAuditUI(container) {
 function renderAuditResultsContent(container, summary, memos) {
     if (!container) return;
 
-    // Missing Alert Banner
-    const missingAlertHtml = summary.missingNumbers && summary.missingNumbers.length > 0
-        ? `
+    let alertBannersHtml = '';
+    if (summary.missingNumbers && summary.missingNumbers.length > 0) {
+        alertBannersHtml += `
             <div class="bg-red-950/40 border border-red-800/80 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-red-200">
-                <div class="w-8 h-8 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 text-sm shrink-0">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
+                <div class="w-8 h-8 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 text-sm shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="space-y-1">
                     <div class="font-black text-red-400 text-sm">সতর্কতা: ${summary.missingNumbers.length}টি মেমো মিসিং রয়েছে!</div>
                     <div class="text-slate-300">নিম্নলিখিত মেমোগুলো এখনো সিস্টেমে এন্ট্রি করা হয়নি:</div>
-                    <div class="flex flex-wrap gap-1.5 pt-1">
-                        ${summary.missingNumbers.map(n => `<span class="px-2 py-0.5 rounded-lg bg-red-500/20 text-red-300 font-mono font-black border border-red-500/30">#${n}</span>`).join('')}
-                    </div>
+                    <div class="flex flex-wrap gap-1.5 pt-1">${summary.missingNumbers.map(n => `<span class="px-2 py-0.5 rounded-lg bg-red-500/20 text-red-300 font-mono font-black border border-red-500/30">#${n}</span>`).join('')}</div>
                 </div>
             </div>
-        `
-        : `
+        `;
+    }
+    if (summary.duplicateNumbers && summary.duplicateNumbers.length > 0) {
+        alertBannersHtml += `
+            <div class="bg-amber-950/40 border border-amber-800/80 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-200">
+                <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-sm shrink-0"><i class="fa-solid fa-clone"></i></div>
+                <div class="space-y-1">
+                    <div class="font-black text-amber-400 text-sm">সতর্কতা: ${summary.duplicateNumbers.length}টি মেমো নম্বরে একাধিক (ডুপ্লিকেট) এন্ট্রি রয়েছে!</div>
+                    <div class="text-slate-300">একই মেমো নম্বরে একাধিক ট্রানজেকশন পাওয়া গেছে:</div>
+                    <div class="flex flex-wrap gap-1.5 pt-1">${summary.duplicateNumbers.map(d => `<span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 font-mono font-black border border-amber-500/30">#${d.number} (${d.count}টি)</span>`).join('')}</div>
+                </div>
+            </div>
+        `;
+    }
+    if (!alertBannersHtml) {
+        alertBannersHtml = `
             <div class="bg-emerald-950/30 border border-emerald-800/60 rounded-2xl p-3 flex items-center gap-3 text-xs text-emerald-300">
                 <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-circle-check"></i></div>
                 <div class="font-bold">এই বইয়ের সকল মেমো ক্রমানুসারে শতভাগ নির্ভুল ও রেকর্ডকৃত রয়েছে (কোনো মেমো বাদ পড়েনি)।</div>
             </div>
         `;
+    }
 
-    // Render Table Rows
     let rowsHtml = '';
     memos.forEach((m, idx) => {
         const bill = Number(m.bill) || 0;
@@ -167,14 +153,16 @@ function renderAuditResultsContent(container, summary, memos) {
         const actualPaid = isLess ? 0 : paid;
         const actualLess = isLess ? paid : 0;
         const netRowDue = safeRound(bill - (actualPaid + actualLess));
+        const cleanCustName = String(m.customerName || 'গ্রাহক').replace(/^\[.*?\]\s*/, '').trim();
+        const isDuplicate = summary.voucherCounts && summary.voucherCounts[m.voucherNum] > 1;
 
         rowsHtml += `
             <tr class="hover:bg-white/[0.02] border-b border-slate-800/60 transition-colors">
                 <td class="py-2.5 px-3 text-xs text-center text-slate-500 font-mono">${idx + 1}</td>
-                <td class="py-2.5 px-3 text-xs text-center font-mono font-black text-cyan-400">#${m.voucherNum || m.voucherNo}</td>
+                <td class="py-2.5 px-3 text-xs text-center font-mono font-black text-cyan-400">#${m.voucherNum || m.voucherNo}${isDuplicate ? ' <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30 ml-0.5">ডুপ্লিকেট</span>' : ''}</td>
                 <td class="py-2.5 px-3 text-xs text-center text-slate-300">${formatAppDate(m.date)}</td>
                 <td class="py-2.5 px-3 text-xs">
-                    <div class="font-black text-white">${escapeHTML(m.customerName)}</div>
+                    <div class="font-black text-white">${escapeHTML(cleanCustName)}</div>
                     <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
                         ${m.customerAccountNo ? `<span class="text-cyan-400 font-mono font-bold">A/C: ${escapeHTML(m.customerAccountNo)}</span>` : ''}
                         ${m.customerPhone ? `<span><i class="fa-solid fa-phone text-[9px] text-emerald-400 mr-0.5"></i>${escapeHTML(m.customerPhone)}</span>` : ''}
@@ -199,13 +187,17 @@ function renderAuditResultsContent(container, summary, memos) {
         `;
     });
 
+    const hasDups = summary.duplicateNumbers && summary.duplicateNumbers.length > 0;
+    const memoCardHtml = hasDups
+        ? `<div class="text-base font-black font-mono text-cyan-400">${summary.uniqueFound} / ${summary.totalExpected} টি</div><div class="text-[10px] text-amber-400 font-bold">(${summary.totalFound}টি এন্ট্রি, ${summary.duplicateNumbers.length}টি ডুপ্লিকেট)</div>`
+        : `<div class="text-base font-black font-mono text-cyan-400">${summary.totalFound} / ${summary.totalExpected} টি</div><div class="text-[10px] text-emerald-400 font-bold">১০০% সম্পূর্ণ</div>`;
+
     container.innerHTML = `
         <div class="space-y-3.5 animate-fade-in font-bn">
-            <!-- 6 Financial KPI Cards Grid -->
             <div class="grid grid-cols-2 lg:grid-cols-6 gap-2.5">
-                <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl text-center space-y-1">
+                <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl text-center space-y-0.5">
                     <div class="text-[10px] font-bold text-slate-400 uppercase">মোট মেমো সংখ্যা</div>
-                    <div class="text-base font-black font-mono text-cyan-400">${summary.totalFound} / ${summary.totalExpected} টি</div>
+                    ${memoCardHtml}
                 </div>
                 <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl text-center space-y-1">
                     <div class="text-[10px] font-bold text-red-400 uppercase">মোট বিল (Debit)</div>
@@ -229,10 +221,8 @@ function renderAuditResultsContent(container, summary, memos) {
                 </div>
             </div>
 
-            <!-- Missing Alert Banner -->
-            ${missingAlertHtml}
+            ${alertBannersHtml}
 
-            <!-- Table Header Toolbar -->
             <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5">
                 <div class="text-xs font-bold text-white flex items-center gap-2">
                     <i class="fa-solid fa-list-check text-purple-400"></i>
@@ -249,7 +239,6 @@ function renderAuditResultsContent(container, summary, memos) {
                 </div>
             </div>
 
-            <!-- Table -->
             <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
                 <div class="overflow-x-auto custom-scrollbar">
                     <table id="memo-book-audit-table" class="w-full text-left border-collapse">

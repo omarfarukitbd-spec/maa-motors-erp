@@ -71,12 +71,19 @@ export async function printMemoBookAuditReport(summary, memos) {
         </div>
     `;
 
-    // 3. Missing Memo Warning Strip
+    // 3. Missing & Duplicate Memo Warning Strips
     let gapAlertHtml = '';
     if (summary.missingNumbers && summary.missingNumbers.length > 0) {
-        gapAlertHtml = `
-            <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 5px; padding: 3px 6px; margin-bottom: 5px; font-size: 8.5px; color: #b91c1c; font-family: 'Hind Siliguri', sans-serif; font-weight: 700;">
+        gapAlertHtml += `
+            <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 5px; padding: 3px 6px; margin-bottom: 4px; font-size: 8.5px; color: #b91c1c; font-family: 'Hind Siliguri', sans-serif; font-weight: 700;">
                 [সতর্কতা] ${summary.missingNumbers.length}টি মেমো বাদ পড়েছে / মিসিং: <strong>#${summary.missingNumbers.join(', #')}</strong>
+            </div>
+        `;
+    }
+    if (summary.duplicateNumbers && summary.duplicateNumbers.length > 0) {
+        gapAlertHtml += `
+            <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 5px; padding: 3px 6px; margin-bottom: 4px; font-size: 8.5px; color: #b45309; font-family: 'Hind Siliguri', sans-serif; font-weight: 700;">
+                [সতর্কতা] ${summary.duplicateNumbers.length}টি মেমো নম্বরে একাধিক (ডুপ্লিকেট) এন্ট্রি রয়েছে: <strong>#${summary.duplicateNumbers.map(d => `${d.number} (${d.count}টি)`).join(', #')}</strong>
             </div>
         `;
     }
@@ -106,15 +113,20 @@ export async function printMemoBookAuditReport(summary, memos) {
         const actualPaid = isLess ? 0 : paid;
         const actualLess = isLess ? paid : 0;
         const netRowDue = safeRound(bill - (actualPaid + actualLess));
+        const cleanCustName = String(m.customerName || 'গ্রাহক').replace(/^\[.*?\]\s*/, '').trim();
+        const isDuplicate = summary.voucherCounts && summary.voucherCounts[m.voucherNum] > 1;
         const bgStyle = idx % 2 === 1 ? 'background: #f8fafc;' : 'background: #ffffff;';
 
         return `
             <tr class="print-row-no-break" style="${bgStyle}">
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', sans-serif;">${idx + 1}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 9px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">#${m.voucherNum || m.voucherNo}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 9px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">
+                    #${m.voucherNum || m.voucherNo}
+                    ${isDuplicate ? '<span style="font-size:7px; color:#d97706; font-weight:bold;">(Dup)</span>' : ''}
+                </td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', sans-serif; white-space: nowrap;">${formatAppDate(m.date)}</td>
                 <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a;">
-                    <strong>${escapeHTML(m.customerName)}</strong>
+                    <strong>${escapeHTML(cleanCustName)}</strong>
                     ${m.customerAccountNo ? `<span style="font-size:7.5px; color:#0284c7; margin-left:2px;">[${escapeHTML(m.customerAccountNo)}]</span>` : ''}
                     ${m.customerPhone ? `<span style="font-size:7.5px; color:#64748b; margin-left:2px;">(${escapeHTML(m.customerPhone)})</span>` : ''}
                 </td>
