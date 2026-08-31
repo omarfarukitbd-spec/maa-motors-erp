@@ -5,3 +5,6 @@ export { openCustomerLedgerDrawer } from './memo-ledger-drawer.js';
 export { openMemoQuickPayModal } from './memo-quick-pay.js';
 export { openMemoEditModal } from './memo-edit.js';
 export { printMemoReceipt, shareMemoOnWhatsApp, sendMemoDueSMS } from './memo-actions-bridge.js';
+export { renderMemoBookAuditUI } from './memo-book-audit-ui.js';
+export { fetchMemosByRange, calculateBookAuditSummary } from './memo-book-audit-calc.js';
+export { printMemoBookAuditReport } from './memo-book-audit-print.js';
