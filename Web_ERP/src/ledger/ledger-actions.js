@@ -171,11 +171,13 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
                 const formattedDue = formatAmountWithComma(Math.abs(netDue));
 
                 const accountNo = currentCust?.accountNo || '';
-                const accStr = accountNo ? `(A/C: ${accountNo})` : '';
+                const isLess = b === 0 && (receivedType === 'Less' || /less|ছাড়|discount|কমিশন/i.test(receivedType || '') || /less|ছাড়|discount/i.test(receivedFrom || '') || /less|ছাড়|discount/i.test(v || ''));
 
                 let autoMsg = '';
                 if (b > 0) {
                     autoMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, memo: v, bill: formatAmountWithComma(b), paid: formatAmountWithComma(p), due: formattedDue });
+                } else if (isLess) {
+                    autoMsg = buildSmsMessage(settings.smsTemplateLess, 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: 'Less', due: formattedDue });
                 } else {
                     autoMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: receivedType || 'Cash', due: formattedDue });
                 }
@@ -201,8 +203,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         } catch (autoErr) { console.warn('Transaction SMS dispatch error:', autoErr); }
 
         document.getElementById('ledger-bill').value = ''; document.getElementById('ledger-paid').value = '';
-        resetLiveWords('ledger-bill-words');
-        resetLiveWords('ledger-paid-words');
+        resetLiveWords('ledger-bill-words'); resetLiveWords('ledger-paid-words');
         const vEl = document.getElementById('ledger-voucher'); if (vEl) vEl.value = '';
         const rfEl = document.getElementById('ledger-received-from'); if (rfEl) rfEl.value = '';
         if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(id);
@@ -228,20 +229,12 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
     if (clearBtn) clearBtn.classList.remove('hidden');
     if (phoneInput) phoneInput.value = cust?.phone || 'মোবাইল নেই';
     if (addressInput) addressInput.value = (cust?.zone ? `[${cust.zone}] ` : '') + (cust?.address || 'ঠিকানা নেই');
-
     if (document.getElementById('ledger-date')) document.getElementById('ledger-date').value = date;
     if (document.getElementById('ledger-voucher')) document.getElementById('ledger-voucher').value = v;
     
-    const billInput = document.getElementById('ledger-bill');
-    const paidInput = document.getElementById('ledger-paid');
-    if (billInput) {
-        billInput.value = b > 0 ? formatAmountWithComma(b) : '';
-        if (window.updateLiveWords) window.updateLiveWords(billInput, 'ledger-bill-words');
-    }
-    if (paidInput) {
-        paidInput.value = p > 0 ? formatAmountWithComma(p) : '';
-        if (window.updateLiveWords) window.updateLiveWords(paidInput, 'ledger-paid-words');
-    }
+    const billInput = document.getElementById('ledger-bill'); const paidInput = document.getElementById('ledger-paid');
+    if (billInput) { billInput.value = b > 0 ? formatAmountWithComma(b) : ''; if (window.updateLiveWords) window.updateLiveWords(billInput, 'ledger-bill-words'); }
+    if (paidInput) { paidInput.value = p > 0 ? formatAmountWithComma(p) : ''; if (window.updateLiveWords) window.updateLiveWords(paidInput, 'ledger-paid-words'); }
 
     if (window.setReceivedType) window.setReceivedType(rt);
     if (document.getElementById('ledger-received-from')) document.getElementById('ledger-received-from').value = rf;
@@ -268,47 +261,35 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
 
     const viewContainer = document.getElementById('view-container');
     const formCard = document.getElementById('ledger-form-card') || document.getElementById('ledger-customer-select');
-    
     if (viewContainer) viewContainer.scrollTo({ top: 0, behavior: 'smooth' });
     if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    setTimeout(() => { 
-        if (billInput) { billInput.focus(); if (billInput.select) billInput.select(); }
-    }, 350);
+    setTimeout(() => { if (billInput) { billInput.focus(); if (billInput.select) billInput.select(); } }, 350);
 }
 
 export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
-    if (await promptSecurityPin("Delete")) {
-        try {
-            Swal.fire({ title: 'ডিলিট হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const txnDoc = await TransactionDAO.getById(id);
-            if (!txnDoc) throw new Error("Transaction not found");
+    if (!(await promptSecurityPin("Delete"))) return;
+    try {
+        Swal.fire({ title: 'ডিলিট হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const txnDoc = await TransactionDAO.getById(id);
+        if (!txnDoc) throw new Error("Transaction not found");
 
-            const batch = db.batch();
-            
-            // 1. Decrease Customer Due
-            batch.update(CustomerDAO.getRef(cid), { totalDue: firebase.firestore.FieldValue.increment(safeRound(p - b)) });
-            
-            // 2. Move to Recycle Bin
-            batch.set(db.collection('recycle_bin').doc(id), {
-                module: 'Transaction',
-                data: txnDoc,
-                deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                deletedBy: window.AppState?.currentUserEmail || 'Unknown'
-            });
-
-            // 3. Delete original
-            batch.delete(TransactionDAO.getRef(id));
-            
-            await batch.commit();
-            
-            auditLog('DELETE', 'Ledger', id, txnDoc.customerName || cid, { bill: b, paid: p, action: 'Soft Delete to Recycle Bin' });
-            showToast('ভাউচার রিসাইকেল বিনে মুভ করা হয়েছে!', 'info');
-            Swal.close();
-            if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(cid);
-        } catch (e) {
-            console.error("deleteTransaction error:", e);
-            Swal.fire('ত্রুটি', 'ভাউচার ডিলিট করা সম্ভব হয়নি।', 'error');
-        }
+        const batch = db.batch();
+        batch.update(CustomerDAO.getRef(cid), { totalDue: firebase.firestore.FieldValue.increment(safeRound(p - b)) });
+        batch.set(db.collection('recycle_bin').doc(id), {
+            module: 'Transaction',
+            data: txnDoc,
+            deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            deletedBy: window.AppState?.currentUserEmail || 'Unknown'
+        });
+        batch.delete(TransactionDAO.getRef(id));
+        await batch.commit();
+        
+        auditLog('DELETE', 'Ledger', id, txnDoc.customerName || cid, { bill: b, paid: p, action: 'Soft Delete to Recycle Bin' });
+        showToast('ভাউচার রিসাইকেল বিনে মুভ করা হয়েছে!', 'info');
+        Swal.close();
+        if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(cid);
+    } catch (e) {
+        console.error("deleteTransaction error:", e);
+        Swal.fire('ত্রুটি', 'ভাউচার ডিলিট করা সম্ভব হয়নি।', 'error');
     }
 }

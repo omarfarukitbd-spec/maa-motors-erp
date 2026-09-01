@@ -13,7 +13,7 @@ export async function unlockSmsSettings() {
     const isPinValid = await promptSecurityPin("SMS সেটিংস পরিবর্তন (Settings Unlock)");
     if (!isPinValid) return;
 
-    const fields = ['set-sms-reminder', 'set-sms-opening', 'set-sms-new-bill', 'set-sms-payment', 'set-sms-api', 'set-sms-sender', 'set-sms-auto'];
+    const fields = ['set-sms-reminder', 'set-sms-opening', 'set-sms-new-bill', 'set-sms-payment', 'set-sms-less', 'set-sms-api', 'set-sms-sender', 'set-sms-auto'];
     fields.forEach(id => {
         const el = document.getElementById(id);
         if(el) {

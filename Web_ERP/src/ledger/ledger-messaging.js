@@ -44,6 +44,9 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
         const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
 
         const accountNo = currentCust?.accountNo || txn?.customerAccountNo || txn?.accountNo || '';
+        const rType = txn?.receivedType || '';
+        const rFrom = txn?.receivedFrom || '';
+        const isLess = targetBill === 0 && (rType === 'Less' || /less|ছাড়|discount|কমিশন/i.test(rType) || /less|ছাড়|discount/i.test(rFrom) || /less|ছাড়|discount/i.test(targetVoucher));
 
         let defaultMsg = '';
         if (isOpening) {
@@ -52,6 +55,16 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 accountNo,
                 shopName,
                 date: formattedDate,
+                due: formattedDue
+            });
+        } else if (isLess) {
+            defaultMsg = buildSmsMessage(settings.smsTemplateLess, 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]', {
+                name: englishName,
+                accountNo,
+                shopName,
+                date: formattedDate,
+                paid: formattedPaid,
+                type: 'Less',
                 due: formattedDue
             });
         } else if (targetBill > 0) {
@@ -155,6 +168,9 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
 
     let msg = '';
     const isOpening = (targetVoucher === 'OPENING' || targetVoucher === 'OPEN' || targetVoucher === 'প্রারম্ভিক ব্যালেন্স' || targetVoucher === 'প্রারম্ভিক জের' || (targetDate && String(targetVoucher).toUpperCase() === 'OPENING'));
+    const waRType = txn?.receivedType || '';
+    const waRFrom = txn?.receivedFrom || '';
+    const isLessTxn = targetBill === 0 && (waRType === 'Less' || /less|ছাড়|discount|কমিশন/i.test(waRType) || /less|ছাড়|discount/i.test(waRFrom) || /less|ছাড়|discount/i.test(targetVoucher));
 
     if (isOpening) {
         msg = `আসসালামু আলাইকুম ${targetName},\nমেসার্স মা মোটরস্ থেকে আপনার হিসাবের একাউন্ট খোলা হয়েছে।\n\n${accLine}একাউন্ট খোলার তারিখ: ${formattedDate}\n`;
@@ -169,6 +185,15 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
             msg += `প্রারম্ভিক ব্যালেন্স: ৳ 0\n`;
         }
         msg += `---------------------------------\n`;
+        if (targetDue < 0) {
+            msg += `অ্যাডভান্স জমা: ৳ ${formattedDue}\n\n`;
+        } else {
+            msg += `বর্তমান মোট বকেয়া: ৳ ${formattedDue}\n\n`;
+        }
+        if (pdfLinkStr) msg += pdfLinkStr;
+        msg += `যোগাযোগ: 01819-397669\nধন্যবাদ! — মেসার্স মা মোটরস্`;
+    } else if (isLessTxn) {
+        msg = `আসসালামু আলাইকুম স্যার,\nমেসার্স মা মোটরস্ থেকে আপনার একাউন্টে বিশেষ ছাড়/লেস (Less) সমন্বয় করা হয়েছে।\n\n${accLine}তারিখ: ${formattedDate}\nলেস/ছাড়ের পরিমাণ: ৳ ${formattedPaid}\n---------------------------------\n`;
         if (targetDue < 0) {
             msg += `অ্যাডভান্স জমা: ৳ ${formattedDue}\n\n`;
         } else {

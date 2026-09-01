@@ -46,10 +46,7 @@ export function renderSettings(container) {
                             <input type="file" id="set-shop-logo" disabled class="m3-field opacity-80 text-xs" onchange="window.handleLogoSelect(event)">
                             <div class="flex items-center justify-center"><img id="logo-preview" src="" class="h-16 hidden rounded-xl" alt="Preview"></div>
                         </div>
-                        <select id="set-print-size" disabled class="m3-field opacity-80">
-                            <option value="a4">A4 (রেগুলার ফুল পেপার)</option>
-                            <option value="pos">POS (৮০ মিমি থার্মাল রসিদ)</option>
-                        </select>
+                        <select id="set-print-size" disabled class="m3-field opacity-80"><option value="a4">A4 (রেগুলার ফুল পেপার)</option><option value="pos">POS (৮০ মিমি থার্মাল রসিদ)</option></select>
                     </div>
                 </div>
 
@@ -71,6 +68,10 @@ export function renderSettings(container) {
                         <div>
                             <div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-300">জমা প্রাপ্তি SMS টেমপ্লেট</span><span id="sms-pay-count" class="text-emerald-400">0/155</span></div>
                             <textarea id="set-sms-payment" rows="2" disabled class="m3-field opacity-80 text-xs font-mono" oninput="window.checkSmsLength(this, 'sms-pay-count')"></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-300">লেস/ছাড় (Discount) SMS টেমপ্লেট</span><span id="sms-less-count" class="text-emerald-400">0/155</span></div>
+                            <textarea id="set-sms-less" rows="2" disabled class="m3-field opacity-80 text-xs font-mono" oninput="window.checkSmsLength(this, 'sms-less-count')"></textarea>
                         </div>
                         <div>
                             <div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-300">বকেয়া তাগাদা SMS টেমপ্লেট</span><span id="sms-rem-count" class="text-emerald-400">0/155</span></div>
@@ -155,6 +156,7 @@ export async function loadSettings() {
             'set-sms-opening': data.smsTemplateOpening || 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!',
             'set-sms-new-bill': data.smsTemplateNew || 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]',
             'set-sms-payment': data.smsTemplatePaid || 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]',
+            'set-sms-less': data.smsTemplateLess || 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]',
             'set-sms-api': data.smsApiKey || '',
             'set-sms-sender': data.smsSenderId || '',
             'set-admin-pin': data.adminSecurityPin || '1060',
@@ -174,7 +176,8 @@ export async function loadSettings() {
             ['set-sms-reminder', 'sms-rem-count'],
             ['set-sms-opening', 'sms-open-count'],
             ['set-sms-new-bill', 'sms-new-count'],
-            ['set-sms-payment', 'sms-pay-count']
+            ['set-sms-payment', 'sms-pay-count'],
+            ['set-sms-less', 'sms-less-count']
         ].forEach(([id, countId]) => {
             checkSmsLength(document.getElementById(id), countId);
         });
@@ -194,6 +197,7 @@ export async function saveSettings() {
     const smsOpening = document.getElementById('set-sms-opening')?.value.trim() || '';
     const smsNew = document.getElementById('set-sms-new-bill')?.value.trim() || '';
     const smsPaid = document.getElementById('set-sms-payment')?.value.trim() || '';
+    const smsLess = document.getElementById('set-sms-less')?.value.trim() || '';
 
     const validateSms = (val, label) => {
         const isUni = /[^\x00-\x7F]/.test(val);
@@ -202,7 +206,7 @@ export async function saveSettings() {
         return null;
     };
 
-    const err = validateSms(smsRem, "রিমাইন্ডার") || validateSms(smsOpening, "একাউন্ট খোলা") || validateSms(smsNew, "নতুন বিল") || validateSms(smsPaid, "পেমেন্ট");
+    const err = validateSms(smsRem, "রিমাইন্ডার") || validateSms(smsOpening, "একাউন্ট খোলা") || validateSms(smsNew, "নতুন বিল") || validateSms(smsPaid, "পেমেন্ট") || validateSms(smsLess, "লেস/ছাড়");
     if(err) {
         Swal.fire('Error', err, 'error');
         btn.disabled = false; btn.innerHTML = 'সকল সেটিংস সেভ করুন';
@@ -222,6 +226,7 @@ export async function saveSettings() {
         smsTemplateOpening: smsOpening,
         smsTemplateNew: smsNew,
         smsTemplatePaid: smsPaid,
+        smsTemplateLess: smsLess,
         smsApiKey: document.getElementById('set-sms-api')?.value.trim() || '',
         smsSenderId: document.getElementById('set-sms-sender')?.value.trim() || '',
         smsAuto: document.getElementById('set-sms-auto')?.checked || false,
@@ -266,7 +271,6 @@ window.togglePinVisibility = async () => {
     const el = document.getElementById('set-admin-pin');
     const icon = document.getElementById('pin-vis-icon');
     if (!el) return;
-
     if (el.type === 'password') {
         const ok = await verifyMasterHardPassword();
         if (ok) {
@@ -287,6 +291,6 @@ window.togglePinVisibility = async () => {
 
 window.appSettings = { exportData: async () => {
     if (await promptSecurityPin("Database Export")) {
-        if(window.downloadAdminExcelBackup) await window.downloadAdminExcelBackup();
+        if (window.downloadAdminExcelBackup) await window.downloadAdminExcelBackup();
     }
 }};
