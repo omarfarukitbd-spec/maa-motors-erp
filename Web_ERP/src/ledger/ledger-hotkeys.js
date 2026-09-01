@@ -67,6 +67,10 @@ function handleGlobalHotkeys(e) {
                 e.preventDefault();
                 if (fn) fn('Cash', 'শোরুম ক্যাশ');
                 break;
+            case '4':
+                e.preventDefault();
+                if (fn) fn('Less', 'বিশেষ ছাড়');
+                break;
             case 's': // Alt + S: Focus Customer Search
                 e.preventDefault();
                 focusCustomerSearch();
