@@ -22,8 +22,13 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
         }
 
         const custMap = new Map();
+        let totalMarketDue = 0, dueCustomerCount = 0;
         if (Array.isArray(customerCache)) {
-            customerCache.forEach(c => custMap.set(c.id, c));
+            customerCache.forEach(c => {
+                custMap.set(c.id, c);
+                const d = Number(c.totalDue) || 0;
+                if (d > 0) { totalMarketDue = safeRound(totalMarketDue + d); dueCustomerCount++; }
+            });
         }
 
         // 1. Fetch Transactions in range
@@ -69,34 +74,16 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             bankTxnSnap.forEach(doc => rawBankTxns.push({ id: doc.id, ...doc.data() }));
         }
 
-        // Sort Txns by date desc, createdAt desc
-        rawTxns.sort((a, b) => {
+        const dateDescSort = (a, b) => {
             if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
             return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
-        });
+        };
+        rawTxns.sort(dateDescSort);
+        rawExpenses.sort(dateDescSort);
+        rawBankTxns.sort(dateDescSort);
 
-        // Sort Expenses by date desc, createdAt desc
-        rawExpenses.sort((a, b) => {
-            if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
-            return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
-        });
-
-        // Sort Bank Txns
-        rawBankTxns.sort((a, b) => {
-            if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
-            return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
-        });
-
-        let totalSales = 0;
-        let salesCount = 0;
-        let totalCollection = 0;
-        let cashCollection = 0;
-        let bankCollection = 0;
-        let lessDiscount = 0;
-        const methodBreakdown = {};
-        const zoneBreakdown = {};
-        const customerCollections = [];
-        const dayMap = new Map();
+        let totalSales = 0, salesCount = 0, totalCollection = 0, cashCollection = 0, bankCollection = 0, lessDiscount = 0;
+        const methodBreakdown = {}, zoneBreakdown = {}, customerCollections = [], dayMap = new Map();
 
         // Process Transactions
         rawTxns.forEach(t => {
@@ -280,6 +267,8 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             lessDiscount,
             totalExpenses,
             netCashFlow,
+            totalMarketDue,
+            dueCustomerCount,
             methodBreakdown,
             zoneBreakdown,
             expenseCategoryBreakdown,

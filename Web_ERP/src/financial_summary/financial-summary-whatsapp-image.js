@@ -44,19 +44,25 @@ export function drawFinancialCardCanvas(data, shopName, dateStr) {
     ctx.lineTo(width - 60, 200);
     ctx.stroke();
 
-    // Four Core KPI Metric Cards
-    const cardY = 225;
+    // 1. Four Collection & Fund KPI Metric Cards
+    const cardY = 215;
     const cardW = 460;
-    const cardH = 145;
+    const cardH = 125;
 
     drawMetricBox(ctx, 60, cardY, cardW, cardH, '#064e3b', '#34d399', 'সর্বমোট জমা (Total Collection)', `৳ ${formatAmountWithComma(data.totalCollection)}`, `${data.customerCollections?.length || 0} জন কাস্টমার জমা`);
     drawMetricBox(ctx, 560, cardY, cardW, cardH, '#0c4a6e', '#38bdf8', 'ক্যাশ ইন হ্যান্ড (Cash In Hand)', `৳ ${formatAmountWithComma(data.cashCollection)}`, 'নগদ ক্যাশ জমা');
-    drawMetricBox(ctx, 60, cardY + 165, cardW, cardH, '#1e3a8a', '#60a5fa', 'ব্যাংক ও অনলাইন আদায় (Bank Inflow)', `৳ ${formatAmountWithComma(data.bankCollection)}`, 'ব্যাংক একাউন্ট ও এমএফএস');
-    drawMetricBox(ctx, 560, cardY + 165, cardW, cardH, '#581c87', '#c084fc', 'মোট ফান্ড স্থিতি (Liquid Balance)', `৳ ${formatAmountWithComma(data.totalLiquidFund || data.totalCollection)}`, 'ক্যাশ ও ব্যাংকের মোট স্থিতি');
+    drawMetricBox(ctx, 60, cardY + 140, cardW, cardH, '#1e3a8a', '#60a5fa', 'ব্যাংক ও অনলাইন আদায় (Bank Inflow)', `৳ ${formatAmountWithComma(data.bankCollection)}`, 'ব্যাংক একাউন্ট ও এমএফএস');
+    drawMetricBox(ctx, 560, cardY + 140, cardW, cardH, '#581c87', '#c084fc', 'মোট ফান্ড স্থিতি (Liquid Balance)', `৳ ${formatAmountWithComma(data.totalLiquidFund || data.totalCollection)}`, 'ক্যাশ ও ব্যাংকের মোট স্থিতি');
+
+    // 2. Full-Width Grand Card: মার্কেটে সর্বমোট বকেয়া (Total Market Outstanding Due)
+    const dueY = cardY + 280;
+    const dueW = 960;
+    const dueH = 115;
+    drawMetricBox(ctx, 60, dueY, dueW, dueH, '#4c0519', '#fb7185', 'মার্কেটে সর্বমোট অবশিষ্ট বকেয়া (Total Market Due)', `৳ ${formatAmountWithComma(data.totalMarketDue || 0)}`, `${data.dueCustomerCount || 0} জন কাস্টমারের কাছে মোট পাওনা বকেয়া`);
 
     // Section 1: আজকের ব্যাংক ও ক্যাশভিত্তিক জমা
-    let currY = 570;
-    const sec1H = 340;
+    let currY = dueY + 130;
+    const sec1H = 320;
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(60, currY, 960, sec1H);
     ctx.strokeStyle = '#10b981';
@@ -99,8 +105,8 @@ export function drawFinancialCardCanvas(data, shopName, dateStr) {
     }
 
     // Section 2: কোন ব্যাংকে কত টাকা আছে (Live Balances)
-    currY = 940;
-    const sec2H = 370;
+    currY = 965;
+    const sec2H = 360;
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(60, currY, 960, sec2H);
     ctx.strokeStyle = '#38bdf8';
@@ -135,7 +141,7 @@ export function drawFinancialCardCanvas(data, shopName, dateStr) {
     }
 
     // Section 3: শীর্ষ জমা প্রদানকারী কাস্টমার
-    currY = 1340;
+    currY = 1345;
     const sec3H = 380;
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(60, currY, 960, sec3H);

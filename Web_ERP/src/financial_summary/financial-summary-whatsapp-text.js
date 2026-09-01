@@ -48,6 +48,10 @@ export function buildDailyClosingTextDigest(summaryData, shopName = 'M/S. MAA-MO
         }).join('\n');
     }
 
+    const marketDueText = summaryData.totalMarketDue !== undefined
+        ? `\n* মার্কেটে সর্বমোট অবশিষ্ট বকেয়া: ৳ ${formatAmountWithComma(summaryData.totalMarketDue)} (${summaryData.dueCustomerCount || 0} জন কাস্টমার)\n`
+        : '';
+
     return `*${shopName}*
 *দৈনিক কাস্টমার জমা ও ব্যাংক ব্যালেন্স ক্লোজিং রিপোর্ট*
 তারিখ: ${dateStr}
@@ -55,8 +59,8 @@ export function buildDailyClosingTextDigest(summaryData, shopName = 'M/S. MAA-MO
 * আজকের সর্বমোট জমা (আদায়): ৳ ${formatAmountWithComma(summaryData.totalCollection)}
    • ক্যাশ জমা: ৳ ${formatAmountWithComma(summaryData.cashCollection)}
    • ব্যাংক ও অনলাইন জমা: ৳ ${formatAmountWithComma(summaryData.bankCollection)}
-   • মোট কাস্টমার সংখ্যা: ${summaryData.customerCollections?.length || 0} জন
-
+   • মোট আদায় কাস্টমার: ${summaryData.customerCollections?.length || 0} জন
+${marketDueText}─────────────────────────
 * আজকের ব্যাংক ও ক্যাশভিত্তিক জমা:
 ${bankDetailsText || '   • কোনো জমার রেকর্ড নেই'}
 ─────────────────────────
