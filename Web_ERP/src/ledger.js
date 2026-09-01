@@ -294,7 +294,6 @@ if (typeof window !== 'undefined') {
 }
 
 document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('ledger-cust-dropdown');
-    const searchInput = document.getElementById('ledger-cust-search-input');
-    if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) dropdown.classList.add('hidden');
+    const d = document.getElementById('ledger-cust-dropdown');
+    if (d && !d.contains(e.target) && e.target !== document.getElementById('ledger-cust-search-input')) d.classList.add('hidden');
 });
