@@ -103,5 +103,12 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
       allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
     }
+
+    // Recycle Bin Collection
+    match /recycle_bin/{docId} {
+      allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true);
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('manageCustomers', false) == true || getPerms().get('manageExpenses', false) == true)));
+    }
   }
 }
+
