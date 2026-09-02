@@ -3,6 +3,7 @@ import { CustomerDAO, TransactionDAO } from './dao.js';
 import { updateLiveWords, promptSecurityPin, handleError, parseAmount } from './utils.js';
 import { getCustomerCache, initCustomerCache } from './customer/index.js';
 import { filterCustomerCombobox } from './shared/components/customer-combobox.js';
+import { reconcileSingleCustomerBalance } from './admin/balance-recon-heal.js';
 import Swal from 'sweetalert2';
 
 import { renderLedger as renderLedgerUI } from './ledger/ledger-ui.js';
@@ -75,6 +76,10 @@ export async function loadRecentTransactions(filterVoucher = null, filterCustome
         let startBalance = null;
         if (filterCustomer) {
             if (direction === 'reset' || balanceStack.length === 0) {
+                try {
+                    const reconRes = await reconcileSingleCustomerBalance(filterCustomer);
+                    if (reconRes && reconRes.healed) updateLedgerLiveText();
+                } catch (reconErr) { console.error("Ledger JIT Recon Error:", reconErr); }
                 const currentCustomer = (getCustomerCache() || []).find(c => c.id === filterCustomer);
                 startBalance = Number(currentCustomer?.totalDue || 0);
                 balanceStack = [startBalance];
@@ -188,14 +193,9 @@ export function selectLedgerCustomer(id) {
     const phoneInput = document.getElementById('ledger-cust-phone');
     const addressInput = document.getElementById('ledger-cust-address');
 
-    if (sel) {
-        sel.value = id;
-    }
+    if (sel) sel.value = id;
     const cust = (getCustomerCache() || []).find(c => c.id === id);
-    if (searchInput && cust) {
-        searchInput.value = cust.name || '';
-        if (clearBtn) clearBtn.classList.remove('hidden');
-    }
+    if (searchInput && cust) { searchInput.value = cust.name || ''; if (clearBtn) clearBtn.classList.remove('hidden'); }
     if (phoneInput) phoneInput.value = cust?.phone || 'মোবাইল নেই';
     if (addressInput) addressInput.value = (cust?.zone ? `[${cust.zone}] ` : '') + (cust?.address || 'ঠিকানা নেই');
     if (dropdown) dropdown.classList.add('hidden');
@@ -212,10 +212,7 @@ export function clearLedgerCustomerSearch() {
     const phoneInput = document.getElementById('ledger-cust-phone');
     const addressInput = document.getElementById('ledger-cust-address');
 
-    if (sel) {
-        sel.value = '';
-        filterLedgerByCustomer('');
-    }
+    if (sel) { sel.value = ''; filterLedgerByCustomer(''); }
     if (searchInput) searchInput.value = '';
     if (phoneInput) phoneInput.value = '';
     if (addressInput) addressInput.value = '';

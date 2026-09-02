@@ -1,6 +1,7 @@
 import Swal from 'sweetalert2';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { formatAmountWithComma, formatAppDate, escapeHTML, safeRound } from '../utils.js';
+import { reconcileSingleCustomerBalance } from '../admin/balance-recon-heal.js';
 
 /**
  * Open Inline Customer Ledger Statement Drawer Modal (Spacious & Responsive)
@@ -29,7 +30,27 @@ export async function openCustomerLedgerDrawer(targetId, customerName = '', acco
         }
 
         customer = customer || {};
+        try {
+            const reconRes = await reconcileSingleCustomerBalance(actualCustId);
+            if (reconRes && reconRes.healed) {
+                customer.totalDue = reconRes.expectedDue;
+            }
+        } catch (rErr) {
+            console.error("Drawer Recon Error:", rErr);
+        }
+
         const rawTxns = await TransactionDAO.getByCustomer(actualCustId);
+
+        let initialDue = Number(customer.initialDue || 0);
+        if (initialDue === 0) {
+            const opDoc = rawTxns.find(t => {
+                const v = String(t.voucherNo || '').trim().toUpperCase();
+                return v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের';
+            });
+            if (opDoc) {
+                initialDue = safeRound((Number(opDoc.bill) || 0) - (Number(opDoc.paid) || 0));
+            }
+        }
 
         // Sort chronologically
         const getTxnTime = (t) => {
@@ -41,14 +62,13 @@ export async function openCustomerLedgerDrawer(targetId, customerName = '', acco
 
         const sortedTxns = rawTxns.filter(t => {
             const v = String(t.voucherNo || '').trim().toUpperCase();
-            return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স';
+            return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের';
         }).sort((a, b) => {
             const dDiff = new Date(a.date) - new Date(b.date);
             if (dDiff !== 0) return dDiff;
             return getTxnTime(a) - getTxnTime(b);
         });
 
-        const initialDue = Number(customer.initialDue || 0);
         let runningBalance = initialDue;
         let totalBills = 0;
         let totalPaid = 0;

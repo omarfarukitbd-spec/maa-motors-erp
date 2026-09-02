@@ -4,6 +4,7 @@ import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, parseAmount, safeRound, showToast } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
+import { reconcileSingleCustomerBalance } from '../admin/balance-recon-heal.js';
 
 export { sendStmtReminderSMS, sendStmtReminderWhatsApp } from './statement-reminders.js';
 
@@ -19,9 +20,16 @@ export async function loadStatementData(stateRef = {}) {
     const { currentCustomerInfo } = stateRef;
 
     try {
+        if (currentCustomerInfo && currentCustomerInfo.id) {
+            try {
+                const recon = await reconcileSingleCustomerBalance(currentCustomerInfo.id);
+                if (recon && recon.healed) currentCustomerInfo.totalDue = recon.expectedDue;
+            } catch (rErr) { console.error("Statement JIT Recon Error:", rErr); }
+        }
+
         let initialDue = 0;
         if (currentCustomerInfo && currentCustomerInfo.id) {
-            const cached = getCustomerCache().find(c => c.id === currentCustomerInfo.id);
+            const cached = (getCustomerCache() || []).find(c => c.id === currentCustomerInfo.id);
             if (cached !== undefined) initialDue = Number(cached.initialDue || 0);
             else {
                 const customer = await CustomerDAO.getById(currentCustomerInfo.id);
@@ -29,8 +37,16 @@ export async function loadStatementData(stateRef = {}) {
             }
         }
 
-        let docs = await TransactionDAO.getByCustomer(currentCustomerInfo?.id);
-        docs = docs.filter(d => {
+        const rawDocs = await TransactionDAO.getByCustomer(currentCustomerInfo?.id);
+        if (initialDue === 0) {
+            const opDoc = rawDocs.find(d => {
+                const v = String(d.voucherNo || '').trim().toUpperCase();
+                return v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের';
+            });
+            if (opDoc) initialDue = safeRound((Number(opDoc.bill) || 0) - (Number(opDoc.paid) || 0));
+        }
+
+        let docs = rawDocs.filter(d => {
             const v = String(d.voucherNo || '').trim().toUpperCase();
             return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের';
         });

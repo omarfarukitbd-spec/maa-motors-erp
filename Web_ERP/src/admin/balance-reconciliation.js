@@ -2,9 +2,10 @@ import Swal from 'sweetalert2';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { safeRound, formatAmountWithComma } from '../utils.js';
 import { auditLog } from '../audit.js';
-import { autoHealCustomerBalances } from './balance-recon-heal.js';
+import { autoHealCustomerBalances, reconcileSingleCustomerBalance } from './balance-recon-heal.js';
 
-export { autoHealCustomerBalances } from './balance-recon-heal.js';
+export { autoHealCustomerBalances, reconcileSingleCustomerBalance } from './balance-recon-heal.js';
+
 
 /**
  * --- Balance Integrity Scanner & Auto-Healer ---
