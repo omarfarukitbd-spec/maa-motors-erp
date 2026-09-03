@@ -140,9 +140,13 @@ export async function editCustomer(id, name, phone, address, currentZone) {
 
             const ops = [ (b) => b.update(custRef, updatePayload) ];
 
+            let hasOpeningTxn = false;
             txns.forEach(txn => {
                 const updateData = { customerName: f.n };
-                if (txn.voucherNo === 'OPENING') {
+                const v = String(txn.voucherNo || '').trim().toUpperCase();
+                if (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের') {
+                    hasOpeningTxn = true;
+                    updateData.voucherNo = 'OPENING';
                     updateData.date = f.d;
                     updateData.bill = f.ib > 0 ? f.ib : 0;
                     updateData.paid = f.ib < 0 ? Math.abs(f.ib) : 0;
@@ -150,6 +154,23 @@ export async function editCustomer(id, name, phone, address, currentZone) {
                 }
                 ops.push((b) => b.update(TransactionDAO.getRef(txn.id), updateData));
             });
+
+            if (!hasOpeningTxn && f.ib !== 0) {
+                const newOpRef = TransactionDAO.getRef();
+                const newOpData = {
+                    customerId: id,
+                    customerName: f.n,
+                    date: f.d,
+                    voucherNo: 'OPENING',
+                    bill: f.ib > 0 ? f.ib : 0,
+                    paid: f.ib < 0 ? Math.abs(f.ib) : 0,
+                    prevDue: 0,
+                    currentDue: f.ib,
+                    createdBy: window.AppState?.currentUserEmail || 'Staff',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                ops.push((b) => b.set(newOpRef, newOpData));
+            }
 
             // Commit in chunks of 400 to observe Firestore batch limit (max 500)
             const CHUNK_SIZE = 400;
@@ -159,9 +180,21 @@ export async function editCustomer(id, name, phone, address, currentZone) {
                 await batch.commit();
             }
 
+            const cachedCust = (cachedCustomers || []).find(c => c.id === id);
+            if (cachedCust) {
+                cachedCust.name = f.n;
+                cachedCust.phone = f.p;
+                cachedCust.address = f.a;
+                cachedCust.zone = f.z || '';
+                cachedCust.accountNo = f.accNo || '';
+                cachedCust.initialDue = f.ib;
+                cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) + balanceDiff);
+            }
+
             auditLog('UPDATE', 'Customers', id, f.n, { old: { name, phone, address, zone: currentZone, initialDue: currentInitialDue, openingDate: currentOpeningDate }, new: f });
             Swal.fire('সফল!', `কাস্টমার তথ্য ও একাউন্ট নম্বর (${f.accNo}) সফলভাবে আপডেট হয়েছে।`, 'success');
             if (window.loadCustomers) window.loadCustomers();
+            if (window.loadCustomersForDropdown) window.loadCustomersForDropdown();
         } catch (e) {
             handleError(e, 'কাস্টমার তথ্য আপডেট করা যায়নি');
         }

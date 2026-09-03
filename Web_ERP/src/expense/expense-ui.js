@@ -36,7 +36,7 @@ export function renderExpenses(container) {
             </div>
 
             <div data-perm="addExpense" class="m3-card">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-start font-bn">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3.5 items-start font-bn">
                     <div><label class="m3-label">তারিখ <span class="m3-label-sub">(Date *)</span></label><input type="text" id="exp-date" class="m3-field h-[42px] py-0 datepicker"></div>
                     <div><label class="m3-label">ক্যাটাগরি <span class="m3-label-sub">(Category *)</span></label><select id="exp-category" class="m3-field h-[42px] py-0 font-bold" onchange="window.handleCategoryChange()"></select></div>
                     <div>
@@ -44,15 +44,27 @@ export function renderExpenses(container) {
                         <input type="text" id="exp-amount" oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'exp-amount-words');" class="m3-field h-[42px] py-0 text-base font-black text-red-400 border-red-500/30" placeholder="০.০০">
                         <div class="h-6"><div id="exp-amount-words" class="text-[10px] font-black text-red-400 mt-1 px-2 py-0.5 rounded-lg bg-red-500/5 hidden italic truncate"></div></div>
                     </div>
+                    <div>
+                        <label class="m3-label text-cyan-400">পেমেন্ট সোর্স <span class="m3-label-sub">(Account)</span></label>
+                        <div class="flex gap-1.5">
+                            <select id="exp-payment-method" class="m3-field h-[42px] py-0 font-bold w-1/3 cursor-pointer text-xs" onchange="window.handleExpensePaymentMethodChange(this.value)">
+                                <option value="Cash">ক্যাশ</option>
+                                <option value="Bank">ব্যাংক</option>
+                            </select>
+                            <select id="exp-payment-account" class="m3-field h-[42px] py-0 font-bold w-2/3 cursor-pointer text-xs">
+                                <option value="">-- অ্যাকাউন্ট --</option>
+                            </select>
+                        </div>
+                    </div>
                     <div><label class="m3-label">বিবরণ <span class="m3-label-sub">(Details)</span></label><input type="text" id="exp-details" placeholder="..." class="m3-field h-[42px]"></div>
-                    <div><button id="save-exp-btn" class="m3-btn-primary w-full h-[42px] mt-6" onclick="window.saveExpense()">সেভ করুন</button></div>
+                    <div><button id="save-exp-btn" class="m3-btn-primary w-full h-[42px] mt-6" onclick="window.saveExpense()"><i class="fa-solid fa-cloud-arrow-up mr-1.5"></i>সেভ করুন</button></div>
                 </div>
             </div>
 
             <!-- Desktop View Table -->
             <div class="desktop-only m3-table-container">
                 <table class="m3-table w-full">
-                    <thead><tr><th class="w-[140px]">তারিখ</th><th class="w-[180px]">ক্যাটাগরি</th><th>বিবরণ</th><th class="w-[150px] text-right">পরিমাণ</th><th class="w-[100px] text-center">অ্যাকশন</th></tr></thead>
+                    <thead><tr><th class="w-[130px]">তারিখ</th><th class="w-[160px]">ক্যাটাগরি</th><th class="w-[140px]">অ্যাকাউন্ট</th><th>বিবরণ</th><th class="w-[140px] text-right">পরিমাণ</th><th class="w-[90px] text-center">অ্যাকশন</th></tr></thead>
                     <tbody id="expense-list"></tbody>
                 </table>
             </div>
@@ -70,8 +82,38 @@ export function renderExpenses(container) {
         </div>`;
 
     document.getElementById('exp-date').value = (window.getTodayLocalDateString ? window.getTodayLocalDateString() : new Date().toISOString().split('T')[0]);
-    loadExpenseCategories(); loadRecentExpenses();
+    loadExpenseCategories();
+    populateExpensePaymentAccounts('Cash');
+    loadRecentExpenses();
 }
+
+export async function populateExpensePaymentAccounts(method = 'Cash', selectedAccount = '') {
+    const accSel = document.getElementById('exp-payment-account');
+    if (!accSel) return;
+    try {
+        if (method === 'Bank') {
+            if (typeof window.loadBankOptions === 'function' && (!window.cachedBanksHtml || window.cachedBanksHtml.length < 30)) {
+                await window.loadBankOptions();
+            }
+            accSel.innerHTML = window.cachedBanksHtml || '<option value="">-- ব্যাংক নির্বাচন করুন --</option>';
+        } else {
+            if (typeof window.loadCashCollectorOptions === 'function' && (!window.cachedCashHtml || window.cachedCashHtml.length < 30)) {
+                await window.loadCashCollectorOptions();
+            }
+            accSel.innerHTML = window.cachedCashHtml || '<option value="">-- ক্যাশ রিসিভার নির্বাচন করুন --</option>';
+        }
+        if (selectedAccount) {
+            accSel.value = selectedAccount;
+        } else if (accSel.options.length > 1) {
+            accSel.selectedIndex = 1;
+        }
+    } catch (e) {
+        console.warn('Populate expense payment accounts error:', e);
+    }
+}
+
+window.handleExpensePaymentMethodChange = (val) => populateExpensePaymentAccounts(val);
+
 
 export async function loadExpenseCategories() {
     const sel = document.getElementById('exp-category'); if(!sel) return;
@@ -123,16 +165,21 @@ function renderExpenseRows(expenses, tbody) {
         const catEsc = escapeHTML(d.category);
         const detEsc = escapeHTML(d.details || '-');
         const catEscJs = catEsc.replace(/'/g, "\\'");
+        const pAccEsc = escapeHTML(d.paymentAccount || (d.paymentMethod === 'Bank' ? 'ব্যাংক' : 'ক্যাশ'));
+        const pMethodEsc = escapeHTML(d.paymentMethod || 'Cash');
+        const pAccEscJs = pAccEsc.replace(/'/g, "\\'");
+        const pMethodEscJs = pMethodEsc.replace(/'/g, "\\'");
 
         html += `
             <tr class="border-b border-slate-800/50 hover:bg-white/[0.02] transition-colors">
                 <td class="text-slate-300 font-bold text-xs">${formatAppDate(d.date)}${d.createdBy ? `<div class="text-[8px] text-blue-400/80 italic mt-0.5">by ${escapeHTML(d.createdBy)}</div>` : ''}</td>
                 <td class="font-bold text-white text-sm">${catEsc}</td>
+                <td class="text-xs font-mono font-bold text-cyan-300"><span class="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 rounded-md"><i class="fa-solid ${d.paymentMethod === 'Bank' ? 'fa-building-columns' : 'fa-wallet'} mr-1 text-[10px]"></i>${pAccEsc}</span></td>
                 <td class="text-xs text-slate-200">${detEsc}</td>
                 <td class="text-right text-red-400 font-black text-base">৳${formatAmountWithComma(d.amount)}</td>
                 <td class="text-center">
                     <div class="flex items-center justify-center gap-1.5">
-                        ${canEdit ? `<button data-perm="editExpenses" class="m3-btn-icon" onclick="window.editExpense('${d.id}', '${d.date}', '${catEscJs}', ${d.amount}, '${encodeURIComponent(d.details || '')}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
+                        ${canEdit ? `<button data-perm="editExpenses" class="m3-btn-icon" onclick="window.editExpense('${d.id}', '${d.date}', '${catEscJs}', ${d.amount}, '${encodeURIComponent(d.details || '')}', '${pMethodEscJs}', '${pAccEscJs}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
                         ${canDelete ? `<button data-perm="deleteExpenses" class="m3-btn-icon" onclick="window.deleteExpense('${d.id}', '${catEscJs}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
                     </div>
                 </td>
@@ -149,11 +196,12 @@ function renderExpenseRows(expenses, tbody) {
                         <div class="text-red-400 font-black text-lg">৳ ${formatAmountWithComma(d.amount)}</div>
                     </div>
                 </div>
+                <div class="mobile-card-row"><span class="mobile-card-label">অ্যাকাউন্ট:</span><span class="mobile-card-value text-cyan-300 font-bold"><i class="fa-solid ${d.paymentMethod === 'Bank' ? 'fa-building-columns' : 'fa-wallet'} mr-1 text-[10px]"></i>${pAccEsc}</span></div>
                 <div class="mobile-card-row"><span class="mobile-card-label">বিবরণ:</span><span class="mobile-card-value text-slate-200">${detEsc}</span></div>
                 ${d.createdBy ? `<div class="mobile-card-row"><span class="mobile-card-label">এন্ট্রিদাতা:</span><span class="mobile-card-value text-blue-400 text-xs">${escapeHTML(d.createdBy)}</span></div>` : ''}
                 ${(canEdit || canDelete) ? `
                 <div class="mobile-card-actions">
-                    ${canEdit ? `<button data-perm="editExpenses" class="m3-btn-icon" onclick="window.editExpense('${d.id}', '${d.date}', '${catEscJs}', ${d.amount}, '${encodeURIComponent(d.details || '')}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
+                    ${canEdit ? `<button data-perm="editExpenses" class="m3-btn-icon" onclick="window.editExpense('${d.id}', '${d.date}', '${catEscJs}', ${d.amount}, '${encodeURIComponent(d.details || '')}', '${pMethodEscJs}', '${pAccEscJs}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>` : ''}
                     ${canDelete ? `<button data-perm="deleteExpenses" class="m3-btn-icon" onclick="window.deleteExpense('${d.id}', '${catEscJs}')" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>` : ''}
                 </div>` : ''}
             </div>`;

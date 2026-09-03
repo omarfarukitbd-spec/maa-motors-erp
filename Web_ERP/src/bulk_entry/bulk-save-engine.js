@@ -216,7 +216,8 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
                 }
                 for (const [cId, docData] of Object.entries(newCustomerDocs)) {
                     batch.set(CustomerDAO.getRef(cId), docData);
-                    if (customersMap[resolvedKey]) customersMap[resolvedKey].isNew = false;
+                    const mapEntry = Object.values(customersMap).find(c => c && c.id === cId);
+                    if (mapEntry) mapEntry.isNew = false;
                 }
                 await batch.commit();
                 batch = db.batch();
@@ -234,6 +235,8 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
         }
         for (const [cId, docData] of Object.entries(newCustomerDocs)) {
             batch.set(CustomerDAO.getRef(cId), docData);
+            const mapEntry = Object.values(customersMap).find(c => c && c.id === cId);
+            if (mapEntry) mapEntry.isNew = false;
             opCount++;
         }
 

@@ -1,4 +1,4 @@
-import { TransactionDAO, BankTransactionDAO } from '../dao.js';
+import { TransactionDAO, BankTransactionDAO, ExpenseDAO } from '../dao.js';
 import { safeRound, toDBDate } from '../utils.js';
 
 /**
@@ -9,15 +9,17 @@ import { safeRound, toDBDate } from '../utils.js';
  *         + (Transfers to this account from other banks)
  *         - (Manual Withdrawals from this account)
  *         - (Transfers from this account to other banks)
+ *         - (Expenses disbursed from this account)
  */
 export async function calculateAccountBalance(accountName, isCash = false) {
     if (!accountName) return 0;
     
-    // Run all 3 queries concurrently to speed up calculation
-    const [collectionSnap, bankTxns, incomingTxns] = await Promise.all([
+    // Run all 4 queries concurrently to speed up calculation
+    const [collectionSnap, bankTxns, incomingTxns, expenseSnap] = await Promise.all([
         TransactionDAO.collection.where('receivedFrom', '==', accountName).get(),
         BankTransactionDAO.getByBank(accountName),
-        BankTransactionDAO.getTransfersByTargetBank(accountName)
+        BankTransactionDAO.getTransfersByTargetBank(accountName),
+        ExpenseDAO.collection.where('paymentAccount', '==', accountName).get()
     ]);
         
     // 1. Process Customer Collections
@@ -48,8 +50,18 @@ export async function calculateAccountBalance(accountName, isCash = false) {
         incomingTransfers += Number(tx.amount || 0);
     });
 
+    // 4. Process Expenses disbursed from this account
+    let expenseTotal = 0;
+    expenseSnap.forEach(doc => {
+        const exp = doc.data();
+        const amt = Number(exp.amount || 0);
+        if (!isNaN(amt) && amt > 0) {
+            expenseTotal += amt;
+        }
+    });
+
     // Final Balance
-    const balance = customerCollectionTotal + manualDeposits + incomingTransfers - manualWithdrawals - outgoingTransfers;
+    const balance = customerCollectionTotal + manualDeposits + incomingTransfers - manualWithdrawals - outgoingTransfers - expenseTotal;
     return safeRound(balance);
 }
 
@@ -115,6 +127,26 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
                 isDebit: false,
                 note: `Transfer from ${t.bankName}. ${t.note || ''}`,
                 sourceBank: t.bankName
+            });
+        }
+    });
+
+    // 4. Fetch Business Expenses disbursed from this account
+    const expenseSnap = await ExpenseDAO.collection.where('paymentAccount', '==', accountName).get();
+    expenseSnap.forEach(doc => {
+        const exp = doc.data();
+        const amt = Number(exp.amount || 0);
+        if (amt > 0) {
+            allTxns.push({
+                id: doc.id,
+                dateStr: exp.date || '',
+                createdAt: exp.createdAt ? (typeof exp.createdAt.toMillis === 'function' ? exp.createdAt.toMillis() : exp.createdAt) : 0,
+                type: 'BUSINESS_EXPENSE',
+                amount: amt,
+                isCredit: false,
+                isDebit: true,
+                note: `খরচ: ${exp.category || 'ব্যবসায়িক খরচ'}${exp.details ? ' (' + exp.details + ')' : ''}`,
+                category: exp.category
             });
         }
     });

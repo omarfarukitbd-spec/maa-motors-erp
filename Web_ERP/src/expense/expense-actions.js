@@ -19,19 +19,23 @@ export async function saveExpense() {
     const catEl = document.getElementById('exp-category');
     const detEl = document.getElementById('exp-details');
     const amtEl = document.getElementById('exp-amount');
+    const pMethodEl = document.getElementById('exp-payment-method');
+    const pAccEl = document.getElementById('exp-payment-account');
     if (!dateEl || !catEl || !amtEl) return;
 
     const d = toDBDate(dateEl.value);
     const c = catEl.value;
     const det = detEl.value.trim();
     const a = parseAmount(amtEl.value);
+    const paymentMethod = pMethodEl?.value || 'Cash';
+    const paymentAccount = pAccEl?.value?.trim() || (paymentMethod === 'Cash' ? 'শোরুম ক্যাশ' : 'Bank');
 
     if(!a || a <= 0) return Swal.fire({ title: 'ত্রুটি!', text: 'সঠিক খরচের পরিমাণ লিখুন', icon: 'error' });
 
     const btn = document.getElementById('save-exp-btn');
     if(btn) btn.disabled = true;
 
-    // RESTORED: Verification Preview
+    // Verification Preview
     const words = numberToBanglaWords(a);
     const isEdit = !!editingExpenseId;
 
@@ -42,6 +46,10 @@ export async function saveExpense() {
                 <div class="flex flex-col gap-1 border-b border-slate-800 pb-2">
                     <span class="text-[10px] text-blue-400 font-black uppercase tracking-widest">খরচের ক্যাটাগরি</span>
                     <span class="text-lg text-white font-black">${c}</span>
+                </div>
+                <div class="flex flex-col gap-1 border-b border-slate-800 pb-2">
+                    <span class="text-[10px] text-cyan-400 font-black uppercase tracking-widest">পেমেন্ট সোর্স</span>
+                    <span class="text-sm text-cyan-300 font-bold">${paymentMethod} - ${paymentAccount}</span>
                 </div>
                 <div class="flex flex-col gap-1 border-b border-slate-800 pb-2">
                     <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">বিবরণ / নোট</span>
@@ -73,16 +81,16 @@ export async function saveExpense() {
 
     try {
         if (editingExpenseId) {
-            await ExpenseDAO.update(editingExpenseId, { date: d, category: c, details: det, amount: a });
-            auditLog('UPDATE', 'Expenses', editingExpenseId, c, { amount: a });
+            await ExpenseDAO.update(editingExpenseId, { date: d, category: c, details: det, amount: a, paymentMethod, paymentAccount });
+            auditLog('UPDATE', 'Expenses', editingExpenseId, c, { amount: a, paymentMethod, paymentAccount });
             editingExpenseId = null;
             if(btn) {
                 btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> সেভ করুন';
                 btn.className = "m3-btn-primary px-6 h-[42px] py-0 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-2";
             }
         } else {
-            const id = await ExpenseDAO.add({ date: d, category: c, details: det, amount: a, createdBy: AppState.currentUserEmail });
-            auditLog('CREATE', 'Expenses', id, c, { amount: a });
+            const id = await ExpenseDAO.add({ date: d, category: c, details: det, amount: a, paymentMethod, paymentAccount, createdBy: AppState.currentUserEmail });
+            auditLog('CREATE', 'Expenses', id, c, { amount: a, paymentMethod, paymentAccount });
         }
 
         amtEl.value = ''; detEl.value = '';
@@ -104,7 +112,7 @@ export async function deleteExpense(id, desc) {
     } catch(err) { Swal.fire('Error', 'মুছতে সমস্যা হয়েছে', 'error'); }
 }
 
-export async function editExpense(id, date, category, amount, detailsEncoded) {
+export async function editExpense(id, date, category, amount, detailsEncoded, pMethod, pAcc) {
     if (!(await promptSecurityPin("খরচ সংশোধন"))) return;
 
     const details = decodeURIComponent(detailsEncoded || '');
@@ -119,6 +127,14 @@ export async function editExpense(id, date, category, amount, detailsEncoded) {
     }
     document.getElementById('exp-amount').value = amount;
     document.getElementById('exp-details').value = details;
+
+    if (pMethod) {
+        const pMethodEl = document.getElementById('exp-payment-method');
+        if (pMethodEl) pMethodEl.value = pMethod;
+        if (typeof window.populateExpensePaymentAccounts === 'function') {
+            await window.populateExpensePaymentAccounts(pMethod, pAcc);
+        }
+    }
 
     editingExpenseId = id;
     const btn = document.getElementById('save-exp-btn');

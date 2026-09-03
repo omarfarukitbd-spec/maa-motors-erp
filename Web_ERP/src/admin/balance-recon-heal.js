@@ -14,8 +14,13 @@ export async function autoHealCustomerBalances(discrepancies) {
 
     try {
         let healedCount = 0;
+        const cache = getCustomerCache() || [];
         for (const d of discrepancies) {
             await CustomerDAO.update(d.id, { totalDue: d.expectedDue });
+            const cachedCust = cache.find(c => c.id === d.id);
+            if (cachedCust) {
+                cachedCust.totalDue = d.expectedDue;
+            }
             auditLog('HEAL_BALANCE', 'Customer', d.id, d.name, {
                 storedDue: d.storedDue,
                 correctedDue: d.expectedDue,
@@ -23,6 +28,9 @@ export async function autoHealCustomerBalances(discrepancies) {
             });
             healedCount++;
         }
+
+        if (typeof window.loadCustomers === 'function') window.loadCustomers();
+        if (typeof window.loadCustomersForDropdown === 'function') window.loadCustomersForDropdown();
 
         Swal.fire({
             title: 'সফলভাবে সম্পন্ন!',

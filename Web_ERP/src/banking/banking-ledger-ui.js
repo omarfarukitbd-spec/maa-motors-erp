@@ -148,9 +148,10 @@ export async function loadLedgerTable(accountName, isCash) {
             const balColor = t.runningBalance < 0 ? 'text-red-400' : 'text-slate-200';
             const formattedDate = formatAppDate(t.dateStr);
             
-            const deleteBtn = t.type !== 'CUSTOMER_PAYMENT' 
+            const deleteBtn = (t.type !== 'CUSTOMER_PAYMENT' && t.type !== 'BUSINESS_EXPENSE')
                 ? `<button data-perm="deleteBankTransaction" onclick="window.bankingApp.deleteBankingTransaction('${t.id}')" class="text-slate-500 hover:text-red-400 p-1 rounded transition-colors cursor-pointer" title="ডিলিট করুন"><i class="fa-solid fa-trash-can text-xs"></i></button>`
                 : '';
+            const typeLabel = t.type === 'BUSINESS_EXPENSE' ? 'খরচ (EXPENSE)' : (t.type === 'CUSTOMER_PAYMENT' ? 'কাস্টমার জমা' : t.type);
 
             trs += `
                 <tr class="hover:bg-slate-800/40 transition-colors text-left group border-b border-slate-800/40">
@@ -161,7 +162,7 @@ export async function loadLedgerTable(accountName, isCash) {
                         </div>
                     </td>
                     <td class="p-3 text-xs text-slate-200">
-                        <div class="font-black text-white flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] ${t.isCredit ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">${t.type}</span></div>
+                        <div class="font-black text-white flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] ${t.isCredit ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">${typeLabel}</span></div>
                         <div class="text-[11px] text-slate-400 mt-0.5">${t.note}</div>
                     </td>
                     <td class="p-3 text-xs text-right whitespace-nowrap">${depositStr}</td>
