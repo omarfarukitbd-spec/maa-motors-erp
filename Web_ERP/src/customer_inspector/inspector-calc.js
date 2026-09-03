@@ -1,4 +1,6 @@
 import { getCustomerCache } from '../customer/customer-state.js';
+import { TransactionDAO } from '../dao.js';
+import { safeRound } from '../utils.js';
 
 /**
  * Returns customer list sorted strictly by numeric account number
@@ -69,18 +71,58 @@ export function extractPrimaryPhone(phoneStr) {
     return digits.length >= 11 ? digits.slice(0, 11) : digits;
 }
 
+export const customerStatsCache = new Map();
+
+/**
+ * Fetches real lifetime total bill and paid for customer from transactions
+ * @param {string} customerId 
+ * @returns {Promise<{totalBill: number, totalPaid: number}>}
+ */
+export async function fetchCustomerStats(customerId) {
+    if (!customerId) return { totalBill: 0, totalPaid: 0 };
+    if (customerStatsCache.has(customerId)) {
+        return customerStatsCache.get(customerId);
+    }
+    try {
+        const txns = await TransactionDAO.getByCustomer(customerId);
+        let totalBill = 0;
+        let totalPaid = 0;
+
+        txns.forEach(t => {
+            const v = String(t.voucherNo || '').trim().toUpperCase();
+            if (v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের') {
+                totalBill += Number(t.bill) || 0;
+                totalPaid += Number(t.paid) || 0;
+            }
+        });
+
+        const stats = {
+            totalBill: safeRound(totalBill),
+            totalPaid: safeRound(totalPaid)
+        };
+        customerStatsCache.set(customerId, stats);
+        return stats;
+    } catch (e) {
+        console.error('fetchCustomerStats error:', e);
+        return { totalBill: 0, totalPaid: 0 };
+    }
+}
+
 /**
  * Formats customer details and financial statuses
  * @param {Object} cust 
+ * @param {Object} [stats] Optional cached lifetime stats
  * @returns {Object} Formatted customer snapshot
  */
-export function getCustomerSnapshot(cust) {
+export function getCustomerSnapshot(cust, stats = null) {
     if (!cust) return null;
 
-    const openingBalance = Number(cust.openingBalance) || 0;
-    const totalBill = Number(cust.totalBill) || 0;
-    const totalPaid = Number(cust.totalPaid) || 0;
-    const totalDue = Number(cust.totalDue) || 0;
+    // Database field is initialDue in Firestore
+    const openingBalance = Number(cust.initialDue !== undefined ? cust.initialDue : (cust.openingBalance || 0));
+    const totalDue = Number(cust.totalDue !== undefined ? cust.totalDue : (cust.currentDue || 0));
+
+    const totalBill = stats ? (Number(stats.totalBill) || 0) : (Number(cust.totalBill) || 0);
+    const totalPaid = stats ? (Number(stats.totalPaid) || 0) : (Number(cust.totalPaid) || 0);
 
     let dueStatus = {
         type: 'zero',

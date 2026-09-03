@@ -1,5 +1,6 @@
-import { getSortedInspectorCustomers, findCustomerIndexByQuery } from './inspector-calc.js';
+import { getSortedInspectorCustomers, findCustomerIndexByQuery, fetchCustomerStats, customerStatsCache } from './inspector-calc.js';
 import { getOrCreateInspectorModal, renderInspectorCard } from './inspector-ui.js';
+import { formatAmountWithComma } from '../utils.js';
 
 let isInspectorOpen = false;
 let currentInspectorIndex = 0;
@@ -68,7 +69,8 @@ function renderCurrent(syncInput = true) {
         return;
     }
     const current = inspectorCustomers[currentInspectorIndex];
-    renderInspectorCard(current, currentInspectorIndex, inspectorCustomers.length);
+    const cachedStats = (current && current.id) ? (customerStatsCache.get(current.id) || null) : null;
+    renderInspectorCard(current, currentInspectorIndex, inspectorCustomers.length, cachedStats);
 
     if (syncInput) {
         const input = document.getElementById('inspector-query-input');
@@ -76,6 +78,24 @@ function renderCurrent(syncInput = true) {
             input.value = current.accountNo || '';
             input.select();
         }
+    }
+
+    if (!cachedStats && current && current.id) {
+        const targetId = current.id;
+        (async () => {
+            try {
+                const stats = await fetchCustomerStats(targetId);
+                const active = inspectorCustomers[currentInspectorIndex];
+                if (active && active.id === targetId) {
+                    const billEl = document.getElementById('inspector-stat-bill');
+                    const paidEl = document.getElementById('inspector-stat-paid');
+                    if (billEl) billEl.innerText = `৳ ${formatAmountWithComma(stats.totalBill)}`;
+                    if (paidEl) paidEl.innerText = `৳ ${formatAmountWithComma(stats.totalPaid)}`;
+                }
+            } catch (err) {
+                console.error('Inspector stats fetch error:', err);
+            }
+        })();
     }
 }
 

@@ -68,7 +68,7 @@ export function getOrCreateInspectorModal() {
  * @param {number} currentIndex Current index in sorted array
  * @param {number} totalCount Total count of sorted customers
  */
-export function renderInspectorCard(customer, currentIndex, totalCount) {
+export function renderInspectorCard(customer, currentIndex, totalCount, stats = null) {
     const contentEl = document.getElementById('inspector-card-content');
     const badgeEl = document.getElementById('inspector-counter-badge');
     if (!contentEl) return;
@@ -87,7 +87,7 @@ export function renderInspectorCard(customer, currentIndex, totalCount) {
         return;
     }
 
-    const s = getCustomerSnapshot(customer);
+    const s = getCustomerSnapshot(customer, stats);
     const cleanPhone = s.primaryPhone || (s.phone || '').replace(/\D/g, '');
     const waText = encodeURIComponent(`আসসালামু আলাইকুম ${s.name}, মা মোটরস্-এ আপনার বর্তমান মোট বকেয়া ৳ ${formatAmountWithComma(s.totalDue)}। দ্রুত পরিশোধের জন্য অনুরোধ করা হলো।`);
     const waLink = cleanPhone ? `https://wa.me/88${cleanPhone}?text=${waText}` : '#';
@@ -132,23 +132,25 @@ export function renderInspectorCard(customer, currentIndex, totalCount) {
         </div>
 
         <!-- Metrics Row: Opening Balance (if any) + Total Bill + Total Paid -->
-        <div class="grid ${s.openingBalance > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-2 sm:gap-3">
-            ${s.openingBalance > 0 ? `
+        <div class="grid ${s.openingBalance !== 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-2 sm:gap-3">
+            ${s.openingBalance !== 0 ? `
             <div class="p-2.5 sm:p-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
-                <div class="text-[10px] sm:text-[11px] font-bold text-amber-400 mb-0.5">প্রারম্ভিক ব্যালেন্স</div>
-                <div class="text-xs sm:text-sm font-black font-mono text-amber-300 truncate">
-                    ৳ ${formatAmountWithComma(s.openingBalance)}
+                <div class="text-[10px] sm:text-[11px] font-bold ${s.openingBalance > 0 ? 'text-amber-400' : 'text-emerald-400'} mb-0.5">
+                    ${s.openingBalance > 0 ? 'প্রারম্ভিক ব্যালেন্স' : 'প্রারম্ভিক জমা'}
+                </div>
+                <div class="text-xs sm:text-sm font-black font-mono ${s.openingBalance > 0 ? 'text-amber-300' : 'text-emerald-300'} truncate">
+                    ৳ ${formatAmountWithComma(Math.abs(s.openingBalance))}
                 </div>
             </div>` : ''}
             <div class="p-2.5 sm:p-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
                 <div class="text-[10px] sm:text-[11px] font-bold text-slate-400 mb-0.5">মোট বিল (ক্রয়)</div>
-                <div class="text-xs sm:text-sm font-black font-mono text-slate-200 truncate">
+                <div id="inspector-stat-bill" class="text-xs sm:text-sm font-black font-mono text-slate-200 truncate">
                     ৳ ${formatAmountWithComma(s.totalBill)}
                 </div>
             </div>
             <div class="p-2.5 sm:p-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
                 <div class="text-[10px] sm:text-[11px] font-bold text-slate-400 mb-0.5">মোট জমা (পরিশোধ)</div>
-                <div class="text-xs sm:text-sm font-black font-mono text-emerald-400 truncate">
+                <div id="inspector-stat-paid" class="text-xs sm:text-sm font-black font-mono text-emerald-400 truncate">
                     ৳ ${formatAmountWithComma(s.totalPaid)}
                 </div>
             </div>
