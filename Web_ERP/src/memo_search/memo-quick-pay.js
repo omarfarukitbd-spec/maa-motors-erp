@@ -156,7 +156,7 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, curren
 
         batch.set(txnRef, newTxnData);
         batch.update(CustomerDAO.getRef(targetCustId), {
-            totalDue: firebase.firestore.FieldValue.increment(-formValues.amt)
+            totalDue: firebase.firestore.FieldValue.increment(safeRound(-formValues.amt))
         });
 
         await batch.commit();

@@ -3,6 +3,7 @@ import { CustomerDAO, TransactionDAO, SettingsDAO, ZoneDAO } from '../dao.js';
 import { getTodayLocalDateString, parseAmount, formatAmountWithComma, formatAppDate, toDBDate, numberToBanglaWords, handleError } from '../utils.js';
 import { auditLog } from '../audit.js';
 import Swal from 'sweetalert2';
+import { verifyDuplicateCustomer } from './customer-duplicate-guard.js';
 
 /**
  * Centered Quick Add Customer Function (Shared across modules)
@@ -68,10 +69,10 @@ export async function quickAddCustomer() {
                 <div class="grid grid-cols-2 gap-3 p-2 bg-slate-950/60 rounded-xl border border-slate-800">
                     <div>
                         <label class="block text-[10px] font-black text-purple-400 uppercase tracking-widest mb-0.5">জোন কোড (Zone Code)</label>
-                        <input id="sw-zcode" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-purple-400 font-mono font-bold text-xs outline-none" readonly placeholder="-">
+                        <input id="sw-zcode" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-purple-400 font-mono font-bold text-xs outline-none" readonly placeholder="অটো লোড...">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black text-amber-400 uppercase tracking-widest mb-0.5">অটো অ্যাকাউন্ট নং (Account No)</label>
+                        <label class="block text-[10px] font-black text-amber-400 uppercase tracking-widest mb-0.5">অ্যাকাউন্ট নং (Account No)</label>
                         <input id="sw-acc" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-amber-400 font-mono font-bold text-xs outline-none" readonly placeholder="অটো জেনারেট...">
                     </div>
                 </div>
@@ -141,7 +142,7 @@ export async function quickAddCustomer() {
                     }
                 });
 
-                if (zForm && zForm.name) {
+                if (zForm) {
                     await ZoneDAO.addZone(zForm.name, zForm.code);
                     zones = await ZoneDAO.getAllZones();
                     if (zSelect) {
@@ -176,6 +177,9 @@ export async function quickAddCustomer() {
     });
 
     if (f && f.n) {
+        const canProceed = await verifyDuplicateCustomer(f.p, f.n);
+        if (!canProceed) return;
+
         // Confirmation Preview Modal (তথ্য যাচাই করুন)
         const words = numberToBanglaWords(f.initialBalance);
         const confirmPreview = await Swal.fire({

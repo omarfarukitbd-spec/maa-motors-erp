@@ -4,6 +4,7 @@ import { parseAmount, toDBDate, getTodayLocalDateString, promptSecurityPin, numb
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones, cachedCustomers } from './customer-state.js';
+import { verifyDuplicateCustomer } from './customer-duplicate-guard.js';
 
 export async function editCustomer(id, name, phone, address, currentZone) {
     if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.editCustomers === false) {
@@ -88,6 +89,9 @@ export async function editCustomer(id, name, phone, address, currentZone) {
     });
 
     if (f) {
+        const canProceed = await verifyDuplicateCustomer(f.p, f.n, id);
+        if (!canProceed) return;
+
         const words = numberToBanglaWords(f.ib);
         const confirmPreview = await Swal.fire({
             title: '<i class="fa-solid fa-magnifying-glass text-amber-400 mr-2"></i>সংশোধন যাচাই করুন',

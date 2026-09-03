@@ -4,6 +4,7 @@ import { parseAmount, toDBDate, getTodayLocalDateString, numberToBanglaWords, re
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones } from './customer-state.js';
+import { verifyDuplicateCustomer } from './customer-duplicate-guard.js';
 
 export function resetAddCustomerForm() {
     ['cust-name', 'cust-phone', 'cust-address', 'cust-initial-balance'].forEach(id => {
@@ -40,6 +41,9 @@ export async function saveNewCustomer() {
           balInput = document.getElementById('cust-initial-balance').value.trim();
 
     if(!n || !p || !z) return Swal.fire('এরর', 'নাম, মোবাইল নম্বর ও জোন আবশ্যক!', 'error');
+
+    const canProceed = await verifyDuplicateCustomer(p, n);
+    if (!canProceed) return;
 
     let initialBalance = safeRound(parseAmount(balInput));
     const accNo = document.getElementById('cust-generated-acc')?.value || 'Auto';

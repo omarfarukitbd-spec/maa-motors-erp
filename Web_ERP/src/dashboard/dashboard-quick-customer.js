@@ -5,6 +5,7 @@ import { parseAmount, formatAmountWithComma, formatAppDate, getTodayLocalDateStr
 import { populateAddressSuggestions } from '../utils/address-suggestions.js';
 import { loadAllZones } from '../customer/customer-handlers.js';
 import { auditLog } from '../audit.js';
+import { verifyDuplicateCustomer } from '../customer/customer-duplicate-guard.js';
 
 export function resetDashCustomerForm() {
     const nameInput = document.getElementById('dash-cust-name');
@@ -66,6 +67,9 @@ export async function saveDashCustomer() {
         balInput = document.getElementById('dash-cust-initial-balance')?.value?.trim();
 
     if (!n || !p || !z) return Swal.fire('এরর', 'নাম, মোবাইল নম্বর ও জোন আবশ্যক!', 'error');
+
+    const canProceed = await verifyDuplicateCustomer(p, n);
+    if (!canProceed) return;
 
     let initialBalance = safeRound(parseAmount(balInput));
     const accNo = document.getElementById('dash-cust-generated-acc')?.value || 'Auto';

@@ -11,9 +11,10 @@ import * as SystemTools from './admin/system-tools.js';
 import * as Banking from './admin/admin-banking.js';
 import * as BalanceRecon from './admin/balance-reconciliation.js';
 import * as RecycleBin from './admin/recycle-bin.js';
+import * as CustomerMerge from './admin/customer-merge.js';
 
 // Export for main navigation
-export { renderAdmin, RecycleBin };
+export { renderAdmin, RecycleBin, CustomerMerge };
 
 // Maintain Global compatibility for HTML onclick="appAdmin.func()"
 window.appAdmin = {
@@ -23,5 +24,7 @@ window.appAdmin = {
     ...SystemTools,
     ...Banking,
     ...BalanceRecon,
-    ...RecycleBin
+    ...RecycleBin,
+    ...CustomerMerge
 };
+

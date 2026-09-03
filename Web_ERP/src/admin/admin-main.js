@@ -124,6 +124,16 @@ export function renderAdmin(container) {
                         </button>
                     </div>
 
+                    <div class="group rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-cyan-500/30 p-4 transition-all flex flex-col gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0"><i class="fa-solid fa-code-merge text-sm"></i></div>
+                            <div><h4 class="text-white font-bold text-sm">কাস্টমার অ্যাকাউন্ট মার্জ</h4><p class="text-[10px] text-slate-500">একই গ্রাহকের একাধিক অ্যাকাউন্ট ১টিতে একীভূত করুন।</p></div>
+                        </div>
+                        <button class="h-9 w-full rounded-xl bg-cyan-600/15 border border-cyan-500/25 hover:bg-cyan-600 text-cyan-400 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95" onclick="appAdmin.openCustomerMergeModal()">
+                            <i class="fa-solid fa-code-merge mr-1.5"></i>অ্যাকাউন্ট মার্জ টুল
+                        </button>
+                    </div>
+
                     <div class="group rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-pink-500/30 p-4 transition-all flex flex-col gap-3">
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 shrink-0"><i class="fa-solid fa-building-columns text-sm"></i></div>
