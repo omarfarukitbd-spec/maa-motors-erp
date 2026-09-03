@@ -11,7 +11,7 @@ export function getDailyCollectionModalConfig(today, suggestedAmount) {
             <div class="space-y-4 text-left p-1">
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">তারিখ</label>
-                    <input id="tr-col-date" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono font-bold text-sm datepicker" value="${formatAppDate(today)}">
+                    <input id="tr-col-date" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono font-bold text-sm datepicker" value="${formatAppDate(today)}" onchange="window.treasuryFetchCollectionForSelectedDate && window.treasuryFetchCollectionForSelectedDate(this.value)">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">কালেকশনের মোট টাকার অংক (৳)</label>
@@ -19,7 +19,16 @@ export function getDailyCollectionModalConfig(today, suggestedAmount) {
                         placeholder="0" value="${suggestedAmount > 0 ? formatAmountWithComma(suggestedAmount) : ''}" 
                         oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'tr-col-words');">
                     <div id="tr-col-words" class="text-[11px] font-bold text-emerald-300 mt-1 italic min-h-[16px]"></div>
-                    ${suggestedAmount > 0 ? `<p class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>আজকের ইআরপি আদায় থেকে ৳ ${formatAmountWithComma(suggestedAmount)} অটো-সাজেস্ট করা হয়েছে।</p>` : ''}
+                    <div class="flex items-center justify-between mt-1.5 flex-wrap gap-1">
+                        <div id="tr-col-info" class="text-[10px] text-slate-400 min-h-[16px]">
+                            ${suggestedAmount > 0 
+                                ? `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${formatAppDate(today)} তারিখে ইআরপি আদায় থেকে ৳ ${formatAmountWithComma(suggestedAmount)} অটো-সাজেস্ট করা হয়েছে।</span>` 
+                                : `<span class="text-slate-400"><i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>তারিখ পরিবর্তন করলে স্বয়ংক্রিয়ভাবে ওই দিনের মোট কালেকশন চলে আসবে।</span>`}
+                        </div>
+                        <button type="button" onclick="window.treasuryFetchCollectionForSelectedDate && window.treasuryFetchCollectionForSelectedDate(document.getElementById('tr-col-date')?.value)" class="text-[10px] font-bold text-blue-400 hover:text-blue-300 underline cursor-pointer flex items-center gap-1 shrink-0">
+                            <i class="fa-solid fa-arrows-rotate"></i><span>সিঙ্ক করুন</span>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">মন্তব্য (ঐচ্ছিক)</label>
@@ -31,6 +40,16 @@ export function getDailyCollectionModalConfig(today, suggestedAmount) {
         confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i> ফান্ডে যোগ করুন',
         cancelButtonText: 'বাতিল',
         customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
+        didOpen: () => {
+            const dateEl = document.getElementById('tr-col-date');
+            if (dateEl && dateEl._flatpickr) {
+                dateEl._flatpickr.config.onChange.push((selectedDates, dateStr) => {
+                    if (window.treasuryFetchCollectionForSelectedDate) {
+                        window.treasuryFetchCollectionForSelectedDate(dateStr);
+                    }
+                });
+            }
+        },
         preConfirm: () => {
             const dateEl = document.getElementById('tr-col-date');
             const amtEl = document.getElementById('tr-col-amount');

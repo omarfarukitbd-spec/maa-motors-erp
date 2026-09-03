@@ -18,7 +18,9 @@ export function setupTreasuryActions(getState) {
             const snap = await firebase.firestore().collection('transactions').where('date', '==', today).get();
             snap.forEach(doc => {
                 const t = doc.data();
-                suggestedAmount = safeRound(suggestedAmount + (Number(t.paid) || 0));
+                if (t.voucherNo !== 'OPENING') {
+                    suggestedAmount = safeRound(suggestedAmount + (Number(t.paid) || 0));
+                }
             });
         } catch (e) {
             console.warn('ERP collection suggest fallback:', e);
@@ -36,6 +38,38 @@ export function setupTreasuryActions(getState) {
                 date: formValues.date,
                 note: formValues.note || 'দৈনিক শোরুম কালেকশন'
             }, getState);
+        }
+    };
+
+    // Auto fetch collection on date change
+    window.treasuryFetchCollectionForSelectedDate = async (dateVal) => {
+        const infoEl = document.getElementById('tr-col-info');
+        const amtEl = document.getElementById('tr-col-amount');
+        if (!dateVal) return;
+        const dbDate = toDBDate(dateVal);
+        if (infoEl) infoEl.innerHTML = '<span class="text-amber-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-1"></i>ইআরপি থেকে কালেকশন খোঁজা হচ্ছে...</span>';
+
+        try {
+            let total = 0;
+            const snap = await firebase.firestore().collection('transactions').where('date', '==', dbDate).get();
+            snap.forEach(doc => {
+                const t = doc.data();
+                if (t.voucherNo !== 'OPENING') {
+                    total = safeRound(total + (Number(t.paid) || 0));
+                }
+            });
+            if (total > 0) {
+                if (amtEl) {
+                    amtEl.value = formatAmountWithComma(total);
+                    window.updateLiveWords(amtEl, 'tr-col-words');
+                }
+                if (infoEl) infoEl.innerHTML = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${formatAppDate(dbDate)} তারিখে ইআরপিতে মোট আদায় পাওয়া গেছে ৳ ${formatAmountWithComma(total)}</span>`;
+            } else {
+                if (infoEl) infoEl.innerHTML = `<span class="text-slate-400"><i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>${formatAppDate(dbDate)} তারিখে ইআরপিতে কোনো কালেকশন এন্ট্রি নেই। খাতা দেখে সরাসরি হাত দিয়ে টাকার অংক লিখুন।</span>`;
+            }
+        } catch (e) {
+            console.warn('Fetch collection for date error:', e);
+            if (infoEl) infoEl.innerHTML = '<span class="text-slate-500">কালেকশন অটো-ফেচ করা যায়নি। হাত দিয়ে লিখুন।</span>';
         }
     };
 
