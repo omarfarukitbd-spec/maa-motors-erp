@@ -70,8 +70,8 @@ export async function calculateClosingBalances(cutoffDateStr) {
         };
     });
 
-    // Default sort: highest due first
-    closingCustomers.sort((a, b) => b.closingDue - a.closingDue);
+    // Default sort: Account No / Serial strictly matching Customer section
+    closingCustomers.sort((a, b) => (a.accountNo || '').localeCompare(b.accountNo || '', undefined, { numeric: true }));
 
     currentClosingData = {
         cutoffDate,
@@ -133,7 +133,7 @@ export function renderClosingBalanceView(containerId, closingData) {
             </div>
 
             <!-- Filters Bar -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                 <input type="text" id="fs-closing-search" oninput="window.fsFilterClosingRows()" placeholder="খুঁজুন (নাম, ফোন, A/C নং)..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500">
                 <select id="fs-closing-zone" onchange="window.fsFilterClosingRows()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500 font-bold">
                     <option value="">সকল জোন (${zones.length} টি)</option>
@@ -144,6 +144,11 @@ export function renderClosingBalanceView(containerId, closingData) {
                     <option value="due">শুধুমাত্র বকেয়া আছে এমন (> ০)</option>
                     <option value="zero">ব্যালেন্স শূন্য (০.০০)</option>
                     <option value="advance">অ্যাডভান্স জমা (< ০)</option>
+                </select>
+                <select id="fs-closing-sort" onchange="window.fsFilterClosingRows()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500 font-bold">
+                    <option value="acc_asc">সিরিয়াল: A/C নং (১, ২, ৩...)</option>
+                    <option value="due_desc">সিরিয়াল: বকেয়া অনুযায়ী (সর্বোচ্চ)</option>
+                    <option value="name_asc">সিরিয়াল: নাম অনুযায়ী (A-Z)</option>
                 </select>
             </div>
 
@@ -180,12 +185,19 @@ export function renderClosingTableRows() {
     const q = (document.getElementById('fs-closing-search')?.value || '').toLowerCase().trim();
     const zone = document.getElementById('fs-closing-zone')?.value || '';
     const status = document.getElementById('fs-closing-status')?.value || 'all';
+    const sort = document.getElementById('fs-closing-sort')?.value || 'acc_asc';
 
     const filtered = currentClosingData.customers.filter(c => {
         if (q && !c.name.toLowerCase().includes(q) && !c.phone.includes(q) && !c.accountNo.toLowerCase().includes(q)) return false;
         if (zone && c.zone !== zone) return false;
         if (status !== 'all' && c.status !== status) return false;
         return true;
+    });
+
+    filtered.sort((a, b) => {
+        if (sort === 'due_desc') return b.closingDue - a.closingDue;
+        if (sort === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+        return (a.accountNo || '').localeCompare(b.accountNo || '', undefined, { numeric: true });
     });
 
     if (filtered.length === 0) {
