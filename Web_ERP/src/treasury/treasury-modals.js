@@ -39,7 +39,11 @@ export function getDailyCollectionModalConfig(today, suggestedAmount) {
         showCancelButton: true,
         confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i> ফান্ডে যোগ করুন',
         cancelButtonText: 'বাতিল',
-        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
+        customClass: { 
+            popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700',
+            confirmButton: '!bg-emerald-600 hover:!bg-emerald-500 !text-white !font-bold !rounded-xl !px-5 !py-2.5 shadow-lg shadow-emerald-900/30',
+            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-xl !px-4 !py-2.5'
+        },
         didOpen: () => {
             const dateEl = document.getElementById('tr-col-date');
             if (dateEl && dateEl._flatpickr) {
@@ -80,8 +84,8 @@ export function getDailyExpenseModalConfig(today) {
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">দিনের মোট খরচ (৳)</label>
-                    <input id="tr-exp-amount" type="text" class="w-full bg-slate-900 border border-red-500/50 rounded-xl px-4 py-3 text-red-400 font-mono font-black text-lg focus:border-red-400 outline-none" 
-                        placeholder="যেমন: ১৬,৭৮১" 
+                    <input id="tr-exp-amount" type="text" class="w-full bg-slate-900 border border-red-500/50 rounded-xl px-4 py-3 text-red-400 font-mono font-bold text-lg focus:border-red-400 outline-none" 
+                        placeholder="0" 
                         oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'tr-exp-words');">
                     <div id="tr-exp-words" class="text-[11px] font-bold text-red-300 mt-1 italic min-h-[16px]"></div>
                 </div>
@@ -94,7 +98,11 @@ export function getDailyExpenseModalConfig(today) {
         showCancelButton: true,
         confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i> ফান্ড থেকে মাইনাস করুন',
         cancelButtonText: 'বাতিল',
-        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
+        customClass: { 
+            popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700',
+            confirmButton: '!bg-red-600 hover:!bg-red-500 !text-white !font-bold !rounded-xl !px-5 !py-2.5 shadow-lg shadow-red-900/30',
+            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-xl !px-4 !py-2.5'
+        },
         preConfirm: () => {
             const dateEl = document.getElementById('tr-exp-date');
             const amtEl = document.getElementById('tr-exp-amount');
@@ -155,7 +163,11 @@ export function getSpecialTransactionModalConfig(today, isEdit, editItem) {
         showCancelButton: true,
         confirmButtonText: isEdit ? 'পরিবর্তন সেভ করুন' : 'ফান্ডে রেকর্ড করুন',
         cancelButtonText: 'বাতিল',
-        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
+        customClass: { 
+            popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700',
+            confirmButton: '!bg-indigo-600 hover:!bg-indigo-500 !text-white !font-bold !rounded-xl !px-5 !py-2.5 shadow-lg shadow-indigo-900/30',
+            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-xl !px-4 !py-2.5'
+        },
         preConfirm: () => {
             const typeEl = document.querySelector('input[name="tr-type"]:checked');
             const dateEl = document.getElementById('tr-spec-date');
@@ -195,8 +207,8 @@ export function getOpeningFundModalConfig(currentFund) {
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">প্রারম্ভিক তহবিল অংক (৳)</label>
-                    <input id="tr-op-amount" type="text" class="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-4 py-3 text-amber-300 font-mono font-black text-lg focus:border-amber-400 outline-none" 
-                        placeholder="যেমন: ৪,৬৭,০৯,২৭৫" value="${formatAmountWithComma(currentFund.openingBalance)}" 
+                    <input id="tr-op-amount" type="text" class="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-4 py-3 text-amber-300 font-mono font-bold text-lg focus:border-amber-400 outline-none" 
+                        placeholder="0" value="${formatAmountWithComma(currentFund.openingBalance)}" 
                         oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'tr-op-words');">
                     <div id="tr-op-words" class="text-[11px] font-bold text-amber-300 mt-1 italic min-h-[16px]"></div>
                 </div>
@@ -205,7 +217,11 @@ export function getOpeningFundModalConfig(currentFund) {
         showCancelButton: true,
         confirmButtonText: 'সংরক্ষণ করুন',
         cancelButtonText: 'বাতিল',
-        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
+        customClass: { 
+            popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700',
+            confirmButton: '!bg-amber-500 hover:!bg-amber-400 !text-slate-950 !font-black !rounded-xl !px-5 !py-2.5 shadow-lg shadow-amber-900/30',
+            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-xl !px-4 !py-2.5'
+        },
         preConfirm: () => {
             const dateEl = document.getElementById('tr-op-date');
             const amtEl = document.getElementById('tr-op-amount');
