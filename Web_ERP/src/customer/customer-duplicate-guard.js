@@ -118,13 +118,12 @@ export async function verifyDuplicateCustomer(phone, name, excludeId = null) {
 
     if (result.isConfirmed) {
         // Open existing customer's ledger!
-        if (typeof window.filterLedgerByCustomer === 'function') {
+        if (typeof window.navigate === 'function') {
+            window.navigate('ledger', { customerId: c.id });
+        } else if (typeof window.filterLedgerByCustomer === 'function') {
             const selectEl = document.getElementById('ledger-customer-select');
             if (selectEl) selectEl.value = c.id;
             window.filterLedgerByCustomer(c.id);
-        }
-        if (typeof window.showSection === 'function') {
-            window.showSection('ledger-sec');
         }
         return false; // Stop creating new customer
     }
@@ -197,13 +196,12 @@ export async function showCustomerQuickInfoModal(c) {
     });
 
     if (result.isConfirmed) {
-        if (typeof window.filterLedgerByCustomer === 'function') {
+        if (typeof window.navigate === 'function') {
+            window.navigate('ledger', { customerId: c.id });
+        } else if (typeof window.filterLedgerByCustomer === 'function') {
             const sel = document.getElementById('ledger-customer-select');
             if (sel) sel.value = c.id;
             window.filterLedgerByCustomer(c.id);
-        }
-        if (typeof window.showSection === 'function') {
-            window.showSection('ledger-sec');
         }
     }
 }

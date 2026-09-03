@@ -172,13 +172,12 @@ export async function mergeCustomerAccounts(sourceCustId, targetCustId) {
         });
 
         if (modalRes.isConfirmed) {
-            if (typeof window.filterLedgerByCustomer === 'function') {
+            if (typeof window.navigate === 'function') {
+                window.navigate('ledger', { customerId: targetCustId });
+            } else if (typeof window.filterLedgerByCustomer === 'function') {
                 const sel = document.getElementById('ledger-customer-select');
                 if (sel) sel.value = targetCustId;
                 window.filterLedgerByCustomer(targetCustId);
-            }
-            if (typeof window.showSection === 'function') {
-                window.showSection('ledger-sec');
             }
         }
 
