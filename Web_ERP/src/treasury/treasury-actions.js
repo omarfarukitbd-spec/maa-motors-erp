@@ -193,51 +193,6 @@ export function setupTreasuryActions(getState) {
             }
         }
     };
-
-    // 6. Seed Notebook Data from PDF
-    window.treasurySeedNotebookData = async () => {
-        const pinOk = await promptSecurityPin();
-        if (!pinOk) return;
-
-        const confirm = await Swal.fire({
-            title: 'খাতার হিসাবসমূহ লোড করবেন?',
-            html: 'বসের দেওয়া খাতা (২৯ আগস্ট থেকে ২ সেপ্টেম্বর) এর মোট ১৩টি বাস্তব লেনদেন ফায়ারস্টোর ডাটাবেসে স্বয়ংক্রিয়ভাবে লোড করা হবে। আপনি কি নিশ্চিত?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'হ্যাঁ, লোড করুন',
-            cancelButtonText: 'বাতিল',
-            customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
-        });
-
-        if (!confirm.isConfirmed) return;
-
-        const seedList = [
-            { date: '2026-08-29', title: 'নয়ন নাহার মোটর', note: 'ইঞ্জিন ক্রয় ১৫ পিছ', type: 'outflow', amount: 2500000, category: 'special' },
-            { date: '2026-08-29', title: 'দৈনিক কালেকশন', note: 'দৈনিক শোরুম কালেকশন', type: 'inflow', amount: 1106500, category: 'collection' },
-            { date: '2026-08-29', title: 'দৈনিক খরচ', note: 'অফলাইন খাতার যোগফল', type: 'outflow', amount: 16781, category: 'daily_expense' },
-            { date: '2026-08-30', title: 'দৈনিক কালেকশন', note: 'দৈনিক শোরুম কালেকশন', type: 'inflow', amount: 2415000, category: 'collection' },
-            { date: '2026-08-30', title: 'মিনহাজ মারফত', note: 'ফান্ড ট্রান্সফার', type: 'outflow', amount: 1725000, category: 'special' },
-            { date: '2026-08-30', title: 'দৈনিক খরচ', note: 'অফলাইন খাতার যোগফল', type: 'outflow', amount: 20685, category: 'daily_expense' },
-            { date: '2026-08-31', title: 'দৈনিক কালেকশন', note: 'দৈনিক শোরুম কালেকশন', type: 'inflow', amount: 410000, category: 'collection' },
-            { date: '2026-08-31', title: 'দৈনিক খরচ', note: 'অফলাইন খাতার যোগফল', type: 'outflow', amount: 18130, category: 'daily_expense' },
-            { date: '2026-09-01', title: 'দৈনিক কালেকশন', note: 'দৈনিক শোরুম কালেকশন', type: 'inflow', amount: 960000, category: 'collection' },
-            { date: '2026-09-01', title: 'মিনহাজ মারফত', note: 'ফান্ড ট্রান্সফার', type: 'outflow', amount: 1725000, category: 'special' },
-            { date: '2026-09-01', title: 'দৈনিক খরচ', note: 'অফলাইন খাতার যোগফল', type: 'outflow', amount: 3378, category: 'daily_expense' },
-            { date: '2026-09-02', title: 'দৈনিক কালেকশন', note: 'দৈনিক শোরুম কালেকশন', type: 'inflow', amount: 208000, category: 'collection' },
-            { date: '2026-09-02', title: 'দৈনিক খরচ', note: 'অফলাইন খাতার যোগফল', type: 'outflow', amount: 11700, category: 'daily_expense' }
-        ];
-
-        try {
-            await TreasuryDAO.saveOpeningFund(46709275, '2026-08-29');
-            for (const item of seedList) {
-                await TreasuryDAO.addTransaction(item);
-            }
-            showToast('খাতার সমস্ত হিসাব সফলভাবে সিস্টেমে যুক্ত হয়েছে!', 'success');
-        } catch (e) {
-            console.error('Seed error:', e);
-            showToast('হিসাব লোড করতে সমস্যা হয়েছে!', 'error');
-        }
-    };
 }
 
 async function saveTreasuryItemWithDuplicateCheck(payload, getState) {

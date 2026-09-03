@@ -211,7 +211,7 @@ export function getOpeningFundModalConfig(currentFund) {
             const amtEl = document.getElementById('tr-op-amount');
             const amt = parseFloat((amtEl?.value || '0').replace(/,/g, ''));
             return {
-                openingDate: toDBDate(dateEl?.value || '2026-08-29'),
+                openingDate: toDBDate(dateEl?.value || '2026-08-31'),
                 openingBalance: amt
             };
         }

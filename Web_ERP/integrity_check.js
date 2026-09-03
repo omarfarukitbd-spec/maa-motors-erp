@@ -245,6 +245,14 @@ function checkIntegrity() {
                     hasError = true;
                 }
             });
+
+            // 4. Unimported Firebase Reference Guard
+            if (/\bfirebase\.(firestore|auth|storage)\b/.test(content)) {
+                if (!content.includes('firebase-config.js') && !file.includes('firebase-config.js')) {
+                    console.error(`❌ [আন-ইমপোর্টেড ফায়ারবেস এরর] ফাইল "${path.basename(file)}": firebase অবজেক্ট ব্যবহার করা হয়েছে কিন্তু firebase-config.js থেকে ইমপোর্ট করা হয়নি!`);
+                    hasError = true;
+                }
+            }
         }
     });
 
