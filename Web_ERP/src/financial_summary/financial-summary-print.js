@@ -60,17 +60,18 @@ export async function printCustomerCollectionRegister(summaryData) {
 
         return `
             <tr class="print-row-no-break" style="${bgStyle}">
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10.5px; font-family: 'Inter', sans-serif;">${idx + 1}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10.5px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.customerAccountNo || '-')}</td>
-                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 6px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #0f172a;">
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 10px; font-family: 'Inter', sans-serif;">${idx + 1}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 10px; font-family: 'Inter', monospace; color: #334155; white-space: nowrap;">${formatAppDate(c.date || startDate)}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 10px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.customerAccountNo || '-')}</td>
+                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 5px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a;">
                     <strong>${escapeHTML(c.customerName)}</strong><br>
-                    <span style="font-size:9.5px; color:#475569;">${escapeHTML(c.customerPhone || '-')}</span>
+                    <span style="font-size:9px; color:#475569;">${escapeHTML(c.customerPhone || '-')}</span>
                 </td>
-                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 6px; font-size: 10px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #334155;">${escapeHTML(c.customerZone || '-')}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10px; font-family: 'Inter', monospace; color: #475569;">${escapeHTML(c.voucherNo || '-')}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10px; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; color: #1e293b;">${escapeHTML(methodDisplay)}</td>
-                <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 6px; font-size: 11px; font-weight: 900; color: #16a34a; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(c.amount)}</td>
-                <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 6px; font-size: 10.5px; font-weight: 800; color: ${dueVal > 0 ? '#dc2626' : '#16a34a'}; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(Math.abs(dueVal))} ${dueVal < 0 ? '(Adv)' : ''}</td>
+                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 5px; font-size: 9.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.15; color: #334155;">${escapeHTML(c.customerZone || '-')}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 9.5px; font-family: 'Inter', monospace; color: #475569;">${escapeHTML(c.voucherNo || '-')}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 9.5px; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; color: #1e293b;">${escapeHTML(methodDisplay)}</td>
+                <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 5px; font-size: 10.5px; font-weight: 900; color: #16a34a; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(c.amount)}</td>
+                <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 5px; font-size: 10px; font-weight: 800; color: ${dueVal > 0 ? '#dc2626' : '#16a34a'}; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(Math.abs(dueVal))} ${dueVal < 0 ? '(Adv)' : ''}</td>
             </tr>
         `;
     });
@@ -78,14 +79,15 @@ export async function printCustomerCollectionRegister(summaryData) {
     const tableColHeaderHtml = `
         <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 35px;">SL</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 55px;">A/C</th>
-                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমার ও মোবাইল</th>
-                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 85px;">জোন</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 65px;">ভাউচার</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 75px;">পেমেন্ট মেথড</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 85px;">আদায় (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 85px;">অবশিষ্ট বকেয়া (৳)</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 30px;">SL</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 68px;">তারিখ</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 50px;">A/C</th>
+                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমার ও মোবাইল</th>
+                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 70px;">জোন</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 55px;">ভাউচার</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 75px;">পেমেন্ট মেথড</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 80px;">আদায় (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 85px;">অবশিষ্ট বকেয়া (৳)</th>
             </tr>
         </thead>
     `;
