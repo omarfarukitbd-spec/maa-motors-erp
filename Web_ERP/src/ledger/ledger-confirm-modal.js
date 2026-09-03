@@ -29,7 +29,7 @@ export async function showTransactionConfirmModal({
     const currentDue = Number(preCommitDue) || 0;
     const isAccountTransfer = Boolean(editingRef?.id && editingRef?.oldCid && editingRef?.oldCid !== customer?.id);
     
-    let balanceDiff = safeRound(b - p);
+    const balanceDiff = safeRound(b - p);
     let projectedDue = 0;
 
     if (editingRef && editingRef.id && !isAccountTransfer) {
@@ -44,140 +44,162 @@ export async function showTransactionConfirmModal({
         ? `<span class="text-red-400 font-mono font-bold">৳ ${formatAmountWithComma(currentDue)} (বকেয়া)</span>`
         : (currentDue < 0 ? `<span class="text-emerald-400 font-mono font-bold">৳ ${formatAmountWithComma(Math.abs(currentDue))} (অ্যাডভান্স)</span>` : `<span class="text-slate-400 font-mono font-bold">৳ ০.০০</span>`);
 
-    let mathParts = `<span>পূর্বের বকেয়া: ${prevDueBadge}</span>`;
+    let mathParts = `<span>পূর্বের ব্যালেন্স: ${prevDueBadge}</span>`;
     if (b > 0) mathParts += `<span class="text-red-400 font-bold font-mono"> + বিল: ৳ ${formatAmountWithComma(b)}</span>`;
     if (p > 0) mathParts += `<span class="text-emerald-400 font-bold font-mono"> - জমা: ৳ ${formatAmountWithComma(p)}</span>`;
 
     const projectedDueBadge = projectedDue > 0
-        ? `<span class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-xl text-sm md:text-base font-black font-mono">৳ ${formatAmountWithComma(projectedDue)} (বকেয়া)</span>`
+        ? `<span class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-xl text-sm font-black font-mono">৳ ${formatAmountWithComma(projectedDue)} (বকেয়া)</span>`
         : (projectedDue < 0 
-            ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl text-sm md:text-base font-black font-mono">৳ ${formatAmountWithComma(Math.abs(projectedDue))} (অ্যাডভান্স)</span>`
-            : `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl text-sm md:text-base font-black font-mono">৳ ০.০০ (পরিশোধিত)</span>`);
+            ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl text-sm font-black font-mono">৳ ${formatAmountWithComma(Math.abs(projectedDue))} (অ্যাডভান্স)</span>`
+            : `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl text-sm font-black font-mono">৳ ০.০০ (পরিশোধিত)</span>`);
 
     // Amount In Words
     const activeAmount = b > 0 ? b : p;
     const words = numberToBanglaWords(activeAmount);
 
     const htmlContent = `
-        <div class="text-left space-y-3 font-bn">
+        <div class="text-left font-bn">
             ${isAccountTransfer ? `
-                <div class="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-arrows-rotate text-amber-400 text-sm shrink-0"></i>
+                <div class="mb-3.5 p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-amber-300 font-bold flex items-center gap-2.5">
+                    <i class="fa-solid fa-arrows-rotate text-amber-400 text-base shrink-0"></i>
                     <span>অ্যাকাউন্ট ট্রান্সফার: এই মেমোটি পূর্বের কাস্টমার থেকে কর্তন হয়ে নতুন কাস্টমারের অ্যাকাউন্টে যোগ হবে।</span>
                 </div>
             ` : ''}
-            <!-- 1. Customer Identity Card -->
-            <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner flex flex-col gap-1.5">
-                <div class="flex items-center justify-between gap-2 flex-wrap">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-sm border border-blue-500/30 font-bold">
-                            <i class="fa-solid fa-user-check"></i>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- LEFT COLUMN: Customer Profile & Balance Impact -->
+                <div class="space-y-3.5 flex flex-col justify-between">
+                    <!-- 1. Customer Card -->
+                    <div class="p-4 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-md flex flex-col gap-2.5">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-xl border border-blue-500/30 font-bold shrink-0">
+                                    <i class="fa-solid fa-user-check"></i>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">কাস্টমার প্রোফাইল</span>
+                                    <span class="text-base md:text-lg text-white font-black leading-tight">${cleanName}</span>
+                                </div>
+                            </div>
+                            ${accountNo ? `<span class="bg-blue-500/15 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-xl text-xs font-mono font-black">A/C #${accountNo}</span>` : ''}
                         </div>
+                        <div class="flex items-center gap-3 text-xs text-slate-400 flex-wrap pt-2 border-t border-slate-800">
+                            ${phone ? `<span class="flex items-center gap-1.5 font-mono text-sm text-slate-200 font-bold"><i class="fa-solid fa-phone text-xs text-emerald-400"></i> ${phone}</span>` : '<span class="text-slate-500 text-xs">ফোন নম্বর নেই</span>'}
+                            ${areaStr ? `<span class="flex items-center gap-1.5 text-xs text-slate-300 truncate max-w-[280px]" title="${areaStr}"><i class="fa-solid fa-location-dot text-xs text-slate-400"></i> ${areaStr}</span>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- 2. Ledger Balance Impact & Reconciliation Breakdown -->
+                    <div class="p-4 bg-gradient-to-b from-slate-900/90 to-slate-950 rounded-2xl border border-slate-800 shadow-md space-y-3 flex-1 flex flex-col justify-between">
                         <div>
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">কাস্টমার প্রোফাইল</span>
-                            <span class="text-sm md:text-base text-white font-black">${cleanName}</span>
+                            <div class="flex items-center justify-between text-xs text-slate-300 font-bold border-b border-slate-800 pb-2">
+                                <div class="flex items-center gap-2 text-purple-400">
+                                    <i class="fa-solid fa-scale-balanced text-base"></i>
+                                    <span class="text-xs text-slate-200 font-bold">হিসাবের প্রভাব (Ledger Impact):</span>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-300 pt-2 pb-1 space-y-1">
+                                <div>${mathParts}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrow-right text-emerald-400"></i>
+                                <span>হালনাগাদ অবশিষ্ট বকেয়া:</span>
+                            </span>
+                            <div>${projectedDueBadge}</div>
                         </div>
                     </div>
-                    ${accountNo ? `<span class="bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold">A/C #${accountNo}</span>` : ''}
-                </div>
-                <div class="flex items-center gap-3 text-xs text-slate-400 flex-wrap pt-1 border-t border-slate-800/80">
-                    ${phone ? `<span class="flex items-center gap-1 font-mono text-slate-300"><i class="fa-solid fa-phone text-[10px] text-emerald-400"></i> ${phone}</span>` : '<span class="text-slate-500 text-[11px]">ফোন নম্বর নেই</span>'}
-                    ${areaStr ? `<span class="flex items-center gap-1 truncate max-w-[280px]" title="${areaStr}"><i class="fa-solid fa-location-dot text-[10px] text-slate-500"></i> ${areaStr}</span>` : ''}
-                </div>
-            </div>
 
-            <!-- 2. Metadata: Date & Voucher -->
-            <div class="grid grid-cols-2 gap-2 text-xs">
-                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/70 flex items-center gap-2">
-                    <i class="fa-regular fa-calendar-check text-blue-400 text-sm"></i>
-                    <div>
-                        <span class="text-[10px] text-slate-400 block font-bold">তারিখ (Date)</span>
-                        <span class="text-xs text-slate-200 font-bold font-mono">${formatAppDate(date)}</span>
-                    </div>
-                </div>
-                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/70 flex items-center gap-2">
-                    <i class="fa-solid fa-receipt text-amber-400 text-sm"></i>
-                    <div>
-                        <span class="text-[10px] text-slate-400 block font-bold">ভাউচার / মেমো নং</span>
-                        <span class="text-xs text-amber-400 font-black font-mono">${voucherNo ? '#' + voucherNo : '(ভাউচার ছাড়া)'}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Financial Dual-Card: Debit (Bill) vs Credit (Paid) -->
-            <div class="grid grid-cols-2 gap-2.5">
-                <!-- Bill / Debit -->
-                <div class="p-3 rounded-2xl ${b > 0 ? 'bg-red-500/10 border border-red-500/30' : 'bg-slate-900/40 border border-slate-800'} text-center transition-all">
-                    <span class="text-[10px] uppercase font-bold text-red-400 flex items-center justify-center gap-1">
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> বিল (Debit)
-                    </span>
-                    <div class="text-lg md:text-xl font-black ${b > 0 ? 'text-red-400' : 'text-slate-500'} font-mono mt-0.5">
-                        ৳ ${formatAmountWithComma(b)}
-                    </div>
-                    ${b > 0 ? '<span class="text-[9px] text-red-300/70 font-bold block mt-0.5">কেনাকাটা / পাওনা বৃদ্ধি</span>' : ''}
+                    <!-- 3. Amount In Words -->
+                    ${words ? `
+                    <div class="bg-slate-950/90 border border-amber-500/30 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-amber-300 flex items-center gap-2 shadow-inner">
+                        <i class="fa-solid fa-coins text-amber-400 text-sm shrink-0"></i>
+                        <span class="truncate">কথায়: ${words}</span>
+                    </div>` : ''}
                 </div>
 
-                <!-- Paid / Credit -->
-                <div class="p-3 rounded-2xl ${p > 0 ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-slate-900/40 border border-slate-800'} text-center transition-all">
-                    <span class="text-[10px] uppercase font-bold text-emerald-400 flex items-center justify-center gap-1">
-                        <i class="fa-solid fa-arrow-down-left-and-up-right-to-center text-[9px]"></i> জমা (Credit)
-                    </span>
-                    <div class="text-lg md:text-xl font-black ${p > 0 ? 'text-emerald-400' : 'text-slate-500'} font-mono mt-0.5">
-                        ৳ ${formatAmountWithComma(p)}
+                <!-- RIGHT COLUMN: Transaction Details & Fast Action Toggles -->
+                <div class="space-y-3.5 flex flex-col justify-between">
+                    <!-- 4. Date & Voucher Grid -->
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div class="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-lg border border-blue-500/25 shrink-0">
+                                <i class="fa-regular fa-calendar-check"></i>
+                            </div>
+                            <div>
+                                <span class="text-[11px] text-slate-400 block font-bold">তারিখ (Date)</span>
+                                <span class="text-xs md:text-sm text-slate-100 font-black font-mono">${formatAppDate(date)}</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-lg border border-amber-500/25 shrink-0">
+                                <i class="fa-solid fa-receipt"></i>
+                            </div>
+                            <div>
+                                <span class="text-[11px] text-slate-400 block font-bold">ভাউচার / মেমো নং</span>
+                                <span class="text-xs md:text-sm text-amber-400 font-black font-mono">${voucherNo ? '#' + voucherNo : '(ভাউচার ছাড়া)'}</span>
+                            </div>
+                        </div>
                     </div>
-                    ${p > 0 ? `<div class="text-[10px] text-emerald-300 font-bold mt-0.5 truncate font-mono">${receivedType} ${receivedFrom ? '(' + receivedFrom + ')' : ''}</div>` : ''}
-                </div>
-            </div>
 
-            <!-- 4. Amount In Words -->
-            ${words ? `
-            <div class="bg-slate-950/90 border border-slate-800/80 rounded-xl px-3 py-2 text-center text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5 shadow-inner">
-                <i class="fa-solid fa-pen-nib text-emerald-400 text-xs shrink-0"></i>
-                <span class="truncate">কথায়: ${words}</span>
-            </div>` : ''}
+                    <!-- 5. Financial Dual-Card: Debit vs Credit -->
+                    <div class="grid grid-cols-2 gap-2.5 flex-1">
+                        <!-- Bill / Debit -->
+                        <div class="p-3.5 rounded-2xl ${b > 0 ? 'bg-red-950/25 border border-red-500/40 text-red-400' : 'bg-slate-900/40 border border-slate-800 text-slate-500'} flex flex-col items-center justify-center text-center transition-all">
+                            <span class="text-xs uppercase font-bold text-red-400 flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> বিল (Debit)
+                            </span>
+                            <div class="text-xl md:text-2xl font-black ${b > 0 ? 'text-red-400' : 'text-slate-500'} font-mono mt-1">
+                                ৳ ${formatAmountWithComma(b)}
+                            </div>
+                            <span class="text-[10px] text-red-300/70 font-bold block mt-1">${b > 0 ? 'কেনাকাটা / পাওনা বৃদ্ধি' : '-'}</span>
+                        </div>
 
-            <!-- 5. Ledger Balance Impact & Reconciliation Breakdown -->
-            <div class="p-3 bg-gradient-to-b from-slate-900/90 to-slate-950 rounded-2xl border border-slate-800 shadow-md space-y-2">
-                <div class="flex items-center justify-between text-xs text-slate-300 font-bold border-b border-slate-800/80 pb-2">
-                    <div class="flex items-center gap-1.5 text-purple-400">
-                        <i class="fa-solid fa-scale-balanced text-sm"></i>
-                        <span class="text-slate-200">হিসাবের প্রভাব (Ledger Impact):</span>
+                        <!-- Paid / Credit -->
+                        <div class="p-3.5 rounded-2xl ${p > 0 ? 'bg-emerald-950/25 border border-emerald-500/40 text-emerald-400' : 'bg-slate-900/40 border border-slate-800 text-slate-500'} flex flex-col items-center justify-center text-center transition-all">
+                            <span class="text-xs uppercase font-bold text-emerald-400 flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-arrow-down-left-and-up-right-to-center text-xs"></i> জমা (Credit)
+                            </span>
+                            <div class="text-xl md:text-2xl font-black ${p > 0 ? 'text-emerald-400' : 'text-slate-500'} font-mono mt-1">
+                                ৳ ${formatAmountWithComma(p)}
+                            </div>
+                            <div class="text-[11px] text-emerald-300 font-bold mt-1 truncate font-mono">${p > 0 ? `${receivedType} ${receivedFrom ? '(' + receivedFrom + ')' : ''}` : '-'}</div>
+                        </div>
                     </div>
-                    <div class="text-[11px] text-slate-400">${mathParts}</div>
-                </div>
-                <div class="flex items-center justify-between gap-2 pt-0.5">
-                    <span class="text-xs text-slate-300 font-bold flex items-center gap-1.5">
-                        <i class="fa-solid fa-arrow-right text-emerald-400"></i>
-                        <span>হালনাগাদ অবশিষ্ট বকেয়া:</span>
-                    </span>
-                    <div>${projectedDueBadge}</div>
-                </div>
-            </div>
 
-            <!-- 6. Instant Post-Action Toggles -->
-            <div class="bg-slate-950/80 border border-slate-800/70 rounded-2xl p-2.5 space-y-2 text-xs font-bold">
-                <label class="flex items-center justify-between cursor-pointer group text-slate-300 hover:text-white transition-colors">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-brands fa-whatsapp text-emerald-400 text-base"></i>
-                        <span>সেভ শেষে স্বয়ংক্রিয় WhatsApp মেমো পাঠানো</span>
+                    <!-- 6. Fast Action Icon Pill Toggles (Default UNCHECKED / OFF) -->
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-bolt text-amber-400"></i>
+                            <span>তাৎক্ষণিক অ্যাকশন (ঐচ্ছিক):</span>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <!-- WhatsApp Toggle Button -->
+                            <label class="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-700 bg-slate-950/70 text-slate-400 hover:text-white cursor-pointer transition-all has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/15 has-[:checked]:text-emerald-300 select-none ${phone ? '' : 'opacity-40 cursor-not-allowed pointer-events-none'}" title="${phone ? 'ক্লিক করে WhatsApp মেমো সিলেক্ট করুন' : 'ফোন নম্বর নেই'}">
+                                <input type="checkbox" id="modal-opt-whatsapp" class="hidden">
+                                <i class="fa-brands fa-whatsapp text-lg text-emerald-400"></i>
+                                <span class="text-xs font-bold">WhatsApp মেমো</span>
+                            </label>
+
+                            <!-- Print Toggle Button -->
+                            <label class="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-700 bg-slate-950/70 text-slate-400 hover:text-white cursor-pointer transition-all has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-500/15 has-[:checked]:text-cyan-300 select-none" title="ক্লিক করে তাৎক্ষণিক প্রিন্ট সিলেক্ট করুন">
+                                <input type="checkbox" id="modal-opt-print" class="hidden">
+                                <i class="fa-solid fa-print text-lg text-cyan-400"></i>
+                                <span class="text-xs font-bold">মেমো প্রিন্ট</span>
+                            </label>
+                        </div>
                     </div>
-                    <input type="checkbox" id="modal-opt-whatsapp" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" ${phone ? 'checked' : 'disabled'}>
-                </label>
-                <label class="flex items-center justify-between cursor-pointer group text-slate-300 hover:text-white transition-colors border-t border-slate-800/60 pt-2">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-print text-cyan-400 text-base"></i>
-                        <span>তাৎক্ষণিক মেমো / রসিদ প্রিন্ট অপশন খোলা</span>
-                    </div>
-                    <input type="checkbox" id="modal-opt-print" class="w-4 h-4 accent-cyan-500 rounded cursor-pointer">
-                </label>
+                </div>
             </div>
         </div>
     `;
 
     const result = await Swal.fire({
         title: `
-            <div class="flex items-center justify-center gap-2.5 font-bn text-lg md:text-xl text-white font-black">
-                <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/30">
+            <div class="flex items-center justify-center gap-3 font-bn text-xl md:text-2xl text-white font-black">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30 shadow-lg shadow-emerald-950/40">
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
                 <span>লেনদেন চূড়ান্ত যাচাইকরণ</span>
@@ -188,9 +210,9 @@ export async function showTransactionConfirmModal({
         confirmButtonText: '<i class="fa-solid fa-circle-check mr-2"></i>কনফার্ম ও সেভ করুন',
         cancelButtonText: '<i class="fa-solid fa-pen-to-square mr-2"></i>সংশোধন করব',
         customClass: {
-            popup: '!bg-[#0b1120] !text-white !rounded-3xl border border-slate-700/80 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-bn !max-w-lg !w-[95%] md:!w-full !p-3.5 md:!p-5 max-h-[94vh] overflow-y-auto custom-scrollbar',
-            confirmButton: '!bg-emerald-600 hover:!bg-emerald-500 !text-white !font-black !rounded-2xl !py-3 !px-6 shadow-xl shadow-emerald-900/40 text-sm md:text-base flex items-center justify-center gap-1.5 cursor-pointer w-full md:w-auto order-1',
-            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-2xl !py-3 !px-5 text-sm flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700 w-full md:w-auto order-2'
+            popup: '!bg-[#0b1120] !text-white !rounded-3xl border border-slate-700/80 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-bn !max-w-3xl !w-[96%] md:!w-[820px] !p-4 md:!p-6 max-h-[92vh] overflow-y-auto custom-scrollbar',
+            confirmButton: '!bg-emerald-600 hover:!bg-emerald-500 !text-white !font-black !rounded-2xl !py-3.5 !px-8 shadow-xl shadow-emerald-900/40 text-sm md:text-base flex items-center justify-center gap-2 cursor-pointer w-full md:w-auto order-1',
+            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-2xl !py-3.5 !px-6 text-sm flex items-center justify-center gap-2 cursor-pointer border border-slate-700 w-full md:w-auto order-2'
         },
         focusConfirm: true,
         didOpen: (popup) => {
