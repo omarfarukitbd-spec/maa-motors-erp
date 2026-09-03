@@ -122,10 +122,16 @@ export function setupTreasuryActions(getState) {
         }
     };
 
-    // 3. Special Custom Transaction
+    // 3. Special Custom Transaction (or Edit Transaction)
     window.treasuryOpenSpecialTransaction = async (editItem = null) => {
         const today = getTodayLocalDateString();
         const isEdit = Boolean(editItem && editItem.id);
+
+        if (isEdit) {
+            const pinOk = await promptSecurityPin();
+            if (!pinOk) return;
+        }
+
         const config = getSpecialTransactionModalConfig(today, isEdit, editItem);
         const { value: formValues } = await Swal.fire(config);
 
@@ -223,7 +229,10 @@ async function saveTreasuryItemWithDuplicateCheck(payload, getState) {
         });
 
         if (result.isConfirmed) {
+            const pinOk = await promptSecurityPin();
+            if (!pinOk) return;
             await TreasuryDAO.updateTransaction(duplicate.id, payload);
+            auditLog('UPDATE', 'Treasury', duplicate.id, payload.title, { old: duplicate, new: payload });
             showToast('পূর্বের এন্ট্রি সফলভাবে আপডেট করা হয়েছে!', 'success');
             return;
         } else if (!result.isDenied) {
