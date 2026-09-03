@@ -3,6 +3,7 @@ import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { safeRound, formatAmountWithComma, promptSecurityPin, showToast, formatAppDate } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
+import { getCustomerCache } from '../customer/index.js';
 
 let unsubscribeRecycleBin = null;
 
@@ -181,6 +182,7 @@ export async function restoreRecycleItem(encodedItem) {
             batch.delete(db.collection('recycle_bin').doc(item.id));
             
             await batch.commit();
+            const cache = getCustomerCache(); const c = (cache || []).find(x => x.id === cid); if (c) c.totalDue = safeRound((Number(c.totalDue) || 0) + safeRound(b - p));
             auditLog('RESTORE', 'Ledger', item.id, tData.customerName, { action: 'Restored Transaction' });
             
         } else if (item.module === 'Customer') {

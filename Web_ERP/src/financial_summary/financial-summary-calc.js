@@ -1,4 +1,4 @@
-import { TransactionDAO, ExpenseDAO, BankDAO, CustomerDAO, BankTransactionDAO } from '../dao.js';
+import { TransactionDAO, ExpenseDAO, BankDAO, CashCollectorDAO, CustomerDAO, BankTransactionDAO } from '../dao.js';
 import { getCustomerCache, initCustomerCache } from '../customer/index.js';
 import { safeRound, toDBDate, getTodayLocalDateString, formatAppDate } from '../utils.js';
 import { calculateAccountBalance } from '../banking/banking-calc.js';
@@ -204,26 +204,17 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
         let totalLiquidFund = 0;
 
         try {
-            const activeBanks = await BankDAO.getAllBanks();
-            if (Array.isArray(activeBanks)) {
-                for (const bank of activeBanks) {
-                    if (bank.status === 'inactive') continue;
-                    try {
-                        const bal = await calculateAccountBalance(bank.name, bank.isCash);
-                        bankBalances.push({
-                            name: bank.name,
-                            balance: bal,
-                            isCash: !!bank.isCash
-                        });
-                        totalLiquidFund = safeRound(totalLiquidFund + bal);
-                    } catch (e) {
-                        console.warn('Individual bank balance calculation warning:', bank.name, e);
-                    }
-                }
+            const [banks, cash] = await Promise.all([BankDAO.getAllBanks(), CashCollectorDAO.getAllCollectors()]);
+            const allAccs = [...(banks || []).map(b => ({ ...b, isCash: false })), ...(cash || []).map(c => ({ ...c, isCash: true }))];
+            for (const acc of allAccs) {
+                if (acc.status === 'inactive') continue;
+                try {
+                    const bal = await calculateAccountBalance(acc.name, acc.isCash);
+                    bankBalances.push({ name: acc.name, balance: bal, isCash: !!acc.isCash });
+                    totalLiquidFund = safeRound(totalLiquidFund + bal);
+                } catch (e) { console.warn('Account balance calc warning:', acc.name, e); }
             }
-        } catch (bankErr) {
-            console.warn('Bank balances summary warning:', bankErr);
-        }
+        } catch (bankErr) { console.warn('Liquid balances warning:', bankErr); }
 
         // Process Banking Transactions
         let manualBankDepositTotal = 0;
