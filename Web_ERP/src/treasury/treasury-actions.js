@@ -153,7 +153,7 @@ async function saveTreasuryItemWithDuplicateCheck(payload, getState) {
 
     if (duplicate) {
         const result = await Swal.fire({
-            title: '<div class="text-amber-400 font-bold text-base">️ ডুপ্লিকেট এন্ট্রির সম্ভাবনা!</div>',
+            title: '<div class="flex items-center justify-center gap-2 text-amber-400 font-bold text-base"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i><span>ডুপ্লিকেট এন্ট্রির সম্ভাবনা!</span></div>',
             html: `
                 <div class="text-xs text-left p-2 space-y-2 bg-slate-950/60 rounded-xl border border-amber-500/30">
                     <p><strong>${formatAppDate(payload.date)}</strong> তারিখে ইতিমধ্যে একটি <strong>${payload.title}</strong> এন্ট্রি রয়েছে:</p>

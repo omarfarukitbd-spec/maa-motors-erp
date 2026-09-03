@@ -227,12 +227,13 @@ function checkIntegrity() {
                 warnings.push(`⚠️  [লাইন লিমিট] ফাইল "${path.basename(file)}" অনেক বড় হয়ে গেছে (${lines.length} লাইন)।`);
             }
 
-            // 2. Strict Raw Emoji Detection Check
+            // 2. Strict Raw Emoji Detection Check (Rule 5: Zero Raw Emojis)
             lines.forEach((lineText, idx) => {
                 const matches = lineText.match(EMOJI_REGEX);
                 if (matches && matches.length > 0) {
                     const cleanMatches = [...new Set(matches)].join(', ');
-                    warnings.push(`⚠️  [ইমোজি সতর্কবার্তা] ফাইল "${path.basename(file)}" (লাইন ${idx + 1}): র ইমোজি পাওয়া গেছে [ ${cleanMatches} ]। Vector icon ব্যবহার করুন।`);
+                    console.error(`[ইমোজি এরর] ফাইল "${path.basename(file)}" (লাইন ${idx + 1}): র ইমোজি পাওয়া গেছে [ ${cleanMatches} ]। র ইমোজি নিষিদ্ধ! FontAwesome vector icon ব্যবহার করুন।`);
+                    hasError = true;
                 }
             });
 

@@ -5,7 +5,7 @@ const COLLECTION_NAME = 'TreasuryTransactions';
 const SETTINGS_DOC = 'treasury';
 
 /**
- * ️ Treasury DAO - Data Access Object for Master Treasury & Fund Flow
+ *  Treasury DAO - Data Access Object for Master Treasury & Fund Flow
  */
 export const TreasuryDAO = {
     collection: db.collection(COLLECTION_NAME),

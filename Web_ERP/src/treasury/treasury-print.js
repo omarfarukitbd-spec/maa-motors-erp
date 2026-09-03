@@ -3,7 +3,7 @@ import { formatAmountWithComma, formatAppDate, escapeHTML, renderPrintHeader, sh
 import { printViaIframe } from '../utils/smart-print-engine.js';
 
 /**
- * ️ Treasury Print & Excel Export Services
+ *  Treasury Print & Excel Export Services
  */
 
 /**

@@ -12,7 +12,7 @@ let customStartDate = '';
 let customEndDate = '';
 
 /**
- * ️ Render Master Treasury & Fund Flow UI View
+ *  Render Master Treasury & Fund Flow UI View
  */
 export async function renderTreasuryUI(container) {
     if (unsubscribeListener) {
