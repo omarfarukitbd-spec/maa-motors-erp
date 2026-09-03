@@ -4,6 +4,7 @@ import { TransactionDAO, CustomerDAO } from '../dao.js';
 import { parseAmount, formatAmountWithComma, promptSecurityPin, toDBDate, safeRound } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 import { auditLog } from '../audit.js';
+import { getCustomerCache } from '../customer/index.js';
 
 /**
  * Open Memo Edit Modal with Admin PIN verification
@@ -120,6 +121,7 @@ export async function openMemoEditModal(txnId, voucherNo) {
             bill: formValues.newBill,
             paid: formValues.newPaid,
             notes: formValues.newNotes,
+            currentDue: firebase.firestore.FieldValue.increment(adjustment),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
@@ -127,6 +129,11 @@ export async function openMemoEditModal(txnId, voucherNo) {
             batch.update(CustomerDAO.getRef(txn.customerId), {
                 totalDue: firebase.firestore.FieldValue.increment(adjustment)
             });
+            const cache = getCustomerCache();
+            const cachedCust = (cache || []).find(c => c.id === txn.customerId);
+            if (cachedCust) {
+                cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) + adjustment);
+            }
         }
 
         await batch.commit();

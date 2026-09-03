@@ -21,15 +21,18 @@ export async function runBalanceIntegrityScanner() {
     });
 
     try {
-        const [customers, transactions] = await Promise.all([
+        const [customers, txnSnap] = await Promise.all([
             CustomerDAO.getAll('name', 'asc'),
-            TransactionDAO.getAll()
+            TransactionDAO.collection.get()
         ]);
 
         const txnMap = {};
         const openingMap = {};
+        let txnCount = 0;
 
-        transactions.forEach(t => {
+        txnSnap.forEach(doc => {
+            const t = doc.data();
+            txnCount++;
             if (!t.customerId) return;
             const v = String(t.voucherNo || '').trim().toUpperCase();
             const isOp = (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের');
@@ -77,7 +80,7 @@ export async function runBalanceIntegrityScanner() {
                 html: `
                     <div class="font-bn text-left space-y-2 p-3 bg-slate-900 rounded-2xl border border-slate-800 text-xs">
                         <div class="flex justify-between border-b border-slate-800 pb-1.5"><span class="text-slate-400">মোট কাস্টমার:</span><strong class="text-white">${customers.length} জন</strong></div>
-                        <div class="flex justify-between border-b border-slate-800 pb-1.5"><span class="text-slate-400">মোট ভাউচার লেনদেন:</span><strong class="text-white">${transactions.length} টি</strong></div>
+                        <div class="flex justify-between border-b border-slate-800 pb-1.5"><span class="text-slate-400">মোট ভাউচার লেনদেন:</span><strong class="text-white">${txnCount} টি</strong></div>
                         <div class="flex justify-between pt-1"><span class="text-emerald-400 font-bold">ব্যালেন্স অমিল:</span><strong class="text-emerald-400">০ (কোনো ভুল নেই)</strong></div>
                     </div>
                 `,
