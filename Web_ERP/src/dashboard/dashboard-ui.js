@@ -35,6 +35,7 @@ function getDashboardHeaderAndFormHTML() {
                     <i class="fa-solid fa-id-card-clip text-amber-400"></i><span>কুইক ডেক</span>
                 </button>
                 <button class="h-9 px-3.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-400 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.navigate('financial-summary')" title="সার্বিক আর্থিক বিবরণী ও ক্লোজিং"><i class="fa-solid fa-file-invoice-dollar"></i><span>আর্থিক রিপোর্ট</span></button>
+                <button class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.navigate('treasury')" title="মাস্টার ফান্ড ও ট্রেজারি বহি"><i class="fa-solid fa-vault"></i><span>মাস্টার ফান্ড</span></button>
                 <button data-perm="printExecutiveReport" class="h-9 px-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer" onclick="window.printExecutiveSummary && window.printExecutiveSummary()" title="১-ক্লিক দৈনিক সারসংক্ষেপ">
                     <i class="fa-solid fa-print"></i><span>রিপোর্ট</span>
                 </button>

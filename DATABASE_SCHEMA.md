@@ -69,15 +69,33 @@
 
 ---
 
+---
+
 ### 1.4 `BankAccounts` & `BankTransactions`
 * **BankAccounts:** `id`, `bankName`, `accountNo`, `branch`, `initialBalance`, `currentBalance`, `createdAt`
 * **BankTransactions:** `id`, `bankAccountId`, `date`, `type` (`'deposit'` | `'withdraw'`), `amount`, `reference`, `currentBalance`, `createdAt`
 
 ---
 
+### 1.5 `TreasuryTransactions` & `settings/treasury` (Master Fund Ledger)
+* **TreasuryTransactions:**
+  - `id`: document ID (string)
+  - `date`: `YYYY-MM-DD` string (e.g. `2026-08-29`)
+  - `title`: string (e.g. `নয়ন নাহার মোটর`, `দৈনিক কালেকশন`, `দৈনিক খরচ`, `মিনহাজ মারফত`)
+  - `type`: `'inflow'` (+) or `'outflow'` (-)
+  - `amount`: number (strictly positive amount)
+  - `note`: string (e.g. `ইঞ্জিন ক্রয় ১৫ পিছ`, `অফলাইন খাতার যোগফল`)
+  - `category`: `'collection'` | `'daily_expense'` | `'special'`
+  - `createdAt`: serverTimestamp
+* **settings/treasury:**
+  - `openingBalance`: number (e.g. `46709275` BDT)
+  - `openingDate`: `YYYY-MM-DD` (e.g. `2026-08-29`)
+
+---
+
 ## 2. Core Accounting & Financial Invariants (Universal Laws)
 
-Every financial calculation in the codebase **MUST strictly satisfy these 5 mathematical invariants**:
+Every financial calculation in the codebase **MUST strictly satisfy these 6 mathematical invariants**:
 
 ### Invariant 1: Transaction Balance Law
 For any ledger transaction $T_i$:
@@ -108,5 +126,10 @@ In JavaScript, `0.1 + 0.2 === 0.30000000000000004`. Therefore:
 * 🚫 **NO "জের"**: Archaic term "জের" is banned. Use **"ব্যালেন্স"** or **"অবশিষ্ট বকেয়া"**.
 * 🔴 **Debit = Red (`text-red-400`)**: Bill / Invoice / Expense / Due
 * 🟢 **Credit = Emerald (`text-emerald-400`)**: Collection / Paid / Deposit / Advance
+
+### Invariant 6: Master Treasury Fund Balance Law
+For any treasury ledger transaction sequence $T_1, \dots, T_n$ starting from opening fund $B_0$:
+$$B_i = \text{safeRound}(B_{i-1} + (\text{amount}_i \text{ if inflow else } -\text{amount}_i))$$
+* Any change, edit, or deletion at index $k$ MUST automatically recalibrate the running balances $B_k, \dots, B_n$ across the entire chain.
 
 <!-- Verified Security Standards -->

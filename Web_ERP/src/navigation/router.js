@@ -12,6 +12,7 @@ import { renderAuditLogs, unsubscribeAuditLogs } from '../audit.js';
 import { renderRecycleBin, unsubscribeRecycleBinData } from '../admin/recycle-bin.js';
 import { renderZoneReports } from '../zone_reports/index.js';
 import { renderFinancialSummary } from '../financial_summary/index.js';
+import { renderTreasury } from '../treasury/index.js';
 import { renderMemoSearch } from '../memo_search/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
@@ -140,6 +141,7 @@ export function navigate(view, params = {}) {
         case 'banking': window.bankingApp.renderBankingLedger(container); break;
         case 'memo-search':
         case 'memo_search': renderMemoSearch(container, params); break;
+        case 'treasury': renderTreasury(container, params); break;
         case 'recycle-bin': renderRecycleBin(container); break;
     }
 
