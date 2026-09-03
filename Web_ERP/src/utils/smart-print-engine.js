@@ -96,8 +96,8 @@ export async function smartPaginatePrint({
 
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
     const effectiveP1HeaderH = Math.max(p1HeaderH, PAGE1_HEADER_H);
-    const page1Budget = A4_H - effectiveP1HeaderH - THEAD_H - FOOTER_H - PAD_V - 10;
-    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - 10;
+    const page1Budget = A4_H - effectiveP1HeaderH - THEAD_H - FOOTER_H - PAD_V - 20;
+    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - 20;
     const totalLastExtra = sumH + sigH;
 
     const pages = [];
@@ -108,10 +108,8 @@ export async function smartPaginatePrint({
         const budget = isP1 ? page1Budget : pageNBudget;
         const isLastRow = i === rowsArray.length - 1;
         const extra = isLastRow ? totalLastExtra : 0;
-        // Last row has a 20px tolerance before forcing a new page
-        const maxAllowed = budget + (isLastRow ? 20 : 0);
 
-        if (curH + rh + extra > maxAllowed && cur.length > 0) {
+        if (curH + rh + extra > budget && cur.length > 0) {
             pages.push(cur); cur = []; curH = 0; isP1 = false;
         }
         const item = rowsArray[i];
@@ -119,17 +117,6 @@ export async function smartPaginatePrint({
         curH += rh;
     }
     if (cur.length) pages.push(cur);
-
-    // Orphan Protection: If last page has <= 4 rows, rebalance with previous page
-    if (pages.length > 1 && pages[pages.length - 1].length <= 4) {
-        const lastPage = pages[pages.length - 1];
-        const prevPage = pages[pages.length - 2];
-        const transferCount = Math.min(Math.ceil((prevPage.length - lastPage.length) / 2), 6);
-        if (transferCount > 0 && prevPage.length - transferCount >= 10) {
-            const moved = prevPage.splice(prevPage.length - transferCount, transferCount);
-            lastPage.unshift(...moved);
-        }
-    }
 
     return _buildPageHtml(pages, {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
@@ -162,9 +149,7 @@ export async function smartPaginateStatement({
         const isLastRow = i === rowsArray.length - 1;
         const extra = isLastRow ? totalLastExtra : 0;
 
-        const maxAllowed = budget + (isLastRow ? 20 : 0);
-
-        if (curH + rh + extra > maxAllowed && cur.length > 0) {
+        if (curH + rh + extra > budget && cur.length > 0) {
             pages.push(cur); cur = []; curH = 0; isP1 = false;
         }
         const item = rowsArray[i];
@@ -172,17 +157,6 @@ export async function smartPaginateStatement({
         curH += rh;
     }
     if (cur.length) pages.push(cur);
-
-    // Orphan Protection: If last page has <= 4 rows, rebalance with previous page
-    if (pages.length > 1 && pages[pages.length - 1].length <= 4) {
-        const lastPage = pages[pages.length - 1];
-        const prevPage = pages[pages.length - 2];
-        const transferCount = Math.min(Math.ceil((prevPage.length - lastPage.length) / 2), 6);
-        if (transferCount > 0 && prevPage.length - transferCount >= 8) {
-            const moved = prevPage.splice(prevPage.length - transferCount, transferCount);
-            lastPage.unshift(...moved);
-        }
-    }
 
     return _buildPageHtml(pages, {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
