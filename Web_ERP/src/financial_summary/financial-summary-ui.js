@@ -3,10 +3,12 @@ import { printCustomerCollectionRegister, printDayByDayMonthlyRegister } from '.
 import { openCashReconciliationModal } from './financial-summary-cash-modal.js';
 import { shareDailyClosingViaWhatsApp } from './financial-summary-whatsapp.js';
 import { calculateAgingDueData, sendAgingCustomerWhatsApp, sendAgingCustomerSMS } from './financial-summary-aging.js';
+import { calculateClosingBalances, renderClosingBalanceView } from './financial-summary-closing.js';
 import { formatAmountWithComma, getTodayLocalDateString, formatAppDate, toDBDate, showToast } from '../utils.js';
 
 let cachedSummaryData = null;
-let currentActiveTab = 'customers'; // 'customers' | 'dayByDay' | 'expenses' | 'methods' | 'aging'
+let currentActiveTab = 'customers'; // 'customers' | 'dayByDay' | 'expenses' | 'methods' | 'aging' | 'closing'
+let currentEndDate = '';
 let fpInstance = null;
 
 /**
@@ -38,6 +40,7 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
                         <button onclick="window.fsSetPeriod('yesterday', true)" class="fs-preset-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-all active:scale-95 flex-1 sm:flex-none text-center cursor-pointer" data-period="yesterday">গতকাল</button>
                         <button onclick="window.fsSetPeriod('this_week', true)" class="fs-preset-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-all active:scale-95 flex-1 sm:flex-none text-center cursor-pointer" data-period="this_week">এই সপ্তাহ</button>
                         <button onclick="window.fsSetPeriod('this_month', true)" class="fs-preset-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-all active:scale-95 flex-1 sm:flex-none text-center cursor-pointer" data-period="this_month">এই মাস</button>
+                        <button onclick="window.fsSetPeriod('last_month', true)" class="fs-preset-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-all active:scale-95 flex-1 sm:flex-none text-center cursor-pointer" data-period="last_month">গত মাস</button>
                         <button onclick="window.fsSetPeriod('this_year', true)" class="fs-preset-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-all active:scale-95 flex-1 sm:flex-none text-center cursor-pointer" data-period="this_year">চলতি বছর</button>
                     </div>
 
@@ -65,6 +68,12 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
                     <button onclick="window.fsShareWhatsApp()" class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black rounded-xl shadow-md border border-emerald-400/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer" title="বসের WhatsApp-এ ক্লোজিং পাঠান">
                         <i class="fa-brands fa-whatsapp text-sm"></i>
                         <span>WhatsApp ক্লোজিং</span>
+                    </button>
+
+                    <!-- Closing Balance Sheet Button -->
+                    <button onclick="window.fsSwitchTab('closing')" class="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black rounded-xl shadow-md border border-indigo-400/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer" title="নির্বাচিত তারিখ পর্যন্ত কাস্টমারদের সমাপনী বকেয়া বিবরণী ও এক্সপোর্ট">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span>সমাপনী বকেয়া</span>
                     </button>
 
                     <!-- Print Collection Register -->
@@ -148,6 +157,11 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
                         <i class="fa-solid fa-triangle-exclamation"></i>
                         <span>অচল বকেয়া ও এজিং</span>
                         <span id="fs-badge-aging-count" class="bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold">বকেয়া</span>
+                    </button>
+                    <button onclick="window.fsSwitchTab('closing')" id="fs-tab-btn-closing" class="fs-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/30 transition-all flex items-center gap-1.5 shrink-0 border border-indigo-500/30 cursor-pointer">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span>সমাপনী ব্যালেন্স শিট</span>
+                        <span id="fs-badge-closing-count" class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold">ক্লোজিং</span>
                     </button>
                     <button onclick="window.fsSwitchTab('expenses')" id="fs-tab-btn-expenses" class="fs-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
                         <i class="fa-solid fa-receipt"></i>
@@ -266,6 +280,13 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
                     <div id="fs-tab-content-methods" class="hidden">
                         <div id="fs-methods-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5"></div>
                     </div>
+
+                    <!-- Tab 6: Closing Balances Sheet -->
+                    <div id="fs-tab-content-closing" class="hidden space-y-3">
+                        <div id="fs-closing-view-container">
+                            <div class="text-center py-12 text-slate-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-2 text-indigo-400"></i>সমাপনী ব্যালেন্স হিসাব করা হচ্ছে...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -297,6 +318,7 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
 
     // Global Functions for the UI
     window.fsLoadData = async (sDate, eDate, retryCount = 0) => {
+        currentEndDate = eDate;
         const periodText = document.getElementById('fs-selected-period-text');
         if (periodText) periodText.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-emerald-400 mr-1"></i> হিসাব লোড হচ্ছে...`;
 
@@ -308,6 +330,9 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
             } catch (agingErr) {
                 console.warn('Aging tab render warning:', agingErr);
             }
+            if (currentActiveTab === 'closing') {
+                window.fsLoadClosingBalances();
+            }
         } catch (err) {
             console.error('FS load attempt error:', err);
             if (retryCount < 2) {
@@ -318,6 +343,25 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
                 showToast('ডাটা লোড করতে সমস্যা হয়েছে! ইন্টারনেট সংযোগ চেক করুন।', 'error', 'আর্থিক রিপোর্ট');
                 if (periodText) periodText.innerText = 'ডাটা লোড করতে সমস্যা হয়েছে।';
             }
+        }
+    };
+
+    window.fsLoadClosingBalances = async () => {
+        const container = document.getElementById('fs-closing-view-container');
+        const targetDate = currentEndDate || getTodayLocalDateString();
+        if (container) {
+            container.innerHTML = `<div class="text-center py-12 text-slate-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-2 text-indigo-400"></i>${formatAppDate(targetDate)} তারিখ পর্যন্ত সমাপনী ব্যালেন্স হিসাব করা হচ্ছে...</div>`;
+        }
+        try {
+            const closingData = await calculateClosingBalances(targetDate);
+            if (closingData) {
+                renderClosingBalanceView('fs-closing-view-container', closingData);
+                const badge = document.getElementById('fs-badge-closing-count');
+                if (badge) badge.innerText = '৳ ' + formatAmountWithComma(closingData.totalMarketDue);
+            }
+        } catch (e) {
+            console.error('Closing balances load error:', e);
+            if (container) container.innerHTML = `<div class="text-center py-12 text-red-400 font-bold">সমাপনী ব্যালেন্স লোড করতে সমস্যা হয়েছে!</div>`;
         }
     };
 
@@ -355,6 +399,13 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
             s = `${year}-${month}-01`;
             e = getTodayLocalDateString();
             periodLabel = 'চলতি মাসের';
+        } else if (period === 'last_month') {
+            const firstOfThisMonth = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
+            const lastOfPrevMonth = new Date(firstOfThisMonth.getTime() - 86400000);
+            const firstOfPrevMonth = new Date(lastOfPrevMonth.getFullYear(), lastOfPrevMonth.getMonth(), 1);
+            s = toDBDate(firstOfPrevMonth);
+            e = toDBDate(lastOfPrevMonth);
+            periodLabel = 'গত মাসের';
         } else if (period === 'this_year') {
             const year = todayObj.getFullYear();
             s = `${year}-01-01`;
@@ -380,10 +431,14 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
         const activeBtn = document.getElementById(`fs-tab-btn-${tabName}`);
         if (activeBtn) activeBtn.className = 'fs-tab-btn px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 bg-emerald-500 text-slate-950 shadow-md cursor-pointer';
 
-        ['customers', 'dayByDay', 'aging', 'expenses', 'methods'].forEach(t => {
+        ['customers', 'dayByDay', 'aging', 'expenses', 'methods', 'closing'].forEach(t => {
             const el = document.getElementById(`fs-tab-content-${t}`);
             if (el) el.classList.toggle('hidden', t !== tabName);
         });
+
+        if (tabName === 'closing') {
+            window.fsLoadClosingBalances();
+        }
     };
 
     window.fsFilterCustomerRows = (query) => {
