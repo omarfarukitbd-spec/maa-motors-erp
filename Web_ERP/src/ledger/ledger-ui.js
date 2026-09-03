@@ -167,14 +167,15 @@ export function renderLedger(container, params, callbacks = {}) {
     loadCashCollectorOptions();
     if (window.initLedgerHotkeys) window.initLedgerHotkeys();
 
-    if (params && params.customerId) {
+    const targetCustId = params ? (params.customerId || params.custId) : null;
+    if (targetCustId) {
         setTimeout(() => {
             if (window.selectLedgerCustomer) {
-                window.selectLedgerCustomer(params.customerId);
+                window.selectLedgerCustomer(targetCustId);
             } else if (filterLedgerByCustomer) {
                 const sel = document.getElementById('ledger-customer-select');
-                if (sel) sel.value = params.customerId;
-                filterLedgerByCustomer(params.customerId);
+                if (sel) sel.value = targetCustId;
+                filterLedgerByCustomer(targetCustId);
             }
         }, 150);
     } else if (loadRecentTransactions) {

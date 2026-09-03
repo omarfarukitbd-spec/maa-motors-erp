@@ -141,7 +141,7 @@ export function prevInspectorCustomer() {
 
 export function openCurrentCustomerLedger() {
     const current = inspectorCustomers[currentInspectorIndex];
-    if (current) {
+    if (current && current.id) {
         inspectorOpenLedger(current.id);
     }
 }
@@ -150,9 +150,18 @@ export function inspectorOpenLedger(custId) {
     if (!custId) return;
     closeCustomerInspector();
 
-    if (typeof window.navigate === 'function') {
-        window.navigate('ledger', { custId });
+    if (typeof window.openCustomerLedger === 'function') {
+        window.openCustomerLedger(custId);
+    } else if (typeof window.navigate === 'function') {
+        window.navigate('ledger', { customerId: custId, custId });
     } else if (typeof window.navigateTo === 'function') {
-        window.navigateTo('ledger', { custId });
+        window.navigateTo('ledger', { customerId: custId, custId });
     }
+
+    // Direct fallback to ensure the customer is instantly selected in ledger
+    setTimeout(() => {
+        if (typeof window.selectLedgerCustomer === 'function') {
+            window.selectLedgerCustomer(custId);
+        }
+    }, 200);
 }
