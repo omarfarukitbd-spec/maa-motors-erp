@@ -5,7 +5,7 @@ import { printTreasuryReport, exportTreasuryExcel } from './treasury-print.js';
 import { formatAmountWithComma, formatAppDate, escapeHTML, toDBDate, showToast } from '../utils.js';
 
 let rawTransactions = [];
-let openingFund = { openingBalance: 46709275, openingDate: '2026-08-29' };
+let openingFund = { openingBalance: 46391562, openingDate: '2026-08-31' };
 let unsubscribeListener = null;
 let currentFilterPeriod = 'all'; // 'all' | 'this_month' | 'last_month' | 'today' | 'custom'
 let customStartDate = '';
@@ -105,39 +105,45 @@ function renderLedgerTable() {
     const tbody = document.getElementById('tr-ledger-tbody');
     if (!tbody) return;
 
-    if (filteredRows.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="text-center py-12 text-slate-400">
-                    <div class="max-w-md mx-auto space-y-3">
-                        <i class="fa-solid fa-book-open text-3xl text-amber-400/60"></i>
-                        <p class="font-bold text-sm text-slate-200">এখনো কোনো লেনদেন রেকর্ড করা হয়নি</p>
-                        <p class="text-xs text-slate-400">আপনি উপরের বাটনগুলো দিয়ে নতুন এন্ট্রি করতে পারেন অথবা বসের অফলাইন খাতার হিসাবগুলো ১-ক্লিকে লোড করতে পারেন।</p>
-                        <button onclick="window.treasurySeedNotebookData()" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs inline-flex items-center gap-2 shadow-lg transition-all cursor-pointer">
-                            <i class="fa-solid fa-cloud-arrow-down"></i><span>বসের খাতার পূর্বের হিসাব লোড করুন (Seed Khata Data)</span>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
     let html = `
         <tr class="bg-amber-950/20 border-b border-amber-500/20 font-bold">
             <td class="py-3 px-3 text-center text-slate-500">-</td>
             <td class="py-3 px-3 text-amber-300 font-mono text-xs whitespace-nowrap">${formatAppDate(openingFund.openingDate)}</td>
             <td class="py-3 px-3 text-amber-400 font-black text-xs" colspan="2">
-                <i class="fa-solid fa-vault text-amber-400 mr-1.5"></i>প্রারম্ভিক তহবিল স্থিতি (Brought Forward / B/F)
+                <i class="fa-solid fa-vault text-amber-400 mr-1.5"></i>৩১ আগস্ট ২০২৬ সমাপনী স্থিতি (B/F)
             </td>
             <td class="py-3 px-3 text-right text-slate-600 font-mono">-</td>
             <td class="py-3 px-3 text-right text-slate-600 font-mono">-</td>
             <td class="py-3 px-3 text-right text-emerald-400 font-mono font-black text-sm">৳ ${formatAmountWithComma(kpis.openingBalance)}</td>
             <td class="py-3 px-3 text-center text-slate-600">
-                <button onclick="window.treasuryEditOpeningFund()" class="text-slate-400 hover:text-amber-400 p-1" title="প্রারম্ভিক তহবিল এডিট"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="window.treasuryEditOpeningFund()" class="text-slate-400 hover:text-amber-400 p-1 cursor-pointer" title="প্রারম্ভিক তহবিল এডিট"><i class="fa-solid fa-pen-to-square"></i></button>
             </td>
         </tr>
     `;
+
+    if (filteredRows.length === 0) {
+        html += `
+            <tr>
+                <td colspan="8" class="text-center py-10 text-slate-400">
+                    <div class="max-w-md mx-auto space-y-2.5">
+                        <i class="fa-solid fa-calendar-check text-2xl text-amber-400"></i>
+                        <p class="font-bold text-xs text-slate-200">৩১ আগস্ট ২০২৬ সমাপনী তহবিল: ৳ ${formatAmountWithComma(kpis.openingBalance)}</p>
+                        <p class="text-[11px] text-slate-400">১ সেপ্টেম্বর ২০২৬ থেকে নতুন লেনদেন যুক্ত করতে উপরের বাটনগুলো ব্যবহার করুন।</p>
+                        <div class="flex items-center justify-center gap-2 pt-1">
+                            <button onclick="window.treasuryOpenDailyCollection()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-md">
+                                <i class="fa-solid fa-hand-holding-dollar"></i><span>+ দৈনিক কালেকশন</span>
+                            </button>
+                            <button onclick="window.treasuryOpenDailyExpense()" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-md">
+                                <i class="fa-solid fa-wallet"></i><span>- দৈনিক খরচ</span>
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML = html;
+        return;
+    }
 
     filteredRows.forEach((t, i) => {
         const isHighlight = t.isMonthEnd;

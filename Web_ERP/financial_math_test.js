@@ -89,24 +89,21 @@ function runFinancialMathTests() {
     assert.strictEqual(countedCash, 79260, "Cash counter denomination sum failed");
     passed++;
 
-    // Test 6: Invariant 6 - Treasury Master Fund Running Balance Recalibration
-    const initialFund = 46709275;
-    const treasuryEntries = [
-        { type: 'outflow', amount: 2500000 },  // নয়ন নাহার মোটর
-        { type: 'inflow', amount: 1106500 },   // দৈনিক কালেকশন
-        { type: 'outflow', amount: 16781 },    // দৈনিক খরচ
-        { type: 'inflow', amount: 2415000 },   // দৈনিক কালেকশন
-        { type: 'outflow', amount: 1725000 },  // মিনহাজ মারফত
-        { type: 'outflow', amount: 20685 },    // দৈনিক খরচ
-        { type: 'inflow', amount: 410000 },    // দৈনিক কালেকশন
-        { type: 'outflow', amount: 18130 }     // দৈনিক খরচ (৩১ আগস্ট)
+    // Test 6: Invariant 6 - Treasury Master Fund Running Balance Recalibration from 31 August Closing
+    const august31ClosingFund = 46391562;
+    const septemberEntries = [
+        { type: 'inflow', amount: 960000 },    // 01/09/26 দৈনিক কালেকশন
+        { type: 'outflow', amount: 1725000 },  // 01/09/26 মিনহাজ মারফত
+        { type: 'outflow', amount: 3378 },     // 01/09/26 দৈনিক খরচ
+        { type: 'inflow', amount: 208000 },    // 02/09/26 দৈনিক কালেকশন
+        { type: 'outflow', amount: 11700 }     // 02/09/26 দৈনিক খরচ
     ];
-    let runningFund = initialFund;
-    treasuryEntries.forEach(item => {
+    let runningFund = august31ClosingFund;
+    septemberEntries.forEach(item => {
         runningFund = safeRound(runningFund + (item.type === 'inflow' ? item.amount : -item.amount));
     });
-    // August 31 closing calculation: 46709275 - 2500000 + 1106500 - 16781 + 2415000 - 1725000 - 20685 + 410000 - 18130
-    assert.strictEqual(runningFund, 46360179, "Treasury running balance recalibration mismatch");
+    // Calculation: 46391562 + 960000 - 1725000 - 3378 + 208000 - 11700 = 45819484
+    assert.strictEqual(runningFund, 45819484, "September treasury running balance recalibration mismatch");
     passed++;
 
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);

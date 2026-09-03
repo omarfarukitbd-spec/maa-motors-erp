@@ -78,24 +78,25 @@ export const TreasuryDAO = {
             if (doc.exists) {
                 const d = doc.data();
                 return {
-                    openingBalance: safeRound(d.openingBalance || 0),
-                    openingDate: d.openingDate || '2026-08-29',
-                    title: d.title || 'প্রারম্ভিক তহবিল স্থিতি (B/F)'
+                    openingBalance: safeRound(d.openingBalance !== undefined ? d.openingBalance : 46391562),
+                    openingDate: d.openingDate || '2026-08-31',
+                    title: d.title || '৩১ আগস্ট ২০২৬ সমাপনী স্থিতি (B/F)'
                 };
             }
         } catch (e) {
             console.error('getOpeningFund error:', e);
         }
-        return { openingBalance: 46709275, openingDate: '2026-08-29', title: 'প্রারম্ভিক তহবিল স্থিতি (B/F)' };
+        return { openingBalance: 46391562, openingDate: '2026-08-31', title: '৩১ আগস্ট ২০২৬ সমাপনী স্থিতি (B/F)' };
     },
 
     /**
      * Update master opening fund settings
      */
-    async saveOpeningFund(openingBalance, openingDate = '2026-08-29') {
+    async saveOpeningFund(openingBalance, openingDate = '2026-08-31') {
         await this.settingsDoc.set({
             openingBalance: safeRound(openingBalance),
             openingDate,
+            title: '৩১ আগস্ট ২০২৬ সমাপনী স্থিতি (B/F)',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
     }
