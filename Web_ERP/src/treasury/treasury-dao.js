@@ -1,4 +1,4 @@
-import { db } from '../firebase-config.js';
+import { db, firebase } from '../firebase-config.js';
 import { safeRound } from '../utils.js';
 
 const COLLECTION_NAME = 'TreasuryTransactions';
