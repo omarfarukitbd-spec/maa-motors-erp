@@ -4,7 +4,7 @@ import { parseAmount, toDBDate, getTodayLocalDateString, promptSecurityPin, numb
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones, cachedCustomers } from './customer-state.js';
-import { verifyDuplicateCustomer } from './customer-duplicate-guard.js';
+import { verifyDuplicateCustomer, attachLiveDuplicatePhoneListener } from './customer-duplicate-guard.js';
 
 export async function editCustomer(id, name, phone, address, currentZone) {
     if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.editCustomers === false) {
@@ -59,6 +59,8 @@ export async function editCustomer(id, name, phone, address, currentZone) {
         showCancelButton: true, confirmButtonText: 'আপডেট করুন', cancelButtonText: 'বাতিল',
         customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
         didOpen: () => {
+            const edP = document.getElementById('ed-p');
+            if (edP) attachLiveDuplicatePhoneListener(edP, id);
             const zSel = document.getElementById('ed-z');
             const accInp = document.getElementById('ed-acc');
             if (zSel && accInp) {

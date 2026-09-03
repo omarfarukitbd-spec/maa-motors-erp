@@ -5,7 +5,7 @@ import { parseAmount, formatAmountWithComma, formatAppDate, getTodayLocalDateStr
 import { populateAddressSuggestions } from '../utils/address-suggestions.js';
 import { loadAllZones } from '../customer/customer-handlers.js';
 import { auditLog } from '../audit.js';
-import { verifyDuplicateCustomer } from '../customer/customer-duplicate-guard.js';
+import { verifyDuplicateCustomer, attachLiveDuplicatePhoneListener } from '../customer/customer-duplicate-guard.js';
 
 export function resetDashCustomerForm() {
     const nameInput = document.getElementById('dash-cust-name');
@@ -22,6 +22,8 @@ export function resetDashCustomerForm() {
     if (addrInput) addrInput.value = '';
     if (balInput) balInput.value = '';
     resetLiveWords('dash-cust-initial-words');
+    const hint = phoneInput?.parentElement?.querySelector('.live-dup-hint');
+    if (hint) { hint.classList.add('hidden'); hint.innerHTML = ''; }
     if (dateInput) dateInput.value = getTodayLocalDateString();
     if (zoneSelect) zoneSelect.selectedIndex = 0;
     if (codeDisplay) codeDisplay.value = '';
@@ -36,6 +38,8 @@ export function toggleDashCustomerForm() {
             resetDashCustomerForm();
             loadAllZones();
             populateAddressSuggestions('dash-cust-address', 'dash-cust-address-datalist', 'dash-cust-address-chips');
+            const pInput = document.getElementById('dash-cust-phone');
+            if (pInput) attachLiveDuplicatePhoneListener(pInput);
             const dateInput = document.getElementById('dash-cust-date');
             if (dateInput && !dateInput.value) dateInput.value = getTodayLocalDateString();
             setTimeout(() => {

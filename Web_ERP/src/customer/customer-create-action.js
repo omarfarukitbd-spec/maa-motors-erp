@@ -4,7 +4,7 @@ import { parseAmount, toDBDate, getTodayLocalDateString, numberToBanglaWords, re
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones } from './customer-state.js';
-import { verifyDuplicateCustomer } from './customer-duplicate-guard.js';
+import { verifyDuplicateCustomer, attachLiveDuplicatePhoneListener } from './customer-duplicate-guard.js';
 
 export function resetAddCustomerForm() {
     ['cust-name', 'cust-phone', 'cust-address', 'cust-initial-balance'].forEach(id => {
@@ -12,6 +12,10 @@ export function resetAddCustomerForm() {
         if (el) el.value = '';
     });
     resetLiveWords('cust-initial-words');
+    const pInput = document.getElementById('cust-phone');
+    const hint = pInput?.parentElement?.querySelector('.live-dup-hint');
+    if (hint) { hint.classList.add('hidden'); hint.innerHTML = ''; }
+    if (pInput) attachLiveDuplicatePhoneListener(pInput);
     const dateInput = document.getElementById('cust-date');
     if (dateInput) {
         const todayStr = getTodayLocalDateString();

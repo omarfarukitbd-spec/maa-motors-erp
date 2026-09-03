@@ -3,7 +3,7 @@ import { CustomerDAO, TransactionDAO, SettingsDAO, ZoneDAO } from '../dao.js';
 import { getTodayLocalDateString, parseAmount, formatAmountWithComma, formatAppDate, toDBDate, numberToBanglaWords, handleError } from '../utils.js';
 import { auditLog } from '../audit.js';
 import Swal from 'sweetalert2';
-import { verifyDuplicateCustomer } from './customer-duplicate-guard.js';
+import { verifyDuplicateCustomer, attachLiveDuplicatePhoneListener } from './customer-duplicate-guard.js';
 
 /**
  * Centered Quick Add Customer Function (Shared across modules)
@@ -100,6 +100,8 @@ export async function quickAddCustomer() {
             cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !rounded-xl !px-5 !py-2 font-bold border border-slate-700'
         },
         didOpen: () => {
+            const pInput = document.getElementById('sw-p');
+            if (pInput) attachLiveDuplicatePhoneListener(pInput);
             const zSelect = document.getElementById('sw-z');
             const addZoneBtn = document.getElementById('sw-add-zone-btn');
             const zCodeInp = document.getElementById('sw-zcode');

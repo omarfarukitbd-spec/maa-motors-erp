@@ -137,3 +137,64 @@ export async function verifyDuplicateCustomer(phone, name, excludeId = null) {
     // Cancelled
     return false;
 }
+
+/**
+ * Attaches a live input event listener to phone inputs to show real-time inline duplicate warnings
+ */
+export function attachLiveDuplicatePhoneListener(inputElement, excludeId = null) {
+    if (!inputElement) return;
+
+    let hintEl = inputElement.parentElement?.querySelector('.live-dup-hint');
+    if (!hintEl && inputElement.parentElement) {
+        hintEl = document.createElement('div');
+        hintEl.className = 'live-dup-hint hidden text-[11px] font-bn font-bold mt-1.5 p-2 rounded-xl border transition-all cursor-pointer';
+        inputElement.parentElement.appendChild(hintEl);
+    }
+
+    const check = () => {
+        if (!hintEl) return;
+        const val = inputElement.value.trim();
+        const dup = findDuplicateCustomer(val, '', excludeId);
+        if (dup && dup.type === 'phone') {
+            const c = dup.customer;
+            const due = Number(c.totalDue || 0);
+            const dueFormatted = formatAmountWithComma(Math.abs(due));
+            const dueText = due > 0 
+                ? `<span class="text-red-400 font-bold">৳ ${dueFormatted} (বকেয়া)</span>` 
+                : (due < 0 ? `<span class="text-emerald-400 font-bold">৳ ${dueFormatted} (অগ্রিম)</span>` : '<span class="text-slate-300 font-bold">৳ ০</span>');
+            
+            hintEl.className = 'live-dup-hint text-[11px] font-bn font-bold mt-1.5 p-2 rounded-xl border bg-amber-500/10 border-amber-500/30 text-amber-300 flex items-center justify-between gap-1 shadow-sm hover:bg-amber-500/20 transition-all';
+            hintEl.title = 'কাস্টমারের খতিয়ান দেখতে ক্লিক করুন';
+            hintEl.innerHTML = `
+                <div class="flex items-center gap-1.5 truncate">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 shrink-0"></i>
+                    <span class="truncate">ইতিমধ্যে অ্যাকাউন্ট আছে: <b>${c.name}</b> (<span class="text-cyan-400 font-mono">#${c.accountNo || ''}</span>)</span>
+                </div>
+                <div class="shrink-0 font-bold ml-1">${dueText}</div>
+            `;
+            hintEl.onclick = () => {
+                if (typeof window.filterLedgerByCustomer === 'function') {
+                    const sel = document.getElementById('ledger-customer-select');
+                    if (sel) sel.value = c.id;
+                    window.filterLedgerByCustomer(c.id);
+                }
+                if (typeof window.showSection === 'function') {
+                    window.showSection('ledger-sec');
+                }
+                Swal.close();
+            };
+            hintEl.classList.remove('hidden');
+        } else {
+            hintEl.classList.add('hidden');
+            hintEl.innerHTML = '';
+        }
+    };
+
+    inputElement.addEventListener('input', check);
+    inputElement.addEventListener('blur', check);
+    // Initial check in case value was prefilled
+    if (inputElement.value) check();
+}
+
+window.attachLiveDuplicatePhoneListener = attachLiveDuplicatePhoneListener;
+
