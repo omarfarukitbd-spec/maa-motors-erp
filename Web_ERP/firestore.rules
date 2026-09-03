@@ -109,6 +109,12 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true);
       allow create, update, delete: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('manageCustomers', false) == true || getPerms().get('manageExpenses', false) == true)));
     }
+
+    // Treasury Transactions (Master Fund Flow Ledger)
+    match /TreasuryTransactions/{txnId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true);
+    }
   }
 }
 

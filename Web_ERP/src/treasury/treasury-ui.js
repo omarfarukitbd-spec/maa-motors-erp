@@ -69,6 +69,7 @@ export async function renderTreasuryUI(container) {
     // Load Opening Fund & Listen to Transactions
     try {
         openingFund = await TreasuryDAO.getOpeningFund();
+        renderLedgerTable();
         unsubscribeListener = TreasuryDAO.listenAll((list) => {
             rawTransactions = list;
             renderLedgerTable();
@@ -105,7 +106,20 @@ function renderLedgerTable() {
     if (!tbody) return;
 
     if (filteredRows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-slate-500 font-bold text-sm">কোনো লেনদেন পাওয়া যায়নি।</td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-12 text-slate-400">
+                    <div class="max-w-md mx-auto space-y-3">
+                        <i class="fa-solid fa-book-open text-3xl text-amber-400/60"></i>
+                        <p class="font-bold text-sm text-slate-200">এখনো কোনো লেনদেন রেকর্ড করা হয়নি</p>
+                        <p class="text-xs text-slate-400">আপনি উপরের বাটনগুলো দিয়ে নতুন এন্ট্রি করতে পারেন অথবা বসের অফলাইন খাতার হিসাবগুলো ১-ক্লিকে লোড করতে পারেন।</p>
+                        <button onclick="window.treasurySeedNotebookData()" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs inline-flex items-center gap-2 shadow-lg transition-all cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-down"></i><span>বসের খাতার পূর্বের হিসাব লোড করুন (Seed Khata Data)</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
         return;
     }
 
@@ -197,6 +211,9 @@ function getTreasuryTemplate() {
                     <button onclick="window.treasuryOpenSpecialTransaction()" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg transition-all cursor-pointer">
                         <i class="fa-solid fa-plus"></i><span>বিশেষ লেনদেন</span>
                     </button>
+                    <button onclick="window.treasuryEditOpeningFund()" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer" title="প্রারম্ভিক তহবিল (B/F) সেট বা পরিবর্তন">
+                        <i class="fa-solid fa-vault text-amber-400"></i><span>প্রারম্ভিক তহবিল (B/F)</span>
+                    </button>
                     <button onclick="window.treasuryHandlePrint()" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer">
                         <i class="fa-solid fa-print text-amber-400"></i><span>প্রিন্ট</span>
                     </button>
@@ -212,12 +229,15 @@ function getTreasuryTemplate() {
                     <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">বর্তমান নেট ফান্ড স্থিতি</span>
                     <h3 id="tr-kpi-balance" class="text-lg sm:text-2xl font-black text-amber-300 font-mono mt-1">৳ ০</h3>
                 </div>
-                <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl">
+                <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl hover:border-amber-500/40 transition-all">
                     <div class="flex items-center justify-between">
                         <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">প্রারম্ভিক তহবিল (B/F)</span>
-                        <button onclick="window.treasuryEditOpeningFund()" class="text-xs text-amber-400 hover:underline"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="window.treasuryEditOpeningFund()" class="text-xs text-amber-400 hover:text-amber-300 p-1 cursor-pointer" title="এডিট"><i class="fa-solid fa-pen-to-square"></i></button>
                     </div>
                     <h3 id="tr-kpi-opening" class="text-base sm:text-xl font-black text-slate-200 font-mono mt-1">৳ ০</h3>
+                    <button onclick="window.treasuryEditOpeningFund()" class="mt-2 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 flex items-center gap-1 cursor-pointer">
+                        <i class="fa-solid fa-pen-to-square"></i><span>সেট বা পরিবর্তন</span>
+                    </button>
                 </div>
                 <div class="bg-slate-900/80 border border-emerald-500/20 p-4 rounded-2xl">
                     <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">মোট ফান্ড বৃদ্ধি (+)</span>
