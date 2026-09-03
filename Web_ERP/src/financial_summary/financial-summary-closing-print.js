@@ -70,19 +70,19 @@ export async function printClosingReport(closingData) {
         const dueColor = dueVal > 0 ? '#dc2626' : (dueVal < 0 ? '#059669' : '#64748b');
         const dueDisp = dueVal === 0 ? '৳ 0' : `৳ ${formatAmountWithComma(Math.abs(dueVal))} ${dueVal < 0 ? '(Adv)' : ''}`;
         const zoneBadge = c.zone 
-            ? `<span style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #334155; display: inline-block;">${escapeHTML(c.zone)}</span>`
+            ? `<span style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 1px 5px; border-radius: 8px; font-size: 9.5px; font-weight: 700; color: #334155; display: inline-block;">${escapeHTML(c.zone)}</span>`
             : '-';
 
         const cellsHtml = `
-            <td style="text-align:center; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 4px; font-size:11px; font-family:'Inter',sans-serif; color:#475569;">${idx + 1}</td>
-            <td style="text-align:center; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 4px; font-size:11px; font-weight:800; font-family:'Inter',monospace; color:#0284c7;">${escapeHTML(c.accountNo || '-')}</td>
-            <td style="text-align:left; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 6px; font-size:11px; font-family:'Hind Siliguri',sans-serif; line-height:1.25; color:#0f172a;"><strong>${escapeHTML(c.name)}</strong></td>
-            <td style="text-align:center; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 4px; font-size:11px; font-family:'Inter',sans-serif; white-space:nowrap; color:#334155;">${escapeHTML(c.phone || '-')}</td>
-            <td style="text-align:center; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 4px; font-size:11px; font-family:'Hind Siliguri',sans-serif;">${zoneBadge}</td>
-            <td style="text-align:left; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 6px; font-size:10.5px; font-family:'Hind Siliguri',sans-serif; color:#475569; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(c.address || '-')}</td>
-            <td style="text-align:right; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 6px; font-size:11px; font-family:'Inter',sans-serif; font-weight:bold; color:#475569; white-space:nowrap;">৳ ${formatAmountWithComma(c.totalBill || 0)}</td>
-            <td style="text-align:right; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 6px; font-size:11px; font-family:'Inter',sans-serif; font-weight:bold; color:#059669; white-space:nowrap;">৳ ${formatAmountWithComma(c.totalPaid || 0)}</td>
-            <td style="text-align:right; vertical-align:middle; border:1px solid #e2e8f0; padding:5px 6px; font-size:11px; font-weight:900; color:${dueColor}; font-family:'Inter',sans-serif; white-space:nowrap;">${dueDisp}</td>
+            <td style="text-align:center; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 3px; font-size:10px; font-family:'Inter',sans-serif; color:#475569;">${idx + 1}</td>
+            <td style="text-align:center; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 3px; font-size:10.5px; font-weight:800; font-family:'Inter',monospace; color:#0284c7;">${escapeHTML(c.accountNo || '-')}</td>
+            <td style="text-align:left; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 5px; font-size:10.5px; font-family:'Hind Siliguri',sans-serif; line-height:1.15; color:#0f172a;"><strong>${escapeHTML(c.name)}</strong></td>
+            <td style="text-align:center; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 3px; font-size:10px; font-family:'Inter',sans-serif; white-space:nowrap; color:#334155;">${escapeHTML(c.phone || '-')}</td>
+            <td style="text-align:center; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 3px; font-size:10px; font-family:'Hind Siliguri',sans-serif;">${zoneBadge}</td>
+            <td style="text-align:left; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 5px; font-size:10px; font-family:'Hind Siliguri',sans-serif; line-height:1.15; color:#475569; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(c.address || '-')}</td>
+            <td style="text-align:right; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 5px; font-size:10.5px; font-family:'Inter',sans-serif; font-weight:bold; color:#475569; white-space:nowrap;">৳ ${formatAmountWithComma(c.totalBill || 0)}</td>
+            <td style="text-align:right; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 5px; font-size:10.5px; font-family:'Inter',sans-serif; font-weight:bold; color:#059669; white-space:nowrap;">৳ ${formatAmountWithComma(c.totalPaid || 0)}</td>
+            <td style="text-align:right; vertical-align:middle; border:1px solid #e2e8f0; padding:3.5px 5px; font-size:10.5px; font-weight:900; color:${dueColor}; font-family:'Inter',sans-serif; white-space:nowrap;">${dueDisp}</td>
         `;
 
         const rowHtml = `<tr class="print-row-no-break" style="${bgStyle}">${cellsHtml}</tr>`;
@@ -93,45 +93,45 @@ export async function printClosingReport(closingData) {
     });
 
     const headerThHtml = `
-        <th style="width:32px; text-align:center; border:1px solid #cbd5e1; padding:7px 4px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">SL</th>
-        <th style="width:65px; text-align:center; border:1px solid #cbd5e1; padding:7px 4px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">A/C NO</th>
-        <th style="text-align:left; border:1px solid #cbd5e1; padding:7px 6px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">কাস্টমারের নাম</th>
-        <th style="width:100px; text-align:center; border:1px solid #cbd5e1; padding:7px 4px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">মোবাইল নম্বর</th>
-        <th style="width:65px; text-align:center; border:1px solid #cbd5e1; padding:7px 4px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">জোন</th>
-        <th style="width:120px; text-align:left; border:1px solid #cbd5e1; padding:7px 6px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">ঠিকানা</th>
-        <th style="width:80px; text-align:right; border:1px solid #cbd5e1; padding:7px 6px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">মোট বিল (৳)</th>
-        <th style="width:80px; text-align:right; border:1px solid #cbd5e1; padding:7px 6px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">মোট জমা (৳)</th>
-        <th style="width:90px; text-align:right; border:1px solid #cbd5e1; padding:7px 6px; font-size:11px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">সমাপনী ব্যালেন্স</th>
+        <th style="width:32px; text-align:center; border:1px solid #cbd5e1; padding:5px 3px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">SL</th>
+        <th style="width:65px; text-align:center; border:1px solid #cbd5e1; padding:5px 3px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">A/C NO</th>
+        <th style="text-align:left; border:1px solid #cbd5e1; padding:5px 5px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">কাস্টমারের নাম</th>
+        <th style="width:100px; text-align:center; border:1px solid #cbd5e1; padding:5px 3px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">মোবাইল নম্বর</th>
+        <th style="width:65px; text-align:center; border:1px solid #cbd5e1; padding:5px 3px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">জোন</th>
+        <th style="width:120px; text-align:left; border:1px solid #cbd5e1; padding:5px 5px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">ঠিকানা</th>
+        <th style="width:80px; text-align:right; border:1px solid #cbd5e1; padding:5px 5px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">মোট বিল (৳)</th>
+        <th style="width:80px; text-align:right; border:1px solid #cbd5e1; padding:5px 5px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">মোট জমা (৳)</th>
+        <th style="width:90px; text-align:right; border:1px solid #cbd5e1; padding:5px 5px; font-size:10px; font-weight:900; color:#1e293b; font-family:'Hind Siliguri',sans-serif;">সমাপনী ব্যালেন্স</th>
     `;
     const tableColHeaderHtml = `<thead><tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">${headerThHtml}</tr></thead>`;
 
     const summaryHtml = `
-        <div style="display:flex; justify-content:flex-end; margin-top:16px; page-break-inside:avoid; break-inside:avoid;">
-            <div style="width:280px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px; font-family:'Hind Siliguri',sans-serif; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; border-bottom:1px dashed #cbd5e1; padding-bottom:4px;">
+        <div style="display:flex; justify-content:flex-end; margin-top:8px; page-break-inside:avoid; break-inside:avoid;">
+            <div style="width:260px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 10px; font-family:'Hind Siliguri',sans-serif; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; border-bottom:1px dashed #cbd5e1; padding-bottom:3px;">
                     <span style="color:#64748b; font-weight:700;">কাট-অফ তারিখ:</span>
                     <strong style="color:#0284c7; font-weight:900;">${formattedDate}</strong>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; border-bottom:1px dashed #cbd5e1; padding-bottom:4px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; border-bottom:1px dashed #cbd5e1; padding-bottom:3px;">
                     <span style="color:#64748b; font-weight:700;">সর্বমোট কাস্টমার:</span>
                     <strong style="color:#0f172a; font-weight:900;">${sortedCustomers.length} জন</strong>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px;">
                     <span style="color:#64748b; font-weight:700;">মার্কেটে মোট বকেয়া:</span>
-                    <strong style="color:#dc2626; font-size:15px; font-weight:900;">৳ ${formatAmountWithComma(closingData.totalMarketDue || totalDue)}</strong>
+                    <strong style="color:#dc2626; font-size:13.5px; font-weight:900;">৳ ${formatAmountWithComma(closingData.totalMarketDue || totalDue)}</strong>
                 </div>
             </div>
         </div>
     `;
 
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top:40px; page-break-inside:avoid; break-inside:avoid;">
+        <div class="signature-last-page-block" style="margin-top:20px; page-break-inside:avoid; break-inside:avoid;">
             <div style="display:flex; justify-content:space-between; padding:0 30px;">
-                <div style="border-top:1.5px dashed #64748b; width:160px; text-align:center; font-size:11px; font-weight:700; color:#334155; padding-top:6px; font-family:'Hind Siliguri',sans-serif;">
-                    ক্যাশিয়ার / প্রস্তুতকারী<br><span style="font-size:9px; font-weight:normal; color:#64748b;">Prepared By</span>
+                <div style="border-top:1.5px dashed #64748b; width:150px; text-align:center; font-size:10px; font-weight:700; color:#334155; padding-top:4px; font-family:'Hind Siliguri',sans-serif;">
+                    ক্যাশিয়ার / প্রস্তুতকারী<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Prepared By</span>
                 </div>
-                <div style="border-top:1.5px dashed #64748b; width:160px; text-align:center; font-size:11px; font-weight:700; color:#334155; padding-top:6px; font-family:'Hind Siliguri',sans-serif;">
-                    কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:9px; font-weight:normal; color:#64748b;">Authorized Signature</span>
+                <div style="border-top:1.5px dashed #64748b; width:150px; text-align:center; font-size:10px; font-weight:700; color:#334155; padding-top:4px; font-family:'Hind Siliguri',sans-serif;">
+                    কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Authorized Signature</span>
                 </div>
             </div>
         </div>
