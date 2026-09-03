@@ -30,13 +30,15 @@ export async function renderTreasuryUI(container) {
 
     // Bind Print & Export
     window.treasuryHandlePrint = () => {
-        const calculated = calculateTreasuryLedger(rawTransactions, openingFund.openingBalance);
-        printTreasuryReport(calculated, { label: getFilterLabel() });
+        const calc = calculateTreasuryLedger(rawTransactions, openingFund.openingBalance);
+        const filtered = filterTreasuryByDateRange(calc.transactions, customStartDate, customEndDate);
+        printTreasuryReport({ transactions: filtered, kpis: calc.kpis, openingDate: openingFund.openingDate }, { label: getFilterLabel(), openingDate: openingFund.openingDate });
     };
 
     window.treasuryHandleExcel = () => {
-        const calculated = calculateTreasuryLedger(rawTransactions, openingFund.openingBalance);
-        exportTreasuryExcel(calculated, { label: getFilterLabel() });
+        const calc = calculateTreasuryLedger(rawTransactions, openingFund.openingBalance);
+        const filtered = filterTreasuryByDateRange(calc.transactions, customStartDate, customEndDate);
+        exportTreasuryExcel({ transactions: filtered, kpis: calc.kpis, openingDate: openingFund.openingDate }, { label: getFilterLabel(), openingDate: openingFund.openingDate });
     };
 
     window.treasurySetPeriod = (period) => {
@@ -93,17 +95,11 @@ function renderLedgerTable() {
     const kpis = calculated.kpis;
 
     // Update KPIs
-    const balEl = document.getElementById('tr-kpi-balance');
-    if (balEl) balEl.innerText = `৳ ${formatAmountWithComma(kpis.currentBalance)}`;
-
-    const opEl = document.getElementById('tr-kpi-opening');
-    if (opEl) opEl.innerText = `৳ ${formatAmountWithComma(kpis.openingBalance)}`;
-
-    const inEl = document.getElementById('tr-kpi-inflow');
-    if (inEl) inEl.innerText = `৳ ${formatAmountWithComma(kpis.totalInflow)}`;
-
-    const outEl = document.getElementById('tr-kpi-outflow');
-    if (outEl) outEl.innerText = `৳ ${formatAmountWithComma(kpis.totalOutflow)}`;
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = `৳ ${formatAmountWithComma(v)}`; };
+    setVal('tr-kpi-balance', kpis.currentBalance);
+    setVal('tr-kpi-opening', kpis.openingBalance);
+    setVal('tr-kpi-inflow', kpis.totalInflow);
+    setVal('tr-kpi-outflow', kpis.totalOutflow);
 
     // Filter rows
     const filteredRows = filterTreasuryByDateRange(calculated.transactions, customStartDate, customEndDate);
