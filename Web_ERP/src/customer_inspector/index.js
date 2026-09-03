@@ -4,7 +4,8 @@ import {
     closeCustomerInspector,
     nextInspectorCustomer,
     prevInspectorCustomer,
-    inspectorOpenLedger
+    inspectorOpenLedger,
+    inspectorOpenPayment
 } from './inspector-nav.js';
 
 export {
@@ -12,7 +13,8 @@ export {
     closeCustomerInspector,
     nextInspectorCustomer,
     prevInspectorCustomer,
-    inspectorOpenLedger
+    inspectorOpenLedger,
+    inspectorOpenPayment
 };
 
 /**
@@ -27,4 +29,5 @@ export function initCustomerInspector() {
     window.inspectorNext = nextInspectorCustomer;
     window.inspectorPrev = prevInspectorCustomer;
     window.inspectorOpenLedger = inspectorOpenLedger;
+    window.inspectorOpenPayment = inspectorOpenPayment;
 }

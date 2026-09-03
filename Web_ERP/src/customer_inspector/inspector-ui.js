@@ -88,7 +88,7 @@ export function renderInspectorCard(customer, currentIndex, totalCount) {
     }
 
     const s = getCustomerSnapshot(customer);
-    const cleanPhone = (s.phone || '').replace(/\D/g, '');
+    const cleanPhone = s.primaryPhone || (s.phone || '').replace(/\D/g, '');
     const waText = encodeURIComponent(`আসসালামু আলাইকুম ${s.name}, মা মোটরস্-এ আপনার বর্তমান মোট বকেয়া ৳ ${formatAmountWithComma(s.totalDue)}। দ্রুত পরিশোধের জন্য অনুরোধ করা হলো।`);
     const waLink = cleanPhone ? `https://wa.me/88${cleanPhone}?text=${waText}` : '#';
 
@@ -131,34 +131,45 @@ export function renderInspectorCard(customer, currentIndex, totalCount) {
             </div>
         </div>
 
-        <!-- Total Bill & Total Paid Metrics -->
-        <div class="grid grid-cols-2 gap-3">
-            <div class="p-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
-                <div class="text-[11px] font-bold text-slate-400 mb-0.5">মোট বিল (ক্রয়)</div>
-                <div class="text-sm sm:text-base font-black font-mono text-slate-200">
+        <!-- Metrics Row: Opening Balance (if any) + Total Bill + Total Paid -->
+        <div class="grid ${s.openingBalance > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-2 sm:gap-3">
+            ${s.openingBalance > 0 ? `
+            <div class="p-2.5 sm:p-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
+                <div class="text-[10px] sm:text-[11px] font-bold text-amber-400 mb-0.5">প্রারম্ভিক ব্যালেন্স</div>
+                <div class="text-xs sm:text-sm font-black font-mono text-amber-300 truncate">
+                    ৳ ${formatAmountWithComma(s.openingBalance)}
+                </div>
+            </div>` : ''}
+            <div class="p-2.5 sm:p-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
+                <div class="text-[10px] sm:text-[11px] font-bold text-slate-400 mb-0.5">মোট বিল (ক্রয়)</div>
+                <div class="text-xs sm:text-sm font-black font-mono text-slate-200 truncate">
                     ৳ ${formatAmountWithComma(s.totalBill)}
                 </div>
             </div>
-            <div class="p-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
-                <div class="text-[11px] font-bold text-slate-400 mb-0.5">মোট জমা (পরিশোধ)</div>
-                <div class="text-sm sm:text-base font-black font-mono text-emerald-400">
+            <div class="p-2.5 sm:p-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
+                <div class="text-[10px] sm:text-[11px] font-bold text-slate-400 mb-0.5">মোট জমা (পরিশোধ)</div>
+                <div class="text-xs sm:text-sm font-black font-mono text-emerald-400 truncate">
                     ৳ ${formatAmountWithComma(s.totalPaid)}
                 </div>
             </div>
         </div>
 
-        <!-- Action Buttons (With Requested Detailed Ledger Icon & Button) -->
+        <!-- Action Buttons (Detailed Ledger + Direct Payment + WhatsApp + Call) -->
         <div class="flex items-center gap-2 pt-1">
-            <button type="button" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white py-2.5 px-4 rounded-xl font-bold shadow-lg shadow-purple-600/30 transition-all cursor-pointer text-xs sm:text-sm" onclick="window.inspectorOpenLedger('${s.id}')">
-                <i class="fa-solid fa-book-open-reader text-base text-purple-200"></i>
-                <span>খতিয়ান দেখুন (বিস্তারিত বিবরণ)</span>
+            <button type="button" class="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white py-2.5 px-3 rounded-xl font-bold shadow-lg shadow-purple-600/30 transition-all cursor-pointer text-xs sm:text-sm" onclick="window.inspectorOpenLedger('${s.id}')">
+                <i class="fa-solid fa-book-open-reader text-sm text-purple-200"></i>
+                <span>খতিয়ান</span>
                 <kbd class="hidden sm:inline-block bg-purple-950/60 border border-purple-400/40 text-[9px] px-1.5 py-0.5 rounded text-purple-200 ml-1 font-mono">Enter</kbd>
             </button>
+            <button type="button" class="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-3 rounded-xl font-bold shadow-lg shadow-emerald-600/30 transition-all cursor-pointer text-xs sm:text-sm shrink-0" onclick="window.inspectorOpenPayment('${s.id}')" title="এই কাস্টমারের টাকা জমা এন্ট্রি করুন">
+                <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                <span>+ টাকা জমা</span>
+            </button>
             ${cleanPhone ? `
-                <a href="${waLink}" target="_blank" class="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-600/30 transition-all" title="হোয়াটসঅ্যাপে তাগাদা পাঠান">
+                <a href="${waLink}" target="_blank" class="w-10 h-10 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 flex items-center justify-center shrink-0 transition-all" title="হোয়াটসঅ্যাপে তাগাদা পাঠান">
                     <i class="fa-brands fa-whatsapp text-lg"></i>
                 </a>
-                <a href="tel:${cleanPhone}" class="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/30 transition-all" title="ফোনে কল করুন">
+                <a href="tel:${cleanPhone}" class="w-10 h-10 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 flex items-center justify-center shrink-0 transition-all" title="ফোনে কল করুন">
                     <i class="fa-solid fa-phone text-sm"></i>
                 </a>
             ` : ''}

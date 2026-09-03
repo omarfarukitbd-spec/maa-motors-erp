@@ -27,11 +27,21 @@ export function findCustomerIndexByQuery(customers, query) {
     const exactAccIdx = customers.findIndex(c => (c.accountNo || '').toLowerCase() === clean);
     if (exactAccIdx !== -1) return exactAccIdx;
 
-    // 2. Account Number Starts With
+    // 2. Numeric Account Match (e.g. typing "1" finds "000001")
+    const cleanNum = parseInt(clean, 10);
+    if (!isNaN(cleanNum) && cleanNum > 0) {
+        const numAccIdx = customers.findIndex(c => {
+            const accNum = parseInt(c.accountNo, 10);
+            return !isNaN(accNum) && accNum === cleanNum;
+        });
+        if (numAccIdx !== -1) return numAccIdx;
+    }
+
+    // 3. Account Number Starts With
     const startsAccIdx = customers.findIndex(c => (c.accountNo || '').toLowerCase().startsWith(clean));
     if (startsAccIdx !== -1) return startsAccIdx;
 
-    // 3. Exact Phone Match or Phone Ends With (last 4/5 digits)
+    // 4. Exact Phone Match or Phone Contains
     const phoneIdx = customers.findIndex(c => {
         const p = (c.phone || '').replace(/\D/g, '');
         const qDigits = clean.replace(/\D/g, '');
@@ -39,11 +49,24 @@ export function findCustomerIndexByQuery(customers, query) {
     });
     if (phoneIdx !== -1) return phoneIdx;
 
-    // 4. Name match
+    // 5. Name match
     const nameIdx = customers.findIndex(c => (c.name || '').toLowerCase().includes(clean));
     if (nameIdx !== -1) return nameIdx;
 
     return -1;
+}
+
+/**
+ * Extracts first valid 11-digit mobile number from phone string
+ * @param {string} phoneStr 
+ * @returns {string} 11-digit clean mobile number
+ */
+export function extractPrimaryPhone(phoneStr) {
+    if (!phoneStr) return '';
+    const match = phoneStr.match(/(?:^|[^\d])(01[3-9]\d{8})(?:[^\d]|$)/);
+    if (match) return match[1];
+    const digits = phoneStr.replace(/\D/g, '');
+    return digits.length >= 11 ? digits.slice(0, 11) : digits;
 }
 
 /**
@@ -54,6 +77,7 @@ export function findCustomerIndexByQuery(customers, query) {
 export function getCustomerSnapshot(cust) {
     if (!cust) return null;
 
+    const openingBalance = Number(cust.openingBalance) || 0;
     const totalBill = Number(cust.totalBill) || 0;
     const totalPaid = Number(cust.totalPaid) || 0;
     const totalDue = Number(cust.totalDue) || 0;
@@ -92,8 +116,10 @@ export function getCustomerSnapshot(cust) {
         accountNo: cust.accountNo || '-',
         name: cust.name || 'নামবিহীন',
         phone: cust.phone || '-',
+        primaryPhone: extractPrimaryPhone(cust.phone),
         address: cust.address || '-',
         zone: cust.zone || '-',
+        openingBalance,
         totalBill,
         totalPaid,
         totalDue,

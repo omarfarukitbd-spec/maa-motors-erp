@@ -165,3 +165,18 @@ export function inspectorOpenLedger(custId) {
         }
     }, 200);
 }
+
+export function inspectorOpenPayment(custId) {
+    if (!custId) return;
+    inspectorOpenLedger(custId);
+
+    // Auto-focus amount paid input and scroll into view for instant receipt entry
+    setTimeout(() => {
+        const paidInput = document.getElementById('ledger-paid');
+        if (paidInput) {
+            paidInput.focus();
+            paidInput.select();
+            paidInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 350);
+}
