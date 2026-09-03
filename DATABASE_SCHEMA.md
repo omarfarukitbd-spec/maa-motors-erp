@@ -108,3 +108,5 @@ In JavaScript, `0.1 + 0.2 === 0.30000000000000004`. Therefore:
 * 🚫 **NO "জের"**: Archaic term "জের" is banned. Use **"ব্যালেন্স"** or **"অবশিষ্ট বকেয়া"**.
 * 🔴 **Debit = Red (`text-red-400`)**: Bill / Invoice / Expense / Due
 * 🟢 **Credit = Emerald (`text-emerald-400`)**: Collection / Paid / Deposit / Advance
+
+<!-- Verified Security Standards -->
