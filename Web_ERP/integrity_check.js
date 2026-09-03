@@ -127,7 +127,9 @@ const RULES = [
 const LINE_LIMIT = 300;
 const EMOJI_REGEX = /(\p{Extended_Pictographic}|\p{Emoji_Presentation})/gu;
 
-// 🛡️ অ্যাডভান্সড কোড কোয়ালিটি গার্ড (Advanced Stable Code Enforcer)
+// 🛡️ অ্যাডভান্সড কোড কোয়ালিটি ও স্কিমা গার্ড (Advanced Schema & Financial Enforcer)
+const { runFinancialMathTests } = require('./financial_math_test.js');
+
 const QUALITY_RULES = [
     {
         name: "Old JS Variable (var)",
@@ -148,6 +150,27 @@ const QUALITY_RULES = [
         name: "Empty Error Catch (Swallow)",
         pattern: /catch\s*\([^)]*\)\s*\{\s*\}/g,
         error: "Catch ব্লক ফাঁকা রাখা যাবে না। অবশ্যই console.error অথবা proper error handling করতে হবে।"
+    },
+    // 🏛️ SCHEMA INTEGRITY GUARDS (DATABASE_SCHEMA.md Enforcement)
+    {
+        name: "Phantom Field (openingBalance on Customer)",
+        pattern: /\b(?:cust|customer)\.openingBalance\b/g,
+        error: "কাস্টমার ডকুমেন্টে 'openingBalance' ফিল্ড নেই! সঠিক ফিল্ড হলো 'initialDue' (DATABASE_SCHEMA.md দেখুন)।"
+    },
+    {
+        name: "Phantom Field (totalBill on Customer)",
+        pattern: /\b(?:cust|customer)\.totalBill\b/g,
+        error: "কাস্টমার ডকুমেন্টে 'totalBill' সরাসরি থাকে না! লেনদেন (Transactions) থেকে ফেচ করতে হবে।"
+    },
+    {
+        name: "Phantom Field (totalPaid on Customer)",
+        pattern: /\b(?:cust|customer)\.totalPaid\b/g,
+        error: "কাস্টমার ডকুমেন্টে 'totalPaid' সরাসরি থাকে না! লেনদেন (Transactions) থেকে ফেচ করতে হবে।"
+    },
+    {
+        name: "Archaic Term ('জের' in UI Label)",
+        pattern: />[^<]*\bজের\b[^<]*</g,
+        error: "UI লেবেলে 'জের' শব্দ ব্যবহার নিষিদ্ধ! আধুনিক শব্দ 'ব্যালেন্স' বা 'অবশিষ্ট বকেয়া' ব্যবহার করুন।"
     }
 ];
 
@@ -156,6 +179,14 @@ function checkIntegrity() {
     let warnings = [];
 
     console.log("\n🔍 বিল্ড গার্ড স্ক্যান শুরু হচ্ছে...\n");
+
+    // 1. Run Automated Financial Math Invariants Suite
+    try {
+        runFinancialMathTests();
+    } catch (mathErr) {
+        console.error(`❌ [ম্যাথ এরর] অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ফেইল করেছে:\n`, mathErr);
+        hasError = true;
+    }
 
     RULES.forEach(rule => {
         rule.files.forEach(fileName => {

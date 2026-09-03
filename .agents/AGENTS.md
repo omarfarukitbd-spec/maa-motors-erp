@@ -38,3 +38,15 @@
 13. **Strict Bengali Language for Artifacts**: ALWAYS write `implementation_plan.md`, `task.md`, and `walkthrough.md` artifacts entirely in Bengali. The user prefers to review plans and understand technical walkthroughs in their native language (Bengali). This applies to all future interactions and feature implementations.
 
 14. **Mandatory Post-Task Explanation & Walkthrough (Bengali)**: After successfully completing any code modifications, bug fixes, or feature additions, you MUST ALWAYS provide a clear, concise "Before vs After" explanation (in Bengali) explaining what the problem/logic was BEFORE the edit, and how it works NOW AFTER the edit. Additionally, ensure the `walkthrough.md` artifact is updated with this summary. NEVER finish a task silently without explaining the changes.
+
+15. **Strict Zero-Assumption & Financial Ground Truth Enforcement**:
+    - **No Field Guessing**: NEVER guess or assume database property names, object schemas, or financial calculations. You MUST ALWAYS consult `DATABASE_SCHEMA.md` and read the canonical DAO/action files (`src/dao.js`, `src/customer/customer-create-action.js`, etc.) before writing or reading data.
+    - **Phantom Property Ban**: Customer documents in Firestore contain `initialDue` (Opening Balance) and `totalDue` (Current Net Balance). They DO NOT contain `totalBill` or `totalPaid`. Never access `cust.openingBalance`, `cust.totalBill`, or `cust.totalPaid`. The build will automatically fail (`integrity_check.js`) if any phantom properties are used.
+    - **Five Universal Accounting Invariants**: All financial calculations must strictly obey the mathematical invariants defined in `DATABASE_SCHEMA.md`:
+      1. $\text{currentDue} = \text{safeRound}(\text{prevDue} + \text{bill} - \text{paid})$
+      2. $\text{totalDue} = \text{safeRound}(\text{initialDue} + \sum \text{bills} - \sum \text{payments})$
+      3. $\text{netCashFlow} = \text{safeRound}(\text{totalCollection} - \text{totalExpenses})$
+      4. Always use `safeRound()` for floating point arithmetic.
+      5. Strict adherence to accounting color codes and terminology.
+    - **Automated Math Invariant Tests**: The automated test suite `financial_math_test.js` runs on every single build to mathematically prove accounting integrity.
+

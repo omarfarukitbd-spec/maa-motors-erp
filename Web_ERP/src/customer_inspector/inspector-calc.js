@@ -117,12 +117,12 @@ export async function fetchCustomerStats(customerId) {
 export function getCustomerSnapshot(cust, stats = null) {
     if (!cust) return null;
 
-    // Database field is initialDue in Firestore
-    const openingBalance = Number(cust.initialDue !== undefined ? cust.initialDue : (cust.openingBalance || 0));
-    const totalDue = Number(cust.totalDue !== undefined ? cust.totalDue : (cust.currentDue || 0));
+    // Database field is initialDue in Firestore (DATABASE_SCHEMA.md)
+    const openingBalance = Number(cust.initialDue || 0);
+    const totalDue = Number(cust.totalDue || 0);
 
-    const totalBill = stats ? (Number(stats.totalBill) || 0) : (Number(cust.totalBill) || 0);
-    const totalPaid = stats ? (Number(stats.totalPaid) || 0) : (Number(cust.totalPaid) || 0);
+    const totalBill = stats ? (Number(stats.totalBill) || 0) : 0;
+    const totalPaid = stats ? (Number(stats.totalPaid) || 0) : 0;
 
     let dueStatus = {
         type: 'zero',
