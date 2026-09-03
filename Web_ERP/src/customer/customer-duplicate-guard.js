@@ -139,6 +139,76 @@ export async function verifyDuplicateCustomer(phone, name, excludeId = null) {
 }
 
 /**
+ * Shows full customer info modal when clicking the live duplicate badge
+ */
+export async function showCustomerQuickInfoModal(c) {
+    if (!c) return;
+    const due = Number(c.totalDue || 0);
+    const dueFormatted = formatAmountWithComma(Math.abs(due));
+    const dueBadge = due > 0 
+        ? `<span class="px-2.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 font-bold text-xs">৳ ${dueFormatted} (বকেয়া)</span>`
+        : (due < 0 ? `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs">৳ ${dueFormatted} (অগ্রিম)</span>` : `<span class="px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-300 font-bold text-xs">৳ ০</span>`);
+
+    const result = await Swal.fire({
+        title: '<i class="fa-solid fa-id-card text-cyan-400 mr-2"></i>বিদ্যমান গ্রাহকের বিবরণ',
+        html: `
+            <div class="text-left font-bn space-y-3 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-black tracking-wider block">গ্রাহকের নাম</span>
+                        <h4 class="text-base font-black text-white">${c.name || 'N/A'}</h4>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-slate-400 uppercase font-black tracking-wider block">অ্যাকাউন্ট নং</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono font-black text-sm">#${c.accountNo || '-'}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 border-b border-slate-800 pb-2">
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-black block">মোবাইল নম্বর</span>
+                        <span class="text-slate-200 font-bold text-xs font-mono">${c.phone || '-'}</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-black block">জোন / অঞ্চল</span>
+                        <span class="text-purple-300 font-bold text-xs">${c.zone || '-'}</span>
+                    </div>
+                </div>
+
+                <div class="border-b border-slate-800 pb-2">
+                    <span class="text-[10px] text-slate-400 uppercase font-black block">ঠিকানা</span>
+                    <span class="text-slate-300 font-medium text-xs">${c.address || 'কোনো ঠিকানা দেওয়া নেই'}</span>
+                </div>
+
+                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                    <span class="text-slate-300 font-bold">বর্তমান হিসাবের স্থিতি:</span>
+                    ${dueBadge}
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-book-open mr-1.5"></i>খতিয়ান দেখুন',
+        cancelButtonText: '<i class="fa-solid fa-xmark mr-1.5"></i>বন্ধ করুন',
+        customClass: {
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn shadow-2xl',
+            confirmButton: 'm3-btn-primary !bg-blue-600 hover:!bg-blue-500 !px-6 !py-2.5 !rounded-xl font-bold',
+            cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700'
+        }
+    });
+
+    if (result.isConfirmed) {
+        if (typeof window.filterLedgerByCustomer === 'function') {
+            const sel = document.getElementById('ledger-customer-select');
+            if (sel) sel.value = c.id;
+            window.filterLedgerByCustomer(c.id);
+        }
+        if (typeof window.showSection === 'function') {
+            window.showSection('ledger-sec');
+        }
+    }
+}
+
+/**
  * Attaches a live input event listener to phone inputs to show real-time inline duplicate warnings
  */
 export function attachLiveDuplicatePhoneListener(inputElement, excludeId = null) {
@@ -147,7 +217,7 @@ export function attachLiveDuplicatePhoneListener(inputElement, excludeId = null)
     let hintEl = inputElement.parentElement?.querySelector('.live-dup-hint');
     if (!hintEl && inputElement.parentElement) {
         hintEl = document.createElement('div');
-        hintEl.className = 'live-dup-hint hidden text-[11px] font-bn font-bold mt-1.5 p-2 rounded-xl border transition-all cursor-pointer';
+        hintEl.className = 'live-dup-hint hidden text-[11px] font-bn font-bold mt-1.5 p-2.5 rounded-xl border transition-all cursor-pointer';
         inputElement.parentElement.appendChild(hintEl);
     }
 
@@ -163,26 +233,24 @@ export function attachLiveDuplicatePhoneListener(inputElement, excludeId = null)
                 ? `<span class="text-red-400 font-bold">৳ ${dueFormatted} (বকেয়া)</span>` 
                 : (due < 0 ? `<span class="text-emerald-400 font-bold">৳ ${dueFormatted} (অগ্রিম)</span>` : '<span class="text-slate-300 font-bold">৳ ০</span>');
             
-            hintEl.className = 'live-dup-hint text-[11px] font-bn font-bold mt-1.5 p-2 rounded-xl border bg-amber-500/10 border-amber-500/30 text-amber-300 flex items-center justify-between gap-1 shadow-sm hover:bg-amber-500/20 transition-all';
-            hintEl.title = 'কাস্টমারের খতিয়ান দেখতে ক্লিক করুন';
+            hintEl.className = 'live-dup-hint text-[11px] font-bn font-bold mt-1.5 p-2 rounded-xl border bg-amber-500/10 border-amber-500/30 text-amber-300 shadow-sm hover:bg-amber-500/20 transition-all cursor-pointer block';
+            hintEl.title = 'কাস্টমারের পূর্ণাঙ্গ তথ্য দেখতে ক্লিক করুন';
             hintEl.innerHTML = `
-                <div class="flex items-center gap-1.5 truncate">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-400 shrink-0"></i>
-                    <span class="truncate">ইতিমধ্যে অ্যাকাউন্ট আছে: <b>${c.name}</b> (<span class="text-cyan-400 font-mono">#${c.accountNo || ''}</span>)</span>
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between gap-1">
+                        <span class="flex items-center gap-1.5 text-amber-300 truncate">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 shrink-0"></i>
+                            <span class="truncate">ইতিমধ্যে অ্যাকাউন্ট আছে: <b>${c.name}</b></span>
+                        </span>
+                        <span class="text-cyan-400 font-mono text-[10px] shrink-0">#${c.accountNo || ''}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] pt-1 border-t border-amber-500/20">
+                        <span class="text-cyan-400 hover:underline flex items-center gap-1"><i class="fa-solid fa-circle-info text-[9px]"></i>সম্পূর্ণ তথ্য দেখতে ক্লিক করুন</span>
+                        <div class="shrink-0 font-bold">${dueText}</div>
+                    </div>
                 </div>
-                <div class="shrink-0 font-bold ml-1">${dueText}</div>
             `;
-            hintEl.onclick = () => {
-                if (typeof window.filterLedgerByCustomer === 'function') {
-                    const sel = document.getElementById('ledger-customer-select');
-                    if (sel) sel.value = c.id;
-                    window.filterLedgerByCustomer(c.id);
-                }
-                if (typeof window.showSection === 'function') {
-                    window.showSection('ledger-sec');
-                }
-                Swal.close();
-            };
+            hintEl.onclick = () => showCustomerQuickInfoModal(c);
             hintEl.classList.remove('hidden');
         } else {
             hintEl.classList.add('hidden');
@@ -197,4 +265,6 @@ export function attachLiveDuplicatePhoneListener(inputElement, excludeId = null)
 }
 
 window.attachLiveDuplicatePhoneListener = attachLiveDuplicatePhoneListener;
+window.showCustomerQuickInfoModal = showCustomerQuickInfoModal;
+
 
