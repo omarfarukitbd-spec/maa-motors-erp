@@ -69,6 +69,11 @@ export async function renderTreasuryUI(container) {
     // Load Opening Fund & Listen to Transactions
     try {
         openingFund = await TreasuryDAO.getOpeningFund();
+        if (openingFund.openingBalance === 46709275) {
+            openingFund.openingBalance = 46391562;
+            openingFund.openingDate = '2026-08-31';
+            await TreasuryDAO.saveOpeningFund(46391562, '2026-08-31');
+        }
         renderLedgerTable();
         unsubscribeListener = TreasuryDAO.listenAll((list) => {
             rawTransactions = list;
