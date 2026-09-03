@@ -1,7 +1,8 @@
 import { TreasuryDAO } from './treasury-dao.js';
+import { TransactionDAO } from '../dao.js';
 import { findTreasuryDuplicate } from './treasury-calc.js';
 import { getDailyCollectionModalConfig, getDailyExpenseModalConfig, getSpecialTransactionModalConfig, getOpeningFundModalConfig } from './treasury-modals.js';
-import { formatAmountWithComma, getTodayLocalDateString, formatAppDate, safeRound, showToast, promptSecurityPin } from '../utils.js';
+import { formatAmountWithComma, getTodayLocalDateString, formatAppDate, safeRound, showToast, promptSecurityPin, toDBDate } from '../utils.js';
 import { auditLog } from '../audit/audit-logger.js';
 
 /**
@@ -15,7 +16,7 @@ export function setupTreasuryActions(getState) {
         let suggestedAmount = 0;
 
         try {
-            const snap = await firebase.firestore().collection('transactions').where('date', '==', today).get();
+            const snap = await TransactionDAO.collection.where('date', '==', today).get();
             snap.forEach(doc => {
                 const t = doc.data();
                 if (t.voucherNo !== 'OPENING') {
@@ -51,13 +52,27 @@ export function setupTreasuryActions(getState) {
 
         try {
             let total = 0;
-            const snap = await firebase.firestore().collection('transactions').where('date', '==', dbDate).get();
+            const snap = await TransactionDAO.collection.where('date', '==', dbDate).get();
             snap.forEach(doc => {
                 const t = doc.data();
                 if (t.voucherNo !== 'OPENING') {
                     total = safeRound(total + (Number(t.paid) || 0));
                 }
             });
+
+            if (total === 0) {
+                const altDate = formatAppDate(dbDate);
+                if (altDate !== dbDate) {
+                    const snap2 = await TransactionDAO.collection.where('date', '==', altDate).get();
+                    snap2.forEach(doc => {
+                        const t = doc.data();
+                        if (t.voucherNo !== 'OPENING') {
+                            total = safeRound(total + (Number(t.paid) || 0));
+                        }
+                    });
+                }
+            }
+
             if (total > 0) {
                 if (amtEl) {
                     amtEl.value = formatAmountWithComma(total);
@@ -65,11 +80,14 @@ export function setupTreasuryActions(getState) {
                 }
                 if (infoEl) infoEl.innerHTML = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${formatAppDate(dbDate)} তারিখে ইআরপিতে মোট আদায় পাওয়া গেছে ৳ ${formatAmountWithComma(total)}</span>`;
             } else {
+                if (amtEl && (!amtEl.value || amtEl.value === '0')) {
+                    amtEl.value = '';
+                }
                 if (infoEl) infoEl.innerHTML = `<span class="text-slate-400"><i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>${formatAppDate(dbDate)} তারিখে ইআরপিতে কোনো কালেকশন এন্ট্রি নেই। খাতা দেখে সরাসরি হাত দিয়ে টাকার অংক লিখুন।</span>`;
             }
         } catch (e) {
-            console.warn('Fetch collection for date error:', e);
-            if (infoEl) infoEl.innerHTML = '<span class="text-slate-500">কালেকশন অটো-ফেচ করা যায়নি। হাত দিয়ে লিখুন।</span>';
+            console.error('Fetch collection for date error:', e);
+            if (infoEl) infoEl.innerHTML = `<span class="text-red-400 text-[10px]"><i class="fa-solid fa-triangle-exclamation mr-1"></i>কালেকশন ফেচ এরর: ${e.message || 'ব্যর্থ'}</span>`;
         }
     };
 
