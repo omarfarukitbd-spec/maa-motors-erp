@@ -33,10 +33,9 @@ export function findDuplicateCustomer(phone, name, excludeId = null) {
         }
     }
 
-    // 2. Check Exact Name Match (Minimum 3 characters)
-    if (cleanName.length >= 3) {
+    // 2. Check Exact Name Match (Only when creating a NEW customer, NEVER when editing an existing one!)
+    if (!excludeId && cleanName.length >= 3) {
         const matchedByName = customers.find(c => {
-            if (excludeId && c.id === excludeId) return false;
             const existingName = String(c.name || '').trim().toLowerCase();
             return existingName === cleanName;
         });
@@ -64,15 +63,39 @@ export async function verifyDuplicateCustomer(phone, name, excludeId = null) {
         : (due < 0 ? `<span class="text-emerald-400 font-bold">৳ ${formattedDue} (অগ্রিম)</span>` : '<span class="text-slate-300 font-bold">৳ ০ (পরিশোধিত)</span>');
 
     const isPhoneDup = dup.type === 'phone';
-    const warningReason = isPhoneDup 
-        ? `এই মোবাইল নম্বরটিতে (<b>${c.phone || phone}</b>) ইতিমধ্যে একটি সক্রিয় অ্যাকাউন্ট রয়েছে!` 
-        : `এই নামে (<b>${c.name}</b>) ইতিমধ্যে একটি গ্রাহক অ্যাকাউন্ট তৈরি করা আছে!`;
+    const isEdit = !!excludeId;
+
+    let titleIcon = isPhoneDup ? 'fa-triangle-exclamation' : 'fa-circle-info';
+    let titleColor = isPhoneDup ? 'text-amber-400' : 'text-blue-400';
+    let titleText = isEdit ? 'ডুপ্লিকেট মোবাইল নম্বর সতর্কতা' : (isPhoneDup ? 'ডুপ্লিকেট মোবাইল নম্বর সতর্কতা' : 'একই নামের গ্রাহক সংক্রান্ত তথ্য');
+    
+    let warningReason = '';
+    let subtext = '';
+    let denyBtnText = '';
+    let denyBtnClass = '';
+
+    if (isEdit) {
+        warningReason = `এই মোবাইল নম্বরটি (<b>${c.phone || phone}</b>) ইতিমধ্যে অন্য গ্রাহক <b>${c.name}</b> (#${c.accountNo || ''})-এর অ্যাকাউন্টে আছে!`;
+        subtext = 'একই মোবাইল নম্বর একাধিক অ্যাকাউন্টে থাকলে স্বয়ংক্রিয় এসএমএস ও তাগাদায় বিভ্রান্তি হতে পারে।';
+        denyBtnText = '<i class="fa-solid fa-check mr-1.5"></i>তবুও আপডেট করুন';
+        denyBtnClass = 'm3-btn-tonal !bg-slate-800 hover:!bg-amber-900/50 !text-amber-400 !px-4 !py-2.5 !rounded-xl font-bold text-xs border border-amber-500/30';
+    } else if (isPhoneDup) {
+        warningReason = `এই মোবাইল নম্বরটিতে (<b>${c.phone || phone}</b>) ইতিমধ্যে একটি সক্রিয় অ্যাকাউন্ট রয়েছে!`;
+        subtext = 'একই ব্যক্তির একাধিক অ্যাকাউন্ট তৈরি করলে আর্থিক খতিয়ান ও বকেয়ার হিসেবে গরমিল হতে পারে।';
+        denyBtnText = '<i class="fa-solid fa-triangle-exclamation mr-1.5"></i>তবুও নতুন একাউন্ট খুলব';
+        denyBtnClass = 'm3-btn-tonal !bg-slate-800 hover:!bg-amber-900/50 !text-amber-400 !px-4 !py-2.5 !rounded-xl font-bold text-xs border border-amber-500/30';
+    } else {
+        warningReason = `এই নামে (<b>${c.name}</b>) ইতিমধ্যে একটি গ্রাহক অ্যাকাউন্ট (#${c.accountNo || ''}) রয়েছে, তবে <b>মোবাইল নম্বর ভিন্ন</b>।`;
+        subtext = 'যদি ইনি ভিন্ন ব্যক্তি হন, তবে নিঃসংকোচে নতুন অ্যাকাউন্ট তৈরি করতে পারেন।';
+        denyBtnText = '<i class="fa-solid fa-user-plus mr-1.5"></i>ইনি ভিন্ন ব্যক্তি (সেভ করুন)';
+        denyBtnClass = 'm3-btn-primary !bg-emerald-600 hover:!bg-emerald-500 !text-white !px-5 !py-2.5 !rounded-xl font-bold text-xs shadow-md shadow-emerald-600/20';
+    }
 
     const result = await Swal.fire({
-        title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-xl text-amber-400"><i class="fa-solid fa-triangle-exclamation"></i><span>ডুপ্লিকেট কাস্টমার সতর্কবার্তা</span></div>',
+        title: `<div class="flex items-center justify-center gap-2 font-bn font-black text-xl ${titleColor}"><i class="fa-solid ${titleIcon}"></i><span>${titleText}</span></div>`,
         html: `
-            <div class="text-left font-bn space-y-3 p-3 bg-slate-900/90 rounded-2xl border border-amber-500/30 text-xs">
-                <p class="text-amber-300 font-medium leading-relaxed">${warningReason}</p>
+            <div class="text-left font-bn space-y-3 p-3 bg-slate-900/90 rounded-2xl border border-slate-700 text-xs">
+                <p class="${isPhoneDup ? 'text-amber-300' : 'text-blue-300'} font-medium leading-relaxed">${warningReason}</p>
                 
                 <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1.5">
                     <div class="flex justify-between items-center border-b border-slate-800/80 pb-1.5">
@@ -97,21 +120,21 @@ export async function verifyDuplicateCustomer(phone, name, excludeId = null) {
                     </div>
                 </div>
 
-                <div class="p-2.5 bg-red-500/10 rounded-xl border border-red-500/20 text-[11px] text-red-300">
-                    <i class="fa-solid fa-circle-exclamation mr-1"></i>একই ব্যক্তির একাধিক অ্যাকাউন্ট তৈরি করলে আর্থিক খতিয়ান ও বকেয়ার হিসেবে গরমিল হতে পারে।
+                <div class="p-2.5 ${isPhoneDup ? 'bg-red-500/10 border-red-500/20 text-red-300' : 'bg-blue-500/10 border-blue-500/20 text-blue-300'} rounded-xl border text-[11px]">
+                    <i class="fa-solid fa-circle-info mr-1"></i>${subtext}
                 </div>
             </div>
         `,
-        icon: 'warning',
+        icon: isPhoneDup ? 'warning' : 'info',
         showCancelButton: true,
         showDenyButton: true,
         confirmButtonText: '<i class="fa-solid fa-folder-open mr-1.5"></i>বিদ্যমান খতিয়ান খুলুন',
-        denyButtonText: '<i class="fa-solid fa-triangle-exclamation mr-1.5"></i>তবুও নতুন একাউন্ট খুলব',
+        denyButtonText: denyBtnText,
         cancelButtonText: 'বাতিল',
         customClass: {
-            popup: '!bg-slate-950 !text-white !rounded-3xl border border-amber-500/40 shadow-2xl font-bn',
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-700 shadow-2xl font-bn',
             confirmButton: 'm3-btn-primary !bg-blue-600 hover:!bg-blue-500 !px-5 !py-2.5 !rounded-xl font-bold text-xs',
-            denyButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-amber-900/50 !text-amber-400 !px-4 !py-2.5 !rounded-xl font-bold text-xs border border-amber-500/30',
+            denyButton: denyBtnClass,
             cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-4 !py-2.5 !rounded-xl font-bold text-xs border border-slate-700'
         }
     });
