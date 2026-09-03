@@ -9,6 +9,7 @@ import { initSearch } from './search/global-search.js';
 import { initDatePickers, startDateObserver } from './utils/date-logic/date-picker.js';
 import { handleCalc, initCalculatorKeyboard, initDraggableCalculator } from './ui/calculator.js';
 import { initOmnisearch, initNetworkSyncBadge, initGlobalButtonInteractions, initPermissionObserver } from './utils.js';
+import { initCustomerInspector } from './customer_inspector/index.js';
 import './banking/banking-ui.js';
 
 // -------------------------------------------------------------------------
@@ -52,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Initialize Search & Omnisearch Command Palette
     initSearch();
     initOmnisearch();
+    initCustomerInspector();
 
     // 3. Initialize Date Pickers & Real-time Observer
     initDatePickers();
