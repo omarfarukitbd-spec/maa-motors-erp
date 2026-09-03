@@ -19,7 +19,7 @@ export function initInspectorNav() {
             const idx = findCustomerIndexByQuery(inspectorCustomers, q);
             if (idx !== -1) {
                 currentInspectorIndex = idx;
-                renderCurrent();
+                renderCurrent(false);
             }
         });
 
@@ -62,13 +62,21 @@ export function initInspectorNav() {
     });
 }
 
-function renderCurrent() {
+function renderCurrent(syncInput = true) {
     if (inspectorCustomers.length === 0) {
         renderInspectorCard(null, 0, 0);
         return;
     }
     const current = inspectorCustomers[currentInspectorIndex];
     renderInspectorCard(current, currentInspectorIndex, inspectorCustomers.length);
+
+    if (syncInput) {
+        const input = document.getElementById('inspector-query-input');
+        if (input && current) {
+            input.value = current.accountNo || '';
+            input.select();
+        }
+    }
 }
 
 /**
