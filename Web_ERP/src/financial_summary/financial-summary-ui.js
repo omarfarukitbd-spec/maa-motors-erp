@@ -76,10 +76,10 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
                         <span>সমাপনী বকেয়া</span>
                     </button>
 
-                    <!-- Print Collection Register -->
-                    <button onclick="window.fsPrintCustomerRegister()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-md border border-blue-400/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer" title="কাস্টমার আদায় শিট প্রিন্ট">
+                    <!-- Print Collection Register / Closing Sheet -->
+                    <button onclick="window.fsHandleTopPrint()" id="fs-top-print-btn" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-md border border-blue-400/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer" title="প্রিন্ট (A4)">
                         <i class="fa-solid fa-print"></i>
-                        <span class="hidden md:inline">আদায় শিট</span><span>প্রিন্ট (A4)</span>
+                        <span id="fs-top-print-text">আদায় শিট প্রিন্ট</span>
                     </button>
 
                     <!-- Print Monthly Audit -->
@@ -89,7 +89,7 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
                     </button>
 
                     <!-- Export Excel -->
-                    <button onclick="window.fsExportExcel()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer" title="এক্সেল ডাউনলোড">
+                    <button onclick="window.fsHandleTopExcel()" id="fs-top-excel-btn" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer" title="এক্সেল ডাউনলোড">
                         <i class="fa-solid fa-file-excel text-emerald-400"></i>
                         <span class="hidden sm:inline text-[11px]">Excel</span>
                     </button>
@@ -436,8 +436,41 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
             if (el) el.classList.toggle('hidden', t !== tabName);
         });
 
+        const topPrintText = document.getElementById('fs-top-print-text');
+        if (topPrintText) {
+            topPrintText.innerText = tabName === 'closing' ? 'সমাপনী শিট প্রিন্ট' : 'আদায় শিট প্রিন্ট';
+        }
+
         if (tabName === 'closing') {
             window.fsLoadClosingBalances();
+            setTimeout(() => {
+                const cEl = document.getElementById('fs-tab-content-closing');
+                if (cEl) cEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    };
+
+    window.fsHandleTopPrint = () => {
+        if (currentActiveTab === 'closing') {
+            if (typeof window.fsPrintClosingReport === 'function') {
+                window.fsPrintClosingReport();
+            } else {
+                showToast('সমাপনী ব্যালেন্স লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...', 'info');
+            }
+        } else {
+            window.fsPrintCustomerRegister();
+        }
+    };
+
+    window.fsHandleTopExcel = () => {
+        if (currentActiveTab === 'closing') {
+            if (typeof window.fsExportClosingExcel === 'function') {
+                window.fsExportClosingExcel();
+            } else {
+                showToast('সমাপনী ব্যালেন্স লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...', 'info');
+            }
+        } else {
+            window.fsExportExcel();
         }
     };
 
