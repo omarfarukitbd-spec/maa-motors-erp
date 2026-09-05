@@ -20,7 +20,18 @@ html, body {
 table {
     border-collapse: collapse !important;
     width: 100% !important;
-    table-layout: auto !important;
+    table-layout: auto;
+}
+table.fixed-table, .fixed-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+.cell-nowrap {
+    white-space: nowrap !important;
+}
+.cell-wrap {
+    word-break: break-word !important;
+    line-height: 1.25 !important;
 }
 .data-table { border: 1px solid #cbd5e1 !important; }
 .data-table th, .data-table td {

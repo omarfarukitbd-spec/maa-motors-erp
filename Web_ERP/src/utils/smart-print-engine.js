@@ -25,8 +25,10 @@ export function measureRowHeights(rowsArray, tableColHeaderHtml) {
             'padding:6px 12px', 'box-sizing:border-box'
         ].join(';');
 
+        const isFixed = tableColHeaderHtml.includes('<colgroup>') || tableColHeaderHtml.includes('fixed-table');
         const table = document.createElement('table');
-        table.style.cssText = 'width:100%;border-collapse:collapse;table-layout:auto;';
+        table.style.cssText = `width:100%;border-collapse:collapse;table-layout:${isFixed ? 'fixed' : 'auto'};`;
+        if (isFixed) table.className = 'fixed-table';
         table.innerHTML = tableColHeaderHtml;
         const tbody = document.createElement('tbody');
 
@@ -177,10 +179,12 @@ function _buildPageHtml(pages, opts) {
         const num = i + 1, isFirst = num === 1, isLast = num === total;
         const brk = isLast ? '' : 'page-break-after:always;break-after:always;';
         const tbodyStyle = tableClass === 'print-items-table' ? ' style="font-size:10px;"' : '';
+        const isFixed = tableColHeaderHtml.includes('<colgroup>') || (tableClass || '').includes('fixed-table');
+        const layoutStyle = isFixed ? 'table-layout:fixed;' : 'table-layout:auto;';
         return `<div style="${brk}width:100%;box-sizing:border-box;background:white;color:#0f172a;padding:6px 12px;">
             <div style="padding-top:2px;margin-bottom:4px;">${isFirst ? page1HeaderHtml : repeatHeaderHtml}</div>
             ${isFirst && page1ExtraHtml ? page1ExtraHtml : ''}
-            <table style="width:100%;border-collapse:collapse;table-layout:auto;margin-top:2px;border:1px solid #cbd5e1;" class="${tableClass}">
+            <table style="width:100%;border-collapse:collapse;${layoutStyle}margin-top:2px;border:1px solid #cbd5e1;" class="${tableClass || ''}${isFixed ? ' fixed-table' : ''}">
                 ${tableColHeaderHtml}
                 <tbody${tbodyStyle}>${rows.join('')}</tbody>
             </table>

@@ -148,15 +148,15 @@ export async function printFilteredCustomerList() {
         const zCode = zoneMap[custZone] ? zoneMap[custZone] : '-';
 
         let cellsHtml = '';
-        if (selectedCols.sl) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-family: 'Inter', sans-serif; color: #475569;">${idx + 1}</td>`;
-        if (selectedCols.date) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 2px; font-size: 10px; font-family: 'Inter', sans-serif; color: #334155; line-height: 1.15; white-space: nowrap;"><div style="font-weight: 700;">${openDateDisp}</div>${openTimeDisp ? `<div style="font-size: 8px; color: #64748b; font-weight: 500; margin-top: 1px;">${openTimeDisp}</div>` : ''}</td>`;
-        if (selectedCols.acc) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.accountNo || '-')}</td>`;
-        if (selectedCols.code) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 10.5px; font-weight: 700; font-family: 'Inter', monospace; color: #475569;">${escapeHTML(zCode)}</td>`;
-        if (selectedCols.name) cellsHtml += `<td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 6px; font-size: 11px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #0f172a;"><strong>${escapeHTML(c.name)}</strong></td>`;
-        if (selectedCols.addr) cellsHtml += `<td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 6px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #334155;">${escapeHTML(c.address || '-')}</td>`;
-        if (selectedCols.phone) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-family: 'Inter', sans-serif; white-space: nowrap; color: #334155;">${escapeHTML(c.phone || '-')}</td>`;
-        if (selectedCols.zone) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif;">${zoneBadge}</td>`;
-        if (selectedCols.bal) cellsHtml += `<td style="text-align:right; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 6px; font-size: 11px; font-weight: 900; color: ${dueColor}; font-family: 'Inter', sans-serif; white-space: nowrap;">${dueDisp}</td>`;
+        if (selectedCols.sl) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4.5px 3px; font-size: 10px; font-family: 'Inter', sans-serif; color: #475569;">${idx + 1}</td>`;
+        if (selectedCols.date) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 2px; font-size: 9.5px; font-family: 'Inter', sans-serif; color: #334155; line-height: 1.15; white-space: nowrap;"><div style="font-weight: 700;">${openDateDisp}</div>${openTimeDisp ? `<div style="font-size: 8px; color: #64748b; font-weight: 500; margin-top: 1px;">${openTimeDisp}</div>` : ''}</td>`;
+        if (selectedCols.acc) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4.5px 3px; font-size: 10.5px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7; white-space: nowrap;">${escapeHTML(c.accountNo || '-')}</td>`;
+        if (selectedCols.code) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4.5px 3px; font-size: 10px; font-weight: 700; font-family: 'Inter', monospace; color: #475569; white-space: nowrap;">${escapeHTML(zCode)}</td>`;
+        if (selectedCols.name) cellsHtml += `<td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4.5px 5px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a; word-break: break-word;"><strong>${escapeHTML(c.name)}</strong></td>`;
+        if (selectedCols.addr) cellsHtml += `<td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4.5px 5px; font-size: 9.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #334155; word-break: break-word;">${escapeHTML(c.address || '-')}</td>`;
+        if (selectedCols.phone) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4.5px 3px; font-size: 10px; font-family: 'Inter', sans-serif; white-space: nowrap; color: #334155;">${escapeHTML(c.phone || '-')}</td>`;
+        if (selectedCols.zone) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4.5px 3px; font-size: 10px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; white-space: nowrap;">${zoneBadge}</td>`;
+        if (selectedCols.bal) cellsHtml += `<td style="text-align:right; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4.5px 5px; font-size: 10.5px; font-weight: 900; color: ${dueColor}; font-family: 'Inter', sans-serif; white-space: nowrap;">${dueDisp}</td>`;
 
         const rowHtml = `<tr class="print-row-no-break" style="${bgStyle}">${cellsHtml}</tr>`;
 
@@ -166,18 +166,36 @@ export async function printFilteredCustomerList() {
         };
     });
 
-    let headerThHtml = '';
-    if (selectedCols.sl) headerThHtml += `<th style="width: 32px; text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">SL</th>`;
-    if (selectedCols.date) headerThHtml += `<th style="width: 70px; text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">তারিখ</th>`;
-    if (selectedCols.acc) headerThHtml += `<th style="width: 65px; text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">A/C NO</th>`;
-    if (selectedCols.code) headerThHtml += `<th style="width: 50px; text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কোড</th>`;
-    if (selectedCols.name) headerThHtml += `<th style="text-align: left; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমারের নাম</th>`;
-    if (selectedCols.addr) headerThHtml += `<th style="text-align: left; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ঠিকানা</th>`;
-    if (selectedCols.phone) headerThHtml += `<th style="width: 100px; text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোবাইল নম্বর</th>`;
-    if (selectedCols.zone) headerThHtml += `<th style="width: 65px; text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">জোন</th>`;
-    if (selectedCols.bal) headerThHtml += `<th style="width: 85px; text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ব্যালেন্স (৳)</th>`;
+    // Dynamic Proportional Column Grid (Totals 100% across all pages)
+    const baseColWeights = {
+        sl: 4, date: 10, acc: 8, code: 6,
+        name: 24, addr: 20, phone: 12, zone: 8, bal: 11
+    };
+    const activeColKeys = Object.keys(baseColWeights).filter(k => selectedCols[k]);
+    const totalWeight = activeColKeys.reduce((s, k) => s + baseColWeights[k], 0) || 100;
 
-    const tableColHeaderHtml = `<thead><tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">${headerThHtml}</tr></thead>`;
+    let allocatedPct = 0;
+    let colgroupHtml = '<colgroup>';
+    activeColKeys.forEach((k, idx) => {
+        const isLast = idx === activeColKeys.length - 1;
+        const pct = isLast ? Math.max(1, 100 - allocatedPct) : Math.round((baseColWeights[k] / totalWeight) * 100);
+        allocatedPct += pct;
+        colgroupHtml += `<col style="width: ${pct}%;">`;
+    });
+    colgroupHtml += '</colgroup>';
+
+    let headerThHtml = '';
+    if (selectedCols.sl) headerThHtml += `<th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">SL</th>`;
+    if (selectedCols.date) headerThHtml += `<th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">তারিখ</th>`;
+    if (selectedCols.acc) headerThHtml += `<th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">A/C NO</th>`;
+    if (selectedCols.code) headerThHtml += `<th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কোড</th>`;
+    if (selectedCols.name) headerThHtml += `<th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমারের নাম</th>`;
+    if (selectedCols.addr) headerThHtml += `<th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ঠিকানা</th>`;
+    if (selectedCols.phone) headerThHtml += `<th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোবাইল নম্বর</th>`;
+    if (selectedCols.zone) headerThHtml += `<th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">জোন</th>`;
+    if (selectedCols.bal) headerThHtml += `<th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ব্যালেন্স (৳)</th>`;
+
+    const tableColHeaderHtml = `${colgroupHtml}<thead><tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">${headerThHtml}</tr></thead>`;
 
     const summaryHtml = `
         <div style="display: flex; justify-content: flex-end; margin-top: 16px; page-break-inside: avoid; break-inside: avoid;">

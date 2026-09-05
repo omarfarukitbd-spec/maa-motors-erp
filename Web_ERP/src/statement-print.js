@@ -121,13 +121,14 @@ function getSharedHtmlTemplates(customer, totalBill, totalPaid, totalDue, runnin
     `;
 
     const tableColHeaderHtml = `
+        <colgroup><col style="width:12%;"><col style="width:40%;"><col style="width:15%;"><col style="width:15%;"><col style="width:18%;"></colgroup>
         <thead>
             <tr style="background:#f1f5f9; border-bottom:1.5px solid #0f172a;">
-                <th style="width:12%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900; text-transform:uppercase;">Date</th>
-                <th style="width:40%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900; text-transform:uppercase;">Description / Voucher</th>
-                <th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase;">Debit</th>
-                <th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase;">Credit</th>
-                <th style="width:18%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase; border-left:1px solid #cbd5e1;">Balance</th>
+                <th style="padding:6px 8px; text-align:left; font-size:9px; font-weight:900; text-transform:uppercase;">Date</th>
+                <th style="padding:6px 8px; text-align:left; font-size:9px; font-weight:900; text-transform:uppercase;">Description / Voucher</th>
+                <th style="padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase;">Debit</th>
+                <th style="padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase;">Credit</th>
+                <th style="padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase; border-left:1px solid #cbd5e1;">Balance</th>
             </tr>
         </thead>
     `;
