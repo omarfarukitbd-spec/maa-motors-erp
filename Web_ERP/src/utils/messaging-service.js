@@ -158,10 +158,10 @@ export function sendWhatsApp(phone, message) {
 }
 
 /**
- * Centralized SMS Message Builder with Guaranteed Date Binding
+ * Centralized SMS Message Builder with Guaranteed Date Binding and Smart Advance/Due Adaptation
  * @param {string} template - The SMS template or empty string to use default
  * @param {string} defaultTemplate - The standard fallback template
- * @param {object} params - Replacement tokens: { name, accountNo, shopName, date, bill, paid, due, memo, type }
+ * @param {object} params - Replacement tokens: { name, accountNo, shopName, date, bill, paid, due, rawDue, isAdvance, memo, type }
  * @returns {string} - Clean formatted SMS string
  */
 export function buildSmsMessage(template, defaultTemplate, params = {}) {
@@ -172,9 +172,16 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
     const date = params.date || '';
     const bill = params.bill !== undefined ? String(params.bill) : '';
     const paid = params.paid !== undefined ? String(params.paid) : '';
-    const due = params.due !== undefined ? String(params.due) : '';
     const memo = params.memo ? String(params.memo).trim() : '';
     const type = params.type || 'Cash';
+
+    // Smart Advance and Zero Balance Detection
+    const isAdv = params.isAdvance ||
+        (params.rawDue !== undefined && Number(params.rawDue) < 0) ||
+        (typeof params.due === 'number' && params.due < 0) ||
+        (typeof params.due === 'string' && params.due.trim().startsWith('-'));
+    const isZero = params.rawDue !== undefined ? params.rawDue === 0 : (params.due === 0 || params.due === '0');
+    const cleanDue = String(params.due !== undefined ? params.due : '').replace(/^-/, '');
 
     let msg = tpl;
 
@@ -197,6 +204,25 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
             .replace(/\[Memo\]/g, '');
     }
 
+    if (isAdv) {
+        msg = msg
+            .replace(/Opening\s+Due\s*:\s*Tk/gi, 'Opening Advance: Tk')
+            .replace(/Your\s+updated\s+due\s+is\s+Tk/gi, 'Your updated advance is Tk')
+            .replace(/your\s+updated\s+due\s+is\s+Tk/gi, 'your updated advance is Tk')
+            .replace(/Your\s+due\s+is\s+Tk/gi, 'Your advance is Tk')
+            .replace(/your\s+due\s+is\s+Tk/gi, 'your advance is Tk')
+            .replace(/Due\s*:\s*Tk/gi, 'Advance: Tk')
+            .replace(/due\s*:\s*Tk/gi, 'advance: Tk')
+            .replace(/বকেয়া\s*:\s*৳/gi, 'অ্যাডভান্স জমা: ৳')
+            .replace(/বকেয়া\s*:\s*Tk/gi, 'অ্যাডভান্স জমা: Tk')
+            .replace(/বকেয়া/gi, 'অ্যাডভান্স');
+    } else if (isZero) {
+        msg = msg
+            .replace(/Your\s+updated\s+due\s+is\s+Tk\s+\[Due\]/gi, 'Your balance is fully clear (Tk 0)')
+            .replace(/your\s+updated\s+due\s+is\s+Tk\s+\[Due\]/gi, 'your balance is fully clear (Tk 0)')
+            .replace(/Due\s*:\s*Tk\s+\[Due\]/gi, 'Balance: Tk 0 (Clear)');
+    }
+
     msg = msg
         .replace(/\[Name\]/g, name)
         .replace(/\[AccNo\]/g, accStr)
@@ -205,7 +231,7 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
         .replace(/\[Bill\]/g, bill)
         .replace(/\[Paid\]/g, paid)
         .replace(/\[Type\]/g, type)
-        .replace(/\[Due\]/g, due);
+        .replace(/\[Due\]/g, cleanDue);
 
     // Fail-safe date injection: if custom template lacks [Date] and date is provided
     if (tpl.indexOf('[Date]') === -1 && date) {
@@ -213,8 +239,9 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
             msg = msg.replace(`of Tk ${bill}`, `of Tk ${bill} on ${date}`);
         } else if (paid && msg.includes(`of Tk ${paid}`)) {
             msg = msg.replace(`of Tk ${paid}`, `of Tk ${paid} on ${date}`);
-        } else if (due && msg.includes(`due is Tk ${due}`)) {
-            msg = msg.replace(`due is Tk ${due}`, `due is Tk ${due} on ${date}`);
+        } else if (cleanDue && (msg.includes(`due is Tk ${cleanDue}`) || msg.includes(`advance is Tk ${cleanDue}`))) {
+            const targetPattern = msg.includes(`due is Tk ${cleanDue}`) ? `due is Tk ${cleanDue}` : `advance is Tk ${cleanDue}`;
+            msg = msg.replace(targetPattern, `${targetPattern} on ${date}`);
         } else {
             const lastDash = msg.lastIndexOf(' - ');
             if (lastDash !== -1) {

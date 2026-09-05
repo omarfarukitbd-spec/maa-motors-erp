@@ -166,7 +166,8 @@ export async function saveDashCustomer() {
                     accountNo,
                     shopName,
                     date: formattedOpeningDate,
-                    due: formatAmountWithComma(Math.abs(initialBalance))
+                    due: formatAmountWithComma(Math.abs(initialBalance)),
+                    rawDue: initialBalance
                 });
 
                 const { value: text, isConfirmed } = await Swal.fire({

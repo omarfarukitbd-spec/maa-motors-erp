@@ -55,7 +55,8 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 accountNo,
                 shopName,
                 date: formattedDate,
-                due: formattedDue
+                due: formattedDue,
+                rawDue: targetDue
             });
         } else if (isLess) {
             defaultMsg = buildSmsMessage(settings.smsTemplateLess, 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]', {
@@ -65,7 +66,8 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 date: formattedDate,
                 paid: formattedPaid,
                 type: 'Less',
-                due: formattedDue
+                due: formattedDue,
+                rawDue: targetDue
             });
         } else if (targetBill > 0) {
             defaultMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', {
@@ -76,7 +78,8 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 memo: targetVoucher,
                 bill: formattedBill,
                 paid: formattedPaid,
-                due: formattedDue
+                due: formattedDue,
+                rawDue: targetDue
             });
         } else {
             defaultMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', {
@@ -86,7 +89,8 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 date: formattedDate,
                 paid: formattedPaid,
                 type: txn?.receivedType || 'Cash',
-                due: formattedDue
+                due: formattedDue,
+                rawDue: targetDue
             });
         }
 

@@ -116,7 +116,8 @@ export async function sendReminderSMS(phone, dueAmt, name, accountNo = '') {
             accountNo,
             shopName,
             date: todayDate,
-            due: formatAmountWithComma(Math.abs(dueAmt))
+            due: formatAmountWithComma(Math.abs(dueAmt)),
+            rawDue: dueAmt
         });
 
         const { value: text } = await Swal.fire({

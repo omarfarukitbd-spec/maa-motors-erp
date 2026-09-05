@@ -178,11 +178,11 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
 
                 let autoMsg = '';
                 if (b > 0) {
-                    autoMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, memo: v, bill: formatAmountWithComma(b), paid: formatAmountWithComma(p), due: formattedDue });
+                    autoMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, memo: v, bill: formatAmountWithComma(b), paid: formatAmountWithComma(p), due: formattedDue, rawDue: netDue });
                 } else if (isLess) {
-                    autoMsg = buildSmsMessage(settings.smsTemplateLess, 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: 'Less', due: formattedDue });
+                    autoMsg = buildSmsMessage(settings.smsTemplateLess, 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: 'Less', due: formattedDue, rawDue: netDue });
                 } else {
-                    autoMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: receivedType || 'Cash', due: formattedDue });
+                    autoMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: receivedType || 'Cash', due: formattedDue, rawDue: netDue });
                 }
 
                 const { value: text, isConfirmed } = await Swal.fire({
