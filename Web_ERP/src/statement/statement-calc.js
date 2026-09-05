@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, getTodayLocalDateString, parseAmount, safeRound, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, getTodayLocalDateString, parseAmount, safeRound, showToast, toDBDate } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 import { reconcileSingleCustomerBalance } from '../admin/balance-recon-heal.js';
@@ -261,8 +261,8 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
             const prevDue = safeRound(Number(cachedCust?.totalDue || 0));
             const newDue = safeRound(prevDue - formValues.amount);
             const autoVoucherNo = 'QC-' + Date.now().toString(36).toUpperCase();
-            // BUG-5 FIX: Use user-selected date, not always today
-            const txnDate = formValues.date || getTodayLocalDateString();
+            // BUG-5 FIX: Use user-selected date, normalized to YYYY-MM-DD for DB
+            const txnDate = toDBDate(formValues.date);
             batch.set(txnRef, {
                 customerId: currentCustomerInfo.id,
                 customerName: currentCustomerInfo.name,

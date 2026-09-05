@@ -135,9 +135,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
             } else {
                 const netIncrement = safeRound(balanceDiff - oldDiff);
                 actualDelta = netIncrement;
-                // BUG-4 FIX: currentDue is a snapshot (balance after txn), not a counter — use calculated value, not increment()
-                const newCurrentDue = safeRound(preCommitDue + netIncrement);
-                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, currentDue: newCurrentDue });
+                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
                 batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
             }
             auditLog('UPDATE', 'Ledger', editingRef.id, name, { oldBill: editingRef.oldBill, oldPaid: editingRef.oldPaid, newBill: b, newPaid: p });
