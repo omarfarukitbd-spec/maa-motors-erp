@@ -15,7 +15,7 @@ html, body {
     margin: 0 !important; padding: 0 !important;
     background: #fff !important; color: #0f172a !important;
     width: 100% !important; overflow: visible !important;
-    font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important;
+    font-family: 'Hind Siliguri', 'Kalpurush', 'Inter', sans-serif !important;
 }
 table {
     border-collapse: collapse !important;
@@ -26,8 +26,13 @@ table.fixed-table, .fixed-table {
     table-layout: fixed !important;
     width: 100% !important;
 }
+table.fixed-table td, table.fixed-table th,
+.fixed-table td, .fixed-table th {
+    overflow: hidden;
+}
 .cell-nowrap {
     white-space: nowrap !important;
+    text-overflow: ellipsis;
 }
 .cell-wrap {
     word-break: break-word !important;

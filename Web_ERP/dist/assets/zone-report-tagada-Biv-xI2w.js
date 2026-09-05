@@ -1,4 +1,4 @@
-import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-CJk3sbx1.js";import{c as n,d as r,h as i,m as a,v as o}from"./ui-helpers-OIqdNIvE.js";import{n as s}from"./vendor-ui-n4g2UPZQ.js";import{n as c,t as l}from"./index-vF26E9IC.js";var u=e(s());async function d(e){let{customers:s}=e,d=e.selectedZone,f=s.filter(e=>(!d||(e.zone||``).trim()===d)&&(Number(e.totalDue)||0)>0);if(f.length===0)return u.default.fire(`তালিকায় কোনো বকেয়া কাস্টমার নেই`,`সিলেক্ট করা জোনে কোনো বকেয়াওয়ালা কাস্টমার পাওয়া যায়নি।`,`warning`);f.sort((e,t)=>(Number(t.totalDue)||0)-(Number(e.totalDue)||0));let p=await t.getAppSettings(),m=d?`${d} জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`:`সকল জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`,h=0;f.forEach(e=>h=o(h+(Number(e.totalDue)||0)));let[g,_,v]=r().split(`-`),y=`${v}/${_}/${g}`,b=n(p,{title:d?`${d} TAGADA SHEET`:`FIELD TAGADA SHEET`,subtitle:`${m} • ${y}`}),x=`
+import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-CJk3sbx1.js";import{c as n,d as r,h as i,m as a,v as o}from"./ui-helpers-OIqdNIvE.js";import{n as s}from"./vendor-ui-n4g2UPZQ.js";import{n as c,t as l}from"./index-w8L5-bPr.js";var u=e(s());async function d(e){let{customers:s}=e,d=e.selectedZone,f=s.filter(e=>(!d||(e.zone||``).trim()===d)&&(Number(e.totalDue)||0)>0);if(f.length===0)return u.default.fire(`তালিকায় কোনো বকেয়া কাস্টমার নেই`,`সিলেক্ট করা জোনে কোনো বকেয়াওয়ালা কাস্টমার পাওয়া যায়নি।`,`warning`);f.sort((e,t)=>(Number(t.totalDue)||0)-(Number(e.totalDue)||0));let p=await t.getAppSettings(),m=d?`${d} জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`:`সকল জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`,h=0;f.forEach(e=>h=o(h+(Number(e.totalDue)||0)));let[g,_,v]=r().split(`-`),y=`${v}/${_}/${g}`,b=n(p,{title:d?`${d} TAGADA SHEET`:`FIELD TAGADA SHEET`,subtitle:`${m} • ${y}`}),x=`
         <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
             <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">FIELD TAGADA SHEET <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
             <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${m}</div>
@@ -30,15 +30,24 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-CJk3
             </div>
         </div>
     `,w=await c({rowsArray:S,page1HeaderHtml:b,repeatHeaderHtml:x,tableColHeaderHtml:`
+        <colgroup>
+            <col style="width: 4%;">
+            <col style="width: 8%;">
+            <col style="width: 24%;">
+            <col style="width: 26%;">
+            <col style="width: 14%;">
+            <col style="width: 13%;">
+            <col style="width: 11%;">
+        </colgroup>
         <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10.5px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">SL</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10.5px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">A/C</th>
-                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10.5px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমার ও মোবাইল</th>
-                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10.5px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ঠিকানা</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10.5px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">বকেয়া (৳)</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10.5px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">আদায়কৃত টাকা (৳)</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10.5px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">স্বাক্ষর/তারিখ</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">SL</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">A/C</th>
+                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 7px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমার ও মোবাইল</th>
+                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 7px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ঠিকানা</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">বকেয়া (৳)</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">আদায়কৃত টাকা (৳)</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">স্বাক্ষর/তারিখ</th>
             </tr>
         </thead>
     `,summaryHtml:C,signatureHtml:`

@@ -119,6 +119,7 @@ export async function smartPaginatePrint({
         curH += rh;
     }
     if (cur.length) pages.push(cur);
+    _balanceOrphanPages(pages);
 
     return _buildPageHtml(pages, {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
@@ -159,12 +160,24 @@ export async function smartPaginateStatement({
         curH += rh;
     }
     if (cur.length) pages.push(cur);
+    _balanceOrphanPages(pages);
 
     return _buildPageHtml(pages, {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
         page1ExtraHtml, summaryHtml, signatureHtml, formattedDate,
         tableClass: 'print-items-table'
     });
+}
+
+function _balanceOrphanPages(pages, minRows = 3) {
+    if (pages.length <= 1) return;
+    const last = pages[pages.length - 1];
+    const prev = pages[pages.length - 2];
+    if (last.length < minRows && prev && prev.length > minRows + 2) {
+        const need = minRows - last.length + 1;
+        const shifted = prev.splice(prev.length - need, need);
+        last.unshift(...shifted);
+    }
 }
 
 function _buildPageHtml(pages, opts) {
@@ -215,7 +228,9 @@ export function printViaIframe(htmlBody, extraCss = '', title = 'Maa_Motors_Docu
     doc.open();
     doc.write(`<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8">
 <title>${title}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/kalpurush/font.css" rel="stylesheet">
 <style>${IFRAME_PRINT_CSS}${extraCss}</style>
 </head><body>${htmlBody}</body></html>`);
