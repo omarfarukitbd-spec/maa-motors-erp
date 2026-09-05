@@ -45,7 +45,8 @@ service cloud.firestore {
 
     // Customers Collection
     match /customers/{customerId} {
-      allow read: if isAuthenticated();
+      allow get: if isAuthenticated() || resource.data.name != null;
+      allow list: if isAuthenticated();
       allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageCustomers', false) == true))
                              && (!request.resource.data.keys().hasAny(['phone']) || request.resource.data.phone is string)
                              && (!request.resource.data.keys().hasAny(['balance']) || request.resource.data.balance is number);
@@ -62,7 +63,8 @@ service cloud.firestore {
 
     // Transactions Collection
     match /transactions/{txnId} {
-      allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
+      allow get: if isAuthenticated() || resource.data.customerId != null;
+      allow list: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
       allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true))
                             && (!request.resource.data.keys().hasAny(['amount']) || isAmountValid(request.resource.data.amount));
       allow delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
@@ -82,7 +84,7 @@ service cloud.firestore {
 
     // Settings
     match /settings/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || docId == 'appSettings';
       allow write: if isAdmin();
     }
 

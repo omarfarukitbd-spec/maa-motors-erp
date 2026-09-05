@@ -20,6 +20,7 @@ export function setupTreasuryActions(getState) {
             snap.forEach(doc => {
                 const t = doc.data();
                 if (t.voucherNo !== 'OPENING') {
+                    if (String(t.receivedType || '').trim() === 'Less') return;
                     suggestedAmount = safeRound(suggestedAmount + (Number(t.paid) || 0));
                 }
             });
@@ -56,6 +57,7 @@ export function setupTreasuryActions(getState) {
             snap.forEach(doc => {
                 const t = doc.data();
                 if (t.voucherNo !== 'OPENING') {
+                    if (String(t.receivedType || '').trim() === 'Less') return;
                     total = safeRound(total + (Number(t.paid) || 0));
                 }
             });
@@ -67,6 +69,7 @@ export function setupTreasuryActions(getState) {
                     snap2.forEach(doc => {
                         const t = doc.data();
                         if (t.voucherNo !== 'OPENING') {
+                            if (String(t.receivedType || '').trim() === 'Less') return;
                             total = safeRound(total + (Number(t.paid) || 0));
                         }
                     });

@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import { db, firebase } from '../firebase-config.js';
 import { ExpenseDAO } from '../dao.js';
 import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, numberToBanglaWords, resetLiveWords, promptSecurityPin } from '../utils.js';
 import { auditLog } from '../audit.js';
@@ -103,13 +104,22 @@ export async function saveExpense() {
 }
 
 export async function deleteExpense(id, desc) {
-    if (!(await promptSecurityPin("খরচ মুছে ফেলা"))) return;
+    if (!(await promptSecurityPin("খরচ মুছে ফেলা", "deleteExpense"))) return;
     try {
+        const expDoc = await ExpenseDAO.getById(id);
+        if (expDoc) {
+            await db.collection('recycle_bin').doc(id).set({
+                module: 'Expense',
+                data: expDoc,
+                deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                deletedBy: AppState?.currentUserEmail || 'Unknown'
+            });
+        }
         await ExpenseDAO.delete(id);
-        auditLog('DELETE', 'Expenses', id, desc);
+        auditLog('DELETE', 'Expenses', id, desc, { action: 'Soft Delete to Recycle Bin' });
         loadRecentExpenses();
-        Swal.fire('সফল!', 'খরচ মুছে ফেলা হয়েছে।', 'success');
-    } catch(err) { Swal.fire('Error', 'মুছতে সমস্যা হয়েছে', 'error'); }
+        Swal.fire('সফল!', 'খরচ মুছে ফেলা হয়েছে এবং রিসাইকেল বিনে ব্যাকআপ রাখা হয়েছে।', 'success');
+    } catch(err) { console.error("deleteExpense error:", err); Swal.fire('Error', 'মুছতে সমস্যা হয়েছে', 'error'); }
 }
 
 export async function editExpense(id, date, category, amount, detailsEncoded, pMethod, pAcc) {

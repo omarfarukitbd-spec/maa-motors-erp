@@ -68,7 +68,11 @@ export async function deleteCustomer(id, name) {
             auditLog('DELETE', 'Customers', id, name, { action: 'Soft Delete Customer & Txns to Recycle Bin' });
             
             if (delCust?.zone && window.appAdmin?.syncSingleZoneCounter) {
-                window.appAdmin.syncSingleZoneCounter(delCust.zone).catch(e => console.warn(e));
+                try {
+                    await window.appAdmin.syncSingleZoneCounter(delCust.zone);
+                } catch (zoneErr) {
+                    console.warn("Zone counter sync error:", zoneErr);
+                }
             }
             
             showToast('কাস্টমার রিসাইকেল বিনে মুভ করা হয়েছে', 'success');

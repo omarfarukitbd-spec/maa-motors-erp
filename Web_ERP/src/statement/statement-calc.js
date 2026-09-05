@@ -59,18 +59,18 @@ export async function loadStatementData(stateRef = {}) {
         });
 
         let openingBalance = initialDue;
-        if (start) {
-            const startDateObj = new Date(start);
+        const fromDate = start ? toDBDate(start) : '';
+        const toDate = end ? toDBDate(end) : '';
+        if (fromDate) {
             docs.forEach(d => {
-                if (new Date(d.date) < startDateObj) {
+                if (toDBDate(d.date) < fromDate) {
                     openingBalance = safeRound(openingBalance + ((Number(d.bill) || 0) - (Number(d.paid) || 0)));
                 }
             });
-            docs = docs.filter(d => new Date(d.date) >= startDateObj);
+            docs = docs.filter(d => toDBDate(d.date) >= fromDate);
         }
-        if (end) {
-            const endDateObj = new Date(end);
-            docs = docs.filter(d => new Date(d.date) <= endDateObj);
+        if (toDate) {
+            docs = docs.filter(d => toDBDate(d.date) <= toDate);
         }
 
         stateRef.currentStatementData = docs;
@@ -190,18 +190,21 @@ export function setStmtPresetDate(type, callbacks = {}) {
     const endEl = document.getElementById('stmt-end-date');
     if (!startEl || !endEl) return;
     const now = new Date();
+    let sVal = '', eVal = '';
     if (type === 'today') { 
-        const todayStr = getTodayLocalDateString(); 
-        startEl.value = todayStr; endEl.value = todayStr; 
+        sVal = getTodayLocalDateString(); eVal = sVal;
     } else if (type === 'this_month') { 
         const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0'); 
-        startEl.value = `${y}-${m}-01`; endEl.value = getTodayLocalDateString(); 
+        sVal = `${y}-${m}-01`; eVal = getTodayLocalDateString(); 
     } else if (type === 'last_month') { 
         const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1); 
         const y = prevMonth.getFullYear(), m = String(prevMonth.getMonth() + 1).padStart(2, '0'); 
         const lastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate(); 
-        startEl.value = `${y}-${m}-01`; endEl.value = `${y}-${m}-${String(lastDay).padStart(2, '0')}`; 
+        sVal = `${y}-${m}-01`; eVal = `${y}-${m}-${String(lastDay).padStart(2, '0')}`; 
     }
+    startEl.value = sVal; endEl.value = eVal;
+    if (startEl._flatpickr) startEl._flatpickr.setDate(sVal, false);
+    if (endEl._flatpickr) endEl._flatpickr.setDate(eVal, false);
     if (callbacks.loadStatementData) callbacks.loadStatementData();
 }
 

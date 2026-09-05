@@ -208,7 +208,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
                 customerDeltas[customerId] = safeRound((customerDeltas[customerId] || 0) + changeInDue);
             }
 
-            if (opCount >= 300) {
+            if (opCount >= 200) {
                 for (const [cId, delta] of Object.entries(customerDeltas)) {
                     if (delta !== 0 && !newCustomerDocs[cId]) {
                         batch.update(CustomerDAO.getRef(cId), { totalDue: firebase.firestore.FieldValue.increment(delta) });
@@ -231,6 +231,11 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             if (delta !== 0 && !newCustomerDocs[cId]) {
                 batch.update(CustomerDAO.getRef(cId), { totalDue: firebase.firestore.FieldValue.increment(delta) });
                 opCount++;
+                if (opCount >= 400) {
+                    await batch.commit();
+                    batch = db.batch();
+                    opCount = 0;
+                }
             }
         }
         for (const [cId, docData] of Object.entries(newCustomerDocs)) {
@@ -238,6 +243,11 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             const mapEntry = Object.values(customersMap).find(c => c && c.id === cId);
             if (mapEntry) mapEntry.isNew = false;
             opCount++;
+            if (opCount >= 400) {
+                await batch.commit();
+                batch = db.batch();
+                opCount = 0;
+            }
         }
 
         if (opCount > 0) await batch.commit();

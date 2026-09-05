@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { BankTransactionDAO } from '../dao.js';
-import { parseAmount, showToast, toDBDate, getTodayLocalDateString } from '../utils.js';
+import { parseAmount, showToast, toDBDate, getTodayLocalDateString, promptSecurityPin } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { firebase } from '../firebase-config.js';
 
@@ -76,6 +76,10 @@ export async function openTransactionModal(type, activeAccounts, refreshCallback
     });
 
     if (formValues) {
+        const pinAction = type === 'DEPOSIT' ? 'ব্যাংক জমা' : (type === 'WITHDRAWAL' ? 'ব্যাংক উত্তোলন' : 'ফান্ড ট্রান্সফার');
+        const isPinValid = await promptSecurityPin(pinAction, 'bankingTxn');
+        if (!isPinValid) return;
+
         Swal.fire({ title: 'সংরক্ষণ করা হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
             const txnData = {

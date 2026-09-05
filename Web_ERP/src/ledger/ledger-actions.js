@@ -270,7 +270,7 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
 }
 
 export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
-    if (!(await promptSecurityPin("Delete"))) return;
+    if (!(await promptSecurityPin("ভাউচার ডিলেট", "deleteTxn"))) return;
     try {
         Swal.fire({ title: 'ডিলিট হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const txnDoc = await TransactionDAO.getById(id);
