@@ -6,6 +6,7 @@ import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 import { showTransactionConfirmModal } from './ledger-confirm-modal.js';
+import { handlePostDeleteSms } from './ledger-delete-sms.js';
 
 export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs = {}) {
     const mainBtn = document.getElementById('save-txn-btn');
@@ -286,6 +287,7 @@ export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
         showToast('ভাউচার রিসাইকেল বিনে মুভ করা হয়েছে!', 'info');
         Swal.close();
         if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(cid);
+        await handlePostDeleteSms({ customer: cachedCust, txnDoc, newTotalDue: cachedCust?.totalDue });
     } catch (e) {
         console.error("deleteTransaction error:", e);
         Swal.fire('ত্রুটি', 'ভাউচার ডিলিট করা সম্ভব হয়নি।', 'error');

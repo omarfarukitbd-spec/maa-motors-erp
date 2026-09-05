@@ -172,6 +172,7 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
     const date = params.date || '';
     const bill = params.bill !== undefined ? String(params.bill) : '';
     const paid = params.paid !== undefined ? String(params.paid) : '';
+    const amount = params.amount !== undefined ? String(params.amount) : (bill || paid);
     const memo = params.memo ? String(params.memo).trim() : '';
     const type = params.type || 'Cash';
 
@@ -207,8 +208,8 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
     if (isAdv) {
         msg = msg
             .replace(/Opening\s+Due\s*:\s*Tk/gi, 'Opening Advance: Tk')
-            .replace(/Your\s+updated\s+due\s+is\s+Tk/gi, 'Your updated advance is Tk')
-            .replace(/your\s+updated\s+due\s+is\s+Tk/gi, 'your updated advance is Tk')
+            .replace(/Your\s+(?:correct\s+)?updated\s+due\s+is\s+Tk/gi, 'Your updated advance is Tk')
+            .replace(/your\s+(?:correct\s+)?updated\s+due\s+is\s+Tk/gi, 'your updated advance is Tk')
             .replace(/Your\s+current\s+due\s+is\s+Tk/gi, 'Your current advance is Tk')
             .replace(/your\s+current\s+due\s+is\s+Tk/gi, 'your current advance is Tk')
             .replace(/Your\s+total\s+due\s+is\s+Tk/gi, 'Your total advance is Tk')
@@ -224,7 +225,7 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
             .replace(/বকেয়া/gi, 'অ্যাডভান্স');
     } else if (isZero) {
         msg = msg
-            .replace(/Your\s+(?:updated|current|total|net)?\s*due\s+is\s+Tk\s+\[Due\]/gi, 'Your balance is fully clear (Tk 0)')
+            .replace(/Your\s+(?:correct\s+)?(?:updated|current|total|net)?\s*due\s+is\s+Tk\s+\[Due\]/gi, 'Your balance is fully clear (Tk 0)')
             .replace(/Opening\s+Due\s*:\s*Tk\s+\[Due\]/gi, 'Opening Balance: Tk 0 (Clear)')
             .replace(/(?:Net\s+)?Due\s*:\s*Tk\s+\[Due\]/gi, 'Balance: Tk 0 (Clear)');
     }
@@ -236,6 +237,7 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
         .replace(/\[Date\]/g, date)
         .replace(/\[Bill\]/g, bill)
         .replace(/\[Paid\]/g, paid)
+        .replace(/\[Amount\]/g, amount)
         .replace(/\[Type\]/g, type)
         .replace(/\[Due\]/g, cleanDue);
 

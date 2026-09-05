@@ -77,6 +77,10 @@ export function renderSettings(container) {
                             <div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-300">বকেয়া তাগাদা SMS টেমপ্লেট</span><span id="sms-rem-count" class="text-emerald-400">0/155</span></div>
                             <textarea id="set-sms-reminder" rows="2" disabled class="m3-field opacity-80 text-xs font-mono" oninput="window.checkSmsLength(this, 'sms-rem-count')"></textarea>
                         </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold mb-1"><span class="text-slate-300">ভুল মেসেজ সংশোধনী SMS টেমপ্লেট</span><span id="sms-corr-count" class="text-emerald-400">0/155</span></div>
+                            <textarea id="set-sms-correction" rows="2" disabled class="m3-field opacity-80 text-xs font-mono" oninput="window.checkSmsLength(this, 'sms-corr-count')"></textarea>
+                        </div>
                         <div class="grid grid-cols-2 gap-3 pt-2">
                             <input type="password" id="set-sms-api" disabled class="m3-field opacity-80" placeholder="API Key">
                             <input type="text" id="set-sms-sender" disabled class="m3-field opacity-80" placeholder="Sender ID">
@@ -147,21 +151,18 @@ export async function loadSettings() {
     try {
         const data = await SettingsDAO.getAppSettings();
         const fields = {
-            'set-shop-name': data.shopName || 'M/S. Maa Motors',
-            'set-shop-owner': data.shopOwner || 'Mohammed Amran',
-            'set-shop-phone': data.shopPhone || '01819-397669, 01815-707934',
-            'set-shop-address': data.shopAddress || 'রহমান টাওয়ার, চট্টগ্রাম।',
+            'set-shop-name': data.shopName || 'M/S. Maa Motors', 'set-shop-owner': data.shopOwner || 'Mohammed Amran',
+            'set-shop-phone': data.shopPhone || '01819-397669, 01815-707934', 'set-shop-address': data.shopAddress || 'রহমান টাওয়ার, চট্টগ্রাম।',
             'set-print-size': data.printSize || 'a4',
             'set-sms-reminder': data.smsTemplateReminder || 'Reminder: Dear [Name] [AccNo], your due is Tk [Due] on [Date]. Kindly clear payment soon. Thanks! - [Shop]',
             'set-sms-opening': data.smsTemplateOpening || 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!',
             'set-sms-new-bill': data.smsTemplateNew || 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]',
             'set-sms-payment': data.smsTemplatePaid || 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]',
             'set-sms-less': data.smsTemplateLess || 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]',
-            'set-sms-api': data.smsApiKey || '',
-            'set-sms-sender': data.smsSenderId || '',
+            'set-sms-correction': data.smsTemplateCorrection || 'Correction Notice: Dear [Name] [AccNo], a transaction of Tk [Amount] on [Date] has been cancelled/deleted due to an entry error. Your updated due is Tk [Due]. We apologize for any inconvenience. - [Shop]',
+            'set-sms-api': data.smsApiKey || '', 'set-sms-sender': data.smsSenderId || '',
             'set-admin-pin': data.adminSecurityPin || '1060',
-            'set-telegram-bot-token': data.telegramBotToken || '',
-            'set-telegram-chat-id': data.telegramChatId || ''
+            'set-telegram-bot-token': data.telegramBotToken || '', 'set-telegram-chat-id': data.telegramChatId || ''
         };
 
         Object.keys(fields).forEach(id => {
@@ -172,15 +173,7 @@ export async function loadSettings() {
         if (data.shopLogo) setCurrentLogo(data.shopLogo);
         if (document.getElementById('set-sms-auto')) document.getElementById('set-sms-auto').checked = data.smsAuto === true;
 
-        [
-            ['set-sms-reminder', 'sms-rem-count'],
-            ['set-sms-opening', 'sms-open-count'],
-            ['set-sms-new-bill', 'sms-new-count'],
-            ['set-sms-payment', 'sms-pay-count'],
-            ['set-sms-less', 'sms-less-count']
-        ].forEach(([id, countId]) => {
-            checkSmsLength(document.getElementById(id), countId);
-        });
+        [['set-sms-reminder', 'sms-rem-count'], ['set-sms-opening', 'sms-open-count'], ['set-sms-new-bill', 'sms-new-count'], ['set-sms-payment', 'sms-pay-count'], ['set-sms-less', 'sms-less-count'], ['set-sms-correction', 'sms-corr-count']].forEach(([id, countId]) => checkSmsLength(document.getElementById(id), countId));
 
         bindSecurityPolicyEvents();
         await populateSecurityPolicyValues();
@@ -198,6 +191,7 @@ export async function saveSettings() {
     const smsNew = document.getElementById('set-sms-new-bill')?.value.trim() || '';
     const smsPaid = document.getElementById('set-sms-payment')?.value.trim() || '';
     const smsLess = document.getElementById('set-sms-less')?.value.trim() || '';
+    const smsCorr = document.getElementById('set-sms-correction')?.value.trim() || '';
 
     const validateSms = (val, label) => {
         const isUni = /[^\x00-\x7F]/.test(val);
@@ -206,7 +200,7 @@ export async function saveSettings() {
         return null;
     };
 
-    const err = validateSms(smsRem, "রিমাইন্ডার") || validateSms(smsOpening, "একাউন্ট খোলা") || validateSms(smsNew, "নতুন বিল") || validateSms(smsPaid, "পেমেন্ট") || validateSms(smsLess, "লেস/ছাড়");
+    const err = validateSms(smsRem, "রিমাইন্ডার") || validateSms(smsOpening, "একাউন্ট খোলা") || validateSms(smsNew, "নতুন বিল") || validateSms(smsPaid, "পেমেন্ট") || validateSms(smsLess, "লেস/ছাড়") || validateSms(smsCorr, "সংশোধনী");
     if(err) {
         Swal.fire('Error', err, 'error');
         btn.disabled = false; btn.innerHTML = 'সকল সেটিংস সেভ করুন';
@@ -227,6 +221,7 @@ export async function saveSettings() {
         smsTemplateNew: smsNew,
         smsTemplatePaid: smsPaid,
         smsTemplateLess: smsLess,
+        smsTemplateCorrection: smsCorr,
         smsApiKey: document.getElementById('set-sms-api')?.value.trim() || '',
         smsSenderId: document.getElementById('set-sms-sender')?.value.trim() || '',
         smsAuto: document.getElementById('set-sms-auto')?.checked || false,
