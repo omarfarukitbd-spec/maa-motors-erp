@@ -28,6 +28,8 @@ export async function calculateAccountBalance(accountName, isCash = false, upToD
     collectionSnap.forEach(doc => {
         const t = doc.data();
         if (targetDate && t.date && t.date > targetDate) return;
+        // BUG-3 FIX: Less/Discount payments must NOT count as bank/cash inflow
+        if (String(t.receivedType || '').trim() === 'Less') return;
         if (t.paid && !isNaN(t.paid)) {
             customerCollectionTotal = safeRound(customerCollectionTotal + Number(t.paid));
         }
@@ -179,8 +181,9 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
         const dbDate = toDBDate(t.dateStr);
 
         if (fromDate && dbDate < fromDate) {
-            if (t.isCredit) openingBalance += t.amount;
-            if (t.isDebit) openingBalance -= t.amount;
+            // BUG-2 FIX: safeRound on every accumulation step to prevent float drift
+            if (t.isCredit) openingBalance = safeRound(openingBalance + t.amount);
+            if (t.isDebit) openingBalance = safeRound(openingBalance - t.amount);
         } else if (toDate && dbDate > toDate) {
             // After To Date -> ignore
         } else {
@@ -191,8 +194,9 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
 
     let currentBal = openingBalance;
     filteredTxns.forEach(t => {
-        if (t.isCredit) currentBal += t.amount;
-        if (t.isDebit) currentBal -= t.amount;
+        // BUG-2 FIX: safeRound on running balance to prevent cumulative float error
+        if (t.isCredit) currentBal = safeRound(currentBal + t.amount);
+        if (t.isDebit) currentBal = safeRound(currentBal - t.amount);
         t.runningBalance = currentBal;
     });
 

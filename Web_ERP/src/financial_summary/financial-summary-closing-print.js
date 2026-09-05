@@ -118,7 +118,7 @@ export async function printClosingReport(closingData) {
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:11px;">
                     <span style="color:#64748b; font-weight:700;">মার্কেটে মোট বকেয়া:</span>
-                    <strong style="color:#dc2626; font-size:13.5px; font-weight:900;">৳ ${formatAmountWithComma(closingData.totalMarketDue || totalDue)}</strong>
+                <strong style="color:#dc2626; font-size:13.5px; font-weight:900;">৳ ${formatAmountWithComma(closingData.totalMarketDue)}</strong>
                 </div>
             </div>
         </div>
