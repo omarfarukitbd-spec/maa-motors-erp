@@ -204,6 +204,7 @@ export function selectLedgerCustomer(id) {
     const addressInput = document.getElementById('ledger-cust-address');
 
     if (sel) sel.value = id;
+    if (editingRef.id && editingRef.oldCid && editingRef.oldCid !== id && window.cancelLedgerEdit) window.cancelLedgerEdit(false);
     const cust = (getCustomerCache() || []).find(c => c.id === id);
     if (searchInput && cust) { searchInput.value = cust.name || ''; if (clearBtn) clearBtn.classList.remove('hidden'); }
     if (phoneInput) phoneInput.value = cust?.phone || 'মোবাইল নেই';
@@ -215,33 +216,28 @@ export function selectLedgerCustomer(id) {
 }
 
 export function clearLedgerCustomerSearch() {
+    if (editingRef.id && window.cancelLedgerEdit) window.cancelLedgerEdit(false);
     const sel = document.getElementById('ledger-customer-select');
-    const searchInput = document.getElementById('ledger-cust-search-input');
-    const clearBtn = document.getElementById('ledger-cust-search-clear');
-    const dropdown = document.getElementById('ledger-cust-dropdown');
-    const phoneInput = document.getElementById('ledger-cust-phone');
-    const addressInput = document.getElementById('ledger-cust-address');
-
     if (sel) { sel.value = ''; filterLedgerByCustomer(''); }
-    if (searchInput) searchInput.value = '';
-    if (phoneInput) phoneInput.value = '';
-    if (addressInput) addressInput.value = '';
-    if (clearBtn) clearBtn.classList.add('hidden');
-    if (dropdown) dropdown.classList.add('hidden');
+    ['ledger-cust-search-input', 'ledger-cust-phone', 'ledger-cust-address'].forEach(k => { const el = document.getElementById(k); if (el) el.value = ''; });
+    document.getElementById('ledger-cust-search-clear')?.classList.add('hidden');
+    document.getElementById('ledger-cust-dropdown')?.classList.add('hidden');
     updateLedgerLiveText();
 }
 
 // Global API Bindings
 if (typeof window !== 'undefined') {
     window._ledgerEditingRef = editingRef;
-    window.cancelLedgerEdit = () => {
+    window.cancelLedgerEdit = (showFeedback = true) => {
         editingRef.id = null; editingRef.oldCid = null; editingRef.oldBill = 0; editingRef.oldPaid = 0;
         window._ledgerEditingRef = editingRef;
         const btn = document.getElementById('save-txn-btn');
         if (btn) { btn.innerText = 'এন্ট্রি সেভ করুন'; btn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20'; }
         document.getElementById('cancel-edit-txn-btn')?.classList.add('hidden');
-        ['ledger-bill', 'ledger-paid', 'ledger-voucher'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        updateLedgerLiveText(); showToast('এডিট বাতিল করা হয়েছে', 'info');
+        if (showFeedback) {
+            ['ledger-bill', 'ledger-paid', 'ledger-voucher'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            updateLedgerLiveText(); showToast('এডিট বাতিল করা হয়েছে', 'info');
+        }
     };
     Object.assign(window, {
         loadRecentTransactions, saveTransaction, sendTxnSMS, sendTxnWhatsApp, updateLedgerLiveText,
