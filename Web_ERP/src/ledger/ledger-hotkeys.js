@@ -140,11 +140,27 @@ export function focusCustomerSearch() {
     }
 }
 
-export function editLastTransaction() {
+export async function editLastTransaction() {
     const firstRow = document.querySelector('#ledger-list tr');
     if (!firstRow) return showToast('এডিট করার মতো লেনদেন পাওয়া যায়নি', 'warning');
     const editBtn = firstRow.querySelector('button[title*="এডিট"]');
-    if (editBtn) {
+    if (!editBtn) return showToast('এডিট করার অনুমতি নেই', 'warning');
+
+    const result = await Swal.fire({
+        title: '<i class="fa-solid fa-pen-to-square text-amber-400 mr-2"></i>এডিট নিশ্চিতকরণ (Alt+E)',
+        html: '<p class="font-bn text-slate-300 text-sm">আপনি কীবোর্ড শর্টকাট (Alt+E) চেপেছেন।<br>আপনি কি নিশ্চিত যে <strong>সর্বশেষ লেনদেনটি এডিট মোডে লোড করতে চান?</strong></p>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i>হ্যাঁ, এডিট করুন',
+        cancelButtonText: '<i class="fa-solid fa-xmark mr-1.5"></i>না, বাতিল',
+        customClass: {
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-amber-500/30 font-bn',
+            confirmButton: 'm3-btn-primary !bg-amber-600 hover:!bg-amber-500 rounded-xl px-6 py-2 text-xs font-bold',
+            cancelButton: 'm3-btn-tonal rounded-xl px-6 py-2 text-xs font-bold ml-2'
+        }
+    });
+
+    if (result.isConfirmed) {
         editBtn.click();
         showToast('সর্বশেষ লেনদেন এডিট মোডে লোড হয়েছে', 'info');
     }
