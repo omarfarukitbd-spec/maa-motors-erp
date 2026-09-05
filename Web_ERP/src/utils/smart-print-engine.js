@@ -25,10 +25,8 @@ export function measureRowHeights(rowsArray, tableColHeaderHtml) {
             'padding:6px 12px', 'box-sizing:border-box'
         ].join(';');
 
-        const isFixed = tableColHeaderHtml.includes('<colgroup>') || tableColHeaderHtml.includes('fixed-table');
         const table = document.createElement('table');
-        table.style.cssText = `width:100%;border-collapse:collapse;table-layout:${isFixed ? 'fixed' : 'auto'};`;
-        if (isFixed) table.className = 'fixed-table';
+        table.style.cssText = 'width:100%;border-collapse:collapse;table-layout:auto;';
         table.innerHTML = tableColHeaderHtml;
         const tbody = document.createElement('tbody');
 
@@ -83,9 +81,7 @@ const THEAD_H  = 34;
 const FOOTER_H = 36;
 const PAD_V    = 16;
 const ROW_SCALE = 1.0;
-const PRINT_SAFETY_MARGIN = 90;
-const MAX_P1_ROWS = 25;
-const MAX_PN_ROWS = 26;
+const BUDGET_BONUS = -20;
 
 export async function smartPaginatePrint({
     rowsArray, page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
@@ -100,8 +96,8 @@ export async function smartPaginatePrint({
 
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
     const effectiveP1HeaderH = Math.max(p1HeaderH, PAGE1_HEADER_H);
-    const page1Budget = A4_H - effectiveP1HeaderH - THEAD_H - FOOTER_H - PAD_V - PRINT_SAFETY_MARGIN;
-    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - PRINT_SAFETY_MARGIN;
+    const page1Budget = A4_H - effectiveP1HeaderH - THEAD_H - FOOTER_H - PAD_V - 20;
+    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - 20;
     const totalLastExtra = sumH + sigH;
 
     const pages = [];
@@ -110,14 +106,10 @@ export async function smartPaginatePrint({
     for (let i = 0; i < rowsArray.length; i++) {
         const rh = rowHeights[i] || 24;
         const budget = isP1 ? page1Budget : pageNBudget;
-        const maxRows = isP1 ? MAX_P1_ROWS : MAX_PN_ROWS;
         const isLastRow = i === rowsArray.length - 1;
         const extra = isLastRow ? totalLastExtra : 0;
 
-        const exceedsBudget = (curH + rh + extra > budget);
-        const exceedsCount = (cur.length >= maxRows);
-
-        if ((exceedsBudget || exceedsCount) && cur.length > 0) {
+        if (curH + rh + extra > budget && cur.length > 0) {
             pages.push(cur); cur = []; curH = 0; isP1 = false;
         }
         const item = rowsArray[i];
@@ -125,7 +117,6 @@ export async function smartPaginatePrint({
         curH += rh;
     }
     if (cur.length) pages.push(cur);
-    _balanceOrphanPages(pages);
 
     return _buildPageHtml(pages, {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
@@ -145,8 +136,8 @@ export async function smartPaginateStatement({
     ]);
 
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
-    const page1Budget = A4_H - PAGE1_HEADER_H - Math.ceil(extraH * ROW_SCALE) - THEAD_H - FOOTER_H - PAD_V - PRINT_SAFETY_MARGIN;
-    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - PRINT_SAFETY_MARGIN;
+    const page1Budget = A4_H - PAGE1_HEADER_H - Math.ceil(extraH * ROW_SCALE) - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
+    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
     const totalLastExtra = sumH + sigH;
 
     const pages = [];
@@ -155,14 +146,10 @@ export async function smartPaginateStatement({
     for (let i = 0; i < rowsArray.length; i++) {
         const rh = rowHeights[i] || 24;
         const budget = isP1 ? page1Budget : pageNBudget;
-        const maxRows = isP1 ? 22 : MAX_PN_ROWS;
         const isLastRow = i === rowsArray.length - 1;
         const extra = isLastRow ? totalLastExtra : 0;
 
-        const exceedsBudget = (curH + rh + extra > budget);
-        const exceedsCount = (cur.length >= maxRows);
-
-        if ((exceedsBudget || exceedsCount) && cur.length > 0) {
+        if (curH + rh + extra > budget && cur.length > 0) {
             pages.push(cur); cur = []; curH = 0; isP1 = false;
         }
         const item = rowsArray[i];
@@ -170,24 +157,12 @@ export async function smartPaginateStatement({
         curH += rh;
     }
     if (cur.length) pages.push(cur);
-    _balanceOrphanPages(pages);
 
     return _buildPageHtml(pages, {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
         page1ExtraHtml, summaryHtml, signatureHtml, formattedDate,
         tableClass: 'print-items-table'
     });
-}
-
-function _balanceOrphanPages(pages, minRows = 3) {
-    if (pages.length <= 1) return;
-    const last = pages[pages.length - 1];
-    const prev = pages[pages.length - 2];
-    if (last.length < minRows && prev && prev.length > minRows + 2) {
-        const need = minRows - last.length + 1;
-        const shifted = prev.splice(prev.length - need, need);
-        last.unshift(...shifted);
-    }
 }
 
 function _buildPageHtml(pages, opts) {
@@ -202,12 +177,10 @@ function _buildPageHtml(pages, opts) {
         const num = i + 1, isFirst = num === 1, isLast = num === total;
         const brk = isLast ? '' : 'page-break-after:always;break-after:always;';
         const tbodyStyle = tableClass === 'print-items-table' ? ' style="font-size:10px;"' : '';
-        const isFixed = tableColHeaderHtml.includes('<colgroup>') || (tableClass || '').includes('fixed-table');
-        const layoutStyle = isFixed ? 'table-layout:fixed;' : 'table-layout:auto;';
-        return `<div style="${brk}width:100%;box-sizing:border-box;background:white;color:#0f172a;padding:6px 12px;page-break-inside:avoid!important;break-inside:avoid!important;">
+        return `<div style="${brk}width:100%;box-sizing:border-box;background:white;color:#0f172a;padding:6px 12px;">
             <div style="padding-top:2px;margin-bottom:4px;">${isFirst ? page1HeaderHtml : repeatHeaderHtml}</div>
             ${isFirst && page1ExtraHtml ? page1ExtraHtml : ''}
-            <table style="width:100%;border-collapse:collapse;${layoutStyle}margin-top:2px;border:1px solid #cbd5e1;" class="${tableClass || ''}${isFixed ? ' fixed-table' : ''}">
+            <table style="width:100%;border-collapse:collapse;table-layout:auto;margin-top:2px;border:1px solid #cbd5e1;" class="${tableClass}">
                 ${tableColHeaderHtml}
                 <tbody${tbodyStyle}>${rows.join('')}</tbody>
             </table>
@@ -238,9 +211,7 @@ export function printViaIframe(htmlBody, extraCss = '', title = 'Maa_Motors_Docu
     doc.open();
     doc.write(`<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8">
 <title>${title}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/kalpurush/font.css" rel="stylesheet">
 <style>${IFRAME_PRINT_CSS}${extraCss}</style>
 </head><body>${htmlBody}</body></html>`);

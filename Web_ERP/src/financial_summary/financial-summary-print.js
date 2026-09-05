@@ -77,28 +77,17 @@ export async function printCustomerCollectionRegister(summaryData) {
     });
 
     const tableColHeaderHtml = `
-        <colgroup>
-            <col style="width: 4%;">
-            <col style="width: 11%;">
-            <col style="width: 7%;">
-            <col style="width: 24%;">
-            <col style="width: 10%;">
-            <col style="width: 8%;">
-            <col style="width: 11%;">
-            <col style="width: 12%;">
-            <col style="width: 13%;">
-        </colgroup>
         <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 2px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">SL</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 2px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">তারিখ</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 2px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">A/C</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 30px;">SL</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 68px;">তারিখ</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 50px;">A/C</th>
                 <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমার ও মোবাইল</th>
-                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">জোন</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 2px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ভাউচার</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 2px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">পেমেন্ট মেথড</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">আদায় (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">অবশিষ্ট বকেয়া (৳)</th>
+                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 70px;">জোন</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 55px;">ভাউচার</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 75px;">পেমেন্ট মেথড</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 80px;">আদায় (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 85px;">অবশিষ্ট বকেয়া (৳)</th>
             </tr>
         </thead>
     `;
@@ -200,26 +189,16 @@ export async function printDayByDayMonthlyRegister(summaryData) {
     });
 
     const tableColHeaderHtml = `
-        <colgroup>
-            <col style="width: 12%;">
-            <col style="width: 9%;">
-            <col style="width: 13%;">
-            <col style="width: 13%;">
-            <col style="width: 13%;">
-            <col style="width: 14%;">
-            <col style="width: 13%;">
-            <col style="width: 13%;">
-        </colgroup>
         <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">তারিখ</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">খদ্দের সংখ্যা</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোট বিক্রয় (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ক্যাশ আদায় (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ব্যাংক আদায় (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোট আদায় (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোট খরচ (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">নিট ক্যাশ (৳)</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 75px;">তারিখ</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif; width: 60px;">খদ্দের সংখ্যা</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোট বিক্রয় (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ক্যাশ আদায় (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ব্যাংক আদায় (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোট আদায় (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোট খরচ (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">নিট ক্যাশ (৳)</th>
             </tr>
         </thead>
     `;

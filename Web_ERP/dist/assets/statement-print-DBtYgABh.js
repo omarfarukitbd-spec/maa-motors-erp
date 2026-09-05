@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/dao-CJk3sbx1.js","assets/rolldown-runtime-Dd_uD5pT.js","assets/vendor-firebase-YQIUDKRL.js","assets/vendor-CJahiyzm.js","assets/vendor-CwbMEznW.css"])))=>i.map(i=>d[i]);
-import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-CJk3sbx1.js";import{a as n}from"./audit-BuamRIjn.js";import{c as r,d as i,h as a,l as o,v as s}from"./ui-helpers-OIqdNIvE.js";import{n as c}from"./vendor-ui-n4g2UPZQ.js";import{r as l,t as u}from"./index-CiKhUzCb.js";var d=e(c());function f(e,t){let n=[],r=e,i=`<tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-CJk3sbx1.js";import{a as n}from"./audit-BuamRIjn.js";import{c as r,d as i,h as a,l as o,v as s}from"./ui-helpers-OIqdNIvE.js";import{n as c}from"./vendor-ui-n4g2UPZQ.js";import{r as l,t as u}from"./index-CzSX0QGa.js";var d=e(c());function f(e,t){let n=[],r=e,i=`<tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
         <td colspan="2" style="font-weight:900; color:#0f172a; text-transform:uppercase; font-size:10px; padding: 8px 12px; letter-spacing: 1px;">Opening Balance</td>
         <td style="text-align:right; color:#0f172a; padding: 8px 12px;">-</td>
         <td style="text-align:right; color:#0f172a; padding: 8px 12px;">-</td>
@@ -59,14 +59,13 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-CJk3
             </div>
         </div>
     `,tableColHeaderHtml:`
-        <colgroup><col style="width:12%;"><col style="width:40%;"><col style="width:15%;"><col style="width:15%;"><col style="width:18%;"></colgroup>
         <thead>
             <tr style="background:#f1f5f9; border-bottom:1.5px solid #0f172a;">
-                <th style="padding:6px 8px; text-align:left; font-size:9px; font-weight:900; text-transform:uppercase;">Date</th>
-                <th style="padding:6px 8px; text-align:left; font-size:9px; font-weight:900; text-transform:uppercase;">Description / Voucher</th>
-                <th style="padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase;">Debit</th>
-                <th style="padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase;">Credit</th>
-                <th style="padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase; border-left:1px solid #cbd5e1;">Balance</th>
+                <th style="width:12%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900; text-transform:uppercase;">Date</th>
+                <th style="width:40%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900; text-transform:uppercase;">Description / Voucher</th>
+                <th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase;">Debit</th>
+                <th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase;">Credit</th>
+                <th style="width:18%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900; text-transform:uppercase; border-left:1px solid #cbd5e1;">Balance</th>
             </tr>
         </thead>
     `,signatureHtml:`

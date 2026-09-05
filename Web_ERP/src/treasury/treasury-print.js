@@ -82,24 +82,15 @@ export async function printTreasuryReport(ledgerData, filterInfo = {}) {
     `;
 
     const tableColHeaderHtml = `
-        <colgroup>
-            <col style="width: 4%;">
-            <col style="width: 11%;">
-            <col style="width: 27%;">
-            <col style="width: 20%;">
-            <col style="width: 12%;">
-            <col style="width: 12%;">
-            <col style="width: 14%;">
-        </colgroup>
         <thead>
             <tr style="background: #0f172a; border-bottom: 2px solid #0f172a;">
-                <th style="text-align: center; border: 1px solid #1e293b; padding: 6px 3px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; color: #ffffff;">SL</th>
-                <th style="text-align: center; border: 1px solid #1e293b; padding: 6px 3px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; color: #ffffff;">তারিখ</th>
-                <th style="text-align: left; border: 1px solid #1e293b; padding: 6px 6px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; color: #ffffff;">বিবরণ / একাউন্ট</th>
-                <th style="text-align: left; border: 1px solid #1e293b; padding: 6px 6px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; color: #ffffff;">মন্তব্য / বিবরণ নোট</th>
-                <th style="text-align: right; border: 1px solid #1e293b; padding: 6px 6px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; color: #34d399;">ইনফ্লো (+)</th>
-                <th style="text-align: right; border: 1px solid #1e293b; padding: 6px 6px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; color: #f87171;">আউটফ্লো (-)</th>
-                <th style="text-align: right; border: 1px solid #1e293b; padding: 6px 6px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; color: #ffffff;">রানিং ব্যালেন্স (৳)</th>
+                <th style="text-align: center; border: 1px solid #1e293b; padding: 6px 4px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; width: 35px; color: #ffffff;">SL</th>
+                <th style="text-align: center; border: 1px solid #1e293b; padding: 6px 4px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; width: 75px; color: #ffffff;">তারিখ</th>
+                <th style="text-align: left; border: 1px solid #1e293b; padding: 6px 8px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; color: #ffffff;">বিবরণ / একাউন্ট</th>
+                <th style="text-align: left; border: 1px solid #1e293b; padding: 6px 8px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; width: 145px; color: #ffffff;">মন্তব্য / বিবরণ নোট</th>
+                <th style="text-align: right; border: 1px solid #1e293b; padding: 6px 8px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; width: 95px; color: #34d399;">ইনফ্লো (+)</th>
+                <th style="text-align: right; border: 1px solid #1e293b; padding: 6px 8px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; width: 95px; color: #f87171;">আউটফ্লো (-)</th>
+                <th style="text-align: right; border: 1px solid #1e293b; padding: 6px 8px; font-size: 10px; font-weight: 800; font-family: 'Hind Siliguri', sans-serif; width: 115px; color: #ffffff;">রানিং ব্যালেন্স (৳)</th>
             </tr>
         </thead>
     `;

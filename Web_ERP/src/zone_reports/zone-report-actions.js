@@ -96,18 +96,15 @@ export async function printZonePDFReport(targetZoneName = '') {
             ? `<span style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #334155; display: inline-block;">${escapeHTML(c.zone)}</span>`
             : '-';
 
-        const phoneList = (c.phone || '-').split(/[,/]/).map(p => p.trim()).filter(Boolean);
-        const phoneDisp = phoneList.length ? phoneList.map(p => escapeHTML(p)).join('<br>') : '-';
-
         const rowHtml = `
             <tr class="print-row-no-break" style="${bgStyle}">
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 3px; font-size: 10px; font-family: 'Inter', sans-serif; color: #475569;">${idx + 1}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 3px; font-size: 10.5px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.accountNo || '-')}</td>
-                <td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 5px; font-size: 10.5px; font-family: 'Hind Siliguri', 'Kalpurush', sans-serif; line-height: 1.25; color: #0f172a;"><strong>${escapeHTML(c.name)}</strong></td>
-                <td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 5px; font-size: 10px; font-family: 'Hind Siliguri', 'Kalpurush', sans-serif; line-height: 1.25; color: #334155;">${escapeHTML(c.address || '-')}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 3px; font-size: 9.5px; font-family: 'Inter', monospace; line-height: 1.25; color: #334155;">${phoneDisp}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 3px; font-size: 10px; font-family: 'Hind Siliguri', 'Kalpurush', sans-serif;">${zoneBadge}</td>
-                <td style="text-align:right; vertical-align:middle; border: 1px solid #e2e8f0; padding: 4px 5px; font-size: 10.5px; font-weight: 900; color: ${dueColor}; font-family: 'Inter', sans-serif; white-space: nowrap;">${dueDisp}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-family: 'Inter', sans-serif; color: #475569;">${idx + 1}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.accountNo || '-')}</td>
+                <td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 6px; font-size: 11px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #0f172a;"><strong>${escapeHTML(c.name)}</strong></td>
+                <td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 6px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #334155;">${escapeHTML(c.address || '-')}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-family: 'Inter', sans-serif; white-space: nowrap; color: #334155;">${escapeHTML(c.phone || '-')}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 4px; font-size: 11px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif;">${zoneBadge}</td>
+                <td style="text-align:right; vertical-align:middle; border: 1px solid #e2e8f0; padding: 5px 6px; font-size: 11px; font-weight: 900; color: ${dueColor}; font-family: 'Inter', sans-serif; white-space: nowrap;">${dueDisp}</td>
             </tr>
         `;
 
@@ -115,24 +112,15 @@ export async function printZonePDFReport(targetZoneName = '') {
     });
 
     const tableColHeaderHtml = `
-        <colgroup>
-            <col style="width: 4%;">
-            <col style="width: 8%;">
-            <col style="width: 23%;">
-            <col style="width: 27%;">
-            <col style="width: 14%;">
-            <col style="width: 10%;">
-            <col style="width: 14%;">
-        </colgroup>
         <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">SL</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">A/C NO</th>
-                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমারের নাম</th>
-                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ঠিকানা</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোবাইল নম্বর</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 6px 3px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">জোন</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 6px 5px; font-size: 10px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ব্যালেন্স (৳)</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">SL</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">A/C NO</th>
+                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">কাস্টমারের নাম</th>
+                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ঠিকানা</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">মোবাইল নম্বর</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 7px 4px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">জোন</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 11px; font-weight: 900; color: #1e293b; font-family: 'Hind Siliguri', sans-serif;">ব্যালেন্স (৳)</th>
             </tr>
         </thead>
     `;
