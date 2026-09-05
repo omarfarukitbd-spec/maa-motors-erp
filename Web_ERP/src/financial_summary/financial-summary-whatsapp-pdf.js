@@ -120,7 +120,7 @@ export async function printClosingDepositPdfReport(summaryData) {
 
         bankBoxesHtml = `
             <div style="margin-bottom: 5px; font-family: 'Hind Siliguri', sans-serif;">
-                <div style="font-size: 8.5px; font-weight: 900; color: #0369a1; margin-bottom: 2px;">সব ব্যাংকের বর্তমান মোট স্থিতি (Live Balances):</div>
+                <div style="font-size: 8.5px; font-weight: 900; color: #0369a1; margin-bottom: 2px;">সব ব্যাংকের সমাপনী মোট স্থিতি (Bank Closing Balances):</div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px;">${bankCards}</div>
             </div>
         `;
@@ -190,6 +190,7 @@ export async function printClosingDepositPdfReport(summaryData) {
                     <strong>${escapeHTML(c.customerName)}</strong>
                     ${c.customerPhone ? `<span style="font-size:8px; color:#475569; margin-left:3px;">(${escapeHTML(c.customerPhone)})</span>` : ''}
                 </td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', monospace; color: #475569;">${escapeHTML(c.voucherNo || '-')}</td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 8.5px; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; color: #1e293b;">${escapeHTML(methodDisplay)}</td>
                 <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 5px; font-size: 10px; font-weight: 900; color: #16a34a; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(c.amount)}</td>
                 <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 5px; font-size: 9.5px; font-weight: 800; color: ${dueVal > 0 ? '#dc2626' : '#16a34a'}; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${formatAmountWithComma(Math.abs(dueVal))} ${dueVal < 0 ? '(Adv)' : ''}</td>
@@ -200,13 +201,14 @@ export async function printClosingDepositPdfReport(summaryData) {
     const tableColHeaderHtml = `
         <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 25px;">SL</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 60px;">তারিখ</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 45px;">A/C</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 22px;">SL</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 55px;">তারিখ</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 42px;">A/C</th>
                 <th style="text-align: left; border: 1px solid #cbd5e1; padding: 4px 5px; font-size: 9px; font-weight: 900; color: #1e293b;">কাস্টমার ও মোবাইল</th>
-                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 4px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 90px;">পদ্ধতি / ব্যাংক</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 4px 5px; font-size: 9px; font-weight: 900; color: #1e293b; width: 85px;">জমা (৳)</th>
-                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 4px 5px; font-size: 9px; font-weight: 900; color: #1e293b; width: 85px;">অবশিষ্ট বকেয়া (৳)</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 45px;">ভাউচার</th>
+                <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 4px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 85px;">পদ্ধতি / ব্যাংক</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 4px 5px; font-size: 9px; font-weight: 900; color: #1e293b; width: 75px;">জমা (৳)</th>
+                <th style="text-align: right; border: 1px solid #cbd5e1; padding: 4px 5px; font-size: 9px; font-weight: 900; color: #1e293b; width: 80px;">অবশিষ্ট বকেয়া (৳)</th>
             </tr>
         </thead>
     `;

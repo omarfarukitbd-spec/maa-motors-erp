@@ -148,22 +148,22 @@ export async function printStatement(currentCustomerInfo, currentOpeningBalance,
     try {
         const settings = await SettingsDAO.getAppSettings();
         let container = document.getElementById('print-receipt-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'print-receipt-container';
-            document.body.appendChild(container);
-        }
+        if (!container) { container = document.createElement('div'); container.id = 'print-receipt-container'; document.body.appendChild(container); }
 
         const start = document.getElementById('stmt-start-date')?.value || '';
         const end = document.getElementById('stmt-end-date')?.value || '';
         const dateRangeStr = (start || end) ? `${start ? formatAppDate(start) : 'শুরু'} হতে ${end ? formatAppDate(end) : 'আজ'}` : 'সকল লেনদেন';
 
-        const totalBill = document.getElementById('stmt-total-bill')?.innerText || '৳ 0';
-        const totalPaid = document.getElementById('stmt-total-paid')?.innerText || '৳ 0';
-        const totalDue = document.getElementById('stmt-total-due')?.innerText || '৳ 0';
-
+        let bSum = 0, pSum = 0;
+        (currentStatementData || []).forEach(t => {
+            bSum = safeRound(bSum + (Number(t.bill) || 0));
+            pSum = safeRound(pSum + (Number(t.paid) || 0));
+        });
         const { rowsArray, running } = generateRowsArray(currentOpeningBalance, currentStatementData);
-        
+        const totalBill = `৳ ${formatAmountWithComma(bSum)}`;
+        const totalPaid = `৳ ${formatAmountWithComma(pSum)}`;
+        const totalDue = `৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '(Adv)' : ''}`;
+
         const { page1HeaderHtml, repeatHeaderHtml, page1ExtraHtml, tableColHeaderHtml, signatureHtml } = getSharedHtmlTemplates(
             currentCustomerInfo, totalBill, totalPaid, totalDue, running, settings, 'CUSTOMER KHATIYAN', 'কাস্টমার বকেয়া খতিয়ান', dateRangeStr
         );

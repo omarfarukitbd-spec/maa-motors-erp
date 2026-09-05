@@ -104,20 +104,20 @@ export function calculateBookAuditSummary(memos = [], startNo, endNo) {
         const rType = String(m.receivedType || '').trim();
         const rFrom = String(m.receivedFrom || '').trim();
 
-        totalBill += bill;
+        totalBill = safeRound(totalBill + bill);
 
         if (paid > 0) {
             if (rType === 'Less' || /less|ছাড়|discount|কমিশন|সমন্বয়/i.test(rType) || /less|ছাড়|discount/i.test(rFrom)) {
-                totalLess += paid;
+                totalLess = safeRound(totalLess + paid);
             } else if (rType === 'Cash') {
-                totalPaid += paid;
-                cashPaid += paid;
+                totalPaid = safeRound(totalPaid + paid);
+                cashPaid = safeRound(cashPaid + paid);
             } else {
                 // Default to Bank
-                totalPaid += paid;
-                bankPaid += paid;
+                totalPaid = safeRound(totalPaid + paid);
+                bankPaid = safeRound(bankPaid + paid);
                 const bKey = rFrom || 'অনির্দিষ্ট ব্যাংক';
-                bankBreakdown[bKey] = (bankBreakdown[bKey] || 0) + paid;
+                bankBreakdown[bKey] = safeRound((bankBreakdown[bKey] || 0) + paid);
             }
         }
     });

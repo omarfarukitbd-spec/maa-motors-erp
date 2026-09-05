@@ -27,7 +27,7 @@ export async function printCustomerCollectionRegister(summaryData) {
     const bankSummaryHtml = summaryData.bankBalances && summaryData.bankBalances.length > 0 ? `
         <div style="margin-bottom: 10px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; font-family: 'Hind Siliguri', sans-serif;">
             <div style="font-size: 10.5px; font-weight: 800; color: #0284c7; margin-bottom: 4px;">
-                কোন ব্যাংকে কত টাকা আছে (Live Bank Balances):
+                কোন ব্যাংকে কত টাকা আছে (সমাপনী ব্যাংক স্থিতি / Bank Closing Balances):
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 9.5px; color: #334155;">
                 <span>ক্যাশ: <strong style="color:#0f172a;">৳ ${formatAmountWithComma(cashCollection)}</strong></span>

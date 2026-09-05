@@ -1,5 +1,5 @@
 import { SettingsDAO, ZoneDAO } from '../dao.js';
-import { formatAmountWithComma, promptSecurityPin, getTodayLocalDateString, escapeHTML, renderPrintHeader, formatAppDate, getDayOfWeekBangla } from '../utils.js';
+import { formatAmountWithComma, promptSecurityPin, getTodayLocalDateString, escapeHTML, renderPrintHeader, formatAppDate, getDayOfWeekBangla, safeRound } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import Swal from 'sweetalert2';
 import { cachedCustomers } from './customer-state.js';
@@ -102,7 +102,7 @@ export async function printFilteredCustomerList() {
 
     const reportTitle = zone ? `${zone} জোনের কাস্টমার লিস্ট` : 'সকল কাস্টমার লিস্ট';
     let totalDue = 0;
-    filtered.forEach(c => totalDue += (Number(c.totalDue) || 0));
+    filtered.forEach(c => totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)));
 
     const todayStr = getTodayLocalDateString();
     const [y, m, d] = todayStr.split('-');

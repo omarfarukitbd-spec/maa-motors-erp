@@ -156,7 +156,7 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
                     customerPhone: cust.phone || '-',
                     customerZone: cust.zone || '-',
                     customerAccountNo: cust.accountNo || '-',
-                    currentDue: Number(cust.totalDue) || Number(t.currentDue) || 0,
+                    currentDue: t.currentDue !== undefined ? Number(t.currentDue) : (Number(cust.totalDue) || 0),
                     voucherNo: t.voucherNo || '-',
                     receivedType: t.receivedType || 'Cash',
                     receivedFrom: t.receivedFrom || (t.receivedType === 'Cash' ? 'ক্যাশ' : 'ব্যাংক'),
@@ -209,7 +209,7 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             for (const acc of allAccs) {
                 if (acc.status === 'inactive') continue;
                 try {
-                    const bal = await calculateAccountBalance(acc.name, acc.isCash);
+                    const bal = await calculateAccountBalance(acc.name, acc.isCash, endDate);
                     bankBalances.push({ name: acc.name, balance: bal, isCash: !!acc.isCash });
                     totalLiquidFund = safeRound(totalLiquidFund + bal);
                 } catch (e) { console.warn('Account balance calc warning:', acc.name, e); }

@@ -11,8 +11,9 @@ import { safeRound, toDBDate } from '../utils.js';
  *         - (Transfers from this account to other banks)
  *         - (Expenses disbursed from this account)
  */
-export async function calculateAccountBalance(accountName, isCash = false) {
+export async function calculateAccountBalance(accountName, isCash = false, upToDate = null) {
     if (!accountName) return 0;
+    const targetDate = upToDate ? toDBDate(upToDate) : null;
     
     // Run all 4 queries concurrently to speed up calculation
     const [collectionSnap, bankTxns, incomingTxns, expenseSnap] = await Promise.all([
@@ -26,8 +27,9 @@ export async function calculateAccountBalance(accountName, isCash = false) {
     let customerCollectionTotal = 0;
     collectionSnap.forEach(doc => {
         const t = doc.data();
+        if (targetDate && t.date && t.date > targetDate) return;
         if (t.paid && !isNaN(t.paid)) {
-            customerCollectionTotal += Number(t.paid);
+            customerCollectionTotal = safeRound(customerCollectionTotal + Number(t.paid));
         }
     });
 
@@ -37,32 +39,35 @@ export async function calculateAccountBalance(accountName, isCash = false) {
     let outgoingTransfers = 0;
     
     bankTxns.forEach(tx => {
+        if (targetDate && tx.date && tx.date > targetDate) return;
         const amt = Number(tx.amount || 0);
         const rawType = String(tx.type || '').toUpperCase();
-        if (rawType === 'DEPOSIT') manualDeposits += amt;
-        else if (rawType === 'WITHDRAWAL' || rawType === 'WITHDRAW') manualWithdrawals += amt;
-        else if (rawType === 'TRANSFER') outgoingTransfers += amt;
+        if (rawType === 'DEPOSIT') manualDeposits = safeRound(manualDeposits + amt);
+        else if (rawType === 'WITHDRAWAL' || rawType === 'WITHDRAW') manualWithdrawals = safeRound(manualWithdrawals + amt);
+        else if (rawType === 'TRANSFER') outgoingTransfers = safeRound(outgoingTransfers + amt);
     });
     
     // 3. Process Incoming Transfers
     let incomingTransfers = 0;
     incomingTxns.forEach(tx => {
-        incomingTransfers += Number(tx.amount || 0);
+        if (targetDate && tx.date && tx.date > targetDate) return;
+        incomingTransfers = safeRound(incomingTransfers + Number(tx.amount || 0));
     });
 
     // 4. Process Expenses disbursed from this account
     let expenseTotal = 0;
     expenseSnap.forEach(doc => {
         const exp = doc.data();
+        if (targetDate && exp.date && exp.date > targetDate) return;
         const amt = Number(exp.amount || 0);
         if (!isNaN(amt) && amt > 0) {
-            expenseTotal += amt;
+            expenseTotal = safeRound(expenseTotal + amt);
         }
     });
 
     // Final Balance
-    const balance = customerCollectionTotal + manualDeposits + incomingTransfers - manualWithdrawals - outgoingTransfers - expenseTotal;
-    return safeRound(balance);
+    const balance = safeRound(customerCollectionTotal + manualDeposits + incomingTransfers - manualWithdrawals - outgoingTransfers - expenseTotal);
+    return balance;
 }
 
 export async function getAccountLedgerTransactions(accountName, isCash, fromDateStr, toDateStr) {
