@@ -3,6 +3,7 @@ import { db, firebase } from '../firebase-config.js';
 import { TransactionDAO, CustomerDAO } from '../dao.js';
 import { parseAmount, formatAmountWithComma, formatAppDate, numberToBanglaWords, toDBDate, safeRound } from '../utils.js';
 import { auditLog } from '../audit.js';
+import { getCustomerCache } from '../customer/index.js';
 import { renderInvoice, renderInvoiceItems, calcItemTotals, loadInvoiceCustomers, updateCashTenderUI } from './invoice-ui.js';
 
 /**
@@ -235,6 +236,9 @@ export async function saveAndPrintInvoice(layoutType) {
         batch.set(txnRef, txnData);
         batch.update(CustomerDAO.getRef(customerId), { totalDue: firebase.firestore.FieldValue.increment(safeRound(bill - paid)) });
         await batch.commit();
+
+        const cachedCust = (getCustomerCache() || []).find(c => c.id === customerId);
+        if (cachedCust) cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) + (bill - paid));
 
         auditLog('CREATE', 'Invoice', txnRef.id, customerName, { bill, paid });
 

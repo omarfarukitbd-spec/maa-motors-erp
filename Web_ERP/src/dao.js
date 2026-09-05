@@ -271,6 +271,8 @@ export const CashCollectorDAO = new class extends BaseDAO {
     }
 }();
 
+const getBankTxnTs = (x) => x?.createdAt?.toMillis?.() || (x?.createdAt?.toDate?.()?.getTime?.()) || (new Date(x?.createdAt || 0).getTime()) || 0;
+
 export const BankTransactionDAO = new class extends BaseDAO {
     constructor() { super('bank_transactions'); }
 
@@ -278,7 +280,7 @@ export const BankTransactionDAO = new class extends BaseDAO {
         const snap = await this.collection.where('bankName', '==', bankName).get();
         const results = [];
         snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
-        return results.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+        return results.sort((a, b) => getBankTxnTs(b) - getBankTxnTs(a));
     }
 
     async getTransfersByTargetBank(bankName) {
@@ -288,6 +290,6 @@ export const BankTransactionDAO = new class extends BaseDAO {
             const data = doc.data();
             if (data.type === 'TRANSFER') results.push({ id: doc.id, ...data });
         });
-        return results.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+        return results.sort((a, b) => getBankTxnTs(b) - getBankTxnTs(a));
     }
 }();

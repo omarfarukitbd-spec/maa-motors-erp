@@ -81,6 +81,8 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
     
     collectionSnap.forEach(doc => {
         const t = doc.data();
+        // Less/Discount payments must NOT count as bank/cash inflow
+        if (String(t.receivedType || '').trim() === 'Less') return;
         if (t.paid && !isNaN(t.paid) && Number(t.paid) > 0) {
             allTxns.push({
                 id: doc.id,

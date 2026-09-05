@@ -185,7 +185,8 @@ export async function runBankingBalanceScanner() {
             const exactBalance = calculatedBalances[i];
             const storedBalance = acc.balance || 0;
 
-            if (exactBalance !== storedBalance) {
+            const diff = safeRound(exactBalance - storedBalance);
+            if (Math.abs(diff) > 0.01) {
                 discrepancies.push({
                     id: acc.id,
                     name: acc.name,
@@ -193,7 +194,7 @@ export async function runBankingBalanceScanner() {
                     storedBalance: storedBalance,
                     expectedBalance: exactBalance,
                     dao: acc.dao,
-                    diff: exactBalance - storedBalance
+                    diff
                 });
             }
         }

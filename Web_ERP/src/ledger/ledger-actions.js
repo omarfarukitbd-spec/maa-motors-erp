@@ -253,8 +253,7 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
     let cancelBtn = document.getElementById('cancel-edit-txn-btn');
     if (!cancelBtn && btn && btn.parentNode) {
         cancelBtn = document.createElement('button');
-        cancelBtn.id = 'cancel-edit-txn-btn';
-        cancelBtn.type = 'button';
+        cancelBtn.id = 'cancel-edit-txn-btn'; cancelBtn.type = 'button';
         cancelBtn.className = 'h-10 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ml-2';
         cancelBtn.innerHTML = '<i class="fa-solid fa-xmark"></i><span>বাতিল</span>';
         cancelBtn.onclick = () => window.cancelLedgerEdit && window.cancelLedgerEdit();
@@ -279,13 +278,15 @@ export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
         const batch = db.batch();
         batch.update(CustomerDAO.getRef(cid), { totalDue: firebase.firestore.FieldValue.increment(safeRound(p - b)) });
         batch.set(db.collection('recycle_bin').doc(id), {
-            module: 'Transaction',
-            data: txnDoc,
+            module: 'Transaction', data: txnDoc,
             deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
             deletedBy: window.AppState?.currentUserEmail || 'Unknown'
         });
         batch.delete(TransactionDAO.getRef(id));
         await batch.commit();
+
+        const cachedCust = (getCustomerCache() || []).find(c => c.id === cid);
+        if (cachedCust) cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) + (p - b));
         
         auditLog('DELETE', 'Ledger', id, txnDoc.customerName || cid, { bill: b, paid: p, action: 'Soft Delete to Recycle Bin' });
         showToast('ভাউচার রিসাইকেল বিনে মুভ করা হয়েছে!', 'info');

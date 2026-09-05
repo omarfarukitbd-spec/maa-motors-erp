@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 import { TransactionDAO, SettingsDAO } from '../dao.js';
-import { promptSecurityPin, getTodayLocalDateString } from '../utils.js';
+import { promptSecurityPin, getTodayLocalDateString, toDBDate } from '../utils.js';
 import { getCustomerCache, initCustomerCache } from '../customer/index.js';
 
 /**
@@ -30,9 +30,11 @@ export async function downloadAdminExcelBackup() {
 
         // Chronological sort
         realTxns.sort((a, b) => {
-            const d1 = new Date(a.date || 0); const d2 = new Date(b.date || 0);
-            if (d1 - d2 !== 0) return d1 - d2;
-            return (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0);
+            const dA = toDBDate(a.date), dB = toDBDate(b.date);
+            if (dA !== dB) return dA.localeCompare(dB);
+            const tA = a.createdAt?.toMillis?.() || (a.createdAt?.toDate?.()?.getTime?.()) || (new Date(a.createdAt || 0).getTime()) || 0;
+            const tB = b.createdAt?.toMillis?.() || (b.createdAt?.toDate?.()?.getTime?.()) || (new Date(b.createdAt || 0).getTime()) || 0;
+            return tA - tB;
         });
 
         const todayStr = getTodayLocalDateString();

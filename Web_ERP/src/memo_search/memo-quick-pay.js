@@ -4,6 +4,7 @@ import { TransactionDAO, CustomerDAO, BankDAO } from '../dao.js';
 import { parseAmount, formatAmountWithComma, numberToBanglaWords, toDBDate, safeRound, escapeHTML } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 import { auditLog } from '../audit.js';
+import { getCustomerCache } from '../customer/index.js';
 
 /**
  * Open Quick Payment Collect Modal directly for a memo
@@ -160,6 +161,9 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, curren
         });
 
         await batch.commit();
+        const cachedCust = (getCustomerCache() || []).find(c => c.id === targetCustId);
+        if (cachedCust) cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) - formValues.amt);
+
         auditLog('QUICK_COLLECT', 'Transaction', txnRef.id, custName, { paid: formValues.amt, voucherNo: targetVoucher });
 
         showToast(`৳ ${formatAmountWithComma(formValues.amt)} জমা সফলভাবে সেভ হয়েছে!`, 'success');

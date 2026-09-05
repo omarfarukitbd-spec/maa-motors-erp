@@ -1,6 +1,6 @@
 import { TransactionDAO, CustomerDAO, SettingsDAO } from '../dao.js';
 import { escapeHTML, formatAmountWithComma } from './formatters.js';
-import { formatAppDate, getDayOfWeekBangla } from './date-logic/date-converter.js';
+import { formatAppDate, getDayOfWeekBangla, toDBDate } from './date-logic/date-converter.js';
 import { safeRound } from './formatters.js';
 import { showToast } from './ui-helpers.js';
 import Swal from 'sweetalert2';
@@ -53,8 +53,18 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
 
         const customerId = txn.customerId;
         const cData = await CustomerDAO.getById(customerId) || {};
+        const rawDocs = await TransactionDAO.getByCustomer(customerId);
 
-        let allTxns = (await TransactionDAO.getByCustomer(customerId)).filter(t => {
+        let initialDue = Number(cData.initialDue || 0);
+        if (initialDue === 0) {
+            const opDoc = rawDocs.find(t => {
+                const v = String(t.voucherNo || '').trim().toUpperCase();
+                return v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের';
+            });
+            if (opDoc) initialDue = safeRound((Number(opDoc.bill) || 0) - (Number(opDoc.paid) || 0));
+        }
+
+        let allTxns = rawDocs.filter(t => {
             const v = String(t.voucherNo || '').trim().toUpperCase();
             return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের';
         });
@@ -66,12 +76,13 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
         };
 
         allTxns.sort((a, b) => {
-            const dDiff = new Date(a.date) - new Date(b.date);
-            if (dDiff !== 0) return dDiff;
+            const dateA = toDBDate(a.date);
+            const dateB = toDBDate(b.date);
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
             return getTxnTime(a) - getTxnTime(b);
         });
 
-        let calcPrevDue = Number(cData.initialDue || 0);
+        let calcPrevDue = initialDue;
         for (const t of allTxns) {
             if (t.id === txnId) break;
             calcPrevDue = safeRound(calcPrevDue + (Number(t.bill) || 0) - (Number(t.paid) || 0));

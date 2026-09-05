@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { SettingsDAO } from './dao.js';
-import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound } from './utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound, toDBDate } from './utils.js';
 import { smartPaginateStatement, printViaIframe } from './utils/smart-print-engine.js';
 
 
@@ -220,9 +220,11 @@ export async function renderPublicStatementView(customerId) {
             return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের';
         });
         docs.sort((a, b) => {
-            const dDiff = new Date(a.date) - new Date(b.date);
-            if (dDiff !== 0) return dDiff;
-            return (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0);
+            const dA = toDBDate(a.date), dB = toDBDate(b.date);
+            if (dA !== dB) return dA.localeCompare(dB);
+            const tA = a.createdAt?.toMillis?.() || (a.createdAt?.toDate?.()?.getTime?.()) || (new Date(a.createdAt || 0).getTime()) || 0;
+            const tB = b.createdAt?.toMillis?.() || (b.createdAt?.toDate?.()?.getTime?.()) || (new Date(b.createdAt || 0).getTime()) || 0;
+            return tA - tB;
         });
 
         const initialDue = Number(customer.initialDue || 0);

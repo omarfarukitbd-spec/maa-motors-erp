@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, escapeHTML, safeRound } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, escapeHTML, safeRound, toDBDate } from '../utils.js';
 import { reconcileSingleCustomerBalance } from '../admin/balance-recon-heal.js';
 
 /**
@@ -64,8 +64,9 @@ export async function openCustomerLedgerDrawer(targetId, customerName = '', acco
             const v = String(t.voucherNo || '').trim().toUpperCase();
             return v !== 'OPENING' && v !== 'OPEN' && v !== 'প্রারম্ভিক ব্যালেন্স' && v !== 'প্রারম্ভিক জের';
         }).sort((a, b) => {
-            const dDiff = new Date(a.date) - new Date(b.date);
-            if (dDiff !== 0) return dDiff;
+            const dateA = toDBDate(a.date);
+            const dateB = toDBDate(b.date);
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
             return getTxnTime(a) - getTxnTime(b);
         });
 
@@ -76,8 +77,8 @@ export async function openCustomerLedgerDrawer(targetId, customerName = '', acco
         const tableRows = sortedTxns.map((t, idx) => {
             const b = Number(t.bill) || 0;
             const p = Number(t.paid) || 0;
-            totalBills += b;
-            totalPaid += p;
+            totalBills = safeRound(totalBills + b);
+            totalPaid = safeRound(totalPaid + p);
             runningBalance = safeRound(runningBalance + b - p);
 
             const vBadge = t.voucherNo ? `<span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono font-bold text-[10px] border border-blue-500/20 whitespace-nowrap">#${escapeHTML(t.voucherNo)}</span>` : '<span class="text-slate-600 font-mono">-</span>';

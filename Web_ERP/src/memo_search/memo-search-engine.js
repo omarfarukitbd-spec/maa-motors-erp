@@ -1,5 +1,5 @@
 import { TransactionDAO, CustomerDAO } from '../dao.js';
-import { safeRound } from '../utils.js';
+import { safeRound, toDBDate } from '../utils.js';
 import { getCustomerCache } from '../customer/customer-state.js';
 
 /**
@@ -79,7 +79,7 @@ export async function enrichMemoData(txn) {
 
     const bill = Number(txn.bill) || 0;
     const paid = Number(txn.paid) || 0;
-    const prevDue = txn.prevDue !== undefined ? Number(txn.prevDue) : (Number(customer.totalDue || 0) - (bill - paid));
+    const prevDue = txn.prevDue !== undefined ? Number(txn.prevDue) : safeRound(Number(customer.totalDue || 0) - (bill - paid));
     const currentDue = txn.currentDue !== undefined ? Number(txn.currentDue) : safeRound(prevDue + (bill - paid));
 
     return {
@@ -141,14 +141,17 @@ export async function getCustomerLifetimeStats(customerId) {
         let totalPaid = 0;
 
         txns.forEach(t => {
-            totalBills += Number(t.bill) || 0;
-            totalPaid += Number(t.paid) || 0;
+            totalBills = safeRound(totalBills + (Number(t.bill) || 0));
+            totalPaid = safeRound(totalPaid + (Number(t.paid) || 0));
         });
 
         const sorted = txns.sort((a, b) => {
-            const da = new Date(a.date).getTime() || 0;
-            const db = new Date(b.date).getTime() || 0;
-            return da - db;
+            const da = toDBDate(a.date);
+            const db = toDBDate(b.date);
+            if (da !== db) return da.localeCompare(db);
+            const ta = a.createdAt?.toMillis?.() || 0;
+            const tb = b.createdAt?.toMillis?.() || 0;
+            return ta - tb;
         });
 
         return {

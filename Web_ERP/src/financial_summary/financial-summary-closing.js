@@ -42,7 +42,8 @@ export async function calculateClosingBalances(cutoffDateStr) {
 
     const closingCustomers = customers.map(c => {
         let initial = Number(c.initialDue || 0);
-        if (c.openingDate && toDBDate(c.openingDate) > cutoffDate) {
+        const opDate = c.openingDate || (c.createdAt ? (c.createdAt.toDate ? c.createdAt.toDate().toISOString().split('T')[0] : (c.createdAt.toMillis ? new Date(c.createdAt.toMillis()).toISOString().split('T')[0] : '')) : '');
+        if (opDate && toDBDate(opDate) > cutoffDate) {
             initial = 0;
         } else if (initial === 0 && openingMap[c.id] !== undefined) {
             initial = openingMap[c.id];

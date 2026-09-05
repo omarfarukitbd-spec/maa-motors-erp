@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { ExpenseDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, numberToBanglaWords, resetLiveWords, promptSecurityPin } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, numberToBanglaWords, resetLiveWords, promptSecurityPin, showToast } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { AppState } from '../state.js';
 import { loadRecentExpenses } from './expense-ui.js';
@@ -97,7 +97,7 @@ export async function saveExpense() {
         amtEl.value = ''; detEl.value = '';
         resetLiveWords('exp-amount-words');
         if (catEl) catEl.selectedIndex = 0;
-        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'সাফল্য!', timer: 2000 });
+        showToast('খরচ সফলভাবে সেভ হয়েছে!', 'success');
         loadRecentExpenses();
     } catch(e) { Swal.fire('Error', 'ব্যর্থ হয়েছেন', 'error'); }
     finally { if(btn) btn.disabled = false; }
@@ -118,7 +118,7 @@ export async function deleteExpense(id, desc) {
         await ExpenseDAO.delete(id);
         auditLog('DELETE', 'Expenses', id, desc, { action: 'Soft Delete to Recycle Bin' });
         loadRecentExpenses();
-        Swal.fire('সফল!', 'খরচ মুছে ফেলা হয়েছে এবং রিসাইকেল বিনে ব্যাকআপ রাখা হয়েছে।', 'success');
+        showToast('খরচ মুছে ফেলা হয়েছে এবং রিসাইকেল বিনে ব্যাকআপ রাখা হয়েছে।', 'success');
     } catch(err) { console.error("deleteExpense error:", err); Swal.fire('Error', 'মুছতে সমস্যা হয়েছে', 'error'); }
 }
 
