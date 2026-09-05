@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, formatAppDate, safeRound } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, formatAppDate, getDayOfWeekBangla, safeRound } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
 
@@ -124,7 +124,7 @@ export async function printMemoBookAuditReport(summary, memos) {
                     #${m.voucherNum || m.voucherNo}
                     ${isDuplicate ? '<span style="font-size:7px; color:#d97706; font-weight:bold;">(Dup)</span>' : ''}
                 </td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', sans-serif; white-space: nowrap;">${formatAppDate(m.date)}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', sans-serif; white-space: nowrap;"><div style="font-weight: 700;">${formatAppDate(m.date)}</div><div style="font-size: 7.5px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600;">${getDayOfWeekBangla(m.date)}</div></td>
                 <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a;">
                     <strong>${escapeHTML(cleanCustName)}</strong>
                     ${m.customerAccountNo ? `<span style="font-size:7.5px; color:#0284c7; margin-left:2px;">[${escapeHTML(m.customerAccountNo)}]</span>` : ''}

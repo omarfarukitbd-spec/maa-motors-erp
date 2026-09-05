@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, parseAmount, safeRound, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, getTodayLocalDateString, parseAmount, safeRound, showToast } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 import { reconcileSingleCustomerBalance } from '../admin/balance-recon-heal.js';
@@ -135,7 +135,7 @@ export function renderTable(openingBalance = 0, stateRef = {}) {
         html += `<tr class="hover:bg-white/[0.03] border-b border-slate-800/50">
             <td class="align-top py-2.5 px-3 whitespace-nowrap">
                 <div class="text-xs font-bold text-slate-200">${formatAppDate(txn.date)}</div>
-                ${entryTime ? `<div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1.5"><i class="fa-regular fa-clock text-[9px] text-slate-500"></i><span>${entryTime}</span></div>` : ''}
+                <div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1.5">${getDayOfWeekBangla(txn.date)}${entryTime ? ` • ${entryTime}` : ''}</div>
             </td>
             <td class="align-top py-2.5 px-3"><div class="flex items-center flex-wrap gap-1.5">${methodBadge}${voucherInfo}</div>${notesInfo}</td>
             <td class="text-right text-red-400 font-black text-sm align-top py-2.5 px-3">${b > 0 ? '৳' + formatAmountWithComma(b) : '-'}</td>
@@ -145,7 +145,7 @@ export function renderTable(openingBalance = 0, stateRef = {}) {
 
         mobileHtml += `<div class="p-3 bg-slate-900/90 border border-slate-800 rounded-xl flex flex-col gap-1.5 text-xs">
             <div class="flex justify-between items-center border-b border-slate-800/60 pb-1">
-                <span class="text-slate-300 font-bold text-[11px]">${formatAppDate(txn.date)}${entryTime ? ` (${entryTime})` : ''} ${voucherInfo}</span>
+                <span class="text-slate-300 font-bold text-[11px]">${formatAppDate(txn.date)} (${getDayOfWeekBangla(txn.date)})${entryTime ? ` • ${entryTime}` : ''} ${voucherInfo}</span>
                 ${methodBadge}
             </div>
             <div class="flex justify-between items-center text-slate-300"><span>খরচ: <strong class="text-red-400 font-black">৳${formatAmountWithComma(b)}</strong></span><span>জমা: <strong class="text-emerald-400 font-black">৳${formatAmountWithComma(p)}</strong></span></div>

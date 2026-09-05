@@ -1,4 +1,4 @@
-import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}from"./dao-CJk3sbx1.js";import{c as i,h as a,l as o,m as s,o as c,v as l}from"./ui-helpers-OIqdNIvE.js";import{n as u}from"./vendor-ui-n4g2UPZQ.js";var d=e(u());async function f(e){if(!e)return;let t=document.getElementById(`login-screen`),i=document.getElementById(`app-container`);t&&(t.style.display=`none`),i&&i.classList.add(`hidden`);let a=document.getElementById(`public-memo-view`);a||(a=document.createElement(`div`),a.id=`public-memo-view`,a.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-3 sm:p-6 font-bn flex flex-col items-center justify-start`,document.body.appendChild(a)),a.innerHTML=`<div class="text-center py-20 text-white font-bold"><i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mb-3"></i><p>মেমো ভাউচার লোড হচ্ছে...</p></div>`;try{let t=await n.getById(e);if(!t){a.innerHTML=`<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">মেমো ভাউচার ডাটা পাওয়া যায়নি!</div>`;return}let i=await r.getAppSettings(),o=i.shopName||`M/S. Maa Motors`,s=i.shopPhone||`01819-397669, 01815-707934`,c=i.shopAddress||`Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road`;a.innerHTML=`
+import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}from"./dao-CJk3sbx1.js";import{_ as i,b as a,c as o,f as s,g as c,l,o as u}from"./ui-helpers-vB-cDBaI.js";import{n as d}from"./vendor-ui-n4g2UPZQ.js";var f=e(d());async function p(e){if(!e)return;let t=document.getElementById(`login-screen`),i=document.getElementById(`app-container`);t&&(t.style.display=`none`),i&&i.classList.add(`hidden`);let a=document.getElementById(`public-memo-view`);a||(a=document.createElement(`div`),a.id=`public-memo-view`,a.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-3 sm:p-6 font-bn flex flex-col items-center justify-start`,document.body.appendChild(a)),a.innerHTML=`<div class="text-center py-20 text-white font-bold"><i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mb-3"></i><p>মেমো ভাউচার লোড হচ্ছে...</p></div>`;try{let t=await n.getById(e);if(!t){a.innerHTML=`<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">মেমো ভাউচার ডাটা পাওয়া যায়নি!</div>`;return}let i=await r.getAppSettings(),o=i.shopName||`M/S. Maa Motors`,s=i.shopPhone||`01819-397669, 01815-707934`,c=i.shopAddress||`Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road`;a.innerHTML=`
             <div class="w-full max-w-2xl bg-slate-900 rounded-3xl border border-slate-800 p-4 sm:p-6 shadow-2xl mb-6 font-bn">
                 <div class="flex items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
                     <div class="flex items-center gap-2 text-white font-black text-sm sm:text-base"><i class="fa-solid fa-file-invoice text-blue-400"></i> ${o} - ডিজিটাল মেমো</div>
@@ -57,7 +57,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                     </div>
                 </div>
             </div>
-        `}catch(e){console.error(`Public Memo View Error:`,e),a.innerHTML=`<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">মেমো লোড করতে সমস্যা হয়েছে</div>`}}function p(e){if(!e)return;e.classList.remove(`hidden`);let t=!1,n=()=>{t||(t=!0,e.classList.add(`hidden`),window.removeEventListener(`afterprint`,n))};window.addEventListener(`afterprint`,n),setTimeout(()=>{window.print(),setTimeout(n,12e3)},150)}function m(e={},t={}){return i(t,e)}async function h(e,i=`a4`){try{c(`রিসিট লেআউট তৈরি হচ্ছে (${i.toUpperCase()})...`,`info`,`প্রিন্ট Engine`);let u=await n.getById(e);if(!u)throw c(`লেনদেন ডাটা পাওয়া যায়নি!`,`error`,`প্রিন্ট Error`),Error(`Transaction record not found in database`);let d=u.customerId,f=await t.getById(d)||{},h=(await n.getByCustomer(d)).filter(e=>{let t=String(e.voucherNo||``).trim().toUpperCase();return t!==`OPENING`&&t!==`OPEN`&&t!==`প্রারম্ভিক ব্যালেন্স`&&t!==`প্রারম্ভিক জের`}),g=e=>e?.createdAt?typeof e.createdAt.toMillis==`function`?e.createdAt.toMillis():typeof e.createdAt.toDate==`function`?e.createdAt.toDate().getTime():new Date(e.createdAt).getTime()||0:0;h.sort((e,t)=>{let n=new Date(e.date)-new Date(t.date);return n===0?g(e)-g(t):n});let _=Number(f.initialDue||0);for(let t of h){if(t.id===e)break;_=l(_+(Number(t.bill)||0)-(Number(t.paid)||0))}let v=l(_),y=l(v+(Number(u.bill)||0)-(Number(u.paid)||0)),b=await r.getAppSettings(),x=s(b.shopName||`M/S. Maa Motors`),S=s(b.shopAddress||`Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road`),C=s(b.shopPhone||`01819-397669, 01815-707934`),w=document.getElementById(`print-receipt-container`);w||(w=document.createElement(`div`),w.id=`print-receipt-container`,w.classList.add(`hidden`),document.body.appendChild(w));let T=``;if(u.hasItems&&u.items&&u.items.length>0)T=`
+        `}catch(e){console.error(`Public Memo View Error:`,e),a.innerHTML=`<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">মেমো লোড করতে সমস্যা হয়েছে</div>`}}function m(e){if(!e)return;e.classList.remove(`hidden`);let t=!1,n=()=>{t||(t=!0,e.classList.add(`hidden`),window.removeEventListener(`afterprint`,n))};window.addEventListener(`afterprint`,n),setTimeout(()=>{window.print(),setTimeout(n,12e3)},150)}function h(e={},t={}){return o(t,e)}async function g(e,o=`a4`){try{u(`রিসিট লেআউট তৈরি হচ্ছে (${o.toUpperCase()})...`,`info`,`প্রিন্ট Engine`);let d=await n.getById(e);if(!d)throw u(`লেনদেন ডাটা পাওয়া যায়নি!`,`error`,`প্রিন্ট Error`),Error(`Transaction record not found in database`);let f=d.customerId,p=await t.getById(f)||{},g=(await n.getByCustomer(f)).filter(e=>{let t=String(e.voucherNo||``).trim().toUpperCase();return t!==`OPENING`&&t!==`OPEN`&&t!==`প্রারম্ভিক ব্যালেন্স`&&t!==`প্রারম্ভিক জের`}),_=e=>e?.createdAt?typeof e.createdAt.toMillis==`function`?e.createdAt.toMillis():typeof e.createdAt.toDate==`function`?e.createdAt.toDate().getTime():new Date(e.createdAt).getTime()||0:0;g.sort((e,t)=>{let n=new Date(e.date)-new Date(t.date);return n===0?_(e)-_(t):n});let v=Number(p.initialDue||0);for(let t of g){if(t.id===e)break;v=a(v+(Number(t.bill)||0)-(Number(t.paid)||0))}let y=a(v),b=a(y+(Number(d.bill)||0)-(Number(d.paid)||0)),x=await r.getAppSettings(),S=c(x.shopName||`M/S. Maa Motors`),C=c(x.shopAddress||`Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road`),w=c(x.shopPhone||`01819-397669, 01815-707934`),T=document.getElementById(`print-receipt-container`);T||(T=document.createElement(`div`),T.id=`print-receipt-container`,T.classList.add(`hidden`),document.body.appendChild(T));let E=``;if(d.hasItems&&d.items&&d.items.length>0)E=`
                 <table class="print-items-table">
                     <thead>
                         <tr>
@@ -69,18 +69,18 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                         </tr>
                     </thead>
                     <tbody>
-                        ${u.items.map((e,t)=>`
+                        ${d.items.map((e,t)=>`
                             <tr>
                                 <td style="text-align:center;">${String(t+1).padStart(2,`0`)}</td>
-                                <td class="text-left" style="font-weight:700;">${s(e.desc||`-`)}</td>
+                                <td class="text-left" style="font-weight:700;">${c(e.desc||`-`)}</td>
                                 <td class="text-right">${e.qty||0}</td>
-                                <td class="text-right">৳${a(e.rate||0)}</td>
-                                <td class="text-right" style="font-weight:800;">৳${a(e.total||0)}</td>
+                                <td class="text-right">৳${i(e.rate||0)}</td>
+                                <td class="text-right" style="font-weight:800;">৳${i(e.total||0)}</td>
                             </tr>
                         `).join(``)}
                     </tbody>
                 </table>
-            `;else{let e=u.bill>0?u.paid>0?`Transaction Entry / Payment`:`Opening Balance / Bill Entry`:`Cash Received / Payment`,t=u.bill>0?u.bill:u.paid;T=`
+            `;else{let e=d.bill>0?d.paid>0?`Transaction Entry / Payment`:`Opening Balance / Bill Entry`:`Cash Received / Payment`,t=d.bill>0?d.bill:d.paid;E=`
                 <table class="print-items-table">
                     <thead>
                         <tr>
@@ -93,11 +93,11 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                         <tr>
                             <td style="text-align:center;">01</td>
                             <td class="text-left" style="font-weight:700; color:#0f172a;">${e}</td>
-                            <td class="text-right" style="font-weight:900; color:#0f172a;">৳${a(t)}</td>
+                            <td class="text-right" style="font-weight:900; color:#0f172a;">৳${i(t)}</td>
                         </tr>
                     </tbody>
                 </table>
-            `}let E=String(u.customerName||f.name||``).replace(/^\[.*?\]\s*/,``).trim(),D=``;if(u.paid>0&&u.receivedType&&(D=` <span style="font-size: 9px; opacity: 0.8;">(${s(u.receivedType)}${u.receivedFrom?` - `+s(u.receivedFrom):``})</span>`),i===`a4`){let t=m({title:`INVOICE`,dateRangeStr:`ভাউচার #: #${s(u.voucherNo||e.slice(-6).toUpperCase())} • তারিখ: ${o(u.date)}`},b);w.className=`print-a4`,w.innerHTML=`
+            `}let D=String(d.customerName||p.name||``).replace(/^\[.*?\]\s*/,``).trim(),O=``;if(d.paid>0&&d.receivedType&&(O=` <span style="font-size: 9px; opacity: 0.8;">(${c(d.receivedType)}${d.receivedFrom?` - `+c(d.receivedFrom):``})</span>`),o===`a4`){let t=h({title:`INVOICE`,dateRangeStr:`ভাউচার #: #${c(d.voucherNo||e.slice(-6).toUpperCase())} • তারিখ: ${l(d.date)} (${s(d.date)})`},x);T.className=`print-a4`,T.innerHTML=`
                 <style>
                     .print-items-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
                     .print-items-table th { background: #f1f5f9 !important; border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-weight: 900; color: #0f172a; }
@@ -111,37 +111,37 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                     <!-- Customer Details Box (Full Width) -->
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 18px;">
                         <div style="font-size: 10px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 0.5px;">CUSTOMER DETAILS</div>
-                        <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${s(E)}</p>
+                        <p style="font-size:15px; font-weight: 900; color:#0f172a; margin-bottom: 4px; line-height: 1.2;">${c(D)}</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size:11px; color:#475569; margin-bottom: 6px;">
-                            <span><strong style="color:#0f172a;">A/C No:</strong> ${s(f.accountNo||`-`)}</span>
-                            <span><strong style="color:#0f172a;">Mobile:</strong> ${s(f.phone||`-`)}</span>
+                            <span><strong style="color:#0f172a;">A/C No:</strong> ${c(p.accountNo||`-`)}</span>
+                            <span><strong style="color:#0f172a;">Mobile:</strong> ${c(p.phone||`-`)}</span>
                         </div>
                         <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-top: 4px;">
-                            <p style="font-size: 11px; color: #334155; line-height: 1.4; margin: 0; font-weight: 600;"><strong>Address:</strong> ${s(f.address||`-`)}</p>
+                            <p style="font-size: 11px; color: #334155; line-height: 1.4; margin: 0; font-weight: 600;"><strong>Address:</strong> ${c(p.address||`-`)}</p>
                         </div>
                     </div>
 
-                    ${T?`<div style="margin-bottom:18px;">${T}</div>`:``}
+                    ${E?`<div style="margin-bottom:18px;">${E}</div>`:``}
 
                     <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; margin-top: 15px; page-break-inside: avoid;">
                         <div style="background: #fffbe6; border: 1px solid #ffe58f; border-radius: 10px; padding: 10px 14px;">
                             <strong style="color:#856404; font-weight:900; font-size:11px; border-bottom:1px solid #fadb14; display:block; padding-bottom:3px; margin-bottom:5px;">নোট / শর্তাবলী:</strong>
-                            <p style="font-size:10.5px; line-height:1.5; color:#533f03; margin:0;">${u.notes?s(u.notes).replace(/\n/g,`<br/>`):`পণ্য বিক্রয়ের সময় রিসিট দেখে বুঝে নিন। ধন্যবাদ!`}</p>
+                            <p style="font-size:10.5px; line-height:1.5; color:#533f03; margin:0;">${d.notes?c(d.notes).replace(/\n/g,`<br/>`):`পণ্য বিক্রয়ের সময় রিসিট দেখে বুঝে নিন। ধন্যবাদ!`}</p>
                         </div>
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; position: relative;">
                             
                             <!-- Watermark Stamp (Moved to Payment Equation) -->
-                            <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-12deg); pointer-events: none; opacity: 0.12; border: 4px double ${y<=0?`#059669`:`#dc2626`}; color: ${y<=0?`#059669`:`#dc2626`}; padding: 6px 14px; border-radius: 8px; font-weight: 900; font-size: 26px; text-transform: uppercase; letter-spacing: 2px; text-align: center; line-height: 1.1; z-index: 10; font-family: sans-serif;">
-                                ${y<=0?`PAID`:`DUE`}
+                            <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-12deg); pointer-events: none; opacity: 0.12; border: 4px double ${b<=0?`#059669`:`#dc2626`}; color: ${b<=0?`#059669`:`#dc2626`}; padding: 6px 14px; border-radius: 8px; font-weight: 900; font-size: 26px; text-transform: uppercase; letter-spacing: 2px; text-align: center; line-height: 1.1; z-index: 10; font-family: sans-serif;">
+                                ${b<=0?`PAID`:`DUE`}
                             </div>
 
                             <div style="font-size: 10px; font-weight: 900; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase;">হিসাবের বিবরণী (Payment Equation)</div>
-                            ${u.subtotal&&u.discount>0?`<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>Subtotal:</span><strong>৳ ${a(u.subtotal)}</strong></div>`:``}
-                            ${u.discount>0?`<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#d97706; position: relative; z-index: 20;"><span>Discount (-):</span><strong>- ৳ ${a(u.discount)}</strong></div>`:``}
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#0f172a; font-weight:700; position: relative; z-index: 20;"><span>আজকের বিল:</span><strong>৳ ${a(u.bill)}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>পূর্বের বকেয়া:</span><strong>৳ ${a(v)}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#059669; font-weight:700; position: relative; z-index: 20;"><span>আজকের জমা${D}:</span><strong>- ৳ ${a(u.paid)}</strong></div>
-                            <div style="display:flex; justify-content:space-between; padding:5px 8px; border-top:2px solid #cbd5e1; font-size:12.5px; font-weight:900; color:${y>0?`#dc2626`:`#059669`}; background: ${y>0?`#fef2f2`:`#ecfdf5`}; border-radius: 6px; margin-top: 4px; border-left: 4px solid ${y>0?`#dc2626`:`#059669`}; position: relative; z-index: 20;"><span>মোট বকেয়া:</span><strong>৳ ${a(Math.abs(y))} ${y<0?`(Adv)`:``}</strong></div>
+                            ${d.subtotal&&d.discount>0?`<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>Subtotal:</span><strong>৳ ${i(d.subtotal)}</strong></div>`:``}
+                            ${d.discount>0?`<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#d97706; position: relative; z-index: 20;"><span>Discount (-):</span><strong>- ৳ ${i(d.discount)}</strong></div>`:``}
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#0f172a; font-weight:700; position: relative; z-index: 20;"><span>আজকের বিল:</span><strong>৳ ${i(d.bill)}</strong></div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#475569; position: relative; z-index: 20;"><span>পূর্বের বকেয়া:</span><strong>৳ ${i(y)}</strong></div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px; color:#059669; font-weight:700; position: relative; z-index: 20;"><span>আজকের জমা${O}:</span><strong>- ৳ ${i(d.paid)}</strong></div>
+                            <div style="display:flex; justify-content:space-between; padding:5px 8px; border-top:2px solid #cbd5e1; font-size:12.5px; font-weight:900; color:${b>0?`#dc2626`:`#059669`}; background: ${b>0?`#fef2f2`:`#ecfdf5`}; border-radius: 6px; margin-top: 4px; border-left: 4px solid ${b>0?`#dc2626`:`#059669`}; position: relative; z-index: 20;"><span>মোট বকেয়া:</span><strong>৳ ${i(Math.abs(b))} ${b<0?`(Adv)`:``}</strong></div>
                         </div>
                     </div>
 
@@ -150,34 +150,34 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; width: 140px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
                 </div>
-            `}else{let t=s(b.shopOwner||`Mohammed Amran`);w.className=`print-pos`,w.innerHTML=`
+            `}else{let t=c(x.shopOwner||`Mohammed Amran`);T.className=`print-pos`,T.innerHTML=`
                 <div class="pos-wrapper font-bn text-center" style="width: 80mm; padding: 10px; box-sizing: border-box; background: white; color: black; font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif;">
-                    <h2 style="font-size: 16px; font-weight: 900; margin: 0 0 2px 0; text-transform: uppercase;">${x}</h2>
+                    <h2 style="font-size: 16px; font-weight: 900; margin: 0 0 2px 0; text-transform: uppercase;">${S}</h2>
                     <p style="font-size: 10px; margin: 1px 0 4px 0; font-weight: 700; font-family: 'Inter', sans-serif;">Proprietor: ${t}</p>
-                    <p style="font-size: 10px; margin: 0 0 6px 0; opacity: 0.85;">${S}<br>মোবাইল: ${C}</p>
+                    <p style="font-size: 10px; margin: 0 0 6px 0; opacity: 0.85;">${C}<br>মোবাইল: ${w}</p>
                     <div style="border-bottom: 1.5px dashed #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; font-family: monospace;">
-                        <span>#${s(u.voucherNo||e.slice(-6).toUpperCase())}</span>
-                        <span>${o(u.date)}</span>
+                        <span>#${c(d.voucherNo||e.slice(-6).toUpperCase())}</span>
+                        <span>${l(d.date)} (${s(d.date)})</span>
                     </div>
                     <div style="text-align: left; margin: 6px 0 4px 0;">
-                        <div style="font-weight: 900; font-size: 12px; line-height: 1.2;">কাস্টমার: ${s(E)}</div>
-                        ${f.accountNo||f.phone?`
+                        <div style="font-weight: 900; font-size: 12px; line-height: 1.2;">কাস্টমার: ${c(D)}</div>
+                        ${p.accountNo||p.phone?`
                         <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #334155; margin-top: 2px;">
-                            ${f.accountNo?`<span><strong>A/C:</strong> ${s(f.accountNo)}</span>`:`<span></span>`}
-                            ${f.phone?`<span><strong>মোবাইল:</strong> ${s(f.phone)}</span>`:`<span></span>`}
+                            ${p.accountNo?`<span><strong>A/C:</strong> ${c(p.accountNo)}</span>`:`<span></span>`}
+                            ${p.phone?`<span><strong>মোবাইল:</strong> ${c(p.phone)}</span>`:`<span></span>`}
                         </div>`:``}
                     </div>
                     <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের বকেয়া:</span><span>৳ ${a(v)}</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${a(u.bill)}</span></div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা${D}:</span><span>- ৳ ${a(u.paid)}</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের বকেয়া:</span><span>৳ ${i(y)}</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${i(d.bill)}</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা${O}:</span><span>- ৳ ${i(d.paid)}</span></div>
                     <div style="border-bottom: 1.5px solid #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 900;">
                         <span>মোট বকেয়া:</span>
-                        <span>৳ ${a(Math.abs(y))} ${y<0?`(Adv)`:``}</span>
+                        <span>৳ ${i(Math.abs(b))} ${b<0?`(Adv)`:``}</span>
                     </div>
                     <div style="border-bottom: 1px dashed #000; margin: 8px 0;"></div>
                     <div style="font-size: 10px; font-weight: 700; margin-top: 6px;">পণ্য বিক্রয়ের সময় দেখে বুঝে নিন। ধন্যবাদ!</div>
                 </div>
-            `}p(w),c(`প্রিন্ট পপ-আপ কমান্ড তৈরি সফল (${i.toUpperCase()})!`,`success`,`প্রিন্ট Engine`)}catch(e){console.error(`Print Engine Error:`,e),c(`প্রিন্ট ব্যর্থ: ${e.message||`অজানা এরর`}`,`error`,`প্রিন্ট Error`),d.default.fire(`প্রিন্ট এরর`,e.message||`প্রিন্ট করতে সমস্যা হয়েছে`,`error`)}}typeof window<`u`&&(window.printReceiptEngine=h);export{h as printReceiptEngine,m as renderPrintHeader,f as renderPublicMemoView,p as triggerUniversalPrint};
+            `}m(T),u(`প্রিন্ট পপ-আপ কমান্ড তৈরি সফল (${o.toUpperCase()})!`,`success`,`প্রিন্ট Engine`)}catch(e){console.error(`Print Engine Error:`,e),u(`প্রিন্ট ব্যর্থ: ${e.message||`অজানা এরর`}`,`error`,`প্রিন্ট Error`),f.default.fire(`প্রিন্ট এরর`,e.message||`প্রিন্ট করতে সমস্যা হয়েছে`,`error`)}}typeof window<`u`&&(window.printReceiptEngine=g);export{g as printReceiptEngine,h as renderPrintHeader,p as renderPublicMemoView,m as triggerUniversalPrint};

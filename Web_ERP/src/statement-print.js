@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { SettingsDAO } from './dao.js';
-import { formatAmountWithComma, formatAppDate, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound } from './utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound } from './utils.js';
 import { smartPaginateStatement, printViaIframe } from './utils/smart-print-engine.js';
 
 
@@ -56,7 +56,7 @@ function generateRowsArray(initialDue, docs) {
         const rowHtml = `<tr>
             <td style="font-size:10.5px; border-bottom:1px solid #e2e8f0; padding: 5px 8px; color:#0f172a; line-height: 1.2; vertical-align: middle;">
                 <div style="font-weight: 700;">${formatAppDate(txn.date)}</div>
-                ${entryTime ? `<div style="font-size: 8px; color: #64748b; font-weight: 500; margin-top: 1px;">${entryTime}</div>` : ''}
+                <div style="font-size: 8px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; margin-top: 1px;">${getDayOfWeekBangla(txn.date)}${entryTime ? ` • ${entryTime}` : ''}</div>
             </td>
             <td style="font-size:11px; border-bottom:1px solid #e2e8f0; padding: 5px 10px; color:#0f172a; vertical-align: middle;">${typeDisp}${voucher}</td>
             <td style="text-align:right; color:#dc2626; font-weight:700; border-bottom:1px solid #e2e8f0; padding: 5px 10px; vertical-align: middle;">${b > 0 ? formatAmountWithComma(b) : '-'}</td>

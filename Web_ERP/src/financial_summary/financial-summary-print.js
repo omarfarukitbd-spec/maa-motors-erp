@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, renderPrintHeader, formatAppDate, safeRound, getTodayLocalDateString } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, renderPrintHeader, formatAppDate, getDayOfWeekBangla, safeRound, getTodayLocalDateString } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
 import Swal from 'sweetalert2';
@@ -61,7 +61,7 @@ export async function printCustomerCollectionRegister(summaryData) {
         return `
             <tr class="print-row-no-break" style="${bgStyle}">
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 10px; font-family: 'Inter', sans-serif;">${idx + 1}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 10px; font-family: 'Inter', monospace; color: #334155; white-space: nowrap;">${formatAppDate(c.date || startDate)}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 4px 3px; font-size: 9.5px; font-family: 'Inter', monospace; color: #334155; white-space: nowrap;"><div style="font-weight: 700;">${formatAppDate(c.date || startDate)}</div><div style="font-size: 8px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600;">${getDayOfWeekBangla(c.date || startDate)}</div></td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 10px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.customerAccountNo || '-')}</td>
                 <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 5px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a;">
                     <strong>${escapeHTML(c.customerName)}</strong><br>

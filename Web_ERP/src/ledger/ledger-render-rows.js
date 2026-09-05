@@ -1,4 +1,4 @@
-import { parseAmount, formatAmountWithComma, formatAppDate, safeRound } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, getDayOfWeekBangla, safeRound } from '../utils.js';
 import Clusterize from 'clusterize.js';
 import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
@@ -156,7 +156,7 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
         rows.push(`<tr class="hover:bg-white/[0.03] transition-colors border-b border-slate-800/50">
             <td class="py-2.5 px-3 text-xs font-bold text-slate-200 whitespace-nowrap align-top">
                 <div>${formatAppDate(d.date)}</div>
-                ${entryTime ? `<div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1.5 cursor-help" title="আসল এন্ট্রির সময়: ${fullEntryDateTime}"><i class="fa-regular fa-clock text-[9px] text-slate-500"></i><span>${entryTime}</span></div>` : ''}
+                <div class="text-[10px] text-slate-400 font-medium mt-0.5">${getDayOfWeekBangla(d.date)}${entryTime ? ` • <span class="cursor-help" title="আসল এন্ট্রির সময়: ${fullEntryDateTime}"><i class="fa-regular fa-clock text-[9px] text-slate-500 mr-0.5"></i>${entryTime}</span>` : ''}</div>
             </td>
             <td class="font-bold text-slate-200 text-xs align-top py-2.5">
                 <div class="flex items-center flex-wrap gap-1">
@@ -183,7 +183,7 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
                 <div>
                     <div class="mobile-card-title">${cleanCustName}</div>
                     ${custAddress ? `<div class="text-[10px] text-slate-400 font-normal flex items-center gap-1 mt-0.5"><i class="fa-solid fa-location-dot text-[9px] text-slate-500"></i><span>${custAddress}</span></div>` : ''}
-                    <div class="mobile-card-sub text-cyan-400 font-mono font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo : formatAppDate(d.date)}${entryTime ? ` <span title="আসল এন্ট্রির সময়: ${fullEntryDateTime}" class="cursor-help font-sans">(${entryTime})</span>` : ''} ${typeBadge}</div>
+                    <div class="mobile-card-sub text-cyan-400 font-mono font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo + ' • ' : ''}${formatAppDate(d.date)} (${getDayOfWeekBangla(d.date)})${entryTime ? ` <span title="আসল এন্ট্রির সময়: ${fullEntryDateTime}" class="cursor-help font-sans">(${entryTime})</span>` : ''} ${typeBadge}</div>
                 </div>
                 <div class="text-right"><div class="text-white font-black text-base">৳ ${formatAmountWithComma(Math.abs(balanceVal))}</div><span class="inline-block text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</span></div>
             </div>

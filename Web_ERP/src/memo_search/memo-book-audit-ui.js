@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { fetchMemosByRange, calculateBookAuditSummary } from './memo-book-audit-calc.js';
 import { printMemoBookAuditReport } from './memo-book-audit-print.js';
-import { formatAmountWithComma, formatAppDate, escapeHTML, safeRound } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, escapeHTML, safeRound } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 
 let _currentAuditSummary = null;
@@ -160,7 +160,7 @@ function renderAuditResultsContent(container, summary, memos) {
             <tr class="hover:bg-white/[0.02] border-b border-slate-800/60 transition-colors">
                 <td class="py-2.5 px-3 text-xs text-center text-slate-500 font-mono">${idx + 1}</td>
                 <td class="py-2.5 px-3 text-xs text-center font-mono font-black text-cyan-400">#${m.voucherNum || m.voucherNo}${isDuplicate ? ' <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30 ml-0.5">ডুপ্লিকেট</span>' : ''}</td>
-                <td class="py-2.5 px-3 text-xs text-center text-slate-300">${formatAppDate(m.date)}</td>
+                <td class="py-2.5 px-3 text-xs text-center text-slate-300 font-mono"><div class="font-bold">${formatAppDate(m.date)}</div><div class="text-[10px] text-slate-400 font-medium font-sans">${getDayOfWeekBangla(m.date)}</div></td>
                 <td class="py-2.5 px-3 text-xs">
                     <div class="font-black text-white">${escapeHTML(cleanCustName)}</div>
                     <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">

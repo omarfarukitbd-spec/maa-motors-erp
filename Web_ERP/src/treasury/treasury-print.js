@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, escapeHTML, renderPrintHeader, showToast, numberToBanglaWords } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, escapeHTML, renderPrintHeader, showToast, numberToBanglaWords } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 
 /**
@@ -99,7 +99,7 @@ export async function printTreasuryReport(ledgerData, filterInfo = {}) {
     const bfRow = `
         <tr class="print-row-no-break" style="background: #fef3c7; border-bottom: 1.5px solid #f59e0b;">
             <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-family: 'Inter', monospace; color: #64748b;">-</td>
-            <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 10px; font-weight: 800; font-family: 'Inter', monospace; color: #92400e; white-space: nowrap;">${formatAppDate(openingDate)}</td>
+            <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 4px 4px; font-size: 9.5px; font-weight: 800; font-family: 'Inter', monospace; color: #92400e; white-space: nowrap;"><div style="font-weight: 700;">${formatAppDate(openingDate)}</div><div style="font-size: 8px; color: #b45309; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; margin-top: 1px;">${getDayOfWeekBangla(openingDate)}</div></td>
             <td style="text-align: left; vertical-align: middle; border: 1px solid #cbd5e1; padding: 6px 8px; font-size: 11px; font-weight: 900; font-family: 'Hind Siliguri', sans-serif; color: #92400e;" colspan="2">
                 ৩১ আগস্ট ২০২৬ সমাপনী স্থিতি (Brought Forward / B/F)
             </td>
@@ -123,7 +123,7 @@ export async function printTreasuryReport(ledgerData, filterInfo = {}) {
         rowsArray.push(`
             <tr class="print-row-no-break" style="${bgStyle}">
                 <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10px; font-family: 'Inter', sans-serif; color: #475569;">${i + 1}</td>
-                <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10px; font-weight: 700; font-family: 'Inter', monospace; color: #1e293b; white-space: nowrap;">${formatAppDate(t.date)}</td>
+                <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 4px 4px; font-size: 9.5px; font-weight: 700; font-family: 'Inter', monospace; color: #1e293b; white-space: nowrap;"><div style="font-weight: 700;">${formatAppDate(t.date)}</div><div style="font-size: 8px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; margin-top: 1px;">${getDayOfWeekBangla(t.date)}</div></td>
                 <td style="text-align: left; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 8px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; color: #0f172a; font-weight: 700;">
                     ${escapeHTML(t.title)}
                     ${isHighlight ? '<span style="font-size: 8px; font-weight: 900; background: #fef08a; color: #854d0e; padding: 1px 5px; border-radius: 4px; margin-left: 6px; border: 1px solid #fde047;">মাস ক্লোজিং</span>' : ''}

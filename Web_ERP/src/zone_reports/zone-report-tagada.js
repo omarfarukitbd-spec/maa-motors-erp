@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, renderPrintHeader, getTodayLocalDateString, safeRound } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, renderPrintHeader, getTodayLocalDateString, getDayOfWeekBangla, safeRound } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import Swal from 'sweetalert2';
 
@@ -33,7 +33,7 @@ export async function printZoneTagadaReport(cachedZoneReportData) {
 
     const page1HeaderHtml = renderPrintHeader(settings, { 
         title: zoneName ? `${zoneName} TAGADA SHEET` : 'FIELD TAGADA SHEET', 
-        subtitle: `${reportTitle} • ${formattedDate}` 
+        subtitle: `${reportTitle} • ${formattedDate} (${getDayOfWeekBangla(todayStr)})` 
     });
 
     const repeatHeaderHtml = `

@@ -1,6 +1,6 @@
 import { TransactionDAO, CustomerDAO, SettingsDAO } from '../dao.js';
 import { escapeHTML, formatAmountWithComma } from './formatters.js';
-import { formatAppDate } from './date-logic/date-converter.js';
+import { formatAppDate, getDayOfWeekBangla } from './date-logic/date-converter.js';
 import { safeRound } from './formatters.js';
 import { showToast } from './ui-helpers.js';
 import Swal from 'sweetalert2';
@@ -151,7 +151,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
         if (layoutType === 'a4') {
             const printHeader = renderPrintHeader({
                 title: 'INVOICE',
-                dateRangeStr: `ভাউচার #: #${escapeHTML(txn.voucherNo || txnId.slice(-6).toUpperCase())} • তারিখ: ${formatAppDate(txn.date)}`
+                dateRangeStr: `ভাউচার #: #${escapeHTML(txn.voucherNo || txnId.slice(-6).toUpperCase())} • তারিখ: ${formatAppDate(txn.date)} (${getDayOfWeekBangla(txn.date)})`
             }, settings);
 
             container.className = 'print-a4';
@@ -220,7 +220,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
                     <div style="border-bottom: 1.5px dashed #000; margin: 6px 0;"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; font-family: monospace;">
                         <span>#${escapeHTML(txn.voucherNo || txnId.slice(-6).toUpperCase())}</span>
-                        <span>${formatAppDate(txn.date)}</span>
+                        <span>${formatAppDate(txn.date)} (${getDayOfWeekBangla(txn.date)})</span>
                     </div>
                     <div style="text-align: left; margin: 6px 0 4px 0;">
                         <div style="font-weight: 900; font-size: 12px; line-height: 1.2;">কাস্টমার: ${escapeHTML(cleanCustName)}</div>

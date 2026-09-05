@@ -1,5 +1,5 @@
 import { calculateAgingDueData, sendAgingCustomerWhatsApp, sendAgingCustomerSMS } from './financial-summary-aging.js';
-import { formatAmountWithComma, formatAppDate, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, showToast } from '../utils.js';
 
 /**
  * Render Customer Collection Table Body
@@ -21,7 +21,7 @@ export function renderCustomerTable(data) {
         return `
             <tr class="hover:bg-slate-800/40 transition-all fs-cust-row">
                 <td class="py-2.5 px-3 text-center text-slate-500 font-mono">${i + 1}</td>
-                <td class="py-2.5 px-3 text-center text-slate-400 whitespace-nowrap">${formatAppDate(c.date)}</td>
+                <td class="py-2.5 px-3 text-center text-slate-400 whitespace-nowrap"><div class="font-bold text-slate-200">${formatAppDate(c.date)}</div><div class="text-[10px] text-slate-400 font-medium">${getDayOfWeekBangla(c.date)}</div></td>
                 <td class="py-2.5 px-3 text-center font-mono font-bold text-blue-400 whitespace-nowrap">${c.customerAccountNo}</td>
                 <td class="py-2.5 px-3 font-bold text-white">
                     <div class="truncate max-w-[150px] sm:max-w-[200px]">${c.customerName}</div>
@@ -51,7 +51,7 @@ export function renderDayByDayTable(data) {
 
     dayTbody.innerHTML = data.dayByDaySummary.map(d => `
         <tr class="hover:bg-slate-800/40 transition-all">
-            <td class="py-2.5 px-3 text-center font-bold text-white whitespace-nowrap">${formatAppDate(d.date)}</td>
+            <td class="py-2.5 px-3 text-center font-bold text-white whitespace-nowrap"><div>${formatAppDate(d.date)}</div><div class="text-[10px] text-slate-400 font-medium font-sans">${getDayOfWeekBangla(d.date)}</div></td>
             <td class="py-2.5 px-3 text-center text-blue-400 font-bold whitespace-nowrap">${d.customerCount} জন</td>
             <td class="py-2.5 px-3 text-right font-mono text-slate-200 whitespace-nowrap">৳ ${formatAmountWithComma(d.sales)}</td>
             <td class="py-2.5 px-3 text-right font-mono text-emerald-400 whitespace-nowrap">৳ ${formatAmountWithComma(d.cashPaid)}</td>
@@ -82,7 +82,7 @@ export function renderExpensesTable(data) {
 
     expTbody.innerHTML = data.rawExpenses.map(e => `
         <tr class="hover:bg-slate-800/40 transition-all">
-            <td class="py-2.5 px-3 text-center text-slate-400 whitespace-nowrap">${formatAppDate(e.date)}</td>
+            <td class="py-2.5 px-3 text-center text-slate-400 whitespace-nowrap"><div class="font-bold text-slate-200">${formatAppDate(e.date)}</div><div class="text-[10px] text-slate-400 font-medium">${getDayOfWeekBangla(e.date)}</div></td>
             <td class="py-2.5 px-3 font-bold text-white">${e.note || e.title || '-'}</td>
             <td class="py-2.5 px-3 text-slate-300">${e.category || 'অন্যান্য'}</td>
             <td class="py-2.5 px-3 text-center text-slate-400">${e.paymentMethod || 'ক্যাশ'}</td>

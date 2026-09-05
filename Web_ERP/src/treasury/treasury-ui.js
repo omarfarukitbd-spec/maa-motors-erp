@@ -2,7 +2,7 @@ import { TreasuryDAO } from './treasury-dao.js';
 import { calculateTreasuryLedger, filterTreasuryByDateRange } from './treasury-calc.js';
 import { setupTreasuryActions } from './treasury-actions.js';
 import { printTreasuryReport, exportTreasuryExcel } from './treasury-print.js';
-import { formatAmountWithComma, formatAppDate, escapeHTML, toDBDate, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, escapeHTML, toDBDate, showToast } from '../utils.js';
 
 let rawTransactions = [];
 let openingFund = { openingBalance: 46391562, openingDate: '2026-08-31' };
@@ -109,7 +109,7 @@ function renderLedgerTable() {
     let html = `
         <tr class="bg-amber-950/20 border-b border-amber-500/20 font-bold">
             <td class="py-3 px-3 text-center text-slate-500">-</td>
-            <td class="py-3 px-3 text-amber-300 font-mono text-xs whitespace-nowrap">${formatAppDate(openingFund.openingDate)}</td>
+            <td class="py-3 px-3 text-amber-300 font-mono text-xs whitespace-nowrap"><div class="font-bold">${formatAppDate(openingFund.openingDate)}</div><div class="text-[10px] text-amber-400/80 font-medium font-sans">${getDayOfWeekBangla(openingFund.openingDate)}</div></td>
             <td class="py-3 px-3 text-amber-400 font-black text-xs" colspan="2">
                 <i class="fa-solid fa-vault text-amber-400 mr-1.5"></i>৩১ আগস্ট ২০২৬ সমাপনী স্থিতি (B/F)
             </td>
@@ -155,7 +155,7 @@ function renderLedgerTable() {
         html += `
             <tr class="${rowClass}">
                 <td class="py-2.5 px-3 text-center text-slate-400 text-xs font-mono">${i + 1}</td>
-                <td class="py-2.5 px-3 text-slate-300 text-xs font-mono whitespace-nowrap">${formatAppDate(t.date)}</td>
+                <td class="py-2.5 px-3 text-slate-300 text-xs font-mono whitespace-nowrap"><div class="font-bold">${formatAppDate(t.date)}</div><div class="text-[10px] text-slate-400 font-medium font-sans">${getDayOfWeekBangla(t.date)}</div></td>
                 <td class="py-2.5 px-3 font-bold text-xs text-white">
                     ${escapeHTML(t.title)}
                     ${isHighlight ? '<span class="ml-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">মাস সমাপ্তি</span>' : ''}
