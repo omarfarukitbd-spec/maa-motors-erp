@@ -231,6 +231,7 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
     }
 
     msg = msg
+        .replace(/Dear\s*\[Name\]/gi, 'Dear Sir')
         .replace(/\[Name\]/g, name)
         .replace(/\[AccNo\]/g, accStr)
         .replace(/\[Shop\]/g, shop)

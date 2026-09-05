@@ -126,7 +126,7 @@ export async function saveNewCustomer() {
                 const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
                 const formattedOpeningDate = formatAppDate(d);
 
-                const msg = buildSmsMessage(settings.smsTemplateOpening, 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!', {
+                const msg = buildSmsMessage(settings.smsTemplateOpening, 'Dear Sir [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!', {
                     name: englishName,
                     accountNo,
                     shopName,

@@ -50,7 +50,7 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
 
         let defaultMsg = '';
         if (isOpening) {
-            defaultMsg = buildSmsMessage(settings.smsTemplateOpening, 'Dear [Name] [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!', {
+            defaultMsg = buildSmsMessage(settings.smsTemplateOpening, 'Dear Sir [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!', {
                 name: englishName,
                 accountNo,
                 shopName,
@@ -70,7 +70,7 @@ export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, sta
                 rawDue: targetDue
             });
         } else if (targetBill > 0) {
-            defaultMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', {
+            defaultMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear Sir [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', {
                 name: englishName,
                 accountNo,
                 shopName,

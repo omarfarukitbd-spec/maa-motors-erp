@@ -111,7 +111,7 @@ export async function sendReminderSMS(phone, dueAmt, name, accountNo = '') {
         const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
         const todayDate = formatAppDate(getTodayLocalDateString());
 
-        const msg = buildSmsMessage(settings.smsTemplateReminder, 'Reminder: Dear [Name] [AccNo], your due is Tk [Due] on [Date]. Kindly clear payment soon. Thanks! - [Shop]', {
+        const msg = buildSmsMessage(settings.smsTemplateReminder, 'Reminder: Dear Sir [AccNo], your due is Tk [Due] on [Date]. Kindly clear payment soon. Thanks! - [Shop]', {
             name: englishName,
             accountNo,
             shopName,

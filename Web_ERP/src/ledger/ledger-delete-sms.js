@@ -52,7 +52,7 @@ export async function handlePostDeleteSms({ customer, txnDoc, newTotalDue }) {
         const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(cleanName) : cleanName) || 'Customer';
         const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
 
-        const defaultCorrectionTpl = 'Correction Notice: Dear [Name] [AccNo], a transaction of Tk [Amount] on [Date] has been cancelled/deleted due to an entry error. Your updated due is Tk [Due]. We apologize for any inconvenience. - [Shop]';
+        const defaultCorrectionTpl = 'Correction Notice: Dear Sir [AccNo], a transaction of Tk [Amount] on [Date] has been cancelled/deleted due to an entry error. Your updated due is Tk [Due]. We apologize for any inconvenience. - [Shop]';
 
         const correctionMsg = buildSmsMessage(settings.smsTemplateCorrection, defaultCorrectionTpl, {
             name: englishName,
