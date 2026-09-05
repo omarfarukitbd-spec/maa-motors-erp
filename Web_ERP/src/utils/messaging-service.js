@@ -209,6 +209,12 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
             .replace(/Opening\s+Due\s*:\s*Tk/gi, 'Opening Advance: Tk')
             .replace(/Your\s+updated\s+due\s+is\s+Tk/gi, 'Your updated advance is Tk')
             .replace(/your\s+updated\s+due\s+is\s+Tk/gi, 'your updated advance is Tk')
+            .replace(/Your\s+current\s+due\s+is\s+Tk/gi, 'Your current advance is Tk')
+            .replace(/your\s+current\s+due\s+is\s+Tk/gi, 'your current advance is Tk')
+            .replace(/Your\s+total\s+due\s+is\s+Tk/gi, 'Your total advance is Tk')
+            .replace(/your\s+total\s+due\s+is\s+Tk/gi, 'your total advance is Tk')
+            .replace(/Net\s+Due\s*:\s*Tk/gi, 'Net Advance: Tk')
+            .replace(/net\s+due\s*:\s*Tk/gi, 'net advance: Tk')
             .replace(/Your\s+due\s+is\s+Tk/gi, 'Your advance is Tk')
             .replace(/your\s+due\s+is\s+Tk/gi, 'your advance is Tk')
             .replace(/Due\s*:\s*Tk/gi, 'Advance: Tk')
@@ -218,9 +224,9 @@ export function buildSmsMessage(template, defaultTemplate, params = {}) {
             .replace(/বকেয়া/gi, 'অ্যাডভান্স');
     } else if (isZero) {
         msg = msg
-            .replace(/Your\s+updated\s+due\s+is\s+Tk\s+\[Due\]/gi, 'Your balance is fully clear (Tk 0)')
-            .replace(/your\s+updated\s+due\s+is\s+Tk\s+\[Due\]/gi, 'your balance is fully clear (Tk 0)')
-            .replace(/Due\s*:\s*Tk\s+\[Due\]/gi, 'Balance: Tk 0 (Clear)');
+            .replace(/Your\s+(?:updated|current|total|net)?\s*due\s+is\s+Tk\s+\[Due\]/gi, 'Your balance is fully clear (Tk 0)')
+            .replace(/Opening\s+Due\s*:\s*Tk\s+\[Due\]/gi, 'Opening Balance: Tk 0 (Clear)')
+            .replace(/(?:Net\s+)?Due\s*:\s*Tk\s+\[Due\]/gi, 'Balance: Tk 0 (Clear)');
     }
 
     msg = msg

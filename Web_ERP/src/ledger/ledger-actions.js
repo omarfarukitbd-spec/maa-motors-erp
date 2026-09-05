@@ -154,12 +154,8 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         showToast('লেনদেন সফলভাবে সেভ হয়েছে!', 'success');
 
         // --- INSTANT POST-ACTIONS FROM CONFIRM MODAL ---
-        if (confirmResult.sendWhatsApp && window.sendTxnWhatsApp && savedTxnId) {
-            setTimeout(() => { window.sendTxnWhatsApp(savedTxnId); }, 350);
-        }
-        if (confirmResult.openPrint && window.choosePrintType && savedTxnId) {
-            setTimeout(() => { window.choosePrintType(savedTxnId); }, 650);
-        }
+        if (confirmResult.sendWhatsApp && window.sendTxnWhatsApp && savedTxnId) setTimeout(() => { window.sendTxnWhatsApp(savedTxnId); }, 350);
+        if (confirmResult.openPrint && window.choosePrintType && savedTxnId) setTimeout(() => { window.choosePrintType(savedTxnId); }, 650);
 
         // --- KHATIYAN TRANSACTION SMS WORKFLOW ---
         try {
@@ -172,35 +168,33 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
                 const shopName = settings.shopName ? (typeof window.toBanglishName === 'function' ? window.toBanglishName(settings.shopName) : settings.shopName) : 'M/S. Maa Motors';
                 const netDue = finalSmsDue;
                 const formattedDue = formatAmountWithComma(Math.abs(netDue));
-
                 const accountNo = currentCust?.accountNo || '';
                 const isLess = b === 0 && (receivedType === 'Less' || /less|ছাড়|discount|কমিশন/i.test(receivedType || '') || /less|ছাড়|discount/i.test(receivedFrom || '') || /less|ছাড়|discount/i.test(v || ''));
-
                 let autoMsg = '';
-                if (b > 0) {
-                    autoMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, memo: v, bill: formatAmountWithComma(b), paid: formatAmountWithComma(p), due: formattedDue, rawDue: netDue });
-                } else if (isLess) {
-                    autoMsg = buildSmsMessage(settings.smsTemplateLess, 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: 'Less', due: formattedDue, rawDue: netDue });
+                if (b > 0) autoMsg = buildSmsMessage(settings.smsTemplateNew, 'Dear [Name] [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, memo: v, bill: formatAmountWithComma(b), paid: formatAmountWithComma(p), due: formattedDue, rawDue: netDue });
+                else if (isLess) autoMsg = buildSmsMessage(settings.smsTemplateLess, 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: 'Less', due: formattedDue, rawDue: netDue });
+                else autoMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: receivedType || 'Cash', due: formattedDue, rawDue: netDue });
+                
+                if (settings.smsAuto) {
+                    const success = await sendSMS(phone, autoMsg, true);
+                    if (success) showToast('অটো এসএমএস সফলভাবে পাঠানো হয়েছে', 'success');
                 } else {
-                    autoMsg = buildSmsMessage(settings.smsTemplatePaid, 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]', { name: englishName, accountNo, shopName, date: formattedDate, paid: formatAmountWithComma(p), type: receivedType || 'Cash', due: formattedDue, rawDue: netDue });
-                }
-
-                const { value: text, isConfirmed } = await Swal.fire({
-                    title: '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-comment-sms text-emerald-400 text-3xl mb-1"></i><span class="font-bn font-black text-xl text-white">Transaction SMS Preview</span></div>',
-                    html: `<div class="text-left space-y-2 mb-2 font-bn"><p class="text-[13px] text-slate-300">কাস্টমারকে কি লেনদেনের মেসেজ পাঠাতে চান? চাইলে নিচের লেখা এডিট করতে পারেন:</p><div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${phone}</strong></div><div id="sms-txn-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(autoMsg)}</div></div></div>`,
-                    input: 'textarea', inputValue: autoMsg, inputAttributes: { rows: 4, class: 'm3-field text-xs font-mono !mt-0' },
-                    showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> পাঠিয়ে দিন', cancelButtonText: 'স্কিপ করুন',
-                    customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-700 shadow-2xl', confirmButton: 'm3-btn-primary !bg-emerald-600 hover:!bg-emerald-500 !px-7 !py-2.5 !rounded-xl font-bold shadow-lg shadow-emerald-600/30', cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700' },
-                    didOpen: () => {
-                        const textarea = Swal.getInput(); const counter = document.getElementById('sms-txn-char-counter');
-                        const updateCount = () => { if (textarea && counter) counter.innerText = formatSmsCounterText(textarea.value); };
-                        if (textarea) { textarea.oninput = updateCount; updateCount(); setTimeout(() => textarea.focus(), 150); }
+                    const { value: text, isConfirmed } = await Swal.fire({
+                        title: '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-comment-sms text-emerald-400 text-3xl mb-1"></i><span class="font-bn font-black text-xl text-white">Transaction SMS Preview</span></div>',
+                        html: `<div class="text-left space-y-2 mb-2 font-bn"><p class="text-[13px] text-slate-300">কাস্টমারকে কি লেনদেনের মেসেজ পাঠাতে চান? চাইলে নিচের লেখা এডিট করতে পারেন:</p><div class="flex justify-between items-center"><div class="text-xs text-slate-400">Recipient Phone: <strong class="text-white">${phone}</strong></div><div id="sms-txn-char-counter" class="text-[11px] font-bold text-emerald-400 text-right">${formatSmsCounterText(autoMsg)}</div></div></div>`,
+                        input: 'textarea', inputValue: autoMsg, inputAttributes: { rows: 4, class: 'm3-field text-xs font-mono !mt-0' },
+                        showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> পাঠিয়ে দিন', cancelButtonText: 'স্কিপ করুন',
+                        customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-700 shadow-2xl', confirmButton: 'm3-btn-primary !bg-emerald-600 hover:!bg-emerald-500 !px-7 !py-2.5 !rounded-xl font-bold shadow-lg shadow-emerald-600/30', cancelButton: 'm3-btn-tonal !bg-slate-800 hover:!bg-slate-700 !text-slate-300 !px-5 !py-2.5 !rounded-xl font-bold border border-slate-700' },
+                        didOpen: () => {
+                            const textarea = Swal.getInput(); const counter = document.getElementById('sms-txn-char-counter');
+                            const updateCount = () => { if (textarea && counter) counter.innerText = formatSmsCounterText(textarea.value); };
+                            if (textarea) { textarea.oninput = updateCount; updateCount(); setTimeout(() => textarea.focus(), 150); }
+                        }
+                    });
+                    if (isConfirmed && text) {
+                        const success = await sendSMS(phone, text, false);
+                        if (success) showToast('এসএমএস সফলভাবে পাঠানো হয়েছে', 'success');
                     }
-                });
-
-                if (isConfirmed && text) {
-                    const success = await sendSMS(phone, text, false);
-                    if (success) showToast('এসএমএস সফলভাবে পাঠানো হয়েছে', 'success');
                 }
             }
         } catch (autoErr) { console.warn('Transaction SMS dispatch error:', autoErr); }
