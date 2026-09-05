@@ -160,7 +160,7 @@ export async function printFilteredCustomerList() {
         if (selectedCols.addr) cellsHtml += `<td style="text-align:left; vertical-align:middle; border: 1px solid #e2e8f0; padding: 3.5px 5px; font-size: 9.5px; font-family: 'Hind Siliguri', 'Kalpurush', sans-serif; line-height: 1.2; color: #334155; word-break: break-word;">${escapeHTML(c.address || '-')}</td>`;
         if (selectedCols.phone) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 3px 2px; font-size: 9.5px; font-family: 'Inter', monospace; line-height: 1.25; color: #334155;">${phoneDisp}</td>`;
         if (selectedCols.zone) cellsHtml += `<td style="text-align:center; vertical-align:middle; border: 1px solid #e2e8f0; padding: 3px 2px; font-size: 9.5px; font-family: 'Hind Siliguri', 'Kalpurush', sans-serif; white-space: nowrap;">${zoneBadge}</td>`;
-        if (selectedCols.bal) cellsHtml += `<td style="text-align:right; vertical-align:middle; border: 1px solid #e2e8f0; padding: 3.5px 4px; font-size: 10px; font-weight: 900; color: ${dueColor}; font-family: 'Inter', sans-serif; white-space: nowrap;">${dueDisp}</td>`;
+        if (selectedCols.bal) cellsHtml += `<td style="text-align:right; vertical-align:middle; border: 1px solid #e2e8f0; padding: 3.5px 3px; font-size: 9.5px; font-weight: 900; color: ${dueColor}; font-family: 'Inter', sans-serif; white-space: nowrap;">${dueDisp}</td>`;
 
         const rowHtml = `<tr class="print-row-no-break" style="${bgStyle}">${cellsHtml}</tr>`;
 
@@ -173,7 +173,7 @@ export async function printFilteredCustomerList() {
     // Dynamic Proportional Column Grid (Totals 100% across all pages)
     const baseColWeights = {
         sl: 3.5, date: 9.5, acc: 7, code: 3.5,
-        name: 21, addr: 27, phone: 12, zone: 6.5, bal: 10
+        name: 20, addr: 26.5, phone: 12, zone: 6.5, bal: 11.5
     };
     const activeColKeys = Object.keys(baseColWeights).filter(k => selectedCols[k]);
     const totalWeight = activeColKeys.reduce((s, k) => s + baseColWeights[k], 0) || 100;

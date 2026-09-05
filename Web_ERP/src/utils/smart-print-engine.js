@@ -83,7 +83,9 @@ const THEAD_H  = 34;
 const FOOTER_H = 36;
 const PAD_V    = 16;
 const ROW_SCALE = 1.0;
-const BUDGET_BONUS = -20;
+const PRINT_SAFETY_MARGIN = 90;
+const MAX_P1_ROWS = 25;
+const MAX_PN_ROWS = 26;
 
 export async function smartPaginatePrint({
     rowsArray, page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
@@ -98,8 +100,8 @@ export async function smartPaginatePrint({
 
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
     const effectiveP1HeaderH = Math.max(p1HeaderH, PAGE1_HEADER_H);
-    const page1Budget = A4_H - effectiveP1HeaderH - THEAD_H - FOOTER_H - PAD_V - 20;
-    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - 20;
+    const page1Budget = A4_H - effectiveP1HeaderH - THEAD_H - FOOTER_H - PAD_V - PRINT_SAFETY_MARGIN;
+    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - PRINT_SAFETY_MARGIN;
     const totalLastExtra = sumH + sigH;
 
     const pages = [];
@@ -108,10 +110,14 @@ export async function smartPaginatePrint({
     for (let i = 0; i < rowsArray.length; i++) {
         const rh = rowHeights[i] || 24;
         const budget = isP1 ? page1Budget : pageNBudget;
+        const maxRows = isP1 ? MAX_P1_ROWS : MAX_PN_ROWS;
         const isLastRow = i === rowsArray.length - 1;
         const extra = isLastRow ? totalLastExtra : 0;
 
-        if (curH + rh + extra > budget && cur.length > 0) {
+        const exceedsBudget = (curH + rh + extra > budget);
+        const exceedsCount = (cur.length >= maxRows);
+
+        if ((exceedsBudget || exceedsCount) && cur.length > 0) {
             pages.push(cur); cur = []; curH = 0; isP1 = false;
         }
         const item = rowsArray[i];
@@ -139,8 +145,8 @@ export async function smartPaginateStatement({
     ]);
 
     const rowHeights = rawRowHeights.map(h => Math.ceil(h * ROW_SCALE));
-    const page1Budget = A4_H - PAGE1_HEADER_H - Math.ceil(extraH * ROW_SCALE) - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
-    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V + BUDGET_BONUS;
+    const page1Budget = A4_H - PAGE1_HEADER_H - Math.ceil(extraH * ROW_SCALE) - THEAD_H - FOOTER_H - PAD_V - PRINT_SAFETY_MARGIN;
+    const pageNBudget = A4_H - PAGEN_HEADER_H - THEAD_H - FOOTER_H - PAD_V - PRINT_SAFETY_MARGIN;
     const totalLastExtra = sumH + sigH;
 
     const pages = [];
@@ -149,10 +155,14 @@ export async function smartPaginateStatement({
     for (let i = 0; i < rowsArray.length; i++) {
         const rh = rowHeights[i] || 24;
         const budget = isP1 ? page1Budget : pageNBudget;
+        const maxRows = isP1 ? 22 : MAX_PN_ROWS;
         const isLastRow = i === rowsArray.length - 1;
         const extra = isLastRow ? totalLastExtra : 0;
 
-        if (curH + rh + extra > budget && cur.length > 0) {
+        const exceedsBudget = (curH + rh + extra > budget);
+        const exceedsCount = (cur.length >= maxRows);
+
+        if ((exceedsBudget || exceedsCount) && cur.length > 0) {
             pages.push(cur); cur = []; curH = 0; isP1 = false;
         }
         const item = rowsArray[i];
@@ -194,7 +204,7 @@ function _buildPageHtml(pages, opts) {
         const tbodyStyle = tableClass === 'print-items-table' ? ' style="font-size:10px;"' : '';
         const isFixed = tableColHeaderHtml.includes('<colgroup>') || (tableClass || '').includes('fixed-table');
         const layoutStyle = isFixed ? 'table-layout:fixed;' : 'table-layout:auto;';
-        return `<div style="${brk}width:100%;box-sizing:border-box;background:white;color:#0f172a;padding:6px 12px;">
+        return `<div style="${brk}width:100%;box-sizing:border-box;background:white;color:#0f172a;padding:6px 12px;page-break-inside:avoid!important;break-inside:avoid!important;">
             <div style="padding-top:2px;margin-bottom:4px;">${isFirst ? page1HeaderHtml : repeatHeaderHtml}</div>
             ${isFirst && page1ExtraHtml ? page1ExtraHtml : ''}
             <table style="width:100%;border-collapse:collapse;${layoutStyle}margin-top:2px;border:1px solid #cbd5e1;" class="${tableClass || ''}${isFixed ? ' fixed-table' : ''}">
