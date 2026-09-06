@@ -30,7 +30,7 @@ export async function getAccountAnchor(accountName, isCash) {
 /**
  * Fetch Customer Collections matching this account with deduplication.
  * For 'শোরুম ক্যাশ', pulls collections where receivedFrom is 'শোরুম ক্যাশ'/'Cash'/'ক্যাশ'
- * OR where receivedType is 'Cash' without another specific collector assigned.
+ * OR where receivedType is 'Cash' without another specific bank or collector assigned.
  */
 export async function fetchAccountCollections(accountName) {
     if (!accountName) return [];
@@ -48,26 +48,39 @@ export async function fetchAccountCollections(accountName) {
         queries.push(TransactionDAO.collection.where('receivedFrom', '==', 'Cash').get());
     }
 
-    const [snapshots, otherCollectors] = await Promise.all([
+    const [snapshots, otherCollectors, activeBanks] = await Promise.all([
         Promise.all(queries),
-        isShowroomCash ? CashCollectorDAO.getActiveCollectors() : Promise.resolve([])
+        isShowroomCash ? CashCollectorDAO.getActiveCollectors() : Promise.resolve([]),
+        isShowroomCash ? BankDAO.getActiveBanks() : Promise.resolve([])
     ]);
 
-    const otherCollectorNames = new Set();
-    if (isShowroomCash && Array.isArray(otherCollectors)) {
-        otherCollectors.forEach(c => {
-            const cName = String(c.name || '').trim();
-            if (cName && cName !== 'শোরুম ক্যাশ') {
-                otherCollectorNames.add(cName);
-            }
-        });
+    const otherAccountNames = new Set();
+    if (isShowroomCash) {
+        if (Array.isArray(otherCollectors)) {
+            otherCollectors.forEach(c => {
+                const cName = String(c.name || '').trim();
+                if (cName && cName !== 'শোরুম ক্যাশ') otherAccountNames.add(cName);
+            });
+        }
+        if (Array.isArray(activeBanks)) {
+            activeBanks.forEach(b => {
+                const bName = String(b.name || '').trim();
+                if (bName) otherAccountNames.add(bName);
+            });
+        }
     }
 
     snapshots.forEach(snap => {
         snap.forEach(doc => {
             if (docMap.has(doc.id)) return;
             const data = doc.data();
+            
+            // Skip Less / Discounts
             if (String(data.receivedType || '').trim() === 'Less') return;
+
+            // Skip customer ledger opening balances (not showroom cash collections)
+            const v = String(data.voucherNo || '').trim().toUpperCase();
+            if (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের') return;
 
             const paid = Number(data.paid || 0);
             if (isNaN(paid) || paid <= 0) return;
@@ -76,8 +89,14 @@ export async function fetchAccountCollections(accountName) {
             const rt = String(data.receivedType || '').trim();
 
             if (isShowroomCash) {
-                if (rf && otherCollectorNames.has(rf)) return;
-                if (rf === 'শোরুম ক্যাশ' || rf === 'Cash' || rf === 'ক্যাশ' || (!rf && rt === 'Cash') || rt === 'Cash') {
+                // If explicitly tagged with another active collector or bank, skip
+                if (rf && otherAccountNames.has(rf)) return;
+
+                // Belongs to Showroom Cash if receivedFrom is cash variant or receivedType is Cash with no other account
+                const isExplicitCash = (rf === 'শোরুম ক্যাশ' || rf === 'Cash' || rf === 'ক্যাশ');
+                const isUnassignedCash = (!rf && rt === 'Cash');
+
+                if (isExplicitCash || isUnassignedCash) {
                     docMap.set(doc.id, { id: doc.id, ...data, paid });
                 }
             } else {

@@ -82,6 +82,7 @@ export async function openAccountLedger(accountName, isCash) {
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-slate-900 border-b border-slate-800 sticky top-0 z-10">
                             <tr>
+                                <th class="p-3 text-xs font-bold text-slate-400 whitespace-nowrap w-12 text-center">#</th>
                                 <th class="p-3 text-xs font-bold text-slate-400 whitespace-nowrap">তারিখ</th>
                                 <th class="p-3 text-xs font-bold text-slate-400 whitespace-nowrap">বিবরণ / নোট</th>
                                 <th class="p-3 text-xs font-bold text-slate-400 whitespace-nowrap text-right">জমা (Deposit)</th>
@@ -90,7 +91,7 @@ export async function openAccountLedger(accountName, isCash) {
                             </tr>
                         </thead>
                         <tbody id="bl-table-body" class="divide-y divide-slate-800/50">
-                            <tr><td colspan="5" class="p-8 text-center text-slate-500 text-sm">লোড হচ্ছে...</td></tr>
+                            <tr><td colspan="6" class="p-8 text-center text-slate-500 text-sm">লোড হচ্ছে...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -121,7 +122,7 @@ export async function loadLedgerTable(accountName, isCash) {
     const tbody = document.getElementById('bl-table-body');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500 text-sm"><i class="fa-solid fa-spinner fa-spin mr-2"></i> ডাটা ফেচ করা হচ্ছে...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500 text-sm"><i class="fa-solid fa-spinner fa-spin mr-2"></i> ডাটা ফেচ করা হচ্ছে...</td></tr>';
 
     try {
         const data = await getAccountLedgerTransactions(accountName, isCash, fromDate, toDate);
@@ -130,6 +131,7 @@ export async function loadLedgerTable(accountName, isCash) {
         let totalInflow = 0, totalOutflow = 0, filteredCount = 0;
         let trs = `
             <tr class="bg-slate-900/60 font-bold border-b border-slate-800">
+                <td class="p-3 text-xs text-slate-500 text-center font-mono">-</td>
                 <td class="p-3 text-xs text-slate-300 whitespace-nowrap" colspan="2"><i class="fa-solid fa-flag-checkered text-blue-400 mr-1.5"></i>প্রারম্ভিক ব্যালেন্স (Opening Balance)</td>
                 <td class="p-3 text-xs text-right"></td><td class="p-3 text-xs text-right"></td>
                 <td class="p-3 text-xs text-right font-black ${data.openingBalance < 0 ? 'text-red-400' : 'text-emerald-400'} font-mono">৳ ${formatAmountWithComma(data.openingBalance)}</td>
@@ -156,6 +158,7 @@ export async function loadLedgerTable(accountName, isCash) {
 
             trs += `
                 <tr class="hover:bg-slate-800/40 transition-colors text-left group border-b border-slate-800/40">
+                    <td class="p-3 text-xs text-slate-400 text-center font-mono font-bold">${filteredCount}</td>
                     <td class="p-3 text-xs text-slate-300 whitespace-nowrap font-mono">
                         <div class="flex items-center justify-between">
                             <span>${formattedDate}</span>
@@ -174,11 +177,12 @@ export async function loadLedgerTable(accountName, isCash) {
         });
 
         if (filteredCount === 0) {
-            trs += `<tr><td colspan="5" class="p-8 text-center text-slate-500 text-xs italic font-bold">এই তারিখে কোনো ট্রানজাকশন নেই।</td></tr>`;
+            trs += `<tr><td colspan="6" class="p-8 text-center text-slate-500 text-xs italic font-bold">এই তারিখে কোনো ট্রানজাকশন নেই।</td></tr>`;
         }
 
         trs += `
             <tr class="bg-slate-900/80 border-t-2 border-slate-700">
+                <td class="p-3 text-xs text-slate-500 text-center font-mono">-</td>
                 <td class="p-3 text-xs text-white font-black whitespace-nowrap" colspan="2"><i class="fa-solid fa-circle-check text-emerald-400 mr-1.5"></i>সর্বশেষ ব্যালেন্স (Closing Balance)</td>
                 <td class="p-3 text-xs text-right"></td><td class="p-3 text-xs text-right"></td>
                 <td class="p-3 text-sm text-right font-black ${data.closingBalance < 0 ? 'text-red-400' : 'text-emerald-400'} font-mono">৳ ${formatAmountWithComma(data.closingBalance)}</td>
@@ -204,7 +208,7 @@ export async function loadLedgerTable(accountName, isCash) {
 
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-red-400 text-xs font-bold">ডাটা লোড করতে সমস্যা হয়েছে!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-400 text-xs font-bold">ডাটা লোড করতে সমস্যা হয়েছে!</td></tr>';
     }
 }
 
@@ -216,16 +220,16 @@ export function printLedger() {
     if (!currentLedgerData) return Swal.fire('ত্রুটি', 'আগে লেজার লোড করুন', 'error');
     
     const printWindow = window.open('', '_blank');
-    let rowsHtml = `<tr><td colspan="2" style="padding: 8px; font-weight: bold;">প্রারম্ভিক ব্যালেন্স (Opening Balance)</td><td></td><td></td><td style="padding: 8px; text-align: right; font-weight: bold;">৳ ${formatAmountWithComma(currentLedgerData.openingBalance)}</td></tr>`;
+    let rowsHtml = `<tr><td style="padding: 8px; text-align: center; font-weight: bold;">-</td><td colspan="2" style="padding: 8px; font-weight: bold;">প্রারম্ভিক ব্যালেন্স (Opening Balance)</td><td></td><td></td><td style="padding: 8px; text-align: right; font-weight: bold;">৳ ${formatAmountWithComma(currentLedgerData.openingBalance)}</td></tr>`;
     
-    currentLedgerData.transactions.forEach(t => {
+    currentLedgerData.transactions.forEach((t, idx) => {
         const formattedDate = formatAppDate(t.dateStr);
-        rowsHtml += `<tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">${formattedDate}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>${t.type}</strong><br><small>${t.note}</small></td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${t.isCredit ? '৳ ' + formatAmountWithComma(t.amount) : '-'}</td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${t.isDebit ? '৳ ' + formatAmountWithComma(t.amount) : '-'}</td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">৳ ${formatAmountWithComma(t.runningBalance)}</td></tr>`;
+        rowsHtml += `<tr><td style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd; font-weight: bold;">${idx + 1}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${formattedDate}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>${t.type}</strong><br><small>${t.note}</small></td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${t.isCredit ? '৳ ' + formatAmountWithComma(t.amount) : '-'}</td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${t.isDebit ? '৳ ' + formatAmountWithComma(t.amount) : '-'}</td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">৳ ${formatAmountWithComma(t.runningBalance)}</td></tr>`;
     });
     
-    rowsHtml += `<tr><td colspan="2" style="padding: 8px; font-weight: bold; border-top: 2px solid #000;">সর্বশেষ ব্যালেন্স (Closing Balance)</td><td style="border-top: 2px solid #000;"></td><td style="border-top: 2px solid #000;"></td><td style="padding: 8px; text-align: right; font-weight: bold; border-top: 2px solid #000;">৳ ${formatAmountWithComma(currentLedgerData.closingBalance)}</td></tr>`;
+    rowsHtml += `<tr><td style="padding: 8px; text-align: center; font-weight: bold; border-top: 2px solid #000;">-</td><td colspan="2" style="padding: 8px; font-weight: bold; border-top: 2px solid #000;">সর্বশেষ ব্যালেন্স (Closing Balance)</td><td style="border-top: 2px solid #000;"></td><td style="border-top: 2px solid #000;"></td><td style="padding: 8px; text-align: right; font-weight: bold; border-top: 2px solid #000;">৳ ${formatAmountWithComma(currentLedgerData.closingBalance)}</td></tr>`;
 
-    const html = `<html><head><title>${currentAccountName} Ledger</title><style>body { font-family: Arial, sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; } th { background: #f0f0f0; padding: 10px; text-align: left; border-bottom: 2px solid #333; } .text-right { text-align: right; }</style></head><body><h2 style="text-align: center;">Maa Motors ERP</h2><h3 style="text-align: center;">Bank Ledger: ${currentAccountName}</h3><p style="text-align: center; color: #555;">From: ${document.getElementById('bl-from-date')?.value || ''} To: ${document.getElementById('bl-to-date')?.value || ''}</p><table><thead><tr><th>Date</th><th>Description / Note</th><th class="text-right">Deposit</th><th class="text-right">Withdrawal</th><th class="text-right">Balance</th></tr></thead><tbody>${rowsHtml}</tbody></table><div style="margin-top: 50px; text-align: center; font-size: 10px; color: #888;">Printed on: ${new Date().toLocaleString('en-GB')}</div><script>window.onload = () => { window.print(); window.close(); }</script></body></html>`;
+    const html = `<html><head><title>${currentAccountName} Ledger</title><style>body { font-family: Arial, sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; } th { background: #f0f0f0; padding: 10px; text-align: left; border-bottom: 2px solid #333; } .text-right { text-align: right; } .text-center { text-align: center; }</style></head><body><h2 style="text-align: center;">Maa Motors ERP</h2><h3 style="text-align: center;">Bank Ledger: ${currentAccountName}</h3><p style="text-align: center; color: #555;">From: ${document.getElementById('bl-from-date')?.value || ''} To: ${document.getElementById('bl-to-date')?.value || ''}</p><table><thead><tr><th style="width: 40px;" class="text-center">#</th><th>Date</th><th>Description / Note</th><th class="text-right">Deposit</th><th class="text-right">Withdrawal</th><th class="text-right">Balance</th></tr></thead><tbody>${rowsHtml}</tbody></table><div style="margin-top: 50px; text-align: center; font-size: 10px; color: #888;">Printed on: ${new Date().toLocaleString('en-GB')}</div><script>window.onload = () => { window.print(); window.close(); }</script></body></html>`;
     
     printWindow.document.write(html);
     printWindow.document.close();
@@ -234,12 +238,12 @@ export function printLedger() {
 export function exportLedgerExcel() {
     if (!currentLedgerData) return Swal.fire('ত্রুটি', 'আগে লেজার লোড করুন', 'error');
     
-    const rows = [['Date', 'Description / Note', 'Deposit (+)', 'Withdrawal (-)', 'Balance'], ['', 'Opening Balance', '', '', currentLedgerData.openingBalance]];
-    currentLedgerData.transactions.forEach(t => {
+    const rows = [['SL', 'Date', 'Description / Note', 'Deposit (+)', 'Withdrawal (-)', 'Balance'], ['-', 'Opening Balance', '', '', '', currentLedgerData.openingBalance]];
+    currentLedgerData.transactions.forEach((t, idx) => {
         const formattedDate = formatAppDate(t.dateStr);
-        rows.push([formattedDate, `${t.type} - ${t.note}`, t.isCredit ? t.amount : 0, t.isDebit ? t.amount : 0, t.runningBalance]);
+        rows.push([idx + 1, formattedDate, `${t.type} - ${t.note}`, t.isCredit ? t.amount : 0, t.isDebit ? t.amount : 0, t.runningBalance]);
     });
-    rows.push(['', 'Closing Balance', '', '', currentLedgerData.closingBalance]);
+    rows.push(['-', 'Closing Balance', '', '', '', currentLedgerData.closingBalance]);
     
     const wb = xlsx.utils.book_new();
     const ws = xlsx.utils.aoa_to_sheet(rows);
