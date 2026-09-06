@@ -27,14 +27,11 @@ export async function showTransactionConfirmModal({
     }
 
     const prevDueBadge = currentDue > 0
-        ? `<span class="text-red-400 font-mono font-bold">৳ ${formatAmountWithComma(currentDue)} (বকেয়া)</span>`
-        : (currentDue < 0 ? `<span class="text-emerald-400 font-mono font-bold">৳ ${formatAmountWithComma(Math.abs(currentDue))} (অ্যাডভান্স)</span>` : `<span class="text-slate-400 font-mono font-bold">৳ ০.০০</span>`);
+        ? `<span class="text-red-400 font-mono font-bold whitespace-nowrap">৳ ${formatAmountWithComma(currentDue)} (বকেয়া)</span>`
+        : (currentDue < 0 ? `<span class="text-emerald-400 font-mono font-bold whitespace-nowrap">৳ ${formatAmountWithComma(Math.abs(currentDue))} (অ্যাডভান্স)</span>` : `<span class="text-slate-400 font-mono font-bold whitespace-nowrap">৳ ০.০০</span>`);
 
-    const projectedDueBadge = projectedDue > 0
-        ? `<span class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-xl text-xs md:text-sm font-black font-mono">৳ ${formatAmountWithComma(projectedDue)} (বকেয়া)</span>`
-        : (projectedDue < 0 
-            ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl text-xs md:text-sm font-black font-mono">৳ ${formatAmountWithComma(Math.abs(projectedDue))} (অ্যাডভান্স)</span>`
-            : `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl text-xs md:text-sm font-black font-mono">৳ ০.০০ (পরিশোধিত)</span>`);
+    const isDue = projectedDue > 0, isAdv = projectedDue < 0;
+    const dueStatusText = isDue ? 'বকেয়া' : (isAdv ? 'অ্যাডভান্স' : 'পরিশোধিত');
 
     const activeAmount = b > 0 ? b : p;
     const words = numberToBanglaWords(activeAmount);
@@ -140,9 +137,24 @@ export async function showTransactionConfirmModal({
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/90">
-                            <span class="text-xs font-black text-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-arrow-right text-emerald-400"></i><span>হালনাগাদ অবশিষ্ট বকেয়া:</span></span>
-                            <div>${projectedDueBadge}</div>
+                        <div class="mt-2 p-2.5 bg-slate-950/90 rounded-xl border border-slate-800/90 flex items-center justify-between gap-2 shadow-inner">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-7 h-7 rounded-lg ${isDue ? 'bg-red-500/15 text-red-400 border border-red-500/25' : (isAdv ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-slate-800 text-slate-400 border border-slate-700')} flex items-center justify-center text-xs shrink-0">
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-[11px] text-slate-200 font-black block leading-tight whitespace-nowrap">হালনাগাদ অবশিষ্ট বকেয়া:</span>
+                                    <span class="text-[9px] text-slate-500 font-bold block whitespace-nowrap">লেনদেন পরবর্তী চূড়ান্ত ব্যালেন্স</span>
+                                </div>
+                            </div>
+                            <div class="text-right flex items-center gap-1.5 shrink-0">
+                                <span class="text-sm md:text-base font-black font-mono whitespace-nowrap ${isDue ? 'text-red-400' : (isAdv ? 'text-emerald-400' : 'text-slate-300')}">
+                                    ৳ ${formatAmountWithComma(Math.abs(projectedDue))}
+                                </span>
+                                <span class="text-[10px] font-black px-2 py-0.5 rounded-lg whitespace-nowrap ${isDue ? 'bg-red-500/20 text-red-300 border border-red-500/30' : (isAdv ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700')}">
+                                    (${dueStatusText})
+                                </span>
+                            </div>
                         </div>
                     </div>
 
