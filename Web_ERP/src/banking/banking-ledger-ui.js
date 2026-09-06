@@ -232,11 +232,11 @@ export function shareLedgerWhatsApp() {
     openWhatsAppShareModal(currentAccountName, isCurrentAccountCash, currentLedgerData);
 }
 
-export function printLedger() {
+export async function printLedger() {
     const fromDate = document.getElementById('bl-from-date')?.value || '';
     const toDate = document.getElementById('bl-to-date')?.value || '';
     const filterType = document.getElementById('bl-type')?.value || 'ALL';
-    executePrint(currentLedgerData, currentAccountName, fromDate, toDate, filterType);
+    await executePrint(currentLedgerData, currentAccountName, fromDate, toDate, filterType);
 }
 
 export function exportLedgerExcel() {

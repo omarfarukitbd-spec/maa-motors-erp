@@ -211,7 +211,9 @@ export function printViaIframe(htmlBody, extraCss = '', title = 'Maa_Motors_Docu
     doc.open();
     doc.write(`<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8">
 <title>${title}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/kalpurush/font.css" rel="stylesheet">
 <style>${IFRAME_PRINT_CSS}${extraCss}</style>
 </head><body>${htmlBody}</body></html>`);
