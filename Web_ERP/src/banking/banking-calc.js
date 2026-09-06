@@ -111,7 +111,7 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
                 amount: Number(t.paid),
                 isCredit: true,
                 isDebit: false,
-                note: `Payment from ${t.customerName || 'কাস্টমার'} (Voucher: ${t.voucherNo || '-'})`,
+                note: `কাস্টমার: ${t.customerName || 'সাধারণ কাস্টমার'} (ভাউচার: ${t.voucherNo || '-'})`,
                 customerName: t.customerName || ''
             });
         }

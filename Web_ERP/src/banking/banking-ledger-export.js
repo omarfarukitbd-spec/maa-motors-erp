@@ -40,14 +40,15 @@ export function printLedger(ledgerData, accountName, fromDate, toDate, filterTyp
         const deposit = t.isCredit ? `৳ ${formatAmountWithComma(t.amount)}` : '-';
         const withdraw = t.isDebit ? `৳ ${formatAmountWithComma(t.amount)}` : '-';
         const balColor = t.runningBalance < 0 ? '#dc2626' : '#0f172a';
+        const typeLabel = t.type === 'CUSTOMER_PAYMENT' ? 'কাস্টমার জমা' : (t.type === 'BUSINESS_EXPENSE' ? 'খরচ' : (t.type === 'DEPOSIT' ? 'ক্যাশ জমা' : (t.type === 'WITHDRAWAL' ? 'উত্তোলন' : t.type)));
 
         rowsHtml += `
             <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
                 <td style="padding: 5px 6px; text-align: center; font-weight: bold; color: #64748b;">${serial}</td>
                 <td style="padding: 5px 6px; white-space: nowrap; font-family: monospace;">${formattedDate}</td>
                 <td style="padding: 5px 8px;">
-                    <div style="font-weight: bold; color: #1e293b;">${t.type}</div>
-                    <div style="font-size: 10px; color: #64748b;">${t.note || ''}</div>
+                    <div style="font-weight: bold; color: #1e293b;">${typeLabel}</div>
+                    <div style="font-size: 10px; color: #475569;">${t.note || ''}</div>
                 </td>
                 <td style="padding: 5px 8px; text-align: right; color: #059669; font-weight: bold; font-family: monospace; white-space: nowrap;">${deposit}</td>
                 <td style="padding: 5px 8px; text-align: right; color: #dc2626; font-weight: bold; font-family: monospace; white-space: nowrap;">${withdraw}</td>
@@ -60,12 +61,15 @@ export function printLedger(ledgerData, accountName, fromDate, toDate, filterTyp
         rowsHtml += `<tr><td colspan="6" style="padding: 16px; text-align: center; color: #64748b; font-style: italic;">এই ফিল্টারে কোনো লেনদেন পাওয়া যায়নি</td></tr>`;
     }
 
+    const isCreditOnly = (filterType === 'CREDIT');
+    const totalRowLabel = isCreditOnly ? 'সর্বমোট জমা (Total Inflow)' : 'সর্বশেষ ব্যালেন্স (Closing Balance)';
+
     rowsHtml += `
         <tr style="background-color: #f1f5f9; font-weight: bold; border-top: 2px solid #0f172a;">
             <td style="padding: 7px 8px; text-align: center; color: #64748b;">-</td>
-            <td style="padding: 7px 8px; white-space: nowrap;" colspan="2">সর্বশেষ ব্যালেন্স (Closing Balance)</td>
-            <td style="padding: 7px 8px; text-align: right; color: #059669; font-family: monospace;">৳ ${formatAmountWithComma(totalInflow)}</td>
-            <td style="padding: 7px 8px; text-align: right; color: #dc2626; font-family: monospace;">৳ ${formatAmountWithComma(totalOutflow)}</td>
+            <td style="padding: 7px 8px; white-space: nowrap;" colspan="2">${totalRowLabel}</td>
+            <td style="padding: 7px 8px; text-align: right; color: #059669; font-family: monospace; font-size: ${isCreditOnly ? '12px' : '11px'}; font-weight: 900;">৳ ${formatAmountWithComma(totalInflow)}</td>
+            <td style="padding: 7px 8px; text-align: right; color: #dc2626; font-family: monospace;">${isCreditOnly ? '-' : '৳ ' + formatAmountWithComma(totalOutflow)}</td>
             <td style="padding: 7px 8px; text-align: right; font-weight: 900; font-family: monospace; color: ${ledgerData.closingBalance < 0 ? '#dc2626' : '#059669'};">৳ ${formatAmountWithComma(ledgerData.closingBalance)}</td>
         </tr>
     `;
@@ -74,6 +78,19 @@ export function printLedger(ledgerData, accountName, fromDate, toDate, filterTyp
     const displayRange = (fromDate || toDate) ? `${fromDate || 'শুরু'} হতে ${toDate || 'বর্তমান'}` : 'সকল লেনদেন';
     const safeTitle = `${cleanAccountName.replace(/[^a-zA-Z0-9\u0980-\u09FF]/g, '_')}_Ledger`;
 
+    const summaryBanner = isCreditOnly ? `
+        <div style="background-color: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 8px; padding: 8px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 11px; font-weight: bold; color: #065f46; text-transform: uppercase;">মোট জমা (Total Inflow)</div>
+                <div style="font-size: 18px; font-weight: 900; color: #047857; font-family: monospace;">৳ ${formatAmountWithComma(totalInflow)}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 11px; font-weight: bold; color: #065f46;">মোট জমা প্রদানকারী (Total Entries)</div>
+                <div style="font-size: 15px; font-weight: 900; color: #047857;">${serial} জন / টি</div>
+            </div>
+        </div>
+    ` : '';
+
     const htmlBody = `
         <div style="font-family: 'Inter', 'Kalpurush', sans-serif; color: #0f172a; padding: 4px;">
             <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px;">
@@ -81,10 +98,12 @@ export function printLedger(ledgerData, accountName, fromDate, toDate, filterTyp
                 <div style="font-size: 13px; font-weight: bold; color: #475569; margin-top: 3px;">অ্যাকাউন্ট লেজার স্টেটমেন্ট — ${cleanAccountName}</div>
             </div>
 
+            ${summaryBanner}
+
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; font-size: 11px;">
                 <div>
                     <div style="font-weight: bold; color: #1e293b;">তারিখ সীমা: <span style="font-weight: normal; color: #475569;">${displayRange}</span></div>
-                    <div style="font-weight: bold; color: #1e293b;">ফিল্টার: <span style="font-weight: normal; color: #475569;">${filterType === 'ALL' ? 'সকল লেনদেন' : (filterType === 'CREDIT' ? 'শুধুমাত্র জমা' : 'শুধুমাত্র খরচ')}</span></div>
+                    <div style="font-weight: bold; color: #1e293b;">ফিল্টার: <span style="font-weight: normal; color: #475569;">${filterType === 'ALL' ? 'সকল লেনদেন' : (filterType === 'CREDIT' ? 'শুধুমাত্র জমা (+ Inflow)' : 'শুধুমাত্র খরচ (- Outflow)')}</span></div>
                 </div>
                 <div style="text-align: right; color: #64748b;">
                     <div>মোট এন্ট্রি: <strong>${serial}</strong> টি</div>
@@ -140,10 +159,11 @@ export function exportLedgerExcel(ledgerData, accountName, fromDate, toDate, fil
         if (filterType === 'DEBIT' && !t.isDebit) return;
         serial++;
         const formattedDate = formatAppDate(t.dateStr);
+        const typeLabel = t.type === 'CUSTOMER_PAYMENT' ? 'কাস্টমার জমা' : (t.type === 'BUSINESS_EXPENSE' ? 'খরচ' : (t.type === 'DEPOSIT' ? 'ক্যাশ জমা' : (t.type === 'WITHDRAWAL' ? 'উত্তোলন' : t.type)));
         rows.push([
             serial,
             formattedDate,
-            `${t.type} - ${t.note || ''}`,
+            `${typeLabel} - ${t.note || ''}`,
             t.isCredit ? Number(t.amount || 0) : 0,
             t.isDebit ? Number(t.amount || 0) : 0,
             t.runningBalance
