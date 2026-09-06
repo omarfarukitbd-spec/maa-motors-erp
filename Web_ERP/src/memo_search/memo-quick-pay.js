@@ -147,7 +147,7 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, curren
             bill: 0,
             paid: formValues.amt,
             receivedType: formValues.pType,
-            receivedFrom: formValues.pType === 'Bank' ? formValues.bankName : 'Cash',
+            receivedFrom: formValues.pType === 'Bank' ? formValues.bankName : 'শোরুম ক্যাশ',
             notes: formValues.notes,
             prevDue: safeRound(prevDue),
             currentDue: safeRound(newDue),

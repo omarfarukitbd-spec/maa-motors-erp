@@ -281,6 +281,10 @@ export const bankingApp = {
     exportLedgerExcel,
     shareLedgerWhatsApp,
     deleteBankingTransaction,
+    openAnchorModal: async (acc, isCash) => {
+        const { openAccountAnchorModal } = await import('./banking-anchor-modal.js');
+        openAccountAnchorModal(acc, isCash, () => { loadLedgerTable(acc, isCash); if (typeof loadAndRenderAccounts === 'function') loadAndRenderAccounts(); });
+    },
     refreshCards: loadAndRenderAccounts
 };
 

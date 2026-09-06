@@ -186,7 +186,7 @@ export async function saveAndPrintInvoice(layoutType) {
         if (paid > 0) {
             const cashBtn = document.getElementById('inv-recv-cash-btn');
             receivedType = (cashBtn && cashBtn.classList.contains('bg-emerald-600')) ? 'Cash' : 'Bank';
-            receivedFrom = document.getElementById('inv-received-from')?.value?.trim() || '';
+            receivedFrom = document.getElementById('inv-received-from')?.value?.trim() || (receivedType === 'Cash' ? 'শোরুম ক্যাশ' : '');
         }
 
         const confirmPreview = await Swal.fire({
