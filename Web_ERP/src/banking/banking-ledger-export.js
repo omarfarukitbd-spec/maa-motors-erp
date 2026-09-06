@@ -17,7 +17,11 @@ export async function printLedger(ledgerData, accountName, fromDate, toDate, fil
 
     const settings = (await SettingsDAO.getAppSettings()) || {};
     const cleanAccountName = accountName || 'অ্যাকাউন্ট';
-    const displayRange = (fromDate || toDate) ? `${fromDate || 'শুরু'} হতে ${toDate || 'বর্তমান'}` : 'সকল লেনদেন';
+    const formattedFromDate = fromDate ? formatAppDate(fromDate) : '';
+    const formattedToDate = toDate ? formatAppDate(toDate) : '';
+    const displayRange = (formattedFromDate || formattedToDate) 
+        ? `${formattedFromDate || 'শুরু'} হতে ${formattedToDate || 'বর্তমান'}` 
+        : 'সকল লেনদেন';
     const formattedToday = formatAppDate(new Date());
 
     const isCreditOnly = (filterType === 'CREDIT');
@@ -61,7 +65,7 @@ export async function printLedger(ledgerData, accountName, fromDate, toDate, fil
         rowsArray.push(`
             <tr class="print-row-no-break" style="background: #f8fafc; border-bottom: 1.5px solid #cbd5e1;">
                 <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10px; font-family: 'Inter', monospace; color: #64748b;">-</td>
-                <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 4px 4px; font-size: 9.5px; font-weight: 800; font-family: 'Inter', monospace; color: #475569; white-space: nowrap;">${fromDate || '-'}</td>
+                <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 4px 4px; font-size: 9.5px; font-weight: 800; font-family: 'Inter', monospace; color: #475569; white-space: nowrap;">${formattedFromDate || '-'}</td>
                 <td style="text-align: left; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 8px; font-size: 11px; font-weight: 900; font-family: 'Hind Siliguri', sans-serif; color: #1e293b;">
                     প্রারম্ভিক ব্যালেন্স (Opening Balance)
                 </td>
