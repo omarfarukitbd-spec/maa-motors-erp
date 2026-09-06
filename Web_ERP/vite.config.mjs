@@ -9,6 +9,7 @@ export default defineConfig({
                 name: 'Maa Motors ERP',
                 short_name: 'Maa ERP',
                 description: 'Maa Motors ERP System',
+                start_url: '/',
                 theme_color: '#0f172a',
                 background_color: '#0f172a',
                 display: 'standalone',

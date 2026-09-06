@@ -1,6 +1,6 @@
 // --- Ledger Module (Modular Architecture) ---
 import { CustomerDAO, TransactionDAO } from './dao.js';
-import { updateLiveWords, promptSecurityPin, handleError, parseAmount } from './utils.js';
+import { updateLiveWords, promptSecurityPin, handleError, parseAmount, showToast } from './utils.js';
 import { getCustomerCache, initCustomerCache } from './customer/index.js';
 import { filterCustomerCombobox } from './shared/components/customer-combobox.js';
 import { reconcileSingleCustomerBalance } from './admin/balance-recon-heal.js';

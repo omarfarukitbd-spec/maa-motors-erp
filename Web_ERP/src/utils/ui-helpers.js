@@ -35,6 +35,10 @@ export function showToast(message, type = 'success', boxContext = null) {
     }, 3000);
 }
 
+if (typeof window !== 'undefined') {
+    window.showToast = showToast;
+}
+
 function createToastContainer() {
     let el = document.getElementById('toast-container');
     if (!el) {
