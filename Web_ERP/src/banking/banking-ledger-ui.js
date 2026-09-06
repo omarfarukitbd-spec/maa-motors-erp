@@ -2,11 +2,12 @@ import Swal from 'sweetalert2';
 import { getAccountLedgerTransactions } from './banking-calc.js';
 import { formatAmountWithComma, formatAppDate, getTodayLocalDateString } from '../utils.js';
 import { openWhatsAppShareModal } from './banking-ledger-share.js';
-import * as xlsx from 'xlsx';
+import { printLedger as executePrint, exportLedgerExcel as executeExcel } from './banking-ledger-export.js';
 
 let currentLedgerData = null; // Store for export/print
 let currentAccountName = '';
 let isCurrentAccountCash = false;
+let ledgerLoadSeq = 0;
 
 export async function openAccountLedger(accountName, isCash) {
     currentAccountName = accountName;
@@ -110,12 +111,26 @@ export async function openAccountLedger(accountName, isCash) {
         showCloseButton: true,
         customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700/80' },
         didOpen: () => {
+            if (typeof window.initDatePickers === 'function') {
+                window.initDatePickers();
+            }
+
+            const reloadTable = () => loadLedgerTable(accountName, isCash);
+            const fromInput = document.getElementById('bl-from-date');
+            const toInput = document.getElementById('bl-to-date');
+            const typeSelect = document.getElementById('bl-type');
+
+            if (fromInput) fromInput.addEventListener('change', reloadTable);
+            if (toInput) toInput.addEventListener('change', reloadTable);
+            if (typeSelect) typeSelect.addEventListener('change', reloadTable);
+
             loadLedgerTable(accountName, isCash);
         }
     });
 }
 
-export async function loadLedgerTable(accountName, isCash) {
+export async function loadLedgerTable(accountName = currentAccountName, isCash = isCurrentAccountCash) {
+    const seq = ++ledgerLoadSeq;
     const fromDate = document.getElementById('bl-from-date')?.value || '';
     const toDate = document.getElementById('bl-to-date')?.value || '';
     const filterType = document.getElementById('bl-type')?.value || 'ALL';
@@ -126,6 +141,7 @@ export async function loadLedgerTable(accountName, isCash) {
 
     try {
         const data = await getAccountLedgerTransactions(accountName, isCash, fromDate, toDate);
+        if (seq !== ledgerLoadSeq) return; // Discard stale response
         currentLedgerData = data; 
         
         let totalInflow = 0, totalOutflow = 0, filteredCount = 0;
@@ -217,38 +233,17 @@ export function shareLedgerWhatsApp() {
 }
 
 export function printLedger() {
-    if (!currentLedgerData) return Swal.fire('ত্রুটি', 'আগে লেজার লোড করুন', 'error');
-    
-    const printWindow = window.open('', '_blank');
-    let rowsHtml = `<tr><td style="padding: 8px; text-align: center; font-weight: bold;">-</td><td colspan="2" style="padding: 8px; font-weight: bold;">প্রারম্ভিক ব্যালেন্স (Opening Balance)</td><td></td><td></td><td style="padding: 8px; text-align: right; font-weight: bold;">৳ ${formatAmountWithComma(currentLedgerData.openingBalance)}</td></tr>`;
-    
-    currentLedgerData.transactions.forEach((t, idx) => {
-        const formattedDate = formatAppDate(t.dateStr);
-        rowsHtml += `<tr><td style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd; font-weight: bold;">${idx + 1}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${formattedDate}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>${t.type}</strong><br><small>${t.note}</small></td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${t.isCredit ? '৳ ' + formatAmountWithComma(t.amount) : '-'}</td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${t.isDebit ? '৳ ' + formatAmountWithComma(t.amount) : '-'}</td><td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">৳ ${formatAmountWithComma(t.runningBalance)}</td></tr>`;
-    });
-    
-    rowsHtml += `<tr><td style="padding: 8px; text-align: center; font-weight: bold; border-top: 2px solid #000;">-</td><td colspan="2" style="padding: 8px; font-weight: bold; border-top: 2px solid #000;">সর্বশেষ ব্যালেন্স (Closing Balance)</td><td style="border-top: 2px solid #000;"></td><td style="border-top: 2px solid #000;"></td><td style="padding: 8px; text-align: right; font-weight: bold; border-top: 2px solid #000;">৳ ${formatAmountWithComma(currentLedgerData.closingBalance)}</td></tr>`;
-
-    const html = `<html><head><title>${currentAccountName} Ledger</title><style>body { font-family: Arial, sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; } th { background: #f0f0f0; padding: 10px; text-align: left; border-bottom: 2px solid #333; } .text-right { text-align: right; } .text-center { text-align: center; }</style></head><body><h2 style="text-align: center;">Maa Motors ERP</h2><h3 style="text-align: center;">Bank Ledger: ${currentAccountName}</h3><p style="text-align: center; color: #555;">From: ${document.getElementById('bl-from-date')?.value || ''} To: ${document.getElementById('bl-to-date')?.value || ''}</p><table><thead><tr><th style="width: 40px;" class="text-center">#</th><th>Date</th><th>Description / Note</th><th class="text-right">Deposit</th><th class="text-right">Withdrawal</th><th class="text-right">Balance</th></tr></thead><tbody>${rowsHtml}</tbody></table><div style="margin-top: 50px; text-align: center; font-size: 10px; color: #888;">Printed on: ${new Date().toLocaleString('en-GB')}</div><script>window.onload = () => { window.print(); window.close(); }</script></body></html>`;
-    
-    printWindow.document.write(html);
-    printWindow.document.close();
+    const fromDate = document.getElementById('bl-from-date')?.value || '';
+    const toDate = document.getElementById('bl-to-date')?.value || '';
+    const filterType = document.getElementById('bl-type')?.value || 'ALL';
+    executePrint(currentLedgerData, currentAccountName, fromDate, toDate, filterType);
 }
 
 export function exportLedgerExcel() {
-    if (!currentLedgerData) return Swal.fire('ত্রুটি', 'আগে লেজার লোড করুন', 'error');
-    
-    const rows = [['SL', 'Date', 'Description / Note', 'Deposit (+)', 'Withdrawal (-)', 'Balance'], ['-', 'Opening Balance', '', '', '', currentLedgerData.openingBalance]];
-    currentLedgerData.transactions.forEach((t, idx) => {
-        const formattedDate = formatAppDate(t.dateStr);
-        rows.push([idx + 1, formattedDate, `${t.type} - ${t.note}`, t.isCredit ? t.amount : 0, t.isDebit ? t.amount : 0, t.runningBalance]);
-    });
-    rows.push(['-', 'Closing Balance', '', '', '', currentLedgerData.closingBalance]);
-    
-    const wb = xlsx.utils.book_new();
-    const ws = xlsx.utils.aoa_to_sheet(rows);
-    xlsx.utils.book_append_sheet(wb, ws, "Ledger");
-    xlsx.writeFile(wb, `Bank_Ledger_${currentAccountName}_${new Date().getTime()}.xlsx`);
+    const fromDate = document.getElementById('bl-from-date')?.value || '';
+    const toDate = document.getElementById('bl-to-date')?.value || '';
+    const filterType = document.getElementById('bl-type')?.value || 'ALL';
+    executeExcel(currentLedgerData, currentAccountName, fromDate, toDate, filterType);
 }
 
 export async function deleteBankingTransaction(txnId) {
