@@ -1,37 +1,8 @@
-import { TransactionDAO, BankTransactionDAO, ExpenseDAO, BankDAO, CashCollectorDAO } from '../dao.js';
+import { BankTransactionDAO, ExpenseDAO } from '../dao.js';
 import { safeRound, toDBDate } from '../utils.js';
+import { getAccountAnchor, fetchAccountCollections } from './banking-queries.js';
 
-/**
- * Fetch Account Anchor (Effective Start Date & Opening Balance)
- */
-async function getAccountAnchor(accountName, isCash) {
-    let effectiveStartDate = null;
-    let initialOpeningBalance = 0;
-
-    try {
-        const dao = isCash ? CashCollectorDAO : BankDAO;
-        const snap = await dao.collection.where('name', '==', accountName).limit(1).get();
-        if (!snap.empty) {
-            const data = snap.docs[0].data();
-            if (data.effectiveStartDate) {
-                effectiveStartDate = toDBDate(data.effectiveStartDate);
-            }
-            if (data.openingBalance !== undefined && !isNaN(Number(data.openingBalance))) {
-                initialOpeningBalance = Number(data.openingBalance);
-            }
-        }
-    } catch (err) {
-        console.warn(`Anchor fetch warning for ${accountName}:`, err);
-    }
-
-    // Default Anchor Fallback for 'শোরুম ক্যাশ' to isolate historical legacy data
-    if (!effectiveStartDate && accountName === 'শোরুম ক্যাশ') {
-        effectiveStartDate = '2026-09-01';
-        initialOpeningBalance = 0;
-    }
-
-    return { effectiveStartDate, initialOpeningBalance };
-}
+export { getAccountAnchor };
 
 /**
  * Calculate dynamic balance for a specific bank or cash account
@@ -49,8 +20,8 @@ export async function calculateAccountBalance(accountName, isCash = false, upToD
     const targetDate = upToDate ? toDBDate(upToDate) : null;
     
     // Run queries concurrently
-    const [collectionSnap, bankTxns, incomingTxns, expenseSnap, anchor] = await Promise.all([
-        TransactionDAO.collection.where('receivedFrom', '==', accountName).get(),
+    const [collections, bankTxns, incomingTxns, expenseSnap, anchor] = await Promise.all([
+        fetchAccountCollections(accountName),
         BankTransactionDAO.getByBank(accountName),
         BankTransactionDAO.getTransfersByTargetBank(accountName),
         (accountName === 'শোরুম ক্যাশ') ? [] : ExpenseDAO.collection.where('paymentAccount', '==', accountName).get(),
@@ -61,13 +32,10 @@ export async function calculateAccountBalance(accountName, isCash = false, upToD
         
     // 1. Process Customer Collections
     let customerCollectionTotal = 0;
-    collectionSnap.forEach(doc => {
-        const t = doc.data();
+    collections.forEach(t => {
         const d = toDBDate(t.date || '');
         if (effectiveStartDate && d < effectiveStartDate) return;
         if (targetDate && d > targetDate) return;
-        // BUG-3 FIX: Less/Discount payments must NOT count as bank/cash inflow
-        if (String(t.receivedType || '').trim() === 'Less') return;
         if (t.paid && !isNaN(t.paid)) {
             customerCollectionTotal = safeRound(customerCollectionTotal + Number(t.paid));
         }
@@ -114,16 +82,15 @@ export async function calculateAccountBalance(accountName, isCash = false, upToD
     }
 
     // Final Balance
-    const balance = safeRound(initialOpeningBalance + customerCollectionTotal + manualDeposits + incomingTransfers - manualWithdrawals - outgoingTransfers - expenseTotal);
-    return balance;
+    return safeRound(initialOpeningBalance + customerCollectionTotal + manualDeposits + incomingTransfers - manualWithdrawals - outgoingTransfers - expenseTotal);
 }
 
 export async function getAccountLedgerTransactions(accountName, isCash, fromDateStr, toDateStr) {
     if (!accountName) return { openingBalance: 0, transactions: [], closingBalance: 0 };
 
     // Parallel fetch
-    const [collectionSnap, bankTxns, incomingTxns, expenseSnap, anchor] = await Promise.all([
-        TransactionDAO.collection.where('receivedFrom', '==', accountName).get(),
+    const [collections, bankTxns, incomingTxns, expenseSnap, anchor] = await Promise.all([
+        fetchAccountCollections(accountName),
         BankTransactionDAO.getByBank(accountName),
         BankTransactionDAO.getTransfersByTargetBank(accountName),
         (accountName === 'শোরুম ক্যাশ') ? [] : ExpenseDAO.collection.where('paymentAccount', '==', accountName).get(),
@@ -131,35 +98,27 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
     ]);
 
     const { effectiveStartDate, initialOpeningBalance } = anchor;
-    let allTxns = [];
+    const allTxns = [];
     
-    // 1. Fetch Customer Collections
-    collectionSnap.forEach(doc => {
-        const t = doc.data();
-        if (String(t.receivedType || '').trim() === 'Less') return;
-        const d = toDBDate(t.date || '');
-        if (effectiveStartDate && d < effectiveStartDate) return;
-
+    // 1. Customer Collections
+    collections.forEach(t => {
         if (t.paid && !isNaN(t.paid) && Number(t.paid) > 0) {
             allTxns.push({
-                id: doc.id,
+                id: t.id,
                 dateStr: t.date || '',
                 createdAt: t.createdAt ? (typeof t.createdAt.toMillis === 'function' ? t.createdAt.toMillis() : t.createdAt) : 0,
                 type: 'CUSTOMER_PAYMENT',
                 amount: Number(t.paid),
                 isCredit: true,
                 isDebit: false,
-                note: `Payment from ${t.customerName} (Voucher: ${t.voucherNo || '-'})`,
-                customerName: t.customerName
+                note: `Payment from ${t.customerName || 'কাস্টমার'} (Voucher: ${t.voucherNo || '-'})`,
+                customerName: t.customerName || ''
             });
         }
     });
 
-    // 2. Fetch Bank Transactions (Deposit, Withdrawal, Outgoing Transfer)
+    // 2. Bank Transactions (Deposit, Withdrawal, Outgoing Transfer)
     bankTxns.forEach(t => {
-        const d = toDBDate(t.date || '');
-        if (effectiveStartDate && d < effectiveStartDate) return;
-
         const amt = Number(t.amount || 0);
         const rawType = String(t.type || '').toUpperCase();
         const isDep = rawType === 'DEPOSIT';
@@ -174,17 +133,14 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
                 amount: amt,
                 isCredit: isDep,
                 isDebit: isWith || isTrans,
-                note: isTrans ? `Transfer to ${t.targetBankName}. ${t.note || ''}` : (t.note || '-'),
+                note: isTrans ? `Transfer to ${t.targetBankName || ''}. ${t.note || ''}` : (t.note || '-'),
                 targetBank: t.targetBankName || ''
             });
         }
     });
 
-    // 3. Fetch Incoming Transfers
+    // 3. Incoming Transfers
     incomingTxns.forEach(t => {
-        const d = toDBDate(t.date || '');
-        if (effectiveStartDate && d < effectiveStartDate) return;
-
         const amt = Number(t.amount || 0);
         if (amt > 0) {
             allTxns.push({
@@ -195,19 +151,16 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
                 amount: amt,
                 isCredit: true,
                 isDebit: false,
-                note: `Transfer from ${t.bankName}. ${t.note || ''}`,
-                sourceBank: t.bankName
+                note: `Transfer from ${t.bankName || ''}. ${t.note || ''}`,
+                sourceBank: t.bankName || ''
             });
         }
     });
 
-    // 4. Fetch Business Expenses (Excluded for শোরুম ক্যাশ)
+    // 4. Business Expenses (Excluded for শোরুম ক্যাশ)
     if (accountName !== 'শোরুম ক্যাশ' && expenseSnap && typeof expenseSnap.forEach === 'function') {
         expenseSnap.forEach(doc => {
             const exp = doc.data();
-            const d = toDBDate(exp.date || '');
-            if (effectiveStartDate && d < effectiveStartDate) return;
-
             const amt = Number(exp.amount || 0);
             if (amt > 0) {
                 allTxns.push({
@@ -219,7 +172,7 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
                     isCredit: false,
                     isDebit: true,
                     note: `খরচ: ${exp.category || 'ব্যবসায়িক খরচ'}${exp.details ? ' (' + exp.details + ')' : ''}`,
-                    category: exp.category
+                    category: exp.category || ''
                 });
             }
         });
@@ -243,15 +196,17 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
 
     const fromDate = fromDateStr ? toDBDate(fromDateStr) : '';
     const toDate = toDateStr ? toDBDate(toDateStr) : '';
-
-    const effectiveFromDate = (effectiveStartDate && (!fromDate || fromDate < effectiveStartDate))
-        ? effectiveStartDate
-        : fromDate;
+    const filterStartDate = fromDate || effectiveStartDate || '';
 
     allTxns.forEach(t => {
         const dbDate = toDBDate(t.dateStr);
 
-        if (effectiveFromDate && dbDate < effectiveFromDate) {
+        // Pre-anchor historical records (if anchor configured and user didn't ask for earlier fromDate)
+        if (effectiveStartDate && dbDate < effectiveStartDate && (!fromDate || fromDate >= effectiveStartDate)) {
+            return;
+        }
+
+        if (filterStartDate && dbDate < filterStartDate) {
             if (t.isCredit) openingBalance = safeRound(openingBalance + t.amount);
             if (t.isDebit) openingBalance = safeRound(openingBalance - t.amount);
         } else if (toDate && dbDate > toDate) {

@@ -1,5 +1,5 @@
 import { TransactionDAO, BankTransactionDAO } from '../dao.js';
-import { toDBDate, getTodayLocalDateString } from '../utils.js';
+import { toDBDate, getTodayLocalDateString, safeRound } from '../utils.js';
 
 export async function getBankingSummary(dateFilter = 'month') {
     let startDate = '';
@@ -78,20 +78,22 @@ export async function getBankingSummary(dateFilter = 'month') {
 
     collectionsSnap.forEach(doc => {
         const t = doc.data();
+        if (String(t.receivedType || '').trim() === 'Less') return;
         const paid = Number(t.paid || 0);
-        if (paid > 0 && t.receivedFrom) {
-            totalCustomerCollections += paid;
+        if (paid > 0) {
+            totalCustomerCollections = safeRound(totalCustomerCollections + paid);
         }
     });
 
     bankTxnSnap.forEach(doc => {
         const t = doc.data();
         const amt = Number(t.amount || 0);
-        if (t.type === 'DEPOSIT') totalDeposits += amt;
-        if (t.type === 'WITHDRAWAL') totalWithdrawals += amt;
+        const type = String(t.type || '').toUpperCase();
+        if (type === 'DEPOSIT') totalDeposits = safeRound(totalDeposits + amt);
+        if (type === 'WITHDRAWAL' || type === 'WITHDRAW') totalWithdrawals = safeRound(totalWithdrawals + amt);
     });
 
-    const totalIn = totalCustomerCollections + totalDeposits;
+    const totalIn = safeRound(totalCustomerCollections + totalDeposits);
     const totalOut = totalWithdrawals;
 
     return {
@@ -100,6 +102,6 @@ export async function getBankingSummary(dateFilter = 'month') {
         totalWithdrawals,
         totalIn,
         totalOut,
-        netFlow: totalIn - totalOut
+        netFlow: safeRound(totalIn - totalOut)
     };
 }

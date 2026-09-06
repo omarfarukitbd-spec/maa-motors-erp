@@ -18,7 +18,7 @@ export async function openAccountAnchorModal(accountName, isCash, onSaveSuccess)
         customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
     });
 
-    let currentAnchor = { effectiveStartDate: '2026-09-01', openingBalance: 0, docId: null };
+    let currentAnchor = { effectiveStartDate: '2026-08-01', openingBalance: 0, docId: null };
 
     try {
         const snap = await dao.collection.where('name', '==', accountName).limit(1).get();
