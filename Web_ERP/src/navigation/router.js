@@ -60,7 +60,7 @@ async function applyAppBranding() {
                 name: shopName,
                 short_name: shopName.split(' ')[0],
                 description: 'Professional Business Ledger & Accounting System',
-                start_url: '/',
+                start_url: window.location.origin + '/',
                 display: 'standalone',
                 background_color: '#0F172A',
                 theme_color: '#0F172A',
