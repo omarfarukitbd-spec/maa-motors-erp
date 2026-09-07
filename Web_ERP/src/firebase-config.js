@@ -1,7 +1,7 @@
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
 import "firebase/compat/auth";
-import "firebase/compat/app-check";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD2KJqHyT84ErCFpWKUSLEFXdvnQ1s9SfQ",
@@ -17,14 +17,16 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Initialize Firebase App Check with reCAPTCHA v3
+// Initialize Firebase App Check with reCAPTCHA Enterprise
 if (typeof window !== "undefined") {
     try {
         if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
             self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         }
-        const appCheck = firebase.appCheck();
-        appCheck.activate("6Ld_Sa4tAAAAAD3cJEVs8nG3XjU-88QhHzp4V9Mo", true);
+        initializeAppCheck(firebase.app(), {
+            provider: new ReCaptchaEnterpriseProvider("6Ld_Sa4tAAAAAD3cJEVs8nG3XjU-88QhHzp4V9Mo"),
+            isTokenAutoRefreshEnabled: true
+        });
     } catch (e) {
         console.warn("Firebase App Check notice:", e);
     }
