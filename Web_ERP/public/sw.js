@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maa-motors-erp-v7'; // Increment version to clear old caches
+const CACHE_NAME = 'maa-motors-erp-v8'; // Increment version to clear old caches
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

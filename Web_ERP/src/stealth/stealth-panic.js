@@ -29,7 +29,8 @@ export async function triggerPanic() {
         if (window.indexedDB && window.indexedDB.databases) {
             const dbs = await window.indexedDB.databases();
             for (const dbInfo of dbs) {
-                if (dbInfo.name) {
+                // Delete local firestore customer & ledger cache, keep auth schema intact
+                if (dbInfo.name && dbInfo.name.toLowerCase().includes('firestore')) {
                     window.indexedDB.deleteDatabase(dbInfo.name);
                 }
             }
