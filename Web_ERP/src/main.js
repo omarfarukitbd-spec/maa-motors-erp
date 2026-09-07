@@ -11,6 +11,7 @@ import { handleCalc, initCalculatorKeyboard, initDraggableCalculator } from './u
 import { initOmnisearch, initNetworkSyncBadge, initGlobalButtonInteractions, initPermissionObserver } from './utils.js';
 import { initCustomerInspector } from './customer_inspector/index.js';
 import { initBotProtection } from './utils/bot-protection.js';
+import { initStealthSystem } from './stealth/index.js';
 import './banking/banking-ui.js';
 
 // -------------------------------------------------------------------------
@@ -48,9 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 1. Initialize Auth & Bot Protection
+    // 1. Initialize Auth, Bot Protection & Stealth Guard
     initAuthListener();
     initBotProtection();
+    initStealthSystem();
 
     // 2. Initialize Search & Omnisearch Command Palette
     initSearch();
