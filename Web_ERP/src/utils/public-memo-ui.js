@@ -23,7 +23,12 @@ export async function renderPublicMemoView(txnId) {
             return;
         }
 
-        const settings = await SettingsDAO.getAppSettings();
+        let settings = {};
+        try {
+            settings = (await SettingsDAO.getAppSettings()) || {};
+        } catch (setErr) {
+            console.warn("Public settings load fallback:", setErr);
+        }
         const shopName = settings.shopName || "M/S. Maa Motors";
         const shopPhone = settings.shopPhone || "01819-397669, 01815-707934";
         const shopAddress = settings.shopAddress || "Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road";

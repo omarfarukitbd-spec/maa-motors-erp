@@ -18,8 +18,13 @@ service cloud.firestore {
       return amount is number && amount > 0;
     }
 
+    function isMasterEmail() {
+      return isAuthenticated() && request.auth.token.email != null && 
+        request.auth.token.email in ['office.maamotors@gmail.com', 'maamotorsbd@gmail.com', 'omarfarukitbd@gmail.com'];
+    }
+
     function isAdmin() {
-      return hasUserDoc() && getUserData().get('role', '') == 'Admin';
+      return isMasterEmail() || (hasUserDoc() && getUserData().get('role', '') == 'Admin');
     }
 
     function isBoss() {
@@ -38,36 +43,68 @@ service cloud.firestore {
     // Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated() && (isAdmin() || request.auth.uid == userId);
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (isAdmin() || (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'permissions'])));
+      allow create: if isAuthenticated() && (
+        isAdmin() ||
+        (request.auth.uid == userId && (
+          isMasterEmail() ||
+          (request.resource.data.get('status', '') == 'pending' && 
+           request.resource.data.get('role', '') in ['Staff', 'Boss'])
+        ))
+      );
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'permissions']))
+      );
       allow delete: if isAdmin();
     }
 
     // Customers Collection
     match /customers/{customerId} {
-      allow get: if isAuthenticated() || resource.data.name != null;
-      allow list: if isAuthenticated();
-      allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageCustomers', false) == true))
-                             && (!request.resource.data.keys().hasAny(['phone']) || request.resource.data.phone is string)
-                             && (!request.resource.data.keys().hasAny(['balance']) || request.resource.data.balance is number);
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (
+        isAdmin() || 
+        (!isBoss() && (
+          getPerms().get('manageCustomers', false) == true ||
+          getPerms().get('addCustomer', false) == true ||
+          getPerms().get('editCustomers', false) == true ||
+          getPerms().get('manageLedger', false) == true ||
+          getPerms().get('addLedgerEntry', false) == true
+        ))
+      )
+      && (!request.resource.data.keys().hasAny(['phone']) || request.resource.data.phone is string)
+      && (!request.resource.data.keys().hasAny(['balance']) || request.resource.data.balance is number);
       allow delete: if isAdmin();
     }
 
     // Expenses Collection
     match /expenses/{expenseId} {
       allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('viewExpenses', false) == true);
-      allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageExpenses', false) == true))
-                            && (!request.resource.data.keys().hasAny(['amount']) || isAmountValid(request.resource.data.amount));
-      allow delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageExpenses', false) == true));
+      allow create, update: if isAuthenticated() && (
+        isAdmin() || 
+        (!isBoss() && (
+          getPerms().get('manageExpenses', false) == true ||
+          getPerms().get('addExpense', false) == true ||
+          getPerms().get('editExpenses', false) == true
+        ))
+      )
+      && (!request.resource.data.keys().hasAny(['amount']) || isAmountValid(request.resource.data.amount));
+      allow delete: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageExpenses', false) == true || getPerms().get('deleteExpenses', false) == true)));
     }
 
     // Transactions Collection
     match /transactions/{txnId} {
-      allow get: if isAuthenticated() || resource.data.customerId != null;
-      allow list: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
-      allow create, update: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true))
-                            && (!request.resource.data.keys().hasAny(['amount']) || isAmountValid(request.resource.data.amount));
-      allow delete: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
+      allow get: if isAuthenticated() || (resource.data.customerId != null && resource.data.bill != null);
+      allow list: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true || getPerms().get('viewLedger', false) == true);
+      allow create, update: if isAuthenticated() && (
+        isAdmin() || 
+        (!isBoss() && (
+          getPerms().get('manageLedger', false) == true ||
+          getPerms().get('addLedgerEntry', false) == true ||
+          getPerms().get('editLedger', false) == true
+        ))
+      )
+      && (!request.resource.data.keys().hasAny(['amount']) || isAmountValid(request.resource.data.amount));
+      allow delete: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('deleteLedger', false) == true)));
     }
 
     // Zones Collection
@@ -84,14 +121,14 @@ service cloud.firestore {
 
     // Settings
     match /settings/{docId} {
-      allow read: if isAuthenticated() || docId == 'appSettings';
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
     // Bank Accounts
     match /bank_accounts/{docId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
+      allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('viewBanking', false) == true)));
     }
 
     // Cash Collectors
@@ -102,8 +139,8 @@ service cloud.firestore {
 
     // Bank Transactions
     match /bank_transactions/{docId} {
-      allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true);
-      allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && getPerms().get('manageLedger', false) == true));
+      allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true || getPerms().get('viewBanking', false) == true);
+      allow write: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('viewBanking', false) == true || getPerms().get('addBankDeposit', false) == true || getPerms().get('addBankWithdrawal', false) == true || getPerms().get('addBankTransfer', false) == true)));
     }
 
     // Recycle Bin Collection
@@ -115,8 +152,7 @@ service cloud.firestore {
     // Treasury Transactions (Master Fund Flow Ledger)
     match /TreasuryTransactions/{txnId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true);
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('addLedgerEntry', false) == true);
     }
   }
 }
-

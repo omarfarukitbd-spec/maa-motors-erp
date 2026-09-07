@@ -55,18 +55,11 @@ class BaseDAO {
         return docRef.id;
     }
 
-    async create(data) {
-        return await this.add(data);
-    }
-
-    async update(id, data) {
-        await this.collection.doc(id).update({ ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    }
-
-    async delete(id) {
-        await this.collection.doc(id).delete();
-    }
+    async create(data) { return await this.add(data); }
+    async update(id, data) { await this.collection.doc(id).update({ ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }); }
+    async delete(id) { await this.collection.doc(id).delete(); }
 }
+
 
 // Specialized DAOs
 export const CustomerDAO = new class extends BaseDAO {
@@ -138,8 +131,13 @@ export const SettingsDAO = new class {
     }
 
     async getAppSettings() {
-        const doc = await this.collection.doc('appSettings').get();
-        return doc.exists ? doc.data() : {};
+        try {
+            const doc = await this.collection.doc('appSettings').get();
+            return doc.exists ? doc.data() : {};
+        } catch (e) {
+            console.warn("SettingsDAO getAppSettings fallback:", e);
+            return {};
+        }
     }
 
     async updateAppSettings(data) {

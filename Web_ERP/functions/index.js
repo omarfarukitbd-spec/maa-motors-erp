@@ -13,7 +13,7 @@ exports.sendSmsViaProxy = functions.https.onCall(async (data, context) => {
     }
 
     const encodedMsg = encodeURIComponent(message);
-    const url = `http://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=${smsType}&number=${cleanPhone}&senderid=${senderId}&message=${encodedMsg}`;
+    const url = `https://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=${smsType}&number=${cleanPhone}&senderid=${senderId}&message=${encodedMsg}`;
 
     try {
         const response = await axios.get(url);
