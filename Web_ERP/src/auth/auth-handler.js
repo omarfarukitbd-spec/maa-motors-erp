@@ -18,24 +18,27 @@ export async function loginWithGoogle() {
     if (errEl) errEl.innerText = "গুগল লগইন উইন্ডো খোলা হচ্ছে...";
     
     try {
-        // Use signInWithPopup across both mobile and desktop (avoids Chrome mobile cookie partitioning issues)
+        // Use signInWithPopup across both mobile and desktop
         await auth.signInWithPopup(googleProvider);
         if (errEl) errEl.innerText = "";
     } catch (e) {
         console.warn("Popup sign-in issue or blocked:", e);
-        if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+        if (e.code === 'auth/popup-closed-by-user') {
             if (errEl) errEl.innerText = "লগইন উইন্ডো বন্ধ করা হয়েছে।";
             return;
         }
-        if (e.code === 'auth/popup-blocked') {
-            if (errEl) errEl.innerText = "পপআপ ব্লক হয়েছে! রিডাইরেক্ট দিয়ে চেষ্টা করা হচ্ছে...";
+        const isDbOrPopupIssue = e.code === 'auth/popup-blocked' || 
+            (e.message && (e.message.includes('Database is closing') || e.message.includes('closing/hidden')));
+        if (isDbOrPopupIssue) {
+            if (errEl) errEl.innerText = "ব্রাউজার পপআপ আটকেছে! সরাসরি রিডাইরেক্ট দিয়ে লগইন হচ্ছে...";
             try {
                 await auth.signInWithRedirect(googleProvider);
+                return;
             } catch (err) {
                 console.error("Redirect fallback error:", err);
                 if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ: " + (err.message || "ত্রুটি হয়েছে");
+                return;
             }
-            return;
         }
         if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ: " + (e.message || "ত্রুটি হয়েছে");
     }

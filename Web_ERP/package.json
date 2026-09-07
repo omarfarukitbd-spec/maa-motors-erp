@@ -15,7 +15,7 @@
   "dependencies": {
     "clusterize.js": "^1.0.0",
     "crypto-js": "^4.2.0",
-    "firebase": "^12.17.0",
+    "firebase": "12.16.0",
     "flatpickr": "^4.6.13",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
