@@ -10,7 +10,6 @@ import { initDatePickers, startDateObserver } from './utils/date-logic/date-pick
 import { handleCalc, initCalculatorKeyboard, initDraggableCalculator } from './ui/calculator.js';
 import { initOmnisearch, initNetworkSyncBadge, initGlobalButtonInteractions, initPermissionObserver } from './utils.js';
 import { initCustomerInspector } from './customer_inspector/index.js';
-import { initBotProtection } from './utils/bot-protection.js';
 import { initStealthSystem } from './stealth/index.js';
 import './banking/banking-ui.js';
 
@@ -49,9 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 1. Initialize Auth, Bot Protection & Stealth Guard
+    // 1. Initialize Auth & Stealth Guard
     initAuthListener();
-    initBotProtection();
     initStealthSystem();
 
     // 2. Initialize Search & Omnisearch Command Palette

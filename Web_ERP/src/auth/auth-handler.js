@@ -27,20 +27,14 @@ export async function loginWithGoogle() {
             if (errEl) errEl.innerText = "লগইন উইন্ডো বন্ধ করা হয়েছে।";
             return;
         }
-        const isDbOrPopupIssue = e.code === 'auth/popup-blocked' || 
-            (e.message && (e.message.includes('Database is closing') || e.message.includes('closing/hidden')));
-        if (isDbOrPopupIssue) {
-            if (errEl) errEl.innerText = "ব্রাউজার পপআপ আটকেছে! সরাসরি রিডাইরেক্ট দিয়ে লগইন হচ্ছে...";
-            try {
-                await auth.signInWithRedirect(googleProvider);
-                return;
-            } catch (err) {
-                console.error("Redirect fallback error:", err);
-                if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ: " + (err.message || "ত্রুটি হয়েছে");
-                return;
-            }
+        if (errEl) errEl.innerText = "সরাসরি গুগল রিডাইরেক্ট দিয়ে লগইন হচ্ছে...";
+        try {
+            await auth.signInWithRedirect(googleProvider);
+            return;
+        } catch (err) {
+            console.error("Redirect fallback error:", err);
+            if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ: " + (err.message || "ত্রুটি হয়েছে");
         }
-        if (errEl) errEl.innerText = "গুগল লগইন ব্যর্থ: " + (e.message || "ত্রুটি হয়েছে");
     }
 }
 
