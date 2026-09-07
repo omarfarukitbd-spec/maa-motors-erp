@@ -3,15 +3,36 @@ import { firebase, auth } from '../firebase-config.js';
 import { triggerPanic } from './stealth-panic.js';
 
 const INACTIVITY_LIMIT_MS = 3 * 60 * 1000; // 3 Minutes
+const LOCK_STORAGE_KEY = 'stealth_screen_locked';
+const LAST_ACTIVE_KEY = 'stealth_last_active_time';
+
 let inactivityTimer = null;
 let isLocked = false;
 let failedAttempts = 0;
 
 /**
- * Reset Inactivity Timer on User Interaction
+ * Check if the screen is currently in locked state
+ */
+export function isStealthLocked() {
+    if (typeof window === 'undefined') return false;
+    return isLocked || 
+        sessionStorage.getItem(LOCK_STORAGE_KEY) === 'true' || 
+        localStorage.getItem(LOCK_STORAGE_KEY) === 'true';
+}
+
+/**
+ * Reset Inactivity Timer on User Interaction & Record Timestamp
  */
 export function resetInactivityTimer() {
     if (isLocked) return;
+
+    const now = Date.now();
+    try {
+        sessionStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+        localStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+    } catch (e) {
+        console.warn('Storage timestamp error:', e);
+    }
 
     if (inactivityTimer) {
         clearTimeout(inactivityTimer);
@@ -22,33 +43,46 @@ export function resetInactivityTimer() {
         const isAppUnlocked = appContainer && !appContainer.classList.contains('hidden');
         const hasUser = auth && auth.currentUser;
 
-        if (isAppUnlocked && hasUser && !isLocked) {
+        if ((isAppUnlocked || hasUser) && !isLocked) {
             lockScreen();
         }
     }, INACTIVITY_LIMIT_MS);
 }
 
 /**
- * Present Secure Dark Lock Screen Overlay
+ * Present Secure Dark Lock Screen Overlay (Persisted Across Refresh)
  */
 export function lockScreen() {
-    if (isLocked) return;
     isLocked = true;
     failedAttempts = 0;
 
-    // Remove existing lock if any
+    // Persist lock status so browser refresh (F5) cannot bypass security
+    try {
+        sessionStorage.setItem(LOCK_STORAGE_KEY, 'true');
+        localStorage.setItem(LOCK_STORAGE_KEY, 'true');
+    } catch (e) {
+        console.warn('Storage lock error:', e);
+    }
+
+    // Blur and freeze underlying app container
+    const appContainer = document.getElementById('app-container');
+    if (appContainer) {
+        appContainer.classList.add('pointer-events-none', 'select-none', 'filter', 'blur-xl');
+    }
+
+    // Remove existing lock overlay if already in DOM
     document.getElementById('stealth-lock-overlay')?.remove();
 
     const overlay = document.createElement('div');
     overlay.id = 'stealth-lock-overlay';
-    overlay.className = 'fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 font-bn select-none';
+    overlay.className = 'fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/95 backdrop-blur-3xl p-4 font-bn select-none';
     overlay.innerHTML = `
-        <div class="w-full max-w-[380px] p-8 m3-card text-center bg-slate-900/90 border border-slate-700/60 rounded-[32px] shadow-2xl">
-            <div class="w-16 h-16 bg-blue-500/10 text-blue-400 text-3xl flex items-center justify-center rounded-2xl mx-auto mb-5 border border-blue-500/20 shadow-lg shadow-blue-500/10 animate-pulse">
+        <div class="w-full max-w-[380px] p-8 m3-card text-center bg-slate-900/95 border border-slate-700/80 rounded-[32px] shadow-2xl animate-fade-in">
+            <div class="w-16 h-16 bg-blue-500/15 text-blue-400 text-3xl flex items-center justify-center rounded-2xl mx-auto mb-5 border border-blue-500/30 shadow-lg shadow-blue-500/10 animate-pulse">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <h3 class="text-xl font-black text-white mb-1">অফিস ওয়ার্কস্পেস লক</h3>
-            <p class="text-slate-400 text-xs mb-6">৩ মিনিট নিষ্ক্রিয় থাকার কারণে স্ক্রিনটি লক করা হয়েছে। আনলক করতে আপনার মাস্টার পিন দিন।</p>
+            <p class="text-slate-400 text-xs mb-6">নিষ্ক্রিয়তার কারণে সিস্টেমটি লক করা হয়েছে। আনলক করতে আপনার মাস্টার পিন দিন।</p>
             
             <form id="stealth-unlock-form" class="space-y-4" onsubmit="return false;">
                 <div>
@@ -59,7 +93,7 @@ export function lockScreen() {
                         autocomplete="off" 
                         autofocus 
                         placeholder="••••" 
-                        class="w-full text-center text-2xl tracking-[0.4em] font-mono py-3.5 px-4 bg-slate-800/80 border border-slate-700 rounded-2xl text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        class="w-full text-center text-2xl tracking-[0.4em] font-mono py-3.5 px-4 bg-slate-800/90 border border-slate-700 rounded-2xl text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     />
                 </div>
                 <div id="stealth-lock-err" class="text-red-400 text-xs font-bold min-h-[18px]"></div>
@@ -117,7 +151,7 @@ export function lockScreen() {
                 failedAttempts++;
                 const remaining = 3 - failedAttempts;
                 if (remaining <= 0) {
-                    // Maximum attempts breached: self-destruct local session
+                    // 3 consecutive failed attempts: trigger panic wipe
                     triggerPanic();
                 } else {
                     if (errEl) errEl.innerText = `ভুল পিন! আর ${remaining} বার চেষ্টা করতে পারবেন।`;
@@ -135,27 +169,58 @@ export function lockScreen() {
 }
 
 /**
- * Successfully Unlock Screen and Return to Previous State
+ * Successfully Unlock Screen and Clear Lock Storage
  */
 export function unlockScreen() {
     isLocked = false;
     failedAttempts = 0;
+
+    // Clear persistent lock flags
+    try {
+        sessionStorage.removeItem(LOCK_STORAGE_KEY);
+        localStorage.removeItem(LOCK_STORAGE_KEY);
+        const now = Date.now().toString();
+        sessionStorage.setItem(LAST_ACTIVE_KEY, now);
+        localStorage.setItem(LAST_ACTIVE_KEY, now);
+    } catch (e) {
+        console.warn('Storage unlock error:', e);
+    }
+
+    // Unblur app container
+    const appContainer = document.getElementById('app-container');
+    if (appContainer) {
+        appContainer.classList.remove('pointer-events-none', 'select-none', 'filter', 'blur-xl');
+    }
+
     document.getElementById('stealth-lock-overlay')?.remove();
     resetInactivityTimer();
 }
 
 /**
- * Initialize 3-Minute Auto-Lock Watcher
+ * Initialize 3-Minute Auto-Lock Watcher & Check Startup Lock State
  */
 export function initAutoLockWatcher() {
     if (typeof window === 'undefined') return;
 
     window.triggerEmergencyPanic = triggerPanic;
 
-    const activityEvents = ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'];
+    // 1. Check if the screen was already locked before browser refresh (F5)
+    const wasLocked = sessionStorage.getItem(LOCK_STORAGE_KEY) === 'true' || 
+                      localStorage.getItem(LOCK_STORAGE_KEY) === 'true';
     
-    // Throttled activity listener
+    const lastActiveStr = sessionStorage.getItem(LAST_ACTIVE_KEY) || localStorage.getItem(LAST_ACTIVE_KEY);
+    const lastActive = lastActiveStr ? parseInt(lastActiveStr, 10) : 0;
+    const isExpired = lastActive > 0 && (Date.now() - lastActive >= INACTIVITY_LIMIT_MS);
+
+    if (wasLocked || isExpired) {
+        // Immediately enforce lock screen upon page load/refresh
+        lockScreen();
+    }
+
+    // 2. Throttled activity listeners
+    const activityEvents = ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'];
     let lastActivityRecorded = 0;
+
     activityEvents.forEach(evt => {
         window.addEventListener(evt, () => {
             const now = Date.now();
