@@ -1,6 +1,7 @@
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
 import "firebase/compat/auth";
+import "firebase/compat/app-check";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD2KJqHyT84ErCFpWKUSLEFXdvnQ1s9SfQ",
@@ -14,6 +15,19 @@ const firebaseConfig = {
 
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
+}
+
+// Initialize Firebase App Check with reCAPTCHA v3
+if (typeof window !== "undefined") {
+    try {
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+            self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        }
+        const appCheck = firebase.appCheck();
+        appCheck.activate("6Ld_Sa4tAAAAAD3cJEVs8nG3XjU-88QhHzp4V9Mo", true);
+    } catch (e) {
+        console.warn("Firebase App Check notice:", e);
+    }
 }
 
 export const db = firebase.firestore();
