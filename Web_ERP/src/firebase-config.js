@@ -1,10 +1,9 @@
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
 import "firebase/compat/auth";
-const isHosting = typeof window !== 'undefined' && window.location.hostname.endsWith('web.app');
 const firebaseConfig = {
     apiKey: "AIzaSyD2KJqHyT84ErCFpWKUSLEFXdvnQ1s9SfQ",
-    authDomain: isHosting ? window.location.hostname : "maa-motors-erp.firebaseapp.com",
+    authDomain: "maa-motors-erp.firebaseapp.com",
     projectId: "maa-motors-erp",
     storageBucket: "maa-motors-erp.firebasestorage.app",
     messagingSenderId: "96761506330",
