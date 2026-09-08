@@ -125,6 +125,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         const batch = db.batch(); const balanceDiff = safeRound(b - p);
         let actualDelta = balanceDiff;
         let txnRef = null;
+        const editedTxnId = editingRef.id || null; // BUG-01 Fix: ID আগে সংরক্ষণ করো, null করার আগে
         if(editingRef.id) {
             const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0));
             const oldCid = editingRef.oldCid || id;
@@ -150,7 +151,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         }
         
         const finalSmsDue = safeRound(preCommitDue + actualDelta);
-        const savedTxnId = editingRef.id || txnRef?.id;
+        const savedTxnId = editedTxnId || txnRef?.id; // BUG-01 Fix: editedTxnId ব্যবহার করো (editingRef.id এখন null)
         await batch.commit();
         showToast('লেনদেন সফলভাবে সেভ হয়েছে!', 'success');
 

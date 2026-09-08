@@ -18,6 +18,7 @@ import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
 import { initDatePickers } from '../utils/date-logic/date-picker.js';
 import { SettingsDAO } from '../dao.js';
+import { isStealthLocked, lockScreen } from '../stealth/stealth-autolock.js'; // BUG-03 Fix
 
 /**
  * Apply shop logo as favicon + PWA manifest icon from Firestore settings
@@ -153,6 +154,12 @@ export function navigate(view, params = {}) {
  * Unlocks the app after successful login/PIN
  */
 export function unlockApp() {
+    // BUG-03 Fix: Auto-lock চলছে কিনা আগে check করো
+    if (isStealthLocked()) {
+        lockScreen();
+        return;
+    }
+
     initCustomerCache();
     applyAppBranding(); // Auto-set favicon & PWA icon from shop logo
     const errEl = document.getElementById('login-error');

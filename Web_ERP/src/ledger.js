@@ -94,13 +94,18 @@ export async function loadRecentTransactions(filterVoucher = null, filterCustome
                 startBalance = Number(currentCustomer?.totalDue || 0);
                 balanceStack = [startBalance];
             } else {
-                startBalance = balanceStack[currentPage - 1] !== undefined ? balanceStack[currentPage - 1] : null;
+                const stackIdx = currentPage - 1; // BUG-02 Fix
+                if (balanceStack[stackIdx] !== undefined) {
+                    startBalance = balanceStack[stackIdx];
+                } else {
+                    console.warn(`[BUG-02] balanceStack[${stackIdx}] undefined, resetting`);
+                    const fc = (getCustomerCache() || []).find(c => c.id === filterCustomer);
+                    startBalance = Number(fc?.totalDue || 0); balanceStack = [startBalance];
+                }
             }
         }
-
         const activeTbody = document.getElementById('ledger-list') || document.getElementById('recent-txn-list');
         if (!activeTbody) return;
-
         const renderRes = renderRows(results.data, activeTbody, startBalance);
         if (filterCustomer && renderRes && renderRes.finalRunning !== undefined) {
             balanceStack[currentPage] = renderRes.finalRunning;
