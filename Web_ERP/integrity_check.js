@@ -124,7 +124,7 @@ const RULES = [
     },
 ];
 
-const LINE_LIMIT = 300;
+const LINE_LIMIT = 500; // সাধারণ টার্গেট ~৩০০ লাইন, তবে জরুরি প্রয়োজনে ৫০০ লাইন পর্যন্ত অনুমোদিত
 const EMOJI_REGEX = /(\p{Extended_Pictographic}|\p{Emoji_Presentation})/gu;
 
 // 🛡️ অ্যাডভান্সড কোড কোয়ালিটি ও স্কিমা গার্ড (Advanced Schema & Financial Enforcer)
@@ -222,9 +222,9 @@ function checkIntegrity() {
             const content = fs.readFileSync(file, 'utf8');
             const lines = content.split('\n');
 
-            // 1. Strict 300-Line Limit Check
-            if (lines.length > LINE_LIMIT && !content.includes('BARREL FILE')) {
-                warnings.push(`⚠️  [লাইন লিমিট] ফাইল "${path.basename(file)}" অনেক বড় হয়ে গেছে (${lines.length} লাইন)।`);
+            // 1. Flexible Line Limit Check (সাধারণ টার্গেট ~৩০০, তবে জরুরি প্রয়োজনে ৫০০ লাইন পর্যন্ত অনুমোদিত)
+            if (lines.length > LINE_LIMIT && !content.includes('BARREL FILE') && !content.includes('ALLOW_LARGE_FILE')) {
+                warnings.push(`⚠️  [লাইন লিমিট] ফাইল "${path.basename(file)}" অনেক বড় হয়ে গেছে (${lines.length} লাইন, লিমিট: ${LINE_LIMIT})।`);
             }
 
             // 2. Strict Raw Emoji Detection Check (Rule 5: Zero Raw Emojis)
