@@ -45,6 +45,12 @@ export function logout() {
     const user = firebase.auth().currentUser;
     if (user) auditLog('LOGOUT', 'Auth', user.uid, user.email);
     auth.signOut();
+    try {
+        sessionStorage.removeItem('stealth_screen_locked');
+        localStorage.removeItem('stealth_screen_locked');
+    } catch (e) {
+        console.warn('Logout clear lock error:', e);
+    }
     const ls = document.getElementById('login-screen'), ac = document.getElementById('app-container');
     if(ls) ls.style.display = 'flex';
     if(ac) ac.classList.add('hidden');
@@ -88,10 +94,9 @@ export async function initAuthListener() {
         if (userStatusUnsubscribe) { userStatusUnsubscribe(); userStatusUnsubscribe = null; }
 
         if (user) {
+            const isMasterEmail = MASTER_EMAILS.includes((user.email || '').toLowerCase());
             userStatusUnsubscribe = UserDAO.listenUser(user.uid, async (userData) => {
                 let finalUserData = userData;
-                const lowerEmail = user.email?.toLowerCase().trim() || '';
-                const isMasterEmail = lowerEmail === 'office.maamotors@gmail.com' || lowerEmail === 'maamotorsbd@gmail.com' || lowerEmail === 'omarfarukitbd@gmail.com';
 
                 if(!userData) {
                     finalUserData = {
@@ -101,7 +106,7 @@ export async function initAuthListener() {
                         role: isMasterEmail ? 'Admin' : (isBossPortal ? 'Boss' : 'Staff'),
                         requestedPortal: portalMode || 'staff',
                         status: isMasterEmail ? 'active' : 'pending',
-                        pin: isMasterEmail ? '' : (isBossPortal ? '5027' : ''),
+                        pin: '',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                     };
@@ -175,8 +180,8 @@ export async function initAuthListener() {
                                 }
                             });
 
-                            const userPin = finalUserData.pin || (isBoss ? '5027' : '');
-                            if (pin && (pin === userPin || (isBoss && pin === '5027'))) {
+                            const userPin = String(finalUserData.pin || '').trim();
+                            if (pin && userPin && pin === userPin) {
                                 const info = await getIpAndDevice();
                                 auditLog('LOGIN', 'Auth', user.uid, user.email, { role: AppState.currentUserRole, ip: info.ip, device: info.device });
                                 ['nav-admin', 'nav-audit'].forEach(id => document.getElementById(id)?.classList.add('hidden'));

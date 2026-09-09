@@ -35,7 +35,7 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 </div>
                 <div>
                     <label class="text-xs text-slate-400 font-bold block mb-1">৪-ডিজিট সিকিউরিটি পিন দিন</label>
-                    <input id="swal-user-pin" type="text" maxlength="4" placeholder="${suggestedRole === 'Boss' ? '5027' : '1234'}" value="${suggestedRole === 'Boss' ? '5027' : '1234'}" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-center text-base font-mono font-bold tracking-widest text-white outline-none">
+                    <input id="swal-user-pin" type="text" maxlength="4" placeholder="৪-ডিজিট পিন লিখুন" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-center text-base font-mono font-bold tracking-widest text-white outline-none">
                 </div>
             </div>
         `,

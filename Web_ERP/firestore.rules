@@ -23,16 +23,20 @@ service cloud.firestore {
         request.auth.token.email in ['office.maamotors@gmail.com', 'maamotorsbd@gmail.com', 'omarfarukitbd@gmail.com'];
     }
 
+    function isActiveUser() {
+      return hasUserDoc() && getUserData().get('status', '') == 'active';
+    }
+
     function isAdmin() {
-      return isMasterEmail() || (hasUserDoc() && getUserData().get('role', '') == 'Admin');
+      return isMasterEmail() || (isActiveUser() && getUserData().get('role', '') == 'Admin');
     }
 
     function isBoss() {
-      return hasUserDoc() && getUserData().get('role', '') == 'Boss';
+      return isActiveUser() && getUserData().get('role', '') == 'Boss';
     }
 
     function getPerms() {
-      return hasUserDoc() ? getUserData().get('permissions', {}) : {};
+      return isActiveUser() ? getUserData().get('permissions', {}) : {};
     }
 
     // By default deny all
@@ -93,7 +97,7 @@ service cloud.firestore {
 
     // Transactions Collection
     match /transactions/{txnId} {
-      allow get: if isAuthenticated() || (resource.data.customerId != null && resource.data.bill != null);
+      allow get: if isAuthenticated() || (resource.data.customerId != null && resource.data.voucherNo != null);
       allow list: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true || getPerms().get('viewLedger', false) == true);
       allow create, update: if isAuthenticated() && (
         isAdmin() || 
@@ -121,7 +125,7 @@ service cloud.firestore {
 
     // Settings
     match /settings/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || docId == 'appSettings';
       allow write: if isAdmin();
     }
 
