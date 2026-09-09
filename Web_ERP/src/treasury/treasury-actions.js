@@ -2,6 +2,7 @@ import { TreasuryDAO } from './treasury-dao.js';
 import { TransactionDAO } from '../dao.js';
 import { findTreasuryDuplicate } from './treasury-calc.js';
 import { getDailyCollectionModalConfig, getDailyExpenseModalConfig, getSpecialTransactionModalConfig, getOpeningFundModalConfig } from './treasury-modals.js';
+import { openBankSyncModal } from './treasury-bank-sync.js';
 import { formatAmountWithComma, getTodayLocalDateString, formatAppDate, safeRound, showToast, promptSecurityPin, toDBDate } from '../utils.js';
 import { auditLog } from '../audit/audit-logger.js';
 
@@ -154,6 +155,11 @@ export function setupTreasuryActions(getState) {
                 showToast('লেনদেন সংরক্ষণ করতে সমস্যা হয়েছে!', 'error');
             }
         }
+    };
+
+    // 3.5. Quick Bank Fund Sync
+    window.treasuryOpenBankSyncModal = async () => {
+        await openBankSyncModal(getState);
     };
 
     // 4. Opening Fund Balance

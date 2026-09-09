@@ -130,12 +130,15 @@ function renderLedgerTable() {
                         <i class="fa-solid fa-calendar-check text-2xl text-amber-400"></i>
                         <p class="font-bold text-xs text-slate-200">৩১ আগস্ট ২০২৬ সমাপনী তহবিল: ৳ ${formatAmountWithComma(kpis.openingBalance)}</p>
                         <p class="text-[11px] text-slate-400">১ সেপ্টেম্বর ২০২৬ থেকে নতুন লেনদেন যুক্ত করতে উপরের বাটনগুলো ব্যবহার করুন।</p>
-                        <div class="flex items-center justify-center gap-2 pt-1">
+                        <div class="flex items-center justify-center gap-2 pt-1 flex-wrap">
                             <button onclick="window.treasuryOpenDailyCollection()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-md">
                                 <i class="fa-solid fa-hand-holding-dollar"></i><span>+ দৈনিক কালেকশন</span>
                             </button>
                             <button onclick="window.treasuryOpenDailyExpense()" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-md">
                                 <i class="fa-solid fa-wallet"></i><span>- দৈনিক খরচ</span>
+                            </button>
+                            <button onclick="window.treasuryOpenBankSyncModal()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-md">
+                                <i class="fa-solid fa-building-columns"></i><span>ব্যাংক সিঙ্ক</span>
                             </button>
                         </div>
                     </div>
@@ -215,10 +218,13 @@ function getTreasuryTemplate() {
                     <button onclick="window.treasuryOpenDailyExpense()" class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-black bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 transition-all cursor-pointer">
                         <i class="fa-solid fa-wallet"></i><span>- দৈনিক খরচ</span>
                     </button>
-                    <button onclick="window.treasuryOpenSpecialTransaction()" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg transition-all cursor-pointer">
+                    <button onclick="window.treasuryOpenSpecialTransaction()" class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg transition-all cursor-pointer">
                         <i class="fa-solid fa-plus"></i><span>বিশেষ লেনদেন</span>
                     </button>
-                    <button onclick="window.treasuryEditOpeningFund()" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer" title="প্রারম্ভিক তহবিল (B/F) সেট বা পরিবর্তন">
+                    <button onclick="window.treasuryOpenBankSyncModal()" class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all cursor-pointer" title="ব্যাংকিং লেজার থেকে ১ ক্লিকে জমা ও উত্তোলন আমদানি করুন">
+                        <i class="fa-solid fa-building-columns text-blue-200"></i><span>ব্যাংক ফান্ড সিঙ্ক</span>
+                    </button>
+                    <button onclick="window.treasuryEditOpeningFund()" class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer" title="প্রারম্ভিক তহবিল (B/F) সেট বা পরিবর্তন">
                         <i class="fa-solid fa-vault text-amber-400"></i><span>প্রারম্ভিক তহবিল (B/F)</span>
                     </button>
                     <button onclick="window.treasuryHandlePrint()" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer">
