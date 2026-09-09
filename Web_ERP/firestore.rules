@@ -24,7 +24,7 @@ service cloud.firestore {
     }
 
     function isActiveUser() {
-      return hasUserDoc() && getUserData().get('status', '') == 'active';
+      return hasUserDoc() && (getUserData().get('status', '') in ['active', 'approved']);
     }
 
     function isAdmin() {

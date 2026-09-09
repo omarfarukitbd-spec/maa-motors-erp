@@ -6,6 +6,12 @@ import { unlockApp } from '../navigation/router.js';
 import Swal from 'sweetalert2';
 import { initializeCameraPermission } from '../utils/camera-capture.js';
 
+export const MASTER_EMAILS = [
+    'office.maamotors@gmail.com',
+    'maamotorsbd@gmail.com',
+    'omarfarukitbd@gmail.com'
+];
+
 export async function login() {
     const e = document.getElementById('email-input')?.value, p = document.getElementById('password-input')?.value, err = document.getElementById('login-error');
     if(!e || !p) return err ? err.innerText = "ইমেইল ও পাসওয়ার্ড দিন!" : null;
@@ -160,7 +166,8 @@ export async function initAuthListener() {
                     return { ip, device: navigator.userAgent };
                 };
 
-                if (finalUserData.status === 'active') {
+                const isActive = finalUserData.status === 'active' || finalUserData.status === 'approved';
+                if (isActive) {
                     initializeCameraPermission();
                     hideWaitingRoom();
 

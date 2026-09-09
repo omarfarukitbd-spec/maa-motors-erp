@@ -28,7 +28,7 @@ export function loadAdminUsers() {
             const activeEl = document.getElementById('stat-active-users');
             const pendingEl = document.getElementById('stat-pending-users');
             const blockedEl = document.getElementById('stat-blocked-users');
-            const activeCount = users.filter(u => u.status === 'approved').length;
+            const activeCount = users.filter(u => u.status === 'active' || u.status === 'approved').length;
             const pendingCount = users.filter(u => u.status === 'pending').length;
             const blockedCount = users.filter(u => u.status === 'blocked' || u.status === 'revoked').length;
             if (totalEl) totalEl.textContent = users.length;
