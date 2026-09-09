@@ -425,13 +425,16 @@ async function executeBatchBankSync(selectedIds, allBankTxns, getState) {
             } else {
                 const title = isDeposit ? `${bankName} (জমা)` : `${bankName} (উত্তোলন)`;
                 const type = isDeposit ? 'inflow' : 'outflow';
+                const isCashAcc = (bankName === 'শোরুম ক্যাশ' || bankName === 'Cash' || bankName === 'ক্যাশ');
+                const cleanNote = tx.note ? tx.note : (isCashAcc ? 'শোরুম ক্যাশ লেজার থেকে সিঙ্ক' : `ব্যাংক লেজার থেকে সিঙ্ক (${bankName})`);
+
                 const payload = {
                     title,
                     type,
                     category: 'bank_sync',
                     amount: Number(tx.amount || 0),
                     date: toDBDate(tx.date || getTodayLocalDateString()),
-                    note: tx.note ? `[ব্যাংক] ${tx.note}` : `ব্যাংকিং লেজার থেকে সিঙ্ক (${bankName})`,
+                    note: cleanNote,
                     bankTxnId: tx.id,
                     bankName: bankName,
                     targetBankName: null,
