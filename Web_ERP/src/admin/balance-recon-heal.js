@@ -16,15 +16,21 @@ export async function autoHealCustomerBalances(discrepancies) {
         let healedCount = 0;
         const cache = getCustomerCache() || [];
         for (const d of discrepancies) {
-            await CustomerDAO.update(d.id, { totalDue: d.expectedDue });
+            const updatePayload = { totalDue: d.expectedDue };
+            if (d.expectedInitialDue !== undefined && Math.abs(safeRound((Number(d.storedInitialDue) || 0) - d.expectedInitialDue)) > 0.01) {
+                updatePayload.initialDue = d.expectedInitialDue;
+            }
+            await CustomerDAO.update(d.id, updatePayload);
             const cachedCust = cache.find(c => c.id === d.id);
             if (cachedCust) {
                 cachedCust.totalDue = d.expectedDue;
+                if (updatePayload.initialDue !== undefined) cachedCust.initialDue = d.expectedInitialDue;
             }
             auditLog('HEAL_BALANCE', 'Customer', d.id, d.name, {
                 storedDue: d.storedDue,
                 correctedDue: d.expectedDue,
-                diff: d.diff
+                diff: d.diff,
+                initialDueSynced: updatePayload.initialDue !== undefined
             });
             healedCount++;
         }
@@ -58,7 +64,8 @@ export async function reconcileSingleCustomerBalance(customerId) {
         ]);
         if (!customer) return null;
 
-        let initial = Number(customer.initialDue || 0);
+        let hasOp = false;
+        let opAmount = 0;
         let billSum = 0;
         let paidSum = 0;
 
@@ -66,33 +73,41 @@ export async function reconcileSingleCustomerBalance(customerId) {
             const v = String(t.voucherNo || '').trim().toUpperCase();
             const isOp = (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের');
             if (isOp) {
-                const opAmount = safeRound((Number(t.bill) || 0) - (Number(t.paid) || 0));
-                if (initial === 0) initial = opAmount;
+                hasOp = true;
+                opAmount = safeRound((Number(t.bill) || 0) - (Number(t.paid) || 0));
             } else {
                 billSum = safeRound(billSum + (Number(t.bill) || 0));
                 paidSum = safeRound(paidSum + (Number(t.paid) || 0));
             }
         });
 
+        const initial = hasOp ? opAmount : Number(customer.initialDue || 0);
         const expectedDue = safeRound(initial + billSum - paidSum);
         const storedDue = safeRound(Number(customer.totalDue || 0));
         const diff = safeRound(storedDue - expectedDue);
+        const initialDiff = hasOp ? safeRound(Number(customer.initialDue || 0) - initial) : 0;
 
-        if (Math.abs(diff) > 0.01) {
+        if (Math.abs(diff) > 0.01 || Math.abs(initialDiff) > 0.01) {
             console.warn(`[Auto-Heal] Customer ${customer.name} (${customerId}) discrepancy: Stored=${storedDue}, Expected=${expectedDue}, Diff=${diff}. Auto-healing...`);
-            await CustomerDAO.update(customerId, { totalDue: expectedDue });
+            const updatePayload = { totalDue: expectedDue };
+            if (hasOp && Math.abs(initialDiff) > 0.01) {
+                updatePayload.initialDue = initial;
+            }
+            await CustomerDAO.update(customerId, updatePayload);
             
             // Sync with memory cache so UI updates immediately
             const cache = getCustomerCache();
             const cachedCust = (cache || []).find(c => c.id === customerId);
             if (cachedCust) {
                 cachedCust.totalDue = expectedDue;
+                if (updatePayload.initialDue !== undefined) cachedCust.initialDue = initial;
             }
 
             auditLog('AUTO_HEAL_BALANCE', 'Customer', customerId, customer.name, {
                 storedDue,
                 correctedDue: expectedDue,
-                diff
+                diff,
+                initialDueSynced: updatePayload.initialDue !== undefined
             });
             return { healed: true, expectedDue, storedDue, diff };
         }

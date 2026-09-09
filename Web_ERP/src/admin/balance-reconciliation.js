@@ -49,22 +49,24 @@ export async function runBalanceIntegrityScanner() {
 
         const discrepancies = [];
         customers.forEach(c => {
-            let initial = Number(c.initialDue || 0);
-            if (initial === 0 && openingMap[c.id] !== undefined) {
-                initial = openingMap[c.id];
-            }
+            const hasOpeningTxn = openingMap[c.id] !== undefined;
+            const expectedInitial = hasOpeningTxn ? openingMap[c.id] : Number(c.initialDue || 0);
+            const storedInitial = Number(c.initialDue || 0);
             const tData = txnMap[c.id] || { totalBill: 0, totalPaid: 0, count: 0 };
-            const expectedDue = safeRound(initial + tData.totalBill - tData.totalPaid);
+            const expectedDue = safeRound(expectedInitial + tData.totalBill - tData.totalPaid);
             const currentDue = safeRound(Number(c.totalDue || 0));
             const diff = safeRound(currentDue - expectedDue);
+            const initialDiff = hasOpeningTxn ? safeRound(storedInitial - expectedInitial) : 0;
 
-            if (Math.abs(diff) > 0.01) {
+            if (Math.abs(diff) > 0.01 || Math.abs(initialDiff) > 0.01) {
                 discrepancies.push({
                     id: c.id,
                     name: c.name,
                     accountNo: c.accountNo || 'N/A',
                     phone: c.phone || '',
-                    initialDue: initial,
+                    initialDue: expectedInitial,
+                    expectedInitialDue: expectedInitial,
+                    storedInitialDue: storedInitial,
                     totalBill: tData.totalBill,
                     totalPaid: tData.totalPaid,
                     storedDue: currentDue,

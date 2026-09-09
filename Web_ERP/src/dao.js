@@ -25,8 +25,11 @@ class BaseDAO {
     }
 
     async getByPage(pageSize = 20, lastDoc = null, orderByField = 'createdAt', direction = 'desc', filters = []) {
-        let query = this.collection.orderBy(orderByField, direction);
+        let query = this.collection;
         filters.forEach(f => { query = query.where(f.field, f.op, f.value); });
+        if (orderByField) {
+            query = query.orderBy(orderByField, direction);
+        }
         if (lastDoc) query = query.startAfter(lastDoc);
 
         const snap = await query.limit(pageSize).get();

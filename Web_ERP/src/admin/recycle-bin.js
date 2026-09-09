@@ -1,5 +1,5 @@
 import { db, firebase } from '../firebase-config.js';
-import { CustomerDAO, TransactionDAO } from '../dao.js';
+import { CustomerDAO, TransactionDAO, ExpenseDAO } from '../dao.js';
 import { safeRound, formatAmountWithComma, promptSecurityPin, showToast, formatAppDate } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
@@ -21,7 +21,7 @@ export function renderRecycleBin(container) {
                     <h2 class="text-xl md:text-2xl font-black text-white flex items-center gap-2">
                         <i class="fa-solid fa-trash-can text-red-500"></i> রিসাইকেল বিন
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1 font-bn">ডিলিট হওয়া কাস্টমার এবং ভাউচার এখানে জমা থাকে।</p>
+                    <p class="text-xs text-slate-400 mt-1 font-bn">ডিলিট হওয়া কাস্টমার, ভাউচার, খরচ ও ট্রেজারি লেনদেন এখানে জমা থাকে।</p>
                 </div>
                 <button class="h-9 px-4 rounded-xl bg-red-600/20 border border-red-500/30 hover:bg-red-600 text-red-400 hover:text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5" onclick="appAdmin.emptyRecycleBin()">
                     <i class="fa-solid fa-dumpster-fire"></i> সম্পূর্ণ খালি করুন
@@ -105,20 +105,51 @@ function loadRecycleBinData() {
 
             tbody.innerHTML = viewItems.map(item => {
                 const isCust = item.module === 'Customer';
-                const icon = isCust ? '<i class="fa-solid fa-users text-blue-400"></i>' : '<i class="fa-solid fa-file-invoice text-emerald-400"></i>';
-                const typeName = isCust ? 'কাস্টমার প্রোফাইল' : 'সিঙ্গেল ভাউচার';
+                const isExp = item.module === 'Expense';
+                const isTreasury = item.module === 'Treasury';
+
+                let icon = '<i class="fa-solid fa-file-invoice text-emerald-400"></i>';
+                let typeName = 'সিঙ্গেল ভাউচার';
+
+                if (isCust) {
+                    icon = '<i class="fa-solid fa-users text-blue-400"></i>';
+                    typeName = 'কাস্টমার প্রোফাইল';
+                } else if (isExp) {
+                    icon = '<i class="fa-solid fa-money-bill-wave text-amber-400"></i>';
+                    typeName = 'খরচ (Expense)';
+                } else if (isTreasury) {
+                    icon = '<i class="fa-solid fa-vault text-purple-400"></i>';
+                    typeName = 'ট্রেজারি লেনদেন';
+                }
                 
                 const dateStr = item.deletedAt ? new Date(item.deletedAt.toMillis()).toLocaleString('en-GB') : 'N/A';
                 
                 let detailsHtml = '';
                 if (isCust) {
-                    const c = item.data;
+                    const c = item.data || {};
                     detailsHtml = `
                         <div class="font-bold text-white">${c.name || 'Unknown'} <span class="text-[10px] text-blue-400 ml-1">[${c.accountNo || ''}]</span></div>
                         <div class="text-[10px] text-slate-400 mt-0.5">বকেয়া: ৳${formatAmountWithComma(c.totalDue || 0)} | সাথে ডিলিট হওয়া ভাউচার: ${item.groupedTxnCount || 0} টি</div>
                     `;
+                } else if (isExp) {
+                    const e = item.data || {};
+                    const eDate = e.date ? formatAppDate(e.date) : 'N/A';
+                    detailsHtml = `
+                        <div class="font-bold text-white">${e.category || 'খরচ'} <span class="text-[10px] text-amber-400 ml-1">[${eDate}]</span></div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">টাকা: ৳${formatAmountWithComma(e.amount || 0)} | বিবরণ: ${e.details || '-'}</div>
+                    `;
+                } else if (isTreasury) {
+                    const tr = item.data || {};
+                    const trDate = tr.date ? formatAppDate(tr.date) : 'N/A';
+                    const isOutflow = tr.type === 'OUTFLOW';
+                    const flowColor = isOutflow ? 'text-red-400' : 'text-emerald-400';
+                    const flowText = isOutflow ? 'খরচ/উত্তোলন' : 'জমা/ইনফ্লো';
+                    detailsHtml = `
+                        <div class="font-bold text-white">${tr.title || 'ট্রেজারি এন্ট্রি'} <span class="text-[10px] text-purple-400 ml-1">[${trDate}]</span></div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">ধরন: <span class="${flowColor} font-bold">${flowText}</span> | পরিমাণ: ৳${formatAmountWithComma(tr.amount || 0)} | ক্যাটাগরি: ${tr.category || '-'}</div>
+                    `;
                 } else {
-                    const t = item.data;
+                    const t = item.data || {};
                     const vDate = t.date ? formatAppDate(t.date) : 'N/A';
                     detailsHtml = `
                         <div class="font-bold text-white">ভাউচার: ${t.voucherNo || '-'} <span class="text-[10px] text-emerald-400 ml-1">[${vDate}]</span></div>
@@ -185,6 +216,20 @@ export async function restoreRecycleItem(encodedItem) {
             const cache = getCustomerCache(); const c = (cache || []).find(x => x.id === cid); if (c) c.totalDue = safeRound((Number(c.totalDue) || 0) + safeRound(b - p));
             auditLog('RESTORE', 'Ledger', item.id, tData.customerName, { action: 'Restored Transaction' });
             
+        } else if (item.module === 'Expense') {
+            const batch = db.batch();
+            batch.set(ExpenseDAO.getRef(item.id), item.data);
+            batch.delete(db.collection('recycle_bin').doc(item.id));
+            await batch.commit();
+            auditLog('RESTORE', 'Expenses', item.id, item.data.category || 'Expense', { action: 'Restored Expense' });
+
+        } else if (item.module === 'Treasury') {
+            const batch = db.batch();
+            batch.set(db.collection('treasury_transactions').doc(item.id), item.data);
+            batch.delete(db.collection('recycle_bin').doc(item.id));
+            await batch.commit();
+            auditLog('RESTORE', 'Treasury', item.id, item.data.title || 'Treasury', { action: 'Restored Treasury Transaction' });
+
         } else if (item.module === 'Customer') {
             const batchId = item.batchId;
             const ops = [];

@@ -137,10 +137,17 @@ export async function initAuthListener() {
                 const getIpAndDevice = async () => {
                     let ip = 'Unknown';
                     try {
-                        const res = await fetch('https://api.ipify.org?format=json');
-                        const data = await res.json();
-                        ip = data.ip;
-                    } catch(e) { console.error(e); }
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 1500);
+                        const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+                        clearTimeout(timeoutId);
+                        if (res.ok) {
+                            const data = await res.json();
+                            ip = data.ip || 'Unknown';
+                        }
+                    } catch (e) {
+                        // Non-blocking fallback: ignore timeout or network issue
+                    }
                     return { ip, device: navigator.userAgent };
                 };
 
@@ -152,10 +159,16 @@ export async function initAuthListener() {
                     if (ac && ac.classList.contains('hidden')) {
                         if (AppState.currentUserRole === 'Admin') {
                             ['nav-admin', 'nav-settings'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
-                            const info = await getIpAndDevice();
-                            auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Admin', ip: info.ip, device: info.device });
                             unlockApp();
                             initAdminPendingBadge();
+                            (async () => {
+                                try {
+                                    const info = await getIpAndDevice();
+                                    auditLog('LOGIN', 'Auth', user.uid, user.email, { role: 'Admin', ip: info.ip, device: info.device });
+                                } catch (err) {
+                                    console.warn('Admin login audit log error:', err);
+                                }
+                            })();
                         } else {
                             const isBoss = AppState.currentUserRole === 'Boss';
                             const rName = 'login_pin_' + Math.random().toString(36).substring(7);
@@ -182,10 +195,16 @@ export async function initAuthListener() {
 
                             const userPin = String(finalUserData.pin || '').trim();
                             if (pin && userPin && pin === userPin) {
-                                const info = await getIpAndDevice();
-                                auditLog('LOGIN', 'Auth', user.uid, user.email, { role: AppState.currentUserRole, ip: info.ip, device: info.device });
                                 ['nav-admin', 'nav-audit'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
                                 unlockApp();
+                                (async () => {
+                                    try {
+                                        const info = await getIpAndDevice();
+                                        auditLog('LOGIN', 'Auth', user.uid, user.email, { role: AppState.currentUserRole, ip: info.ip, device: info.device });
+                                    } catch (err) {
+                                        console.warn('Login audit log error:', err);
+                                    }
+                                })();
                                 if (isBoss) {
                                     document.getElementById('nav-banking')?.classList.remove('hidden');
                                     Swal.fire({

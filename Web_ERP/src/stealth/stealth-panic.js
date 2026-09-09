@@ -44,27 +44,38 @@ export async function triggerPanic() {
 }
 
 /**
- * Initialize 3x ESC Emergency Trigger
- * Listens for 3 rapid presses of the Escape key within 1.5 seconds.
+ * Initialize Emergency Stealth Panic Trigger
+ * Requires either:
+ *  1. Alt + Escape 3 rapid presses within 1.5 seconds, OR
+ *  2. Instant Combo: Ctrl + Alt + Shift + P
+ * Normal Escape presses (closing modals/popups) will NEVER trigger panic.
  */
 export function initPanicKey() {
     if (typeof window === 'undefined') return;
 
-    let escCount = 0;
-    let lastEscTime = 0;
+    let altEscCount = 0;
+    let lastAltEscTime = 0;
 
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const now = Date.now();
-            if (now - lastEscTime <= 1500) {
-                escCount++;
-            } else {
-                escCount = 1;
-            }
-            lastEscTime = now;
+        // 1. Direct Instant Emergency Combo: Ctrl + Alt + Shift + P
+        if (e.ctrlKey && e.altKey && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+            e.preventDefault();
+            triggerPanic();
+            return;
+        }
 
-            if (escCount >= 3) {
-                escCount = 0;
+        // 2. Multi-key Buffer: Alt + Escape 3 times within 1.5 seconds
+        if (e.altKey && e.key === 'Escape') {
+            const now = Date.now();
+            if (now - lastAltEscTime <= 1500) {
+                altEscCount++;
+            } else {
+                altEscCount = 1;
+            }
+            lastAltEscTime = now;
+
+            if (altEscCount >= 3) {
+                altEscCount = 0;
                 triggerPanic();
             }
         }

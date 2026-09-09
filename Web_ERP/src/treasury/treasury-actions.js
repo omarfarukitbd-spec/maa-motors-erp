@@ -1,3 +1,4 @@
+import { db, firebase } from '../firebase-config.js';
 import { TreasuryDAO } from './treasury-dao.js';
 import { TransactionDAO } from '../dao.js';
 import { findTreasuryDuplicate } from './treasury-calc.js';
@@ -199,9 +200,18 @@ export function setupTreasuryActions(getState) {
 
         if (confirm.isConfirmed) {
             try {
+                const itemDoc = (getState().allTransactions || []).find(t => t.id === id);
+                if (itemDoc) {
+                    await db.collection('recycle_bin').doc(id).set({
+                        module: 'Treasury',
+                        data: itemDoc,
+                        deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        deletedBy: window.AppState?.currentUserEmail || 'Unknown'
+                    });
+                }
                 await TreasuryDAO.deleteTransaction(id);
-                auditLog('DELETE', 'Treasury', id, title, { amount });
-                showToast('লেনদেনটি মুছে ফেলা হয়েছে এবং ব্যালেন্স রিক্যালকুলেট করা হয়েছে!', 'success');
+                auditLog('DELETE', 'Treasury', id, title, { amount, action: 'Soft Delete to Recycle Bin' });
+                showToast('লেনদেনটি মুছে রিসাইকেল বিনে ব্যাকআপ রাখা হয়েছে এবং ব্যালেন্স রিক্যালকুলেট হয়েছে!', 'success');
             } catch (err) {
                 console.error('Delete treasury item error:', err);
                 showToast('মুছতে সমস্যা হয়েছে!', 'error');
