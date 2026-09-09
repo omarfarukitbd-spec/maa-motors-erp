@@ -49,11 +49,16 @@ export async function openBankSyncModal(getState) {
             }
         });
 
-        // Compute pending items count (excluding showroom cash by default)
+        // Exclude Bank Opening Balance Anchors & Showroom Cash from pending count
         const pendingCount = allBankTxns.filter(t => {
             const bName = String(t.bankName || '').trim();
             const isCash = (bName === 'শোরুম ক্যাশ' || bName === 'Cash' || bName === 'ক্যাশ');
             if (isCash) return false;
+            
+            const noteText = String(t.note || '').toLowerCase();
+            const isOpening = noteText.includes('opening balance') || noteText.includes('প্রারম্ভিক ব্যালেন্স');
+            if (isOpening) return false;
+
             return !syncedBankTxnIds.has(t.id);
         }).length;
 
@@ -75,9 +80,10 @@ export async function openBankSyncModal(getState) {
  * Render Interactive Staging Checklist Dialog
  */
 async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPendingCount, getState) {
-    // Default mode: If pending items exist, open in 'pending' mode so user instantly sees what's left
-    let activeFilterMode = initialPendingCount > 0 ? 'pending' : 'today';
-    let selectedDateFilter = activeFilterMode === 'today' ? getTodayLocalDateString() : '';
+    // ALWAYS default to Today's date as requested by user
+    const todayStr = getTodayLocalDateString();
+    let activeFilterMode = 'today';
+    let selectedDateFilter = todayStr;
     let showShowroomCash = false;
     let searchQuery = '';
 
@@ -91,16 +97,23 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
                 return false;
             }
 
-            // 2. Active Mode Filter
-            if (activeFilterMode === 'pending') {
-                if (syncedBankTxnIds.has(t.id)) return false;
-            } else if (activeFilterMode === 'date') {
-                const tDate = toDBDate(t.date || '');
-                const targetDate = toDBDate(selectedDateFilter || '');
-                if (tDate !== targetDate) return false;
+            // 2. Exclude Bank Opening Balance Anchors (Not daily operational cash flows)
+            const noteText = String(t.note || '').toLowerCase();
+            const isOpening = noteText.includes('opening balance') || noteText.includes('প্রারম্ভিক ব্যালেন্স');
+            if (isOpening) {
+                return false;
             }
 
-            // 3. Search Query Filter
+            // 3. Active Mode Filter
+            if (activeFilterMode === 'today' || activeFilterMode === 'date') {
+                const tDate = toDBDate(t.date || '');
+                const targetDate = toDBDate(selectedDateFilter || todayStr);
+                if (tDate !== targetDate) return false;
+            } else if (activeFilterMode === 'pending') {
+                if (syncedBankTxnIds.has(t.id)) return false;
+            }
+
+            // 4. Search Query Filter
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 const bank = String(t.bankName || '').toLowerCase();
@@ -120,12 +133,14 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
             const bName = String(t.bankName || '').trim();
             const isCash = (bName === 'শোরুম ক্যাশ' || bName === 'Cash' || bName === 'ক্যাশ');
             if (isCash && !showShowroomCash) return false;
+            const noteText = String(t.note || '').toLowerCase();
+            if (noteText.includes('opening balance') || noteText.includes('প্রারম্ভিক ব্যালেন্স')) return false;
             return !syncedBankTxnIds.has(t.id);
         }).length;
     };
 
     const modalHtml = buildSyncModalHTML(
-        activeFilterMode === 'date' ? selectedDateFilter : '', 
+        todayStr, 
         showShowroomCash, 
         initialPendingCount
     );
@@ -219,27 +234,35 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
             };
 
             const updateTabPillStyles = () => {
-                const tabPending = document.getElementById('tr-sync-tab-pending');
                 const tabToday = document.getElementById('tr-sync-tab-today');
                 const tabYesterday = document.getElementById('tr-sync-tab-yesterday');
+                const tabPending = document.getElementById('tr-sync-tab-pending');
                 const tabAll = document.getElementById('tr-sync-tab-all');
 
                 const resetClass = 'px-2.5 py-1 text-xs font-bold rounded-xl border whitespace-nowrap shrink-0 transition-all flex items-center gap-1 cursor-pointer bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800';
                 const activeClass = 'px-2.5 py-1 text-xs font-bold rounded-xl border whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 cursor-pointer bg-blue-600/30 text-blue-300 border-blue-500/50 hover:bg-blue-600/40';
 
-                if (tabPending) tabPending.className = activeFilterMode === 'pending' ? activeClass : resetClass;
-                if (tabToday) tabToday.className = (activeFilterMode === 'date' && selectedDateFilter === getTodayLocalDateString()) ? activeClass : resetClass;
+                const isTodayActive = (activeFilterMode === 'today') || (activeFilterMode === 'date' && selectedDateFilter === todayStr);
+                if (tabToday) tabToday.className = isTodayActive ? activeClass : resetClass;
                 
                 const yDate = new Date();
                 yDate.setDate(yDate.getDate() - 1);
                 const yDateStr = toDBDate(yDate);
-                if (tabYesterday) tabYesterday.className = (activeFilterMode === 'date' && selectedDateFilter === yDateStr) ? activeClass : resetClass;
+                const isYesterdayActive = (activeFilterMode === 'date' && selectedDateFilter === yDateStr);
+                if (tabYesterday) tabYesterday.className = isYesterdayActive ? activeClass : resetClass;
                 
+                if (tabPending) tabPending.className = activeFilterMode === 'pending' ? activeClass : resetClass;
                 if (tabAll) tabAll.className = activeFilterMode === 'all' ? activeClass : resetClass;
 
                 // Update text label badge
                 if (filterLabel) {
-                    if (activeFilterMode === 'pending') {
+                    if (isTodayActive) {
+                        filterLabel.innerText = `আজকের তারিখ (${formatAppDate(todayStr)})`;
+                        filterLabel.className = 'text-[11px] font-bold text-blue-400 whitespace-nowrap shrink-0 bg-blue-500/10 px-2 py-0.5 rounded-lg border border-blue-500/20';
+                    } else if (isYesterdayActive) {
+                        filterLabel.innerText = `গতকাল (${formatAppDate(yDateStr)})`;
+                        filterLabel.className = 'text-[11px] font-bold text-purple-400 whitespace-nowrap shrink-0 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/20';
+                    } else if (activeFilterMode === 'pending') {
                         filterLabel.innerText = 'সকল অপেক্ষমান';
                         filterLabel.className = 'text-[11px] font-bold text-amber-400 whitespace-nowrap shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20';
                     } else if (activeFilterMode === 'all') {
@@ -254,8 +277,11 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
 
             const setFilterMode = (mode, dateVal = '') => {
                 activeFilterMode = mode;
-                if (mode === 'date') {
-                    selectedDateFilter = toDBDate(dateVal || getTodayLocalDateString());
+                if (mode === 'today') {
+                    selectedDateFilter = todayStr;
+                    if (dateInput) dateInput.value = formatAppDate(todayStr);
+                } else if (mode === 'date') {
+                    selectedDateFilter = toDBDate(dateVal || todayStr);
                     if (dateInput) dateInput.value = formatAppDate(selectedDateFilter);
                 } else if (mode === 'pending' || mode === 'all') {
                     selectedDateFilter = '';
@@ -265,7 +291,7 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
                 refreshTableRows();
             };
 
-            // Initialize UI elements
+            // Initialize UI elements with Today's Date
             updateTabPillStyles();
             refreshTableRows();
 
@@ -287,13 +313,13 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
             }
 
             // Quick Filter Buttons
-            document.getElementById('tr-sync-tab-pending')?.addEventListener('click', () => setFilterMode('pending'));
-            document.getElementById('tr-sync-tab-today')?.addEventListener('click', () => setFilterMode('date', getTodayLocalDateString()));
+            document.getElementById('tr-sync-tab-today')?.addEventListener('click', () => setFilterMode('today'));
             document.getElementById('tr-sync-tab-yesterday')?.addEventListener('click', () => {
                 const y = new Date();
                 y.setDate(y.getDate() - 1);
                 setFilterMode('date', toDBDate(y));
             });
+            document.getElementById('tr-sync-tab-pending')?.addEventListener('click', () => setFilterMode('pending'));
             document.getElementById('tr-sync-tab-all')?.addEventListener('click', () => setFilterMode('all'));
 
             // Showroom Cash Toggle Listener
