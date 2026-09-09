@@ -99,5 +99,31 @@ export const TreasuryDAO = {
             title: '৩১ আগস্ট ২০২৬ সমাপনী স্থিতি (B/F)',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+    },
+
+    /**
+     * Get Bank Sync effective start cutoff date (defaults to '2026-09-09')
+     */
+    async getBankSyncCutoffDate() {
+        try {
+            const doc = await this.settingsDoc.get();
+            if (doc.exists) {
+                const d = doc.data();
+                return d.bankSyncCutoffDate || '2026-09-09';
+            }
+        } catch (e) {
+            console.error('getBankSyncCutoffDate error:', e);
+        }
+        return '2026-09-09';
+    },
+
+    /**
+     * Save Bank Sync effective start cutoff date
+     */
+    async saveBankSyncCutoffDate(cutoffDate = '2026-09-09') {
+        await this.settingsDoc.set({
+            bankSyncCutoffDate: cutoffDate,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
     }
 };

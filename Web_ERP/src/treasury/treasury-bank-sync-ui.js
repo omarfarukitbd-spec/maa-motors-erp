@@ -5,14 +5,17 @@ import { formatAmountWithComma, formatAppDate } from '../utils.js';
  * Pure UI Template builder with Zero Raw Emojis (Strict Rule 5)
  */
 
-export function buildRowsHTML(items, syncedBankTxnIds, activeFilterMode, selectedDateStr, pendingCount) {
+export function buildRowsHTML(items, syncedBankTxnIds, activeFilterMode, selectedDateStr, pendingCount, syncCutoffDate = '2026-09-09') {
     if (!items || items.length === 0) {
         let emptyTitle = 'কোনো ব্যাংকিং লেনদেন পাওয়া যায়নি';
         let emptySubtext = 'তারিখ পরিবর্তন করে বা ফিল্টার পরিবর্তন করে পেছনের লেনদেন দেখতে পারেন।';
         let actionBtnHTML = '';
 
-        if (activeFilterMode === 'date') {
-            emptyTitle = `এই তারিখে (${selectedDateStr ? formatAppDate(selectedDateStr) : ''}) কোনো ব্যাংকিং লেনদেন নেই`;
+        if (activeFilterMode === 'pending') {
+            emptyTitle = 'কোনো অপেক্ষমান লেনদেন নেই';
+            emptySubtext = 'বিগত দিনের সকল ব্যাংকিং লেনদেন ইতোমধ্যে ট্রেজারিতে সমন্বয় করা হয়েছে! নতুন লেনদেন দিলে তা এখানে শো করবে।';
+        } else if (activeFilterMode === 'today' || activeFilterMode === 'date') {
+            emptyTitle = `এই তারিখে (${selectedDateStr ? formatAppDate(selectedDateStr) : ''}) কোনো নতুন ব্যাংকিং লেনদেন নেই`;
             emptySubtext = 'আজকে ব্যাংকিং লেজারে নতুন কোনো জমা বা উত্তোলন এন্ট্রি করা হয়নি। পেছনের তারিখ নির্বাচন করে বা বিগত দিনের বাকি লেনদেন দেখতে পারেন।';
             if (pendingCount > 0) {
                 actionBtnHTML = `
@@ -29,7 +32,7 @@ export function buildRowsHTML(items, syncedBankTxnIds, activeFilterMode, selecte
         return `
             <tr>
                 <td colspan="5" class="text-center py-10 px-4 text-slate-400 font-bn">
-                    <i class="fa-solid fa-calendar-xmark text-3xl text-slate-600 mb-2"></i>
+                    <i class="fa-solid fa-calendar-check text-3xl text-blue-500/70 mb-2"></i>
                     <div class="font-bold text-sm text-slate-300">${emptyTitle}</div>
                     <div class="text-xs text-slate-500 mt-1 max-w-md mx-auto">${emptySubtext}</div>
                     ${actionBtnHTML}
@@ -39,7 +42,8 @@ export function buildRowsHTML(items, syncedBankTxnIds, activeFilterMode, selecte
     }
 
     return items.map((tx) => {
-        const isSynced = syncedBankTxnIds.has(tx.id);
+        const isHistoricalReconciled = toDBDate(tx.date || '') < syncCutoffDate;
+        const isSynced = syncedBankTxnIds.has(tx.id) || isHistoricalReconciled;
         const rawType = String(tx.type || '').toUpperCase();
         const isDeposit = rawType === 'DEPOSIT';
         const isTransfer = rawType === 'TRANSFER';
@@ -64,7 +68,9 @@ export function buildRowsHTML(items, syncedBankTxnIds, activeFilterMode, selecte
         }
 
         let statusBadge = '';
-        if (isSynced) {
+        if (isHistoricalReconciled) {
+            statusBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-500/40 whitespace-nowrap inline-flex items-center gap-1" title="এই লেনদেনটি অফলাইন খাতার সাথে ট্রেজারিতে ইতোমধ্যে সমন্বয়কৃত"><i class="fa-solid fa-circle-check"></i>পূর্বে সমন্বয়কৃত</span>';
+        } else if (isSynced) {
             statusBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-500/40 whitespace-nowrap inline-flex items-center gap-1"><i class="fa-solid fa-circle-check"></i>যুক্ত আছে</span>';
         } else if (isCashDepositRisk) {
             statusBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 whitespace-nowrap inline-flex items-center gap-1" title="সতর্কতা: শোরুম ক্যাশ থেকে জমা হলে ট্রেজারিতে অলরেডি দৈনিক কালেকশনে থাকতে পারে!"><i class="fa-solid fa-triangle-exclamation"></i>ক্যাশ ডিপোজিট?</span>';

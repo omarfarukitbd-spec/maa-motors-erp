@@ -29,10 +29,11 @@ export async function openBankSyncModal(getState) {
     });
 
     try {
-        // 1. Fetch Bank Transactions & Existing Treasury Transactions in Parallel
-        const [bankTxnSnap, existingTreasury] = await Promise.all([
+        // 1. Fetch Bank Transactions, Existing Treasury Transactions & Sync Cutoff Date in Parallel
+        const [bankTxnSnap, existingTreasury, syncCutoffDate] = await Promise.all([
             BankTransactionDAO.collection.orderBy('date', 'desc').get(),
-            TreasuryDAO.getAll()
+            TreasuryDAO.getAll(),
+            TreasuryDAO.getBankSyncCutoffDate()
         ]);
 
         const allBankTxns = [];
@@ -49,7 +50,7 @@ export async function openBankSyncModal(getState) {
             }
         });
 
-        // Exclude Bank Opening Balance Anchors & Showroom Cash from pending count
+        // Exclude Bank Opening Balance Anchors, Showroom Cash, and Historical Reconciled (< syncCutoffDate)
         const pendingCount = allBankTxns.filter(t => {
             const bName = String(t.bankName || '').trim();
             const isCash = (bName === 'শোরুম ক্যাশ' || bName === 'Cash' || bName === 'ক্যাশ');
@@ -59,11 +60,15 @@ export async function openBankSyncModal(getState) {
             const isOpening = noteText.includes('opening balance') || noteText.includes('প্রারম্ভিক ব্যালেন্স');
             if (isOpening) return false;
 
+            // Historical transactions prior to cutoff date are already adjusted in offline khata
+            const isHistorical = toDBDate(t.date || '') < syncCutoffDate;
+            if (isHistorical) return false;
+
             return !syncedBankTxnIds.has(t.id);
         }).length;
 
         Swal.close();
-        await renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, pendingCount, getState);
+        await renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, pendingCount, syncCutoffDate, getState);
 
     } catch (err) {
         console.error('Bank sync init error:', err);
@@ -79,7 +84,7 @@ export async function openBankSyncModal(getState) {
 /**
  * Render Interactive Staging Checklist Dialog
  */
-async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPendingCount, getState) {
+async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPendingCount, syncCutoffDate, getState) {
     // ALWAYS default to Today's date as requested by user
     const todayStr = getTodayLocalDateString();
     let activeFilterMode = 'today';
@@ -110,7 +115,8 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
                 const targetDate = toDBDate(selectedDateFilter || todayStr);
                 if (tDate !== targetDate) return false;
             } else if (activeFilterMode === 'pending') {
-                if (syncedBankTxnIds.has(t.id)) return false;
+                const isHistorical = toDBDate(t.date || '') < syncCutoffDate;
+                if (syncedBankTxnIds.has(t.id) || isHistorical) return false;
             }
 
             // 4. Search Query Filter
@@ -135,6 +141,8 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
             if (isCash && !showShowroomCash) return false;
             const noteText = String(t.note || '').toLowerCase();
             if (noteText.includes('opening balance') || noteText.includes('প্রারম্ভিক ব্যালেন্স')) return false;
+            const isHistorical = toDBDate(t.date || '') < syncCutoffDate;
+            if (isHistorical) return false;
             return !syncedBankTxnIds.has(t.id);
         }).length;
     };
@@ -219,7 +227,8 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialPe
                         syncedBankTxnIds, 
                         activeFilterMode, 
                         selectedDateFilter, 
-                        currentPendingTotal()
+                        currentPendingTotal(),
+                        syncCutoffDate
                     );
                 }
                 window.updateTreasurySyncLiveCalc();
