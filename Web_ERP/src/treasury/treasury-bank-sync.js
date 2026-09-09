@@ -40,7 +40,12 @@ export async function openBankSyncModal(getState) {
         // Track already synced bank IDs to permanently prevent duplicate entries
         const syncedBankTxnIds = new Set();
         (existingTreasury || []).forEach(t => {
-            if (t.bankTxnId) syncedBankTxnIds.add(t.bankTxnId);
+            if (t.bankTxnId) {
+                syncedBankTxnIds.add(t.bankTxnId);
+                if (t.bankTxnId.includes('_')) {
+                    syncedBankTxnIds.add(t.bankTxnId.split('_')[0]);
+                }
+            }
         });
 
         const todayStr = getTodayLocalDateString();
@@ -182,7 +187,7 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialDa
                         type="text" 
                         id="tr-sync-date-picker" 
                         class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono outline-none datepicker cursor-pointer w-28 text-center" 
-                        value="${currentDateFilter}"
+                        value="${formatAppDate(currentDateFilter)}"
                     />
                     <button type="button" id="tr-sync-today-btn" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg border border-slate-700 cursor-pointer">
                         আজ
@@ -276,6 +281,7 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialDa
             if (type === 'DEPOSIT') {
                 totalInflow = safeRound(totalInflow + amt);
             } else if (type === 'TRANSFER') {
+                totalInflow = safeRound(totalInflow + amt);
                 totalOutflow = safeRound(totalOutflow + amt);
             } else {
                 totalOutflow = safeRound(totalOutflow + amt);
@@ -310,6 +316,9 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialDa
         customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-800' },
         didOpen: () => {
             window.updateTreasurySyncLiveCalc();
+            if (typeof window.initDatePickers === 'function') {
+                setTimeout(() => window.initDatePickers(), 50);
+            }
 
             const tbody = document.getElementById('tr-sync-tbody');
             const refreshTableRows = () => {
@@ -330,7 +339,7 @@ async function renderSyncChecklistModal(allBankTxns, syncedBankTxnIds, initialDa
             // Quick 'Today' Button
             document.getElementById('tr-sync-today-btn')?.addEventListener('click', () => {
                 currentDateFilter = getTodayLocalDateString();
-                if (dateInput) dateInput.value = currentDateFilter;
+                if (dateInput) dateInput.value = formatAppDate(currentDateFilter);
                 refreshTableRows();
             });
 
@@ -405,34 +414,53 @@ async function executeBatchBankSync(selectedIds, allBankTxns, getState) {
             const isTransfer = rawType === 'TRANSFER';
             const bankName = tx.bankName || 'ব্যাংক অ্যাকাউন্ট';
 
-            let title = '';
-            let type = 'inflow';
-            if (isDeposit) {
-                title = `${bankName} (জমা)`;
-                type = 'inflow';
-            } else if (isTransfer) {
-                title = `${bankName} ➔ ${tx.targetBankName || 'অন্য ব্যাংক'} (ট্রান্সফার)`;
-                type = 'outflow';
+            if (isTransfer) {
+                const targetBankName = tx.targetBankName || 'অন্য ব্যাংক';
+                const outPayload = {
+                    title: `${bankName} (ট্রান্সফার বহির্গমন ➔ ${targetBankName})`,
+                    type: 'outflow',
+                    category: 'bank_sync',
+                    amount: Number(tx.amount || 0),
+                    date: toDBDate(tx.date || getTodayLocalDateString()),
+                    note: tx.note ? `[ট্রান্সফার ➔ ${targetBankName}] ${tx.note}` : `ট্রান্সফার ➔ ${targetBankName}`,
+                    bankTxnId: `${tx.id}_out`,
+                    bankName: bankName,
+                    targetBankName: targetBankName,
+                    createdBy: firebase.auth().currentUser?.email || 'Admin'
+                };
+                const inPayload = {
+                    title: `${targetBankName} (ট্রান্সফার আগমন ➔ ${bankName})`,
+                    type: 'inflow',
+                    category: 'bank_sync',
+                    amount: Number(tx.amount || 0),
+                    date: toDBDate(tx.date || getTodayLocalDateString()),
+                    note: tx.note ? `[ট্রান্সফার ➔ ${bankName} থেকে প্রাপ্ত] ${tx.note}` : `ট্রান্সফার ➔ ${bankName} থেকে প্রাপ্ত`,
+                    bankTxnId: `${tx.id}_in`,
+                    bankName: targetBankName,
+                    targetBankName: bankName,
+                    createdBy: firebase.auth().currentUser?.email || 'Admin'
+                };
+                await TreasuryDAO.addTransaction(outPayload);
+                await TreasuryDAO.addTransaction(inPayload);
+                successCount++;
             } else {
-                title = `${bankName} (উত্তোলন)`;
-                type = 'outflow';
+                const title = isDeposit ? `${bankName} (জমা)` : `${bankName} (উত্তোলন)`;
+                const type = isDeposit ? 'inflow' : 'outflow';
+                const payload = {
+                    title,
+                    type,
+                    category: 'bank_sync',
+                    amount: Number(tx.amount || 0),
+                    date: toDBDate(tx.date || getTodayLocalDateString()),
+                    note: tx.note ? `[ব্যাংক] ${tx.note}` : `ব্যাংকিং লেজার থেকে সিঙ্ক (${bankName})`,
+                    bankTxnId: tx.id,
+                    bankName: bankName,
+                    targetBankName: null,
+                    createdBy: firebase.auth().currentUser?.email || 'Admin'
+                };
+                await TreasuryDAO.addTransaction(payload);
+                successCount++;
             }
-
-            const payload = {
-                title,
-                type,
-                category: 'bank_sync',
-                amount: Number(tx.amount || 0),
-                date: toDBDate(tx.date || getTodayLocalDateString()),
-                note: tx.note ? `[ব্যাংক] ${tx.note}` : `ব্যাংকিং লেজার থেকে সিঙ্ক (${bankName})`,
-                bankTxnId: tx.id,
-                bankName: bankName,
-                targetBankName: tx.targetBankName || null,
-                createdBy: firebase.auth().currentUser?.email || 'Admin'
-            };
-
-            await TreasuryDAO.addTransaction(payload);
-            successCount++;
         }
 
         auditLog(

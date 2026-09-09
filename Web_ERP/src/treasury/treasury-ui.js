@@ -160,7 +160,7 @@ function renderLedgerTable() {
                 <td class="py-2.5 px-3 text-center text-slate-400 text-xs font-mono">${i + 1}</td>
                 <td class="py-2.5 px-3 text-slate-300 text-xs font-mono whitespace-nowrap"><div class="font-bold">${formatAppDate(t.date)}</div><div class="text-[10px] text-slate-400 font-medium font-sans">${getDayOfWeekBangla(t.date)}</div></td>
                 <td class="py-2.5 px-3 font-bold text-xs text-white">
-                    ${escapeHTML(t.title)}
+                    ${t.category === 'bank_sync' ? '<i class="fa-solid fa-building-columns text-blue-400 mr-1.5 text-[11px]" title="ব্যাংকিং লেজার থেকে সিঙ্ককৃত"></i>' : ''}${escapeHTML(t.title)}
                     ${isHighlight ? '<span class="ml-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">মাস সমাপ্তি</span>' : ''}
                 </td>
                 <td class="py-2.5 px-3 text-slate-400 text-xs">${escapeHTML(t.note || '-')}</td>
