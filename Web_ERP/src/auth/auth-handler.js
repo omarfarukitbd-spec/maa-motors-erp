@@ -44,6 +44,14 @@ export async function loginWithGoogle() {
 export function logout() {
     const user = firebase.auth().currentUser;
     if (user) auditLog('LOGOUT', 'Auth', user.uid, user.email);
+    if (userStatusUnsubscribe) {
+        userStatusUnsubscribe();
+        userStatusUnsubscribe = null;
+    }
+    if (adminPendingUnsubscribe) {
+        adminPendingUnsubscribe();
+        adminPendingUnsubscribe = null;
+    }
     auth.signOut();
     try {
         sessionStorage.removeItem('stealth_screen_locked');
@@ -59,6 +67,7 @@ export function logout() {
 }
 
 let userStatusUnsubscribe = null;
+let adminPendingUnsubscribe = null;
 export async function initAuthListener() {
     try {
         const redirectRes = await auth.getRedirectResult();
@@ -240,7 +249,11 @@ export async function initAuthListener() {
 }
 
 function initAdminPendingBadge() {
-    UserDAO.listenAll(users => {
+    if (adminPendingUnsubscribe) {
+        adminPendingUnsubscribe();
+        adminPendingUnsubscribe = null;
+    }
+    adminPendingUnsubscribe = UserDAO.listenAll(users => {
         const pendingCount = users.filter(u => u.status === 'pending').length;
         const navAdmin = document.getElementById('nav-admin');
         if (navAdmin) {

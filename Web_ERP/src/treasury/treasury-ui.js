@@ -88,6 +88,16 @@ export async function renderTreasuryUI(container) {
 }
 
 /**
+ * Unsubscribe active Firestore realtime listener when navigating away
+ */
+export function unsubscribeTreasuryListener() {
+    if (unsubscribeListener) {
+        unsubscribeListener();
+        unsubscribeListener = null;
+    }
+}
+
+/**
  * Recalculates and updates KPI cards and Ledger table
  */
 function renderLedgerTable() {

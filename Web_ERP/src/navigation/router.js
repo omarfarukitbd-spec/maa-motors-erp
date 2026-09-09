@@ -12,7 +12,7 @@ import { renderAuditLogs, unsubscribeAuditLogs } from '../audit.js';
 import { renderRecycleBin, unsubscribeRecycleBinData } from '../admin/recycle-bin.js';
 import { renderZoneReports } from '../zone_reports/index.js';
 import { renderFinancialSummary } from '../financial_summary/index.js';
-import { renderTreasury } from '../treasury/index.js';
+import { renderTreasury, unsubscribeTreasury } from '../treasury/index.js';
 import { renderMemoSearch } from '../memo_search/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
@@ -110,6 +110,7 @@ export function navigate(view, params = {}) {
     if (AppState.currentView === 'dashboard' && view !== 'dashboard') unsubscribeDashboard();
     if (AppState.currentView === 'audit' && view !== 'audit') unsubscribeAuditLogs();
     if (AppState.currentView === 'recycle-bin' && view !== 'recycle-bin') unsubscribeRecycleBinData();
+    if (AppState.currentView === 'treasury' && view !== 'treasury') unsubscribeTreasury();
 
     AppState.currentView = view;
     const sidebar = document.getElementById('app-sidebar');
