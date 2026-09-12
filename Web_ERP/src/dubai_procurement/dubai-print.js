@@ -1,5 +1,5 @@
 /**
- * Dubai Procurement & Weekly Audit - Executive 1-Page A4 Print Engine
+ * Dubai Procurement & Weekly Audit - Authentic 2-Column Waterfall Print Engine
  * Generates an executive single-page printable voucher matching the authentic Thursday audit sheet.
  */
 
@@ -14,205 +14,235 @@ export function printDubaiAuditSheet(auditData, memos = [], remittances = [], ex
     
     const extraCss = `
         @page { size: A4 portrait; margin: 10mm 12mm; }
-        body { font-family: 'Inter', 'Hind Siliguri', sans-serif; background: #fff; color: #0f172a; }
-        .print-box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; }
-        .print-title-badge { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 6px; }
+        body { font-family: 'Inter', 'Hind Siliguri', sans-serif; background: #fff; color: #0f172a; margin: 0; padding: 0; }
         .num-font { font-family: 'Inter', monospace; font-weight: 700; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #334155; padding: 5px 8px; font-size: 11px; }
     `;
 
     printViaIframe(htmlBody, extraCss, title);
 }
 
-function generateAuditPrintHtml(audit, memos, remittances, expenses) {
-    const formatAEDVal = val => `${formatAmountWithComma(safeRound(parseAmount(val)))}/-`;
+function generateAuditPrintHtml(audit, memos) {
+    const formatAED = val => formatAmountWithComma(safeRound(parseAmount(val)));
+    const desc = audit.descriptions || {};
 
-    // Memos sub-list for print (compact)
-    let memosRowsHtml = '';
-    if (memos.length > 0) {
-        memosRowsHtml = memos.map(m => `
-            <span style="display:inline-block; margin-right:8px; font-size:9.5px; border-bottom:1px dashed #cbd5e1; padding:1px 0;">
+    const cumSent = safeRound(parseAmount(audit.cumulativeRemittance));
+    const runningSent = safeRound(parseAmount(audit.weeklyRemittanceTotal));
+
+    const cumPur = safeRound(parseAmount(audit.cumulativePurchaseTotal));
+    const runningPur = safeRound(parseAmount(audit.weeklyPurchaseTotal));
+
+    const sub1 = safeRound(cumSent - cumPur);
+
+    const cumExp = safeRound(parseAmount(audit.cumulativeExpenseTotal));
+    const runningExp = safeRound(parseAmount(audit.weeklyExpenseTotal));
+
+    const sub2 = safeRound(sub1 - cumExp);
+
+    const marketAd = safeRound(parseAmount(audit.marketAdvance));
+    const cashInHand = safeRound(parseAmount(audit.cashInHand));
+    const sub3 = safeRound(sub2 - marketAd - cashInHand);
+
+    let holdingsTotal = 0;
+    const holdingsList = Array.isArray(audit.personalHoldings) ? audit.personalHoldings : [];
+    holdingsList.forEach(h => {
+        holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount)));
+    });
+
+    const finalVariance = safeRound(parseAmount(audit.varianceAmount));
+    const isSurplus = finalVariance >= 0;
+
+    // Dynamic holdings rows
+    let holdingsHtml = '';
+    holdingsList.forEach(h => {
+        const amt = safeRound(parseAmount(h.amount));
+        holdingsHtml += `
+            <tr style="background: #faf5ff;">
+                <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 700; color: #581c87;">${h.desc || h.name || 'ব্যক্তিগত হস্তান্তর'}</span>
+                        <span style="color: #64748b; font-size: 9.5px;">(-) AED: <b class="num-font" style="color: #6b21a8; font-size: 11px;">${formatAED(amt)}</b></span>
+                    </div>
+                </td>
+                <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
+                    ব্যক্তিগত হস্তান্তর / মেস
+                </td>
+            </tr>
+        `;
+    });
+
+    // Memos compact list
+    let memosSummaryHtml = '';
+    if (Array.isArray(memos) && memos.length > 0) {
+        memosSummaryHtml = memos.map(m => `
+            <span style="display: inline-block; margin: 1px 4px; font-size: 9px; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; border: 1px solid #e2e8f0;">
                 #${m.memoNo}: <b class="num-font">${formatAmountWithComma(m.amount)}</b>
             </span>
         `).join('');
     }
 
-    // Remittances list
-    let remRowsHtml = '';
-    if (remittances.length > 0) {
-        remRowsHtml = remittances.map(r => `
-            <div style="display:flex; justify-content:space-between; font-size:10px; border-bottom:1px dotted #e2e8f0; padding:2px 0;">
-                <span>${r.date || ''} (${r.via || 'রেমিট্যান্স'})</span>
-                <span class="num-font">${formatAEDVal(r.amount)}</span>
-            </div>
-        `).join('');
-    }
-
-    // Custodians list
-    let custRowsHtml = '';
-    if (Array.isArray(audit.personalHoldings) && audit.personalHoldings.length > 0) {
-        custRowsHtml = audit.personalHoldings.map(c => `
-            <div style="display:flex; justify-content:space-between; font-size:10px; border-bottom:1px dotted #e2e8f0; padding:2px 0;">
-                <span>${c.name || 'ব্যক্তিগত হস্তান্তর'}</span>
-                <span class="num-font">${formatAEDVal(c.amount)}</span>
-            </div>
-        `).join('');
-    }
-
-    const varianceAmt = safeRound(parseAmount(audit.varianceAmount));
-    const isSurplus = varianceAmt >= 0;
-
     return `
-        <div style="width:100%; box-sizing:border-box; font-size:11px; line-height:1.35;">
+        <div style="width: 100%; box-sizing: border-box; font-size: 11px; line-height: 1.35;">
             <!-- Header -->
-            <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:6px; margin-bottom:8px;">
-                <div style="font-size:18px; font-weight:900; letter-spacing:0.5px; color:#0f172a;">মা মোটরস — দুবাই কনটেইনার ও বিদেশি ক্রয় খতিয়ান</div>
-                <div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1px;">
+            <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 8px;">
+                <div style="font-size: 18px; font-weight: 900; letter-spacing: 0.5px; color: #0f172a;">মা মোটরস — দুবাই কনটেইনার ও বিদেশি ক্রয় খতিয়ান</div>
+                <div style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px;">
                     MAA MOTORS • OVERSEAS PROCUREMENT & WEEKLY CASH AUDIT (AED)
                 </div>
-                <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:10.5px; background:#f8fafc; padding:4px 8px; border-radius:6px; border:1px solid #e2e8f0;">
-                    <div><b>কনটেইনার আইডি:</b> ${audit.containerNo || 'CT-DXB-01'}</div>
+                <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div><b>কনটেইনার আইডি:</b> ${audit.containerNo || 'CT-2026-DXB-01'}</div>
                     <div><b>অডিট তারিখ:</b> ${audit.weekEndDate || ''} (বৃহস্পতিবার)</div>
-                    <div><b>কারেন্সি:</b> UAE Dirham (AED د.إ)</div>
-                    <div><b>স্ট্যাটাস:</b> <span style="color:#047857; font-weight:800;">${audit.status || 'CLOSED'}</span></div>
+                    <div><b>মুদ্রা:</b> UAE Dirham (AED د.إ)</div>
+                    <div><b>স্ট্যাটাস:</b> <span style="color: #047857; font-weight: 800;">${audit.status || 'CLOSED'}</span></div>
                 </div>
             </div>
 
-            <!-- Two Column Layout: Inflows & Outflows vs Physical Holdings -->
-            <div style="display:grid; grid-template-columns:1.05fr 0.95fr; gap:10px;">
-                <!-- LEFT COLUMN: FLOWS & THEORETICAL CASH -->
-                <div>
-                    <!-- 1. দেশ থেকে দেরহাম আসা -->
-                    <div class="print-box" style="background:#f0fdf4; border-color:#bbf7d0;">
-                        <div class="print-title-badge" style="color:#166534;">১. দেশ থেকে দেরহাম আসা (Remittances)</div>
-                        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                            <span>পূর্বের মোট আগমন:</span>
-                            <span class="num-font">${formatAEDVal(audit.prevRemittance)}</span>
-                        </div>
-                        ${remRowsHtml ? `<div style="margin:4px 0; max-height:80px; overflow:hidden;">${remRowsHtml}</div>` : ''}
-                        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                            <span>এই সপ্তাহের নতুন রেমিট্যান্স:</span>
-                            <span class="num-font">+ ${formatAEDVal(audit.weeklyRemittanceTotal)}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; border-top:1px solid #86efac; padding-top:3px; color:#14532d;">
-                            <span>সর্বমোট প্রাপ্ত দেরহাম:</span>
-                            <span class="num-font">${formatAEDVal(audit.cumulativeRemittance)}</span>
-                        </div>
-                    </div>
-
-                    <!-- 2. মাল কেনার হিসাব -->
-                    <div class="print-box" style="background:#fff7ed; border-color:#fed7aa;">
-                        <div class="print-title-badge" style="color:#9a3412;">২. মাল কেনার হিসাব (${audit.memoCount || 0}টি মেমো)</div>
-                        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                            <span>পূর্বের মোট ক্রয়:</span>
-                            <span class="num-font">${formatAEDVal(audit.prevPurchaseTotal)}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                            <span>এই সপ্তাহের ক্রয় (${audit.memoCount || 0}টি মেমো):</span>
-                            <span class="num-font">+ ${formatAEDVal(audit.weeklyPurchaseTotal)}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; border-top:1px solid #fdba74; padding-top:3px; color:#7c2d12;">
-                            <span>সর্বমোট ক্রয় ব্যালেন্স:</span>
-                            <span class="num-font">${formatAEDVal(audit.cumulativePurchaseTotal)}</span>
-                        </div>
-                        ${memosRowsHtml ? `<div style="margin-top:6px; line-height:1.5; background:#fff; padding:4px 6px; border-radius:4px; border:1px solid #ffedd5;">${memosRowsHtml}</div>` : ''}
-                    </div>
-
-                    <!-- 3. আনুষঙ্গিক লজিস্টিক খরচ -->
-                    <div class="print-box" style="background:#fef2f2; border-color:#fecaca;">
-                        <div class="print-title-badge" style="color:#991b1b;">৩. আনুষঙ্গিক খরচ হিসাব (Expenses)</div>
-                        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                            <span>পূর্বের মোট খরচ:</span>
-                            <span class="num-font">${formatAEDVal(audit.prevExpenseTotal)}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px;">
-                            <span>এই সপ্তাহের নতুন খরচ:</span>
-                            <span class="num-font">+ ${formatAEDVal(audit.weeklyExpenseTotal)}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; border-top:1px solid #fca5a5; padding-top:3px; color:#7f1d1d;">
-                            <span>সর্বমোট খরচ ব্যালেন্স:</span>
-                            <span class="num-font">${formatAEDVal(audit.cumulativeExpenseTotal)}</span>
-                        </div>
-                    </div>
-
-                    <!-- 4. হিসাব অনুযায়ী নিট ক্যাশ স্থিতি -->
-                    <div class="print-box" style="background:#f8fafc; border:1.5px solid #64748b;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <div style="font-size:11px; font-weight:800; color:#1e293b;">হিসাব অনুযায়ী নিট ক্যাশ স্থিতি</div>
-                                <div style="font-size:8.5px; color:#64748b;">(মোট দেরহাম - মোট ক্রয় - মোট খরচ)</div>
+            <!-- Authentic 2-Column Waterfall Table -->
+            <table style="border: 1.5px solid #0f172a; margin-top: 4px;">
+                <thead>
+                    <tr style="background: #0f172a; color: #fff;">
+                        <th style="width: 68%; text-align: left; padding: 6px 8px; font-size: 11px; border: 1px solid #0f172a;">
+                            তারিখ: ${audit.weekEndDate || ''} (বৃহস্পতিবার) — ক্রমপুঞ্জিত ও বিয়োগফল
+                        </th>
+                        <th style="width: 32%; text-align: center; padding: 6px 8px; font-size: 11px; border: 1px solid #0f172a; color: #34d399;">
+                            ক্রয়/খরচ দেরহাম দেওয়া রানিং সপ্তাহ
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Row 1: টাকা পাঠানো -->
+                    <tr style="background: #f0fdf4;">
+                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 700; color: #166534;">${desc.sent || 'বৃহস্পতিবার পর্যন্ত টাকা পাঠানো'}</span>
+                                <span style="color: #15803d;">AED: <b class="num-font" style="font-size: 12px;">${formatAED(cumSent)}</b></span>
                             </div>
-                            <div class="num-font" style="font-size:14px; font-weight:900; color:#0f172a;">
-                                ${formatAEDVal(audit.calculatedCashBalance)}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        </td>
+                        <td style="text-align: right; padding: 6px 8px; font-weight: 700; border: 1px solid #cbd5e1;" class="num-font">
+                            ${runningSent > 0 ? formatAED(runningSent) : '-'}
+                        </td>
+                    </tr>
 
-                <!-- RIGHT COLUMN: PHYSICAL ASSETS & RECONCILIATION -->
-                <div>
-                    <div class="print-box" style="background:#f8fafc; border:1.5px solid #cbd5e1; height:calc(100% - 10px); display:flex; flex-col; justify-content:space-between;">
-                        <div>
-                            <div class="print-title-badge" style="color:#0f172a; font-size:12px;">সমাপনী বাস্তব সম্পদ ও মার্কেট অবস্থান</div>
-                            
-                            <!-- নগদ ক্যাশ -->
-                            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #e2e8f0; font-size:11px;">
-                                <div><b>১. নগদ ক্যাশ (Cash in Hand)</b><br><span style="font-size:8.5px; color:#64748b;">অফিস ভল্ট / ক্যাশ বাক্স</span></div>
-                                <div class="num-font" style="font-size:12px; color:#047857;">${formatAEDVal(audit.cashInHand)}</div>
+                    <!-- Row 2: মাল ক্রয় -->
+                    <tr style="background: #fffbeb;">
+                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span style="font-weight: 700; color: #92400e;">${desc.purchase || 'সর্বমোট মাল ক্রয়'}</span>
+                                    ${desc.memos ? `<div style="font-size: 9.5px; color: #78350f; margin-top: 1px;">${desc.memos}</div>` : ''}
+                                </div>
+                                <span style="color: #b45309;">(-) AED: <b class="num-font" style="font-size: 12px;">${formatAED(cumPur)}</b></span>
                             </div>
+                        </td>
+                        <td style="text-align: right; padding: 6px 8px; font-weight: 700; border: 1px solid #cbd5e1;" class="num-font">
+                            ${runningPur > 0 ? formatAED(runningPur) : '-'}
+                        </td>
+                    </tr>
 
-                            <!-- মার্কেট এডভান্স -->
-                            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #e2e8f0; font-size:11px;">
-                                <div><b>২. মার্কেট এডভান্স (AD)</b><br><span style="font-size:8.5px; color:#64748b;">ইয়ার্ড ও সাপ্লায়ার অগ্রিম</span></div>
-                                <div class="num-font" style="font-size:12px; color:#0369a1;">${formatAEDVal(audit.marketAdvance)}</div>
-                            </div>
+                    <!-- Subtotal 1 -->
+                    <tr style="background: #e0f2fe; font-weight: 800;">
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #94a3b8; color: #0369a1;">
+                            অবশিষ্ট (টাকা পাঠানো – মাল ক্রয়): AED = <span class="num-font" style="font-size: 12px;">${formatAED(sub1)}</span>
+                        </td>
+                        <td style="background: #f1f5f9; border: 1px solid #cbd5e1;"></td>
+                    </tr>
 
-                            <!-- ব্যক্তিগত হস্তান্তর -->
-                            <div style="padding:4px 0; border-bottom:1px solid #e2e8f0;">
-                                <div style="font-size:11px; font-weight:700; margin-bottom:2px;">৩. ব্যক্তিগত হেফাজত / হস্তান্তর:</div>
-                                ${custRowsHtml || '<div style="font-size:9.5px; color:#94a3b8; font-style:italic;">কোনো ব্যক্তি জমা নেই</div>'}
+                    <!-- Row 3: খরচ -->
+                    <tr style="background: #fef2f2;">
+                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 700; color: #991b1b;">${desc.expense || 'সর্বমোট খরচ'}</span>
+                                <span style="color: #b91c1c;">(-) AED: <b class="num-font" style="font-size: 12px;">${formatAED(cumExp)}</b></span>
                             </div>
+                        </td>
+                        <td style="text-align: right; padding: 6px 8px; font-weight: 700; border: 1px solid #cbd5e1;" class="num-font">
+                            ${runningExp > 0 ? formatAED(runningExp) : '-'}
+                        </td>
+                    </tr>
 
-                            <!-- মেস ব্যালেন্স -->
-                            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #e2e8f0; font-size:11px;">
-                                <div><b>৪. মেস ফান্ড (Mess Balance)</b></div>
-                                <div class="num-font" style="font-size:11px;">${formatAEDVal(audit.messBalance)}</div>
-                            </div>
+                    <!-- Subtotal 2 -->
+                    <tr style="background: #e0f2fe; font-weight: 800;">
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #94a3b8; color: #0369a1;">
+                            নিট ক্যাশ স্থিতি (হাতে থাকার কথা): AED = <span class="num-font" style="font-size: 12px;">${formatAED(sub2)}</span>
+                        </td>
+                        <td style="background: #f1f5f9; border: 1px solid #cbd5e1;"></td>
+                    </tr>
 
-                            <!-- সর্বমোট বাস্তব সম্পদ -->
-                            <div style="display:flex; justify-content:space-between; padding:6px 0; margin-top:8px; background:#e2e8f0; border-radius:4px; padding:6px 8px; font-size:12px; font-weight:900;">
-                                <span>মোট ঘোষিত বাস্তব সম্পদ:</span>
-                                <span class="num-font" style="color:#0f172a;">${formatAEDVal(audit.totalPhysicalAssets)}</span>
+                    <!-- Row 4: মার্কেট এডভান্স (সম্পূর্ণ আলাদা সারি) -->
+                    <tr style="background: #ecfeff;">
+                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 700; color: #155e75;">${desc.ad || 'মার্কেট এডভান্স (AD)'}</span>
+                                <span style="color: #0891b2;">(-) AED: <b class="num-font" style="font-size: 12px;">${formatAED(marketAd)}</b></span>
                             </div>
-                        </div>
+                        </td>
+                        <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
+                            সাপ্লায়ারদের অগ্রিম
+                        </td>
+                    </tr>
 
-                        <!-- ভ্যারিয়েন্স কার্ড -->
-                        <div style="margin-top:12px; padding:8px 10px; border-radius:6px; background:${isSurplus ? '#ecfdf5' : '#fff1f2'}; border:1.5px solid ${isSurplus ? '#10b981' : '#f43f5e'};">
-                            <div style="font-size:10px; font-weight:800; color:${isSurplus ? '#047857' : '#be123c'}; text-transform:uppercase;">
-                                সাপ্তাহিক রিকনসিলিয়েশন ভ্যারিয়েন্স:
+                    <!-- Row 5: নগদ ক্যাশ আছে (সম্পূর্ণ আলাদা সারি) -->
+                    <tr style="background: #ecfdf5;">
+                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 700; color: #065f46;">${desc.cash || 'নগদ ক্যাশ আছে (Cash in Hand)'}</span>
+                                <span style="color: #059669;">(-) AED: <b class="num-font" style="font-size: 12px;">${formatAED(cashInHand)}</b></span>
                             </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-                                <span style="font-size:11px; font-weight:700;">
-                                    ${isSurplus ? 'ক্যাশ উদ্বৃত্ত / বাড়তি (Surplus)' : 'ক্যাশ ঘাটতি / শর্ট (Deficit)'}
+                        </td>
+                        <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
+                            ক্যাশ বাক্সে নগদ দেরহাম
+                        </td>
+                    </tr>
+
+                    <!-- Subtotal 3 -->
+                    <tr style="background: #f3e8ff; font-weight: 800;">
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #c084fc; color: #6b21a8;">
+                            অবশিষ্ট ব্যালেন্স (এডভান্স ও ক্যাশ বাদে): AED = <span class="num-font" style="font-size: 12px;">${formatAED(sub3)}</span>
+                        </td>
+                        <td style="background: #f1f5f9; border: 1px solid #cbd5e1;"></td>
+                    </tr>
+
+                    <!-- Dynamic Holdings Rows -->
+                    ${holdingsHtml}
+
+                    <!-- Final Variance Row: ক্যাশ বাড়তি / ঘাটতি -->
+                    <tr style="background: ${isSurplus ? '#dcfce7' : '#fee2e2'}; font-weight: 900;">
+                        <td style="padding: 8px; border: 2px solid ${isSurplus ? '#16a34a' : '#dc2626'};">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 13px; color: ${isSurplus ? '#15803d' : '#b91c1c'};">
+                                    ${desc.status || (isSurplus ? '(ক্যাশ বাড়তি)' : '(ক্যাশ ঘাটতি)')}
                                 </span>
-                                <span class="num-font" style="font-size:14px; font-weight:900; color:${isSurplus ? '#047857' : '#be123c'};">
-                                    ${formatAEDVal(varianceAmt)}
+                                <span style="font-size: 14px; color: ${isSurplus ? '#15803d' : '#b91c1c'};">
+                                    AED = <span class="num-font" style="font-size: 15px;">${formatAED(finalVariance)}</span>
                                 </span>
                             </div>
-                        </div>
-                    </div>
+                        </td>
+                        <td style="text-align: center; font-weight: 700; color: ${isSurplus ? '#15803d' : '#b91c1c'}; border: 2px solid ${isSurplus ? '#16a34a' : '#dc2626'};">
+                            ${isSurplus ? 'অডিট সমন্বয় সফল' : 'ক্যাশ ঘাটতি'}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Memos Section if available -->
+            ${memosSummaryHtml ? `
+                <div style="margin-top: 8px; padding: 4px 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px;">
+                    <div style="font-size: 9.5px; font-weight: 800; color: #475569; margin-bottom: 2px;">সংযুক্ত মেমো তালিকা:</div>
+                    <div>${memosSummaryHtml}</div>
                 </div>
-            </div>
+            ` : ''}
 
             <!-- Signature Footers -->
-            <div style="margin-top:16px; padding-top:10px; border-top:1px solid #cbd5e1; display:flex; justify-content:space-between; text-align:center; font-size:10px; color:#475569;">
-                <div style="width:180px;">
-                    <div style="border-top:1px dashed #94a3b8; margin-top:25px; padding-top:4px;">দুবাই প্রতিনিধি স্বাক্ষর</div>
+            <div style="margin-top: 25px; padding-top: 10px; display: flex; justify-content: space-between; text-align: center; font-size: 10px; color: #475569;">
+                <div style="width: 180px;">
+                    <div style="border-top: 1px dashed #64748b; margin-top: 25px; padding-top: 4px; font-weight: 700;">দুবাই প্রতিনিধি স্বাক্ষর</div>
                 </div>
-                <div style="width:180px;">
-                    <div style="border-top:1px dashed #94a3b8; margin-top:25px; padding-top:4px;">অডিটর যাচাই</div>
+                <div style="width: 180px;">
+                    <div style="border-top: 1px dashed #64748b; margin-top: 25px; padding-top: 4px; font-weight: 700;">অডিটর যাচাই</div>
                 </div>
-                <div style="width:180px;">
-                    <div style="border-top:1px dashed #94a3b8; margin-top:25px; padding-top:4px;">স্বত্বাধিকারী অনুমোদন</div>
+                <div style="width: 180px;">
+                    <div style="border-top: 1px dashed #64748b; margin-top: 25px; padding-top: 4px; font-weight: 700;">স্বত্বাধিকারী অনুমোদন</div>
                 </div>
             </div>
         </div>
