@@ -1,6 +1,7 @@
-import { BankTransactionDAO, ExpenseDAO } from '../dao.js';
+import { BankTransactionDAO, ExpenseDAO, CustomerDAO } from '../dao.js';
 import { safeRound, toDBDate } from '../utils.js';
 import { getAccountAnchor, fetchAccountCollections } from './banking-queries.js';
+import { getCustomerCache } from '../customer/index.js';
 
 export { getAccountAnchor };
 
@@ -88,14 +89,27 @@ export async function calculateAccountBalance(accountName, isCash = false, upToD
 export async function getAccountLedgerTransactions(accountName, isCash, fromDateStr, toDateStr) {
     if (!accountName) return { openingBalance: 0, transactions: [], closingBalance: 0 };
 
-    // Parallel fetch
-    const [collections, bankTxns, incomingTxns, expenseSnap, anchor] = await Promise.all([
+    // Parallel fetch with customer cache resolution
+    let customerCache = getCustomerCache();
+    const custFetchPromise = (!customerCache || customerCache.length === 0)
+        ? CustomerDAO.getAll('name', 'asc')
+        : Promise.resolve(customerCache);
+
+    const [collections, bankTxns, incomingTxns, expenseSnap, anchor, resolvedCustomers] = await Promise.all([
         fetchAccountCollections(accountName),
         BankTransactionDAO.getByBank(accountName),
         BankTransactionDAO.getTransfersByTargetBank(accountName),
         (accountName === 'শোরুম ক্যাশ') ? [] : ExpenseDAO.collection.where('paymentAccount', '==', accountName).get(),
-        getAccountAnchor(accountName, isCash)
+        getAccountAnchor(accountName, isCash),
+        custFetchPromise
     ]);
+
+    const custMap = new Map();
+    const allCusts = Array.isArray(resolvedCustomers) ? resolvedCustomers : [];
+    allCusts.forEach(c => {
+        if (c.id) custMap.set(c.id, c);
+        if (c.accountNo) custMap.set(String(c.accountNo).trim(), c);
+    });
 
     const { effectiveStartDate, initialOpeningBalance } = anchor;
     const allTxns = [];
@@ -103,16 +117,43 @@ export async function getAccountLedgerTransactions(accountName, isCash, fromDate
     // 1. Customer Collections
     collections.forEach(t => {
         if (t.paid && !isNaN(t.paid) && Number(t.paid) > 0) {
+            let cust = t.customerId ? custMap.get(t.customerId) : null;
+            if (!cust && t.customerName) {
+                const match = String(t.customerName).match(/\[(\d+)\]/);
+                if (match && match[1]) {
+                    cust = custMap.get(match[1]);
+                }
+            }
+            if (!cust && t.customerName) {
+                const cleanName = String(t.customerName).replace(/\[.*?\]/, '').trim();
+                if (cleanName) {
+                    cust = allCusts.find(c => c.name && c.name.trim() === cleanName);
+                }
+            }
+
+            const cName = cust?.name || (t.customerName ? String(t.customerName).replace(/\[.*?\]/, '').trim() : 'সাধারণ কাস্টমার');
+            const cAcc = cust?.accountNo || (t.customerName?.match(/\[(\d+)\]/)?.[1] || '');
+            const cAddr = cust?.address ? String(cust.address).trim() : '';
+            const cPhone = cust?.phone ? String(cust.phone).trim() : '';
+            const cZone = cust?.zone ? String(cust.zone).trim() : '';
+            const vNo = t.voucherNo || '';
+
             allTxns.push({
                 id: t.id,
+                customerId: t.customerId || cust?.id || '',
+                customerName: cName,
+                customerAccountNo: cAcc,
+                customerAddress: cAddr,
+                customerPhone: cPhone,
+                customerZone: cZone,
+                voucherNo: vNo,
                 dateStr: t.date || '',
                 createdAt: t.createdAt ? (typeof t.createdAt.toMillis === 'function' ? t.createdAt.toMillis() : t.createdAt) : 0,
                 type: 'CUSTOMER_PAYMENT',
                 amount: Number(t.paid),
                 isCredit: true,
                 isDebit: false,
-                note: `কাস্টমার: ${t.customerName || 'সাধারণ কাস্টমার'} (ভাউচার: ${t.voucherNo || '-'})`,
-                customerName: t.customerName || ''
+                note: `কাস্টমার: ${cAcc ? `[${cAcc}] ` : ''}${cName}${cAddr ? ` • ${cAddr}` : ''}${vNo && vNo !== '-' ? ` (ভাউচার: ${vNo})` : ''}`
             });
         }
     });

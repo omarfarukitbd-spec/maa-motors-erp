@@ -99,6 +99,37 @@ export async function printLedger(ledgerData, accountName, fromDate, toDate, fil
         const balColor = t.runningBalance < 0 ? '#dc2626' : '#0f172a';
         const typeLabel = t.type === 'CUSTOMER_PAYMENT' ? 'কাস্টমার জমা' : (t.type === 'BUSINESS_EXPENSE' ? 'খরচ' : (t.type === 'DEPOSIT' ? 'ক্যাশ জমা' : (t.type === 'WITHDRAWAL' ? 'উত্তোলন' : t.type)));
 
+        let detailsHtml = '';
+        if (t.type === 'CUSTOMER_PAYMENT') {
+            const accBadge = t.customerAccountNo ? `[${escapeHTML(t.customerAccountNo)}] ` : '';
+            const nameStr = `${accBadge}${escapeHTML(t.customerName || 'সাধারণ কাস্টমার')}`;
+            const addressStr = t.customerAddress ? escapeHTML(t.customerAddress) : '';
+            const zoneStr = t.customerZone ? ` (${escapeHTML(t.customerZone)})` : '';
+            const phoneStr = t.customerPhone ? escapeHTML(t.customerPhone) : '';
+            const vNoStr = (t.voucherNo && t.voucherNo !== '-') ? `ভাউচার: ${escapeHTML(t.voucherNo)}` : '';
+
+            detailsHtml = `
+                <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                    <span style="font-weight: 800; color: #15803d; font-size: 10px; background: #dcfce7; padding: 1px 5px; border-radius: 3px;">কাস্টমার জমা</span>
+                    <span style="font-weight: 900; color: #0f172a; font-size: 11px;">${nameStr}</span>
+                </div>
+                ${addressStr ? `
+                <div style="font-size: 9.5px; color: #1e293b; font-weight: 600; margin-top: 2px; line-height: 1.3;">
+                    <span style="color: #64748b; font-size: 8.5px; font-weight: 700; margin-right: 3px;">ঠিকানা:</span>${addressStr}${zoneStr}
+                </div>` : ''}
+                ${(phoneStr || vNoStr) ? `
+                <div style="font-size: 9px; color: #64748b; margin-top: 1.5px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    ${phoneStr ? `<span>মোবা: <strong style="color:#334155;">${phoneStr}</strong></span>` : ''}
+                    ${vNoStr ? `<span>(${vNoStr})</span>` : ''}
+                </div>` : ''}
+            `;
+        } else {
+            detailsHtml = `
+                <div style="font-weight: 800; color: #0f172a;">${typeLabel}</div>
+                <div style="font-size: 10px; color: #475569; margin-top: 1px;">${escapeHTML(t.note || '')}</div>
+            `;
+        }
+
         rowsArray.push(`
             <tr class="print-row-no-break" style="${bgStyle}">
                 <td style="text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 4px; font-size: 10px; font-family: 'Inter', sans-serif; color: #475569;">${serial}</td>
@@ -107,8 +138,7 @@ export async function printLedger(ledgerData, accountName, fromDate, toDate, fil
                     <div style="font-size: 8px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; margin-top: 1px;">${dayBangla}</div>
                 </td>
                 <td style="text-align: left; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 8px; font-size: 10.5px; font-family: 'Hind Siliguri', 'Kalpurush', sans-serif;">
-                    <div style="font-weight: 800; color: #0f172a;">${typeLabel}</div>
-                    <div style="font-size: 10px; color: #475569; margin-top: 1px;">${escapeHTML(t.note || '')}</div>
+                    ${detailsHtml}
                 </td>
                 <td style="text-align: right; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 8px; font-size: 10.5px; font-weight: 800; font-family: 'Inter', monospace; color: #16a34a; white-space: nowrap;">${deposit}</td>
                 <td style="text-align: right; vertical-align: middle; border: 1px solid #cbd5e1; padding: 5px 8px; font-size: 10.5px; font-weight: 800; font-family: 'Inter', monospace; color: #dc2626; white-space: nowrap;">${withdraw}</td>
@@ -194,8 +224,8 @@ export function exportLedgerExcel(ledgerData, accountName, fromDate, toDate, fil
     }
 
     const rows = [
-        ['#', 'তারিখ', 'লেনদেনের ধরন', 'কাস্টমার / বিবরণ', 'জমা (+ Inflow)', 'খরচ (- Outflow)', 'ব্যালেন্স'],
-        ['-', 'প্রারম্ভিক ব্যালেন্স (Opening)', '', '', '', '', ledgerData.openingBalance]
+        ['#', 'তারিখ', 'লেনদেনের ধরন', 'অ্যাকাউন্ট নং', 'কাস্টমার / বিবরণ', 'পূর্ণ ঠিকানা', 'ফোন নম্বর', 'ভাউচার নং', 'জমা (+ Inflow)', 'খরচ (- Outflow)', 'ব্যালেন্স'],
+        ['-', 'প্রারম্ভিক ব্যালেন্স (Opening)', '', '', '', '', '', '', '', '', ledgerData.openingBalance]
     ];
 
     let serial = 0;
@@ -211,18 +241,23 @@ export function exportLedgerExcel(ledgerData, accountName, fromDate, toDate, fil
         serial++;
         const formattedDate = formatAppDate(t.dateStr);
         const typeLabel = t.type === 'CUSTOMER_PAYMENT' ? 'কাস্টমার জমা' : (t.type === 'BUSINESS_EXPENSE' ? 'খরচ' : (t.type === 'DEPOSIT' ? 'ক্যাশ জমা' : (t.type === 'WITHDRAWAL' ? 'উত্তোলন' : t.type)));
+        const isCust = (t.type === 'CUSTOMER_PAYMENT');
         rows.push([
             serial,
             formattedDate,
             typeLabel,
-            t.note || '',
+            isCust ? (t.customerAccountNo || '') : '',
+            isCust ? (t.customerName || '') : (t.note || ''),
+            isCust ? (t.customerAddress || '') : '',
+            isCust ? (t.customerPhone || '') : '',
+            t.voucherNo || '',
             t.isCredit ? Number(t.amount || 0) : 0,
             t.isDebit ? Number(t.amount || 0) : 0,
             t.runningBalance
         ]);
     });
 
-    rows.push(['-', 'সর্বশেষ ব্যালেন্স / মোট', '', '', totalInflow, totalOutflow, ledgerData.closingBalance]);
+    rows.push(['-', 'সর্বশেষ ব্যালেন্স / মোট', '', '', '', '', '', '', totalInflow, totalOutflow, ledgerData.closingBalance]);
 
     const wb = xlsx.utils.book_new();
     const ws = xlsx.utils.aoa_to_sheet(rows);

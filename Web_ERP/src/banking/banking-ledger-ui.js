@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { getAccountLedgerTransactions } from './banking-calc.js';
-import { formatAmountWithComma, formatAppDate, getTodayLocalDateString } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, escapeHTML } from '../utils.js';
 import { openWhatsAppShareModal } from './banking-ledger-share.js';
 import { printLedger as executePrint, exportLedgerExcel as executeExcel } from './banking-ledger-export.js';
 
@@ -182,8 +182,25 @@ export async function loadLedgerTable(accountName = currentAccountName, isCash =
                         </div>
                     </td>
                     <td class="p-3 text-xs text-slate-200">
-                        <div class="font-black text-white flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] ${t.isCredit ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">${typeLabel}</span></div>
-                        <div class="text-[11px] text-slate-400 mt-0.5">${t.note}</div>
+                        ${(t.type === 'CUSTOMER_PAYMENT') ? `
+                            <div class="font-black text-white flex items-center gap-1.5 flex-wrap">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">কাস্টমার জমা</span>
+                                <span class="text-slate-100 font-bold text-xs">${t.customerAccountNo ? `[${escapeHTML(t.customerAccountNo)}] ` : ''}${escapeHTML(t.customerName || 'সাধারণ কাস্টমার')}</span>
+                            </div>
+                            ${t.customerAddress ? `
+                            <div class="text-[11px] text-slate-300 mt-1 flex items-center gap-1.5">
+                                <i class="fa-solid fa-location-dot text-indigo-400 text-[10px]"></i>
+                                <span class="font-medium">${escapeHTML(t.customerAddress)}${t.customerZone ? ` (${escapeHTML(t.customerZone)})` : ''}</span>
+                            </div>` : ''}
+                            ${(t.customerPhone || (t.voucherNo && t.voucherNo !== '-')) ? `
+                            <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-3">
+                                ${t.customerPhone ? `<span><i class="fa-solid fa-phone text-slate-500 text-[9px] mr-1"></i>${escapeHTML(t.customerPhone)}</span>` : ''}
+                                ${(t.voucherNo && t.voucherNo !== '-') ? `<span>(ভাউচার: ${escapeHTML(t.voucherNo)})</span>` : ''}
+                            </div>` : ''}
+                        ` : `
+                            <div class="font-black text-white flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded text-[10px] ${t.isCredit ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">${typeLabel}</span></div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">${escapeHTML(t.note || '')}</div>
+                        `}
                     </td>
                     <td class="p-3 text-xs text-right whitespace-nowrap">${depositStr}</td>
                     <td class="p-3 text-xs text-right whitespace-nowrap">${withdrawStr}</td>
