@@ -19,6 +19,9 @@ let dynamicHoldings = [
     { desc: 'আলতাফ + মেছ (৫০,০০০ + ৪৮৮)', amount: 50488 }
 ];
 
+const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
+const getTxt = (id, def = '') => document.getElementById(id)?.value?.trim() || def;
+
 export async function renderDubaiProcurement(container) {
     if (!container) return;
 
@@ -71,30 +74,17 @@ function setupActionButtons() {
 }
 
 export function updateLiveWaterfall() {
-    // 1. Cumulative amounts directly from left column inputs
-    const cumSent = safeRound(parseAmount(document.getElementById('input-cum-sent')?.value || 0));
-    const cumPur = safeRound(parseAmount(document.getElementById('input-cum-purchase')?.value || 0));
-    const cumExp = safeRound(parseAmount(document.getElementById('input-cum-expense')?.value || 0));
-
-    // 2. Subtotals
+    const cumSent = getVal('input-cum-sent');
+    const cumPur = getVal('input-cum-purchase');
+    const cumExp = getVal('input-cum-expense');
     const sub1 = safeRound(cumSent - cumPur);
     const sub2 = safeRound(sub1 - cumExp);
+    const sub3 = safeRound(sub2 - getVal('val-market-ad') - getVal('val-cash-in-hand'));
 
-    // 3. Separated Market Advance & Cash
-    const marketAd = safeRound(parseAmount(document.getElementById('val-market-ad')?.value || 0));
-    const cashInHand = safeRound(parseAmount(document.getElementById('val-cash-in-hand')?.value || 0));
-    const sub3 = safeRound(sub2 - marketAd - cashInHand);
-
-    // 4. Dynamic Holdings sum
     let holdingsTotal = 0;
-    dynamicHoldings.forEach(h => {
-        holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount)));
-    });
-
-    // 5. Final Variance (Subtotal 3 - Holdings)
+    dynamicHoldings.forEach(h => { holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount))); });
     const finalVariance = safeRound(sub3 - holdingsTotal);
 
-    // Update DOM Subtotals & Variance
     const setTxt = (id, val) => { 
         const el = document.getElementById(id); 
         if (el) el.textContent = formatAmountWithComma(val); 
@@ -124,7 +114,7 @@ export function updateLiveWaterfall() {
         if (valFinalEl) valFinalEl.className = 'text-red-400 font-bold';
     }
 
-    const dateVal = document.getElementById('dubai-week-date')?.value || '';
+    const dateVal = getTxt('dubai-week-date');
     const lblDate = document.getElementById('label-table-date');
     if (lblDate && dateVal) lblDate.textContent = `তারিখ: ${dateVal} (বৃহস্পতিবার)`;
 }
@@ -134,28 +124,15 @@ window.handleDubaiWaterfallChange = function() {
 };
 
 window.handleRunningChange = function(type) {
-    const prevRem = safeRound(parseAmount(document.getElementById('dubai-prev-rem-input')?.value || 0));
-    const prevPur = safeRound(parseAmount(document.getElementById('dubai-prev-pur-input')?.value || 0));
-    const prevExp = safeRound(parseAmount(document.getElementById('dubai-prev-exp-input')?.value || 0));
-
-    if (type === 'sent') {
-        const running = safeRound(parseAmount(document.getElementById('input-running-sent')?.value || 0));
-        if (prevRem > 0) {
-            const cumInp = document.getElementById('input-cum-sent');
-            if (cumInp) cumInp.value = formatAmountWithComma(safeRound(prevRem + running));
-        }
-    } else if (type === 'purchase') {
-        const running = safeRound(parseAmount(document.getElementById('input-running-purchase')?.value || 0));
-        if (prevPur > 0) {
-            const cumInp = document.getElementById('input-cum-purchase');
-            if (cumInp) cumInp.value = formatAmountWithComma(safeRound(prevPur + running));
-        }
-    } else if (type === 'expense') {
-        const running = safeRound(parseAmount(document.getElementById('input-running-expense')?.value || 0));
-        if (prevExp > 0) {
-            const cumInp = document.getElementById('input-cum-expense');
-            if (cumInp) cumInp.value = formatAmountWithComma(safeRound(prevExp + running));
-        }
+    const map = {
+        sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
+        purchase: ['dubai-prev-pur-input', 'input-cum-purchase', 'input-running-purchase'],
+        expense: ['dubai-prev-exp-input', 'input-cum-expense', 'input-running-expense']
+    };
+    const [pId, cId, rId] = map[type] || [];
+    if (pId && getVal(pId) > 0) {
+        const cumInp = document.getElementById(cId);
+        if (cumInp) cumInp.value = formatAmountWithComma(safeRound(getVal(pId) + getVal(rId)));
     }
     updateLiveWaterfall();
 };
@@ -258,6 +235,8 @@ window.removeDubaiHoldingRow = function(idx) {
 async function onRollForwardClick() {
     const latest = await DubaiActions.rollForward();
     if (!latest) return;
+    currentAuditId = null; // Prepare for new week's audit
+
     const prevRem = latest.cumulativeRemittance || 0;
     const prevPur = latest.cumulativePurchaseTotal || 0;
     const prevExp = latest.cumulativeExpenseTotal || 0;
@@ -274,8 +253,45 @@ async function onRollForwardClick() {
     document.getElementById('input-running-purchase').value = '';
     document.getElementById('input-running-expense').value = '';
 
+    // Auto-advance date by 7 days to next Thursday
+    if (latest.weekEndDate) {
+        try {
+            const parts = String(latest.weekEndDate).split('-');
+            if (parts.length === 3) {
+                const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                d.setDate(d.getDate() + 7);
+                const yr = d.getFullYear();
+                const mo = String(d.getMonth() + 1).padStart(2, '0');
+                const da = String(d.getDate()).padStart(2, '0');
+                const nextDateStr = `${yr}-${mo}-${da}`;
+                const dateInp = document.getElementById('dubai-week-date');
+                if (dateInp) dateInp.value = nextDateStr;
+            }
+        } catch (e) {
+            console.error('Date advance error:', e);
+        }
+    }
+
+    // Auto-set next memo start number (e.g. 95 -> 96)
+    if (latest.memoRangeEnd) {
+        const nextStart = parseInt(latest.memoRangeEnd, 10) + 1;
+        if (!isNaN(nextStart)) {
+            const startInp = document.getElementById('memo-range-start');
+            if (startInp) startInp.value = nextStart;
+            const endInp = document.getElementById('memo-range-end');
+            if (endInp) endInp.value = '';
+            window.handleMemoRangeChange();
+        }
+    }
+
+    document.getElementById('val-market-ad').value = '';
+    document.getElementById('val-cash-in-hand').value = '';
+    dynamicHoldings = [{ desc: 'আলতাফ', amount: 0 }];
+    renderDynamicHoldings();
+    DubaiMemoModal.setMemos([]);
+
     updateLiveWaterfall();
-    showToast(`পূর্ববর্তী অডিট (${latest.weekEndDate || ''}) থেকে ব্যালেন্স আনা হয়েছে`, 'success');
+    showToast(`পূর্ববর্তী অডিট (${latest.weekEndDate || ''}) থেকে ব্যালেন্স রোল-ফরওয়ার্ড করা হয়েছে`, 'success');
 }
 
 async function onSaveAuditClick() {
@@ -293,20 +309,14 @@ function onPrintAuditClick() {
 }
 
 function buildCurrentAuditObject() {
-    const cumSent = safeRound(parseAmount(document.getElementById('input-cum-sent')?.value || 0));
-    const cumPur = safeRound(parseAmount(document.getElementById('input-cum-purchase')?.value || 0));
-    const cumExp = safeRound(parseAmount(document.getElementById('input-cum-expense')?.value || 0));
-
-    const runningSent = safeRound(parseAmount(document.getElementById('input-running-sent')?.value || 0));
-    const runningPur = safeRound(parseAmount(document.getElementById('input-running-purchase')?.value || 0));
-    const runningExp = safeRound(parseAmount(document.getElementById('input-running-expense')?.value || 0));
-
-    const prevRem = Math.max(0, safeRound(cumSent - runningSent));
-    const prevPur = Math.max(0, safeRound(cumPur - runningPur));
-    const prevExp = Math.max(0, safeRound(cumExp - runningExp));
-
-    const marketAd = safeRound(parseAmount(document.getElementById('val-market-ad')?.value || 0));
-    const cashInHand = safeRound(parseAmount(document.getElementById('val-cash-in-hand')?.value || 0));
+    const cumSent = getVal('input-cum-sent');
+    const cumPur = getVal('input-cum-purchase');
+    const cumExp = getVal('input-cum-expense');
+    const runningSent = getVal('input-running-sent');
+    const runningPur = getVal('input-running-purchase');
+    const runningExp = getVal('input-running-expense');
+    const marketAd = getVal('val-market-ad');
+    const cashInHand = getVal('val-cash-in-hand');
 
     let holdingsTotal = 0;
     dynamicHoldings.forEach(h => { holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount))); });
@@ -315,8 +325,8 @@ function buildCurrentAuditObject() {
     const theoreticalCash = safeRound(cumSent - cumPur - cumExp);
     const finalVariance = safeRound(theoreticalCash - totalPhysical);
 
-    const mStart = document.getElementById('memo-range-start')?.value || '';
-    const mEnd = document.getElementById('memo-range-end')?.value || '';
+    const mStart = getTxt('memo-range-start');
+    const mEnd = getTxt('memo-range-end');
     const mStartNum = parseInt(mStart, 10);
     const mEndNum = parseInt(mEnd, 10);
     const memoCount = (!isNaN(mStartNum) && !isNaN(mEndNum) && mEndNum >= mStartNum) 
@@ -324,28 +334,28 @@ function buildCurrentAuditObject() {
         : (!isNaN(mStartNum) ? 1 : 0);
 
     return {
-        containerNo: document.getElementById('dubai-container-no')?.value?.trim() || 'CT-2026-DXB-01',
-        weekEndDate: document.getElementById('dubai-week-date')?.value?.trim() || getTodayLocalDateString(),
-        note: document.getElementById('dubai-audit-note')?.value?.trim() || '',
+        containerNo: getTxt('dubai-container-no', 'CT-2026-DXB-01'),
+        weekEndDate: getTxt('dubai-week-date', getTodayLocalDateString()),
+        note: getTxt('dubai-audit-note'),
         descriptions: {
-            sent: document.getElementById('desc-sent')?.value || 'বৃহস্পতিবার পর্যন্ত টাকা পাঠানো',
-            purchase: document.getElementById('desc-purchase')?.value || 'সর্বমোট মাল ক্রয়',
-            memos: document.getElementById('desc-memos')?.value || '',
-            expense: document.getElementById('desc-expense')?.value || 'সর্বমোট খরচ',
-            ad: document.getElementById('desc-ad')?.value || 'মার্কেট এডভান্স (AD)',
-            cash: document.getElementById('desc-cash')?.value || 'নগদ ক্যাশ আছে (Cash in Hand)',
-            status: document.getElementById('desc-final-status')?.value || '(ক্যাশ বাড়তি)'
+            sent: getTxt('desc-sent', 'বৃহস্পতিবার পর্যন্ত টাকা পাঠানো'),
+            purchase: getTxt('desc-purchase', 'সর্বমোট মাল ক্রয়'),
+            memos: getTxt('desc-memos'),
+            expense: getTxt('desc-expense', 'সর্বমোট খরচ'),
+            ad: getTxt('desc-ad', 'মার্কেট এডভান্স (AD)'),
+            cash: getTxt('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)'),
+            status: getTxt('desc-final-status', '(ক্যাশ বাড়তি)')
         },
         memoRangeStart: mStart,
         memoRangeEnd: mEnd,
         memoCount: memoCount,
-        prevRemittance: prevRem,
+        prevRemittance: Math.max(0, safeRound(cumSent - runningSent)),
         weeklyRemittanceTotal: runningSent,
         cumulativeRemittance: cumSent,
-        prevPurchaseTotal: prevPur,
+        prevPurchaseTotal: Math.max(0, safeRound(cumPur - runningPur)),
         weeklyPurchaseTotal: runningPur,
         cumulativePurchaseTotal: cumPur,
-        prevExpenseTotal: prevExp,
+        prevExpenseTotal: Math.max(0, safeRound(cumExp - runningExp)),
         weeklyExpenseTotal: runningExp,
         cumulativeExpenseTotal: cumExp,
         marketAdvance: marketAd,
