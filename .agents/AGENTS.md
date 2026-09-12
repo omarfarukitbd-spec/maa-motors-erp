@@ -52,3 +52,22 @@
       5. Strict adherence to accounting color codes and terminology.
     - **Automated Math Invariant Tests**: The automated test suite `financial_math_test.js` runs on every single build to mathematically prove accounting integrity.
 
+16. **Strict Rules for Dubai Container & Overseas Procurement Module (`src/dubai_procurement/`)**:
+    - **100% Data & Accounting Isolation (Zero Cross-Contamination)**:
+      - The Dubai Overseas Container Procurement module is completely independent from all local ERP collections (`customers`, `transactions`, `expenses`, `bank_transactions`, `TreasuryTransactions`).
+      - NEVER mix, query, merge, or cross-calculate Dubai foreign amounts against local BDT accounting, customer balances, sales reports, or local daily expenses.
+      - Dedicated Collections: `dubai_weekly_audits`, `dubai_memos`, `dubai_remittances`, `dubai_expenses`.
+    - **Strict UAE Dirham (AED / د.إ) Currency**: All foreign procurement transactions, memos, remittances, expenses, and cash holdings must strictly be in **AED**. NEVER mix BDT or use Bangladeshi Taka symbols (৳) in this module.
+    - **Independent Foreign Memo Book**: Foreign purchase memo numbers (e.g. Memo 88 to 112) belong exclusively to the overseas purchase register (`dubai_memos`). They MUST NEVER interfere with or share sequences with local sales invoice memo numbers (`INV-XXXX`).
+    - **Disaggregated Physical Assets Policy**:
+      - Always maintain strict separation between **নগদ ক্যাশ (Cash in Hand)** and **মার্কেট এডভান্স (Market Advance / AD)**. NEVER combine them into a single database field or combined UI input.
+      - Custodian transfers (e.g., এমরান মামা, আলতাফ, জাবেদ) must be stored and displayed as distinct named items in `personalHoldings: [{ name, amount }]`.
+      - Mess fund (`messBalance`) must remain separate.
+    - **Thursday Rolling Reconciliation Formulas**:
+      - Net Theoretical Cash: $\text{cumulativeRemittance} - \text{cumulativePurchaseTotal} - \text{cumulativeExpenseTotal}$.
+      - Total Physical Assets: $\text{cashInHand} + \text{marketAdvance} + \sum(\text{personalHoldings}) + \text{messBalance}$.
+      - Variance: $\text{totalPhysicalAssets} - \text{calculatedCashBalance}$ ($>0$ Surplus / $<0$ Deficit).
+      - Opening balances must roll forward automatically from the previous week's closing.
+    - **Smart Memo Range Auto-Generator Preservation**: Always maintain the Start Memo to End Memo automatic row generation and fast keyboard navigation (`Enter` key moves focus to next memo row). Never force users to type repetitive memo numbers manually.
+
+
