@@ -59,25 +59,11 @@ export function getDubaiAuditMainTemplate() {
                 </div>
             </div>
 
-            <!-- Hidden/Optional Opening Balances for week 1 manual setup -->
-            <div id="dubai-opening-section" class="bg-slate-900/40 border border-slate-800/80 p-3 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span class="text-slate-400 font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-clock-rotate-left text-sky-400"></i> পূর্বের ব্যালেন্স (Opening):
-                </span>
-                <div class="flex items-center gap-3 flex-wrap">
-                    <div class="flex items-center gap-1">
-                        <span class="text-slate-500 text-[11px]">রেমিট্যান্স:</span>
-                        <input type="text" id="dubai-prev-rem-input" value="0" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiWaterfallChange()" class="w-24 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-emerald-400 font-mono text-right font-bold">
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <span class="text-slate-500 text-[11px]">ক্রয়:</span>
-                        <input type="text" id="dubai-prev-pur-input" value="0" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiWaterfallChange()" class="w-24 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-amber-400 font-mono text-right font-bold">
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <span class="text-slate-500 text-[11px]">খরচ:</span>
-                        <input type="text" id="dubai-prev-exp-input" value="0" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiWaterfallChange()" class="w-24 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-red-400 font-mono text-right font-bold">
-                    </div>
-                </div>
+            <!-- Hidden Opening Balances (handled automatically by roll forward) -->
+            <div id="dubai-opening-section" class="hidden">
+                <input type="hidden" id="dubai-prev-rem-input" value="0">
+                <input type="hidden" id="dubai-prev-pur-input" value="0">
+                <input type="hidden" id="dubai-prev-exp-input" value="0">
             </div>
 
             <!-- Authentic 2-Column Waterfall Table Card -->
@@ -110,13 +96,13 @@ export function getDubaiAuditMainTemplate() {
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition-colors">
                         <div class="col-span-8 p-2.5 border-r border-slate-800 flex items-center justify-between gap-2">
                             <input type="text" id="desc-sent" value="বৃহস্পতিবার পর্যন্ত টাকা পাঠানো" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none flex-grow">
-                            <div class="flex items-center gap-1 font-mono font-black text-emerald-400 shrink-0">
-                                <span class="text-[10px] text-slate-500">AED:</span>
-                                <span id="val-cum-sent" class="text-sm">0</span>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <span class="text-[10px] text-slate-500 font-bold">AED:</span>
+                                <input type="text" id="input-cum-sent" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
                             </div>
                         </div>
                         <div class="col-span-4 p-2.5 flex items-center">
-                            <input type="text" id="input-running-sent" placeholder="০.০০" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiWaterfallChange()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-emerald-400 font-bold font-mono text-right focus:border-emerald-500 outline-none">
+                            <input type="text" id="input-running-sent" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('sent')" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-emerald-400 font-bold font-mono text-right focus:border-emerald-500 outline-none">
                         </div>
                     </div>
 
@@ -125,9 +111,9 @@ export function getDubaiAuditMainTemplate() {
                         <div class="col-span-8 p-2.5 border-r border-slate-800 flex flex-col gap-2">
                             <div class="flex items-center justify-between gap-2">
                                 <input type="text" id="desc-purchase" value="সর্বমোট মাল ক্রয়" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none flex-grow">
-                                <div class="flex items-center gap-1 font-mono font-black text-amber-400 shrink-0">
-                                    <span class="text-[10px] text-slate-500">AED:</span>
-                                    <span id="val-cum-purchase" class="text-sm">0</span>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <span class="text-[10px] text-slate-500 font-bold">AED:</span>
+                                    <input type="text" id="input-cum-purchase" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-amber-400 font-mono text-right font-bold focus:border-amber-500 outline-none">
                                 </div>
                             </div>
 
@@ -161,7 +147,7 @@ export function getDubaiAuditMainTemplate() {
                             </div>
                         </div>
                         <div class="col-span-4 p-2.5 flex items-center">
-                            <input type="text" id="input-running-purchase" placeholder="০.০০" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiWaterfallChange()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-amber-400 font-bold font-mono text-right focus:border-amber-500 outline-none">
+                            <input type="text" id="input-running-purchase" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('purchase')" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-amber-400 font-bold font-mono text-right focus:border-amber-500 outline-none">
                         </div>
                     </div>
 
@@ -182,13 +168,13 @@ export function getDubaiAuditMainTemplate() {
                                 <input type="text" id="desc-expense" value="সর্বমোট খরচ" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none w-44">
                                 <span class="text-slate-500 text-[10px]"><i class="fa-solid fa-minus text-red-400 mr-1"></i> বিয়োগ</span>
                             </div>
-                            <div class="flex items-center gap-1 font-mono font-black text-red-400 shrink-0">
-                                <span class="text-[10px] text-slate-500">AED:</span>
-                                <span id="val-cum-expense" class="text-sm">0</span>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <span class="text-[10px] text-slate-500 font-bold">AED:</span>
+                                <input type="text" id="input-cum-expense" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-red-400 font-mono text-right font-bold focus:border-red-500 outline-none">
                             </div>
                         </div>
                         <div class="col-span-4 p-2.5 flex items-center">
-                            <input type="text" id="input-running-expense" placeholder="০.০০" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiWaterfallChange()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-red-400 font-bold font-mono text-right focus:border-red-500 outline-none">
+                            <input type="text" id="input-running-expense" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('expense')" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-red-400 font-bold font-mono text-right focus:border-red-500 outline-none">
                         </div>
                     </div>
 
