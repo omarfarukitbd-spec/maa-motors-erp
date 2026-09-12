@@ -6122,121 +6122,142 @@ _Maa Motors ERP সিস্টেম থেকে স্বয়ংক্রি�
             <!-- Memo Book Audit View Container -->
             <div id="memo-audit-view" class="hidden space-y-3.5"></div>
         </div>
-    `,window.switchMemoSearchTab=e=>{let t=document.getElementById(`tab-memo-single-btn`),n=document.getElementById(`tab-memo-audit-btn`),r=document.getElementById(`memo-single-view`),i=document.getElementById(`memo-audit-view`),a=e===`audit`;t&&(t.className=`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${a?`text-slate-400 hover:text-white hover:bg-slate-900`:`bg-cyan-600 text-white shadow-md`}`),n&&(n.className=`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${a?`bg-purple-600 text-white shadow-md shadow-purple-600/30`:`text-slate-400 hover:text-white hover:bg-slate-900`}`),r&&r.classList.toggle(`hidden`,a),i&&(i.classList.toggle(`hidden`,!a),a&&ec(i)),a||document.getElementById(`memo-search-input`)?.focus()},oc(t),cc())}function oc(e={}){let t=document.getElementById(`memo-search-input`),n=document.getElementById(`memo-search-clear-btn`);t&&(setTimeout(()=>t.focus(),100),t.oninput=e=>{let t=e.target.value;if(n&&n.classList.toggle(`hidden`,t.length===0),clearTimeout(nc),!t.trim()){lc();return}nc=setTimeout(()=>sc(t),180)},t.onkeydown=e=>{e.key===`Enter`&&(e.preventDefault(),clearTimeout(nc),sc(t.value))},e.memoNo&&(t.value=e.memoNo,n&&n.classList.remove(`hidden`),sc(e.memoNo)))}async function sc(e){let t=++ic,n=document.getElementById(`memo-search-result-area`),r=document.getElementById(`memo-multiple-matches`);if(!n)return;let i=(e||``).trim();if(!i){lc();return}n.innerHTML=`<div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-400 space-y-2"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400 mb-1"></i><div class="text-xs font-bold">মেমো তথ্য লোড করা হচ্ছে...</div></div>`;try{let e=await Ms(i);if(t!==ic)return;if(!e||e.length===0){r&&r.classList.add(`hidden`),n.innerHTML=`<div class="bg-slate-900/60 border border-red-500/20 rounded-2xl p-8 text-center text-slate-400 space-y-2"><div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400 text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="text-sm font-bold text-white">মেমো পাওয়া যায়নি!</div><div class="text-xs text-slate-500 font-mono">"#${O(i)}" নম্বরে কোনো লেনদেন নেই</div></div>`;return}let a=e[0];rc=a.voucherNo||``;let[o,s]=await Promise.all([Ps(rc),Fs(a.customerId)]);if(t!==ic)return;e.length>1&&r?(r.classList.remove(`hidden`),r.innerHTML=`<div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-2.5 mb-3 font-bn"><div class="text-[10px] font-black text-cyan-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i> <span>একাধিক মেমো পাওয়া গেছে (${e.length}টি):</span></div><div class="flex flex-wrap gap-1.5">${e.map((e,t)=>`<button onclick="window.selectSpecificMemoMatch(${t})" class="memo-match-btn px-2.5 py-1 rounded-xl ${t===0?`bg-cyan-600 text-white font-black`:`bg-slate-800 hover:bg-slate-700 text-slate-300`} text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer" data-idx="${t}"><span class="font-mono font-bold">#${O(e.voucherNo||e.id.slice(-6).toUpperCase())}</span><span>•</span><span class="font-bold truncate max-w-[130px]">${O(String(e.customerName||`গ্রাহক`).replace(/^\[.*?\]\s*/,``).trim())}</span><span class="text-[10px] text-slate-400 font-mono">(${A(e.date)})</span></button>`).join(``)}</div></div>`,window._currentMemoSearchResults=e):r&&r.classList.add(`hidden`),n.innerHTML=Ks(a,o,s)}catch(e){if(t!==ic)return;console.error(`executeMemoSearch error:`,e),n.innerHTML=`<div class="p-6 text-center text-red-400 font-bold bg-slate-900/60 rounded-2xl border border-red-500/20">মেমো অনুসন্ধানে সমস্যা হয়েছে</div>`}}window.triggerMemoVoiceSearch=function(){qs((e,t)=>{let n=document.getElementById(`memo-search-input`);n&&(n.value=e,document.getElementById(`memo-search-clear-btn`)?.classList.remove(`hidden`),sc(e)),N(`ভয়েস রিসিভ: "${t}"`,`success`)})};async function cc(){let e=document.getElementById(`memo-recent-chips`);if(e)try{let t=await Is(8);if(t.length===0){e.innerHTML=`<span class="text-slate-600 text-xs">কোনো মেমো নেই</span>`;return}e.innerHTML=t.map(e=>{let t=String(e.customerName||`গ্রাহক`).replace(/^\[.*?\]\s*/,``).trim();return`<button onclick="window.searchMemoDirectly('${O(e.voucherNo)}')" class="px-3 py-1.5 rounded-xl bg-slate-950/70 hover:bg-cyan-950/40 hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 border border-slate-800 text-[11px] font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 group shadow-sm" title="${O(t)} (${A(e.date)})"><span class="font-mono font-black text-cyan-400">#${O(e.voucherNo)}</span><span class="text-slate-400 group-hover:text-slate-200 truncate max-w-[130px] font-medium">${O(t)}</span></button>`}).join(``)}catch(e){console.error(`loadRecentMemoChips error:`,e)}}window.selectSpecificMemoMatch=async function(e){if(window._currentMemoSearchResults&&window._currentMemoSearchResults[e]){let t=window._currentMemoSearchResults[e],[n,r]=await Promise.all([Ps(t.voucherNo),Fs(t.customerId)]),i=document.getElementById(`memo-search-result-area`);i&&(i.innerHTML=Ks(t,n,r)),document.querySelectorAll(`.memo-match-btn`).forEach(t=>{t.className=`memo-match-btn px-3 py-1.5 rounded-xl ${Number(t.dataset.idx)===e?`bg-cyan-600 text-white font-black`:`bg-slate-800 hover:bg-slate-700 text-slate-300`} text-xs flex items-center gap-2 border border-slate-700 transition-all cursor-pointer`})}},window.searchMemoDirectly=function(e){let t=document.getElementById(`memo-search-input`);t&&(t.value=e,document.getElementById(`memo-search-clear-btn`)?.classList.remove(`hidden`),sc(e))},window.clearMemoSearchInput=function(){let e=document.getElementById(`memo-search-input`);e&&(e.value=``,e.focus(),document.getElementById(`memo-search-clear-btn`)?.classList.add(`hidden`),lc())};function lc(){let e=document.getElementById(`memo-search-result-area`);document.getElementById(`memo-multiple-matches`)?.classList.add(`hidden`),e&&(e.innerHTML=`<div class="bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-12 text-center text-slate-500 space-y-3"><div class="w-16 h-16 rounded-3xl bg-slate-800/40 border border-slate-700/40 flex items-center justify-center mx-auto text-slate-600 text-2xl"><i class="fa-solid fa-barcode"></i></div><div class="text-sm font-bold text-slate-400">যেকোনো মেমো নম্বর লিখে সার্চ করুন</div><div class="text-xs text-slate-600">মেমো নম্বর লেখার সাথে সাথে সম্পূর্ণ বিবরণ ও হিসাবের সমীকরণ এখানে প্রদর্শিত হবে</div></div>`)}var uc=`dubai_weekly_audits`,dc=`dubai_memos`,fc=`dubai_remittances`,pc=`dubai_expenses`,mc={listenWeeklyAudits(e){return m.collection(uc).orderBy(`weekEndDate`,`desc`).onSnapshot(t=>{let n=[];t.forEach(e=>n.push({id:e.id,...e.data()})),e(n)},e=>{console.error(`Error listening to dubai weekly audits:`,e)})},async getAllAudits(){try{let e=await m.collection(uc).orderBy(`weekEndDate`,`desc`).get(),t=[];return e.forEach(e=>t.push({id:e.id,...e.data()})),t}catch(e){return console.error(`Error getting all audits:`,e),[]}},async getAuditById(e){try{let t=await m.collection(uc).doc(e).get();return t.exists?{id:t.id,...t.data()}:null}catch(e){return console.error(`Error getting audit by ID:`,e),null}},async getPreviousAudit(e=null){try{let t=m.collection(uc);e&&(t=t.where(`weekEndDate`,`<`,e));let n=await t.orderBy(`weekEndDate`,`desc`).limit(1).get();if(!n.empty){let e=n.docs[0];return{id:e.id,...e.data()}}return null}catch(e){return console.error(`Error getting previous audit:`,e),null}},async saveWeeklyAudit(e){try{let t=e.id||`AUDIT-${e.weekEndDate||Date.now()}`,r=m.collection(uc).doc(t),i={...e,id:t,updatedAt:n.firestore.FieldValue.serverTimestamp()};return e.id||(i.createdAt=n.firestore.FieldValue.serverTimestamp()),await r.set(i,{merge:!0}),t}catch(e){throw console.error(`Error saving weekly audit:`,e),e}},async deleteWeeklyAudit(e){try{await m.collection(uc).doc(e).delete();let t=await m.collection(dc).where(`auditId`,`==`,e).get(),n=m.batch();t.forEach(e=>n.delete(e.ref)),await n.commit();let r=await m.collection(fc).where(`auditId`,`==`,e).get(),i=m.batch();r.forEach(e=>i.delete(e.ref)),await i.commit();let a=await m.collection(pc).where(`auditId`,`==`,e).get(),o=m.batch();return a.forEach(e=>o.delete(e.ref)),await o.commit(),!0}catch(e){throw console.error(`Error deleting weekly audit:`,e),e}},async saveMemos(e,t){try{let r=await m.collection(dc).where(`auditId`,`==`,e).get(),i=m.batch();return r.forEach(e=>i.delete(e.ref)),t.forEach(t=>{let r=m.collection(dc).doc();i.set(r,{...t,auditId:e,createdAt:n.firestore.FieldValue.serverTimestamp()})}),await i.commit(),!0}catch(e){throw console.error(`Error saving memos:`,e),e}},async getMemosByAuditId(e){try{let t=await m.collection(dc).where(`auditId`,`==`,e).get(),n=[];return t.forEach(e=>n.push({id:e.id,...e.data()})),n}catch(e){return console.error(`Error getting memos by auditId:`,e),[]}}};function hc(e,t=[],n=[],r=[]){if(!e)return;let i=`Dubai_Audit_${e.weekEndDate||`Weekly`}`,a=gc(e,t,n,r);we(a,`
-        @page { size: A4 portrait; margin: 10mm 12mm; }
-        body { font-family: 'Inter', 'Hind Siliguri', sans-serif; background: #fff; color: #0f172a; margin: 0; padding: 0; }
-        .num-font { font-family: 'Inter', monospace; font-weight: 700; }
+    `,window.switchMemoSearchTab=e=>{let t=document.getElementById(`tab-memo-single-btn`),n=document.getElementById(`tab-memo-audit-btn`),r=document.getElementById(`memo-single-view`),i=document.getElementById(`memo-audit-view`),a=e===`audit`;t&&(t.className=`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${a?`text-slate-400 hover:text-white hover:bg-slate-900`:`bg-cyan-600 text-white shadow-md`}`),n&&(n.className=`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${a?`bg-purple-600 text-white shadow-md shadow-purple-600/30`:`text-slate-400 hover:text-white hover:bg-slate-900`}`),r&&r.classList.toggle(`hidden`,a),i&&(i.classList.toggle(`hidden`,!a),a&&ec(i)),a||document.getElementById(`memo-search-input`)?.focus()},oc(t),cc())}function oc(e={}){let t=document.getElementById(`memo-search-input`),n=document.getElementById(`memo-search-clear-btn`);t&&(setTimeout(()=>t.focus(),100),t.oninput=e=>{let t=e.target.value;if(n&&n.classList.toggle(`hidden`,t.length===0),clearTimeout(nc),!t.trim()){lc();return}nc=setTimeout(()=>sc(t),180)},t.onkeydown=e=>{e.key===`Enter`&&(e.preventDefault(),clearTimeout(nc),sc(t.value))},e.memoNo&&(t.value=e.memoNo,n&&n.classList.remove(`hidden`),sc(e.memoNo)))}async function sc(e){let t=++ic,n=document.getElementById(`memo-search-result-area`),r=document.getElementById(`memo-multiple-matches`);if(!n)return;let i=(e||``).trim();if(!i){lc();return}n.innerHTML=`<div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-400 space-y-2"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400 mb-1"></i><div class="text-xs font-bold">মেমো তথ্য লোড করা হচ্ছে...</div></div>`;try{let e=await Ms(i);if(t!==ic)return;if(!e||e.length===0){r&&r.classList.add(`hidden`),n.innerHTML=`<div class="bg-slate-900/60 border border-red-500/20 rounded-2xl p-8 text-center text-slate-400 space-y-2"><div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400 text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="text-sm font-bold text-white">মেমো পাওয়া যায়নি!</div><div class="text-xs text-slate-500 font-mono">"#${O(i)}" নম্বরে কোনো লেনদেন নেই</div></div>`;return}let a=e[0];rc=a.voucherNo||``;let[o,s]=await Promise.all([Ps(rc),Fs(a.customerId)]);if(t!==ic)return;e.length>1&&r?(r.classList.remove(`hidden`),r.innerHTML=`<div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-2.5 mb-3 font-bn"><div class="text-[10px] font-black text-cyan-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i> <span>একাধিক মেমো পাওয়া গেছে (${e.length}টি):</span></div><div class="flex flex-wrap gap-1.5">${e.map((e,t)=>`<button onclick="window.selectSpecificMemoMatch(${t})" class="memo-match-btn px-2.5 py-1 rounded-xl ${t===0?`bg-cyan-600 text-white font-black`:`bg-slate-800 hover:bg-slate-700 text-slate-300`} text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer" data-idx="${t}"><span class="font-mono font-bold">#${O(e.voucherNo||e.id.slice(-6).toUpperCase())}</span><span>•</span><span class="font-bold truncate max-w-[130px]">${O(String(e.customerName||`গ্রাহক`).replace(/^\[.*?\]\s*/,``).trim())}</span><span class="text-[10px] text-slate-400 font-mono">(${A(e.date)})</span></button>`).join(``)}</div></div>`,window._currentMemoSearchResults=e):r&&r.classList.add(`hidden`),n.innerHTML=Ks(a,o,s)}catch(e){if(t!==ic)return;console.error(`executeMemoSearch error:`,e),n.innerHTML=`<div class="p-6 text-center text-red-400 font-bold bg-slate-900/60 rounded-2xl border border-red-500/20">মেমো অনুসন্ধানে সমস্যা হয়েছে</div>`}}window.triggerMemoVoiceSearch=function(){qs((e,t)=>{let n=document.getElementById(`memo-search-input`);n&&(n.value=e,document.getElementById(`memo-search-clear-btn`)?.classList.remove(`hidden`),sc(e)),N(`ভয়েস রিসিভ: "${t}"`,`success`)})};async function cc(){let e=document.getElementById(`memo-recent-chips`);if(e)try{let t=await Is(8);if(t.length===0){e.innerHTML=`<span class="text-slate-600 text-xs">কোনো মেমো নেই</span>`;return}e.innerHTML=t.map(e=>{let t=String(e.customerName||`গ্রাহক`).replace(/^\[.*?\]\s*/,``).trim();return`<button onclick="window.searchMemoDirectly('${O(e.voucherNo)}')" class="px-3 py-1.5 rounded-xl bg-slate-950/70 hover:bg-cyan-950/40 hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 border border-slate-800 text-[11px] font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 group shadow-sm" title="${O(t)} (${A(e.date)})"><span class="font-mono font-black text-cyan-400">#${O(e.voucherNo)}</span><span class="text-slate-400 group-hover:text-slate-200 truncate max-w-[130px] font-medium">${O(t)}</span></button>`}).join(``)}catch(e){console.error(`loadRecentMemoChips error:`,e)}}window.selectSpecificMemoMatch=async function(e){if(window._currentMemoSearchResults&&window._currentMemoSearchResults[e]){let t=window._currentMemoSearchResults[e],[n,r]=await Promise.all([Ps(t.voucherNo),Fs(t.customerId)]),i=document.getElementById(`memo-search-result-area`);i&&(i.innerHTML=Ks(t,n,r)),document.querySelectorAll(`.memo-match-btn`).forEach(t=>{t.className=`memo-match-btn px-3 py-1.5 rounded-xl ${Number(t.dataset.idx)===e?`bg-cyan-600 text-white font-black`:`bg-slate-800 hover:bg-slate-700 text-slate-300`} text-xs flex items-center gap-2 border border-slate-700 transition-all cursor-pointer`})}},window.searchMemoDirectly=function(e){let t=document.getElementById(`memo-search-input`);t&&(t.value=e,document.getElementById(`memo-search-clear-btn`)?.classList.remove(`hidden`),sc(e))},window.clearMemoSearchInput=function(){let e=document.getElementById(`memo-search-input`);e&&(e.value=``,e.focus(),document.getElementById(`memo-search-clear-btn`)?.classList.add(`hidden`),lc())};function lc(){let e=document.getElementById(`memo-search-result-area`);document.getElementById(`memo-multiple-matches`)?.classList.add(`hidden`),e&&(e.innerHTML=`<div class="bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-12 text-center text-slate-500 space-y-3"><div class="w-16 h-16 rounded-3xl bg-slate-800/40 border border-slate-700/40 flex items-center justify-center mx-auto text-slate-600 text-2xl"><i class="fa-solid fa-barcode"></i></div><div class="text-sm font-bold text-slate-400">যেকোনো মেমো নম্বর লিখে সার্চ করুন</div><div class="text-xs text-slate-600">মেমো নম্বর লেখার সাথে সাথে সম্পূর্ণ বিবরণ ও হিসাবের সমীকরণ এখানে প্রদর্শিত হবে</div></div>`)}var uc=`dubai_weekly_audits`,dc=`dubai_memos`,fc=`dubai_remittances`,pc=`dubai_expenses`,mc={listenWeeklyAudits(e){return m.collection(uc).orderBy(`weekEndDate`,`desc`).onSnapshot(t=>{let n=[];t.forEach(e=>n.push({id:e.id,...e.data()})),e(n)},e=>{console.error(`Error listening to dubai weekly audits:`,e)})},async getAllAudits(){try{let e=await m.collection(uc).orderBy(`weekEndDate`,`desc`).get(),t=[];return e.forEach(e=>t.push({id:e.id,...e.data()})),t}catch(e){return console.error(`Error getting all audits:`,e),[]}},async getAuditById(e){try{let t=await m.collection(uc).doc(e).get();return t.exists?{id:t.id,...t.data()}:null}catch(e){return console.error(`Error getting audit by ID:`,e),null}},async getPreviousAudit(e=null){try{let t=m.collection(uc);e&&(t=t.where(`weekEndDate`,`<`,e));let n=await t.orderBy(`weekEndDate`,`desc`).limit(1).get();if(!n.empty){let e=n.docs[0];return{id:e.id,...e.data()}}return null}catch(e){return console.error(`Error getting previous audit:`,e),null}},async saveWeeklyAudit(e){try{let t=e.id||`AUDIT-${e.weekEndDate||Date.now()}`,r=m.collection(uc).doc(t),i={...e,id:t,updatedAt:n.firestore.FieldValue.serverTimestamp()};return e.id||(i.createdAt=n.firestore.FieldValue.serverTimestamp()),await r.set(i,{merge:!0}),t}catch(e){throw console.error(`Error saving weekly audit:`,e),e}},async deleteWeeklyAudit(e){try{await m.collection(uc).doc(e).delete();let t=await m.collection(dc).where(`auditId`,`==`,e).get(),n=m.batch();t.forEach(e=>n.delete(e.ref)),await n.commit();let r=await m.collection(fc).where(`auditId`,`==`,e).get(),i=m.batch();r.forEach(e=>i.delete(e.ref)),await i.commit();let a=await m.collection(pc).where(`auditId`,`==`,e).get(),o=m.batch();return a.forEach(e=>o.delete(e.ref)),await o.commit(),!0}catch(e){throw console.error(`Error deleting weekly audit:`,e),e}},async saveMemos(e,t){try{let r=await m.collection(dc).where(`auditId`,`==`,e).get(),i=m.batch();return r.forEach(e=>i.delete(e.ref)),t.forEach(t=>{let r=m.collection(dc).doc();i.set(r,{...t,auditId:e,createdAt:n.firestore.FieldValue.serverTimestamp()})}),await i.commit(),!0}catch(e){throw console.error(`Error saving memos:`,e),e}},async getMemosByAuditId(e){try{let t=await m.collection(dc).where(`auditId`,`==`,e).get(),n=[];return t.forEach(e=>n.push({id:e.id,...e.data()})),n}catch(e){return console.error(`Error getting memos by auditId:`,e),[]}}};async function hc(e,t=[],n=[],r=[]){if(!e)return;let i={};try{i=await g.getAppSettings()||{}}catch(e){console.error(`Settings fetch error in dubai print:`,e)}let a=`Dubai_Audit_${e.weekEndDate||`Weekly`}`,o=gc(e,t,i);we(o,`
+        @page { size: A4 portrait; margin: 6mm 8mm; }
+        body { font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif; background: #fff; color: #0f172a; margin: 0; padding: 0; }
+        .num-font { font-family: 'Inter', monospace; }
         table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #334155; padding: 5px 8px; font-size: 11px; }
-    `,i)}function gc(e,t){let n=e=>C(T(I(e))),r=e.descriptions||{},i=T(I(e.cumulativeRemittance)),a=T(I(e.weeklyRemittanceTotal)),o=T(I(e.cumulativePurchaseTotal)),s=T(I(e.weeklyPurchaseTotal)),c=T(i-o),l=T(I(e.cumulativeExpenseTotal)),u=T(I(e.weeklyExpenseTotal)),d=T(c-l),f=T(I(e.marketAdvance)),p=T(I(e.cashInHand)),m=T(d-f-p),h=0,g=Array.isArray(e.personalHoldings)?e.personalHoldings:[];g.forEach(e=>{h=T(h+T(I(e.amount)))});let _=T(I(e.varianceAmount)),v=_>=0,y=``;g.forEach(e=>{let t=T(I(e.amount));y+=`
-            <tr style="background: #faf5ff;">
+        .print-row-no-break { page-break-inside: avoid; break-inside: avoid; }
+    `,a)}function gc(e,t,n){let r=e=>C(T(I(e))),i=e.descriptions||{},a=T(I(e.cumulativeRemittance)),o=T(I(e.weeklyRemittanceTotal)),s=T(I(e.cumulativePurchaseTotal)),c=T(I(e.weeklyPurchaseTotal)),l=T(a-s),u=T(I(e.cumulativeExpenseTotal)),d=T(I(e.weeklyExpenseTotal)),f=T(l-u),p=T(I(e.marketAdvance)),m=T(I(e.cashInHand)),h=T(f-p-m),g=0,_=Array.isArray(e.personalHoldings)?e.personalHoldings:[];_.forEach(e=>{g=T(g+T(I(e.amount)))});let v=T(I(e.varianceAmount)),y=v>=0,b=``;_.forEach(e=>{let t=T(I(e.amount));b+=`
+            <tr class="print-row-no-break" style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
                 <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 700; color: #581c87;">${e.desc||e.name||`ব্যক্তিগত হস্তান্তর`}</span>
-                        <span style="color: #64748b; font-size: 9.5px;">(-) AED: <b class="num-font" style="color: #6b21a8; font-size: 11px;">${n(t)}</b></span>
+                        <span style="font-weight: 700; color: #475569; font-size: 11px;">${O(e.desc||e.name||`ব্যক্তিগত হস্তান্তর`)}</span>
+                        <span style="color: #64748b; font-size: 9.5px;">(-) AED: <b class="num-font" style="color: #6b21a8; font-size: 11.5px;">${r(t)}</b></span>
                     </div>
                 </td>
                 <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
                     ব্যক্তিগত হস্তান্তর / মেস
                 </td>
             </tr>
-        `});let b=``;return Array.isArray(t)&&t.length>0&&(b=t.map(e=>`
-            <span style="display: inline-block; margin: 1px 4px; font-size: 9px; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; border: 1px solid #e2e8f0;">
-                #${e.memoNo}: <b class="num-font">${C(e.amount)}</b>
+        `});let x=``;Array.isArray(t)&&t.length>0&&(x=t.map(e=>`
+            <span style="display: inline-block; margin: 2px 3px; font-size: 9px; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                <span style="color: #0284c7; font-weight: 800;">#${O(e.memoNo)}:</span> <b class="num-font" style="color: #0f172a;">${C(e.amount)}</b>
             </span>
-        `).join(``)),`
-        <div style="width: 100%; box-sizing: border-box; font-size: 11px; line-height: 1.35;">
-            <!-- Header -->
-            <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 8px;">
-                <div style="font-size: 18px; font-weight: 900; letter-spacing: 0.5px; color: #0f172a;">মা মোটরস — দুবাই কনটেইনার ও বিদেশি ক্রয় খতিয়ান</div>
-                <div style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px;">
-                    MAA MOTORS • OVERSEAS PROCUREMENT & WEEKLY CASH AUDIT (AED)
+        `).join(``));let S=E(n,{title:`DUBAI CONTAINER AUDIT`,subtitle:`দুবাই কনটেইনার ও বিদেশি ক্রয় খতিয়ান (Weekly Cash & Procurement Audit)`}),w=new Date().toLocaleString(`en-US`,{hour:`numeric`,minute:`2-digit`,hour12:!0,day:`2-digit`,month:`short`,year:`numeric`});return`
+        <div style="width: 100%; box-sizing: border-box; font-size: 11px; line-height: 1.3; background: #ffffff;">
+            <!-- Official Corporate Gradient Header -->
+            <div style="margin-bottom: 10px;">
+                ${S}
+            </div>
+
+            <!-- Executive Metadata Bar (4-Column) -->
+            <div style="display: grid; grid-template-columns: 1.2fr 1.3fr 1.1fr 1.2fr; gap: 8px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; margin-bottom: 10px;">
+                <div>
+                    <div style="font-size: 8.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">কনটেইনার নং:</div>
+                    <div style="font-size: 11.5px; font-weight: 900; color: #0f172a; font-family: 'Inter', monospace; margin-top: 1px;">${O(e.containerNo||`CT-2026-DXB-01`)}</div>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div><b>কনটেইনার আইডি:</b> ${e.containerNo||`CT-2026-DXB-01`}</div>
-                    <div><b>অডিট তারিখ:</b> ${e.weekEndDate||``} (বৃহস্পতিবার)</div>
-                    <div><b>মুদ্রা:</b> UAE Dirham (AED د.إ)</div>
-                    <div><b>স্ট্যাটাস:</b> <span style="color: #047857; font-weight: 800;">${e.status||`CLOSED`}</span></div>
+                <div>
+                    <div style="font-size: 8.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">অডিট তারিখ:</div>
+                    <div style="font-size: 11px; font-weight: 800; color: #0284c7; margin-top: 1px;">${A(e.weekEndDate)} <span style="font-size: 9.5px; color: #64748b; font-weight: 600;">(বৃহস্পতিবার)</span></div>
+                </div>
+                <div>
+                    <div style="font-size: 8.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">মুদ্রা (Currency):</div>
+                    <div style="font-size: 11px; font-weight: 800; color: #0f172a; margin-top: 1px;">UAE Dirham (<span style="font-weight: 900; color: #047857;">AED د.إ</span>)</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 8.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">অডিট স্ট্যাটাস:</div>
+                    <div style="margin-top: 2px;">
+                        <span style="display: inline-block; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 9.5px; font-weight: 800; padding: 1px 7px; border-radius: 5px;">
+                            ${O(e.status||`AUDITED & CLOSED`)}
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <!-- Authentic 2-Column Waterfall Table -->
-            <table style="border: 1.5px solid #0f172a; margin-top: 4px;">
+            <table style="border: 1.5px solid #0f172a; width: 100%;">
                 <thead>
-                    <tr style="background: #0f172a; color: #fff;">
-                        <th style="width: 68%; text-align: left; padding: 6px 8px; font-size: 11px; border: 1px solid #0f172a;">
-                            তারিখ: ${e.weekEndDate||``} (বৃহস্পতিবার) — ক্রমপুঞ্জিত ও বিয়োগফল
+                    <tr style="background: #0f172a; color: #ffffff;">
+                        <th style="width: 70%; text-align: left; padding: 6px 10px; font-size: 10.5px; font-weight: 800; border: 1px solid #0f172a; letter-spacing: 0.3px;">
+                            তারিখ: ${A(e.weekEndDate)} (বৃহস্পতিবার) — ক্রমপুঞ্জিত ও বিয়োগফল (Cumulative Waterfall)
                         </th>
-                        <th style="width: 32%; text-align: center; padding: 6px 8px; font-size: 11px; border: 1px solid #0f172a; color: #34d399;">
-                            ক্রয়/খরচ দেরহাম দেওয়া রানিং সপ্তাহ
+                        <th style="width: 30%; text-align: right; padding: 6px 10px; font-size: 10.5px; font-weight: 800; border: 1px solid #0f172a; color: #38bdf8;">
+                            ক্রয়/খরচ দেরহাম রানিং সপ্তাহ (AED د.إ)
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     <!-- Row 1: টাকা পাঠানো -->
-                    <tr style="background: #f0fdf4;">
-                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                    <tr class="print-row-no-break" style="background: #ffffff;">
+                        <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 700; color: #166534;">${r.sent||`বৃহস্পতিবার পর্যন্ত টাকা পাঠানো`}</span>
-                                <span style="color: #15803d;">AED: <b class="num-font" style="font-size: 12px;">${n(i)}</b></span>
+                                <strong style="font-size: 11px; color: #0f172a;">${O(i.sent||`বৃহস্পতিবার পর্যন্ত টাকা পাঠানো`)}</strong>
+                                <span style="color: #047857;">AED: <b class="num-font" style="font-size: 12px;">${r(a)}</b></span>
                             </div>
                         </td>
-                        <td style="text-align: right; padding: 6px 8px; font-weight: 700; border: 1px solid #cbd5e1;" class="num-font">
-                            ${a>0?n(a):`-`}
+                        <td style="text-align: right; padding: 5px 8px; font-weight: 800; border: 1px solid #cbd5e1; color: #047857;" class="num-font">
+                            ${o>0?r(o):`—`}
                         </td>
                     </tr>
 
-                    <!-- Row 2: মাল ক্রয় -->
-                    <tr style="background: #fffbeb;">
-                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                    <!-- Row 2: সর্বমোট মাল ক্রয় -->
+                    <tr class="print-row-no-break" style="background: #ffffff;">
+                        <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <span style="font-weight: 700; color: #92400e;">${r.purchase||`সর্বমোট মাল ক্রয়`}</span>
-                                    ${r.memos?`<div style="font-size: 9.5px; color: #78350f; margin-top: 1px;">${r.memos}</div>`:``}
+                                    <strong style="font-size: 11px; color: #0f172a;">${O(i.purchase||`সর্বমোট মাল ক্রয়`)}</strong>
+                                    ${i.memos?`<div style="font-size: 9.5px; color: #64748b; margin-top: 1px;">${O(i.memos)}</div>`:``}
                                 </div>
-                                <span style="color: #b45309;">(-) AED: <b class="num-font" style="font-size: 12px;">${n(o)}</b></span>
+                                <span style="color: #b45309;">(-) AED: <b class="num-font" style="font-size: 12px;">${r(s)}</b></span>
                             </div>
                         </td>
-                        <td style="text-align: right; padding: 6px 8px; font-weight: 700; border: 1px solid #cbd5e1;" class="num-font">
-                            ${s>0?n(s):`-`}
+                        <td style="text-align: right; padding: 5px 8px; font-weight: 800; border: 1px solid #cbd5e1; color: #b45309;" class="num-font">
+                            ${c>0?r(c):`—`}
                         </td>
                     </tr>
 
-                    <!-- Subtotal 1 -->
-                    <tr style="background: #e0f2fe; font-weight: 800;">
-                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #94a3b8; color: #0369a1;">
-                            অবশিষ্ট (টাকা পাঠানো – মাল ক্রয়): AED = <span class="num-font" style="font-size: 12px;">${n(c)}</span>
-                        </td>
-                        <td style="background: #f1f5f9; border: 1px solid #cbd5e1;"></td>
-                    </tr>
-
-                    <!-- Row 3: খরচ -->
-                    <tr style="background: #fef2f2;">
-                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                    <!-- Subtotal 1 (টাকা পাঠানো – মাল ক্রয়) -->
+                    <tr class="print-row-no-break" style="background: #f0f9ff; font-weight: 800;">
+                        <td style="padding: 4px 8px; border: 1px solid #94a3b8; border-left: 3px solid #0284c7; color: #0369a1;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 700; color: #991b1b;">${r.expense||`সর্বমোট খরচ`}</span>
-                                <span style="color: #b91c1c;">(-) AED: <b class="num-font" style="font-size: 12px;">${n(l)}</b></span>
+                                <span>অবশিষ্ট ফান্ড (টাকা পাঠানো – মাল ক্রয়):</span>
+                                <span>AED = <b class="num-font" style="font-size: 12px;">${r(l)}</b></span>
                             </div>
                         </td>
-                        <td style="text-align: right; padding: 6px 8px; font-weight: 700; border: 1px solid #cbd5e1;" class="num-font">
-                            ${u>0?n(u):`-`}
+                        <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 9px;">—</td>
+                    </tr>
+
+                    <!-- Row 3: সর্বমোট খরচ -->
+                    <tr class="print-row-no-break" style="background: #ffffff;">
+                        <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 11px; color: #0f172a;">${O(i.expense||`সর্বমোট খরচ`)}</strong>
+                                <span style="color: #dc2626;">(-) AED: <b class="num-font" style="font-size: 12px;">${r(u)}</b></span>
+                            </div>
+                        </td>
+                        <td style="text-align: right; padding: 5px 8px; font-weight: 800; border: 1px solid #cbd5e1; color: #dc2626;" class="num-font">
+                            ${d>0?r(d):`—`}
                         </td>
                     </tr>
 
-                    <!-- Subtotal 2 -->
-                    <tr style="background: #e0f2fe; font-weight: 800;">
-                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #94a3b8; color: #0369a1;">
-                            নিট ক্যাশ স্থিতি (হাতে থাকার কথা): AED = <span class="num-font" style="font-size: 12px;">${n(d)}</span>
+                    <!-- Subtotal 2 (নিট ক্যাশ স্থিতি - হাতে থাকার কথা) -->
+                    <tr class="print-row-no-break" style="background: #ecfdf5; font-weight: 800;">
+                        <td style="padding: 4px 8px; border: 1px solid #94a3b8; border-left: 3px solid #10b981; color: #065f46;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>নিট ক্যাশ স্থিতি (হাতে থাকার কথা):</span>
+                                <span>AED = <b class="num-font" style="font-size: 12px;">${r(f)}</b></span>
+                            </div>
                         </td>
-                        <td style="background: #f1f5f9; border: 1px solid #cbd5e1;"></td>
+                        <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 9px;">—</td>
                     </tr>
 
                     <!-- Row 4: মার্কেট এডভান্স (সম্পূর্ণ আলাদা সারি) -->
-                    <tr style="background: #ecfeff;">
-                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                    <tr class="print-row-no-break" style="background: #ffffff;">
+                        <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 700; color: #155e75;">${r.ad||`মার্কেট এডভান্স (AD)`}</span>
-                                <span style="color: #0891b2;">(-) AED: <b class="num-font" style="font-size: 12px;">${n(f)}</b></span>
+                                <strong style="font-size: 11px; color: #0f172a;">${O(i.ad||`মার্কেট এডভান্স (AD)`)}</strong>
+                                <span style="color: #0284c7;">(-) AED: <b class="num-font" style="font-size: 12px;">${r(p)}</b></span>
                             </div>
                         </td>
                         <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
@@ -6245,11 +6266,11 @@ _Maa Motors ERP সিস্টেম থেকে স্বয়ংক্রি�
                     </tr>
 
                     <!-- Row 5: নগদ ক্যাশ আছে (সম্পূর্ণ আলাদা সারি) -->
-                    <tr style="background: #ecfdf5;">
-                        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+                    <tr class="print-row-no-break" style="background: #ffffff;">
+                        <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 700; color: #065f46;">${r.cash||`নগদ ক্যাশ আছে (Cash in Hand)`}</span>
-                                <span style="color: #059669;">(-) AED: <b class="num-font" style="font-size: 12px;">${n(p)}</b></span>
+                                <strong style="font-size: 11px; color: #0f172a;">${O(i.cash||`নগদ ক্যাশ আছে (Cash in Hand)`)}</strong>
+                                <span style="color: #059669;">(-) AED: <b class="num-font" style="font-size: 12px;">${r(m)}</b></span>
                             </div>
                         </td>
                         <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
@@ -6257,55 +6278,79 @@ _Maa Motors ERP সিস্টেম থেকে স্বয়ংক্রি�
                         </td>
                     </tr>
 
-                    <!-- Subtotal 3 -->
-                    <tr style="background: #f3e8ff; font-weight: 800;">
-                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #c084fc; color: #6b21a8;">
-                            অবশিষ্ট ব্যালেন্স (এডভান্স ও ক্যাশ বাদে): AED = <span class="num-font" style="font-size: 12px;">${n(m)}</span>
+                    <!-- Subtotal 3 (এডভান্স ও ক্যাশ বাদে অবশিষ্ট) -->
+                    <tr class="print-row-no-break" style="background: #faf5ff; font-weight: 800;">
+                        <td style="padding: 4px 8px; border: 1px solid #c084fc; border-left: 3px solid #8b5cf6; color: #6b21a8;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>অবশিষ্ট ব্যালেন্স (এডভান্স ও ক্যাশ বাদে):</span>
+                                <span>AED = <b class="num-font" style="font-size: 12px;">${r(h)}</b></span>
+                            </div>
                         </td>
-                        <td style="background: #f1f5f9; border: 1px solid #cbd5e1;"></td>
+                        <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 9px;">—</td>
                     </tr>
 
                     <!-- Dynamic Holdings Rows -->
-                    ${y}
+                    ${b}
 
                     <!-- Final Variance Row: ক্যাশ বাড়তি / ঘাটতি -->
-                    <tr style="background: ${v?`#dcfce7`:`#fee2e2`}; font-weight: 900;">
-                        <td style="padding: 8px; border: 2px solid ${v?`#16a34a`:`#dc2626`};">
+                    <tr class="print-row-no-break" style="background: ${y?`#f0fdf4`:`#fef2f2`}; font-weight: 900;">
+                        <td style="padding: 7px 8px; border: 2px solid ${y?`#16a34a`:`#dc2626`};">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 13px; color: ${v?`#15803d`:`#b91c1c`};">
-                                    ${r.status||(v?`(ক্যাশ বাড়তি)`:`(ক্যাশ ঘাটতি)`)}
+                                <span style="font-size: 12px; color: ${y?`#15803d`:`#b91c1c`};">
+                                    ${O(i.status||(y?`(ক্যাশ সমাপনী স্থিতি — অডিট সমন্বয় সফল)`:`(ক্যাশ ঘাটতি)`))}
                                 </span>
-                                <span style="font-size: 14px; color: ${v?`#15803d`:`#b91c1c`};">
-                                    AED = <span class="num-font" style="font-size: 15px;">${n(_)}</span>
+                                <span style="font-size: 13px; color: ${y?`#15803d`:`#b91c1c`};">
+                                    AED = <span class="num-font" style="font-size: 15px;">${r(v)}</span>
                                 </span>
                             </div>
                         </td>
-                        <td style="text-align: center; font-weight: 700; color: ${v?`#15803d`:`#b91c1c`}; border: 2px solid ${v?`#16a34a`:`#dc2626`};">
-                            ${v?`অডিট সমন্বয় সফল`:`ক্যাশ ঘাটতি`}
+                        <td style="text-align: center; font-weight: 800; font-size: 10.5px; color: ${y?`#15803d`:`#b91c1c`}; border: 2px solid ${y?`#16a34a`:`#dc2626`};">
+                            ${y?`অডিট সমন্বয় সফল (SURPLUS)`:`ক্যাশ ঘাটতি (DEFICIT)`}
                         </td>
                     </tr>
                 </tbody>
             </table>
 
-            <!-- Memos Section if available -->
-            ${b?`
-                <div style="margin-top: 8px; padding: 4px 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px;">
-                    <div style="font-size: 9.5px; font-weight: 800; color: #475569; margin-bottom: 2px;">সংযুক্ত মেমো তালিকা:</div>
-                    <div>${b}</div>
+            <!-- Attached Memos Section (if available) -->
+            ${x?`
+                <div style="margin-top: 8px; padding: 5px 8px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+                    <div style="font-size: 9.5px; font-weight: 800; color: #334155; margin-bottom: 3px; display: flex; justify-content: space-between;">
+                        <span>সংযুক্ত ক্রয় মেমো তালিকা (${t.length}টি মেমো):</span>
+                        <span style="color: #64748b;">মোট ক্রয়: <b class="num-font" style="color: #0f172a;">${r(s)} AED</b></span>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 3px;">
+                        ${x}
+                    </div>
                 </div>
             `:``}
 
             <!-- Signature Footers -->
-            <div style="margin-top: 25px; padding-top: 10px; display: flex; justify-content: space-between; text-align: center; font-size: 10px; color: #475569;">
-                <div style="width: 180px;">
-                    <div style="border-top: 1px dashed #64748b; margin-top: 25px; padding-top: 4px; font-weight: 700;">দুবাই প্রতিনিধি স্বাক্ষর</div>
+            <div class="print-row-no-break" style="margin-top: 22px; padding-top: 6px;">
+                <div style="display: flex; justify-content: space-between; padding: 0 16px; text-align: center;">
+                    <div style="width: 170px;">
+                        <div style="border-top: 1.5px dashed #64748b; padding-top: 4px; font-size: 10px; font-weight: 800; color: #1e293b;">
+                            দুবাই প্রতিনিধি স্বাক্ষর
+                        </div>
+                        <div style="font-size: 8px; color: #64748b; font-family: 'Inter', sans-serif;">Dubai Representative</div>
+                    </div>
+                    <div style="width: 170px;">
+                        <div style="border-top: 1.5px dashed #64748b; padding-top: 4px; font-size: 10px; font-weight: 800; color: #1e293b;">
+                            অডিটর যাচাই ও নিরীক্ষা
+                        </div>
+                        <div style="font-size: 8px; color: #64748b; font-family: 'Inter', sans-serif;">Audited & Verified</div>
+                    </div>
+                    <div style="width: 170px;">
+                        <div style="border-top: 1.5px dashed #64748b; padding-top: 4px; font-size: 10px; font-weight: 800; color: #1e293b;">
+                            স্বত্বাধিকারী চূড়ান্ত অনুমোদন
+                        </div>
+                        <div style="font-size: 8px; color: #64748b; font-family: 'Inter', sans-serif;">Proprietor Approval</div>
+                    </div>
                 </div>
-                <div style="width: 180px;">
-                    <div style="border-top: 1px dashed #64748b; margin-top: 25px; padding-top: 4px; font-weight: 700;">অডিটর যাচাই</div>
-                </div>
-                <div style="width: 180px;">
-                    <div style="border-top: 1px dashed #64748b; margin-top: 25px; padding-top: 4px; font-weight: 700;">স্বত্বাধিকারী অনুমোদন</div>
-                </div>
+            </div>
+
+            <!-- Print Footer Notice -->
+            <div style="margin-top: 12px; text-align: center; font-size: 8px; color: #94a3b8; font-family: 'Inter', 'Hind Siliguri', sans-serif; border-top: 1px dotted #e2e8f0; padding-top: 4px;">
+                সফটওয়্যার জেনারেটেড অফিসিয়াল অডিট ভাউচার • মা মোটরস ইআরপি সিস্টেম • প্রিন্ট সময়: ${w}
             </div>
         </div>
     `}var _c=null,vc={async saveAudit(e,t){try{let n=await mc.saveWeeklyAudit(e);return Array.isArray(t)&&t.length>0&&await mc.saveMemos(n,t),N(`দুবাই সাপ্তাহিক অডিট সফলভাবে সংরক্ষিত হয়েছে!`,`success`),n}catch(e){throw console.error(`Save audit error:`,e),N(`অডিট সংরক্ষণ করতে সমস্যা হয়েছে`,`error`),e}},async rollForward(){let e=await mc.getPreviousAudit();return e?(N(`গত অডিটের ব্যালেন্স রোল-ফরওয়ার্ড করা হয়েছে (${e.weekEndDate||``})`,`success`),e):(N(`কোনো পূর্ববর্তী সংরক্ষিত অডিট রেকর্ড পাওয়া যায়নি`,`error`),null)},async loadAudit(e){try{let t=await mc.getAuditById(e);return t?{audit:t,memos:await mc.getMemosByAuditId(e)}:null}catch(e){return console.error(`Error loading audit:`,e),null}},async printAudit(e){try{let t=await mc.getAuditById(e);if(!t)return;hc(t,await mc.getMemosByAuditId(e),[],[])}catch(e){console.error(`Error printing audit:`,e)}},async deleteAudit(e){if(!await z(`দুবাই অডিট রেকর্ড ডিলিট`))return!1;try{return await mc.deleteWeeklyAudit(e),N(`অডিট রেকর্ড মুছে ফেলা হয়েছে`,`success`),!0}catch(e){return console.error(`Delete audit error:`,e),N(`অডিট মুছতে সমস্যা হয়েছে`,`error`),!1}},listenAudits(e){_c&&_c(),_c=mc.listenWeeklyAudits(e)},unsubscribe(){_c&&=(_c(),null)}};function yc(){return`
