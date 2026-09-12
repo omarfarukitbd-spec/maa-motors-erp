@@ -122,7 +122,7 @@ export function getDubaiAuditMainTemplate() {
 
                     <!-- Row 2: মাল ক্রয় (Purchases) -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition-colors">
-                        <div class="col-span-8 p-2.5 border-r border-slate-800 flex flex-col gap-1">
+                        <div class="col-span-8 p-2.5 border-r border-slate-800 flex flex-col gap-2">
                             <div class="flex items-center justify-between gap-2">
                                 <input type="text" id="desc-purchase" value="সর্বমোট মাল ক্রয়" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none flex-grow">
                                 <div class="flex items-center gap-1 font-mono font-black text-amber-400 shrink-0">
@@ -130,9 +130,34 @@ export function getDubaiAuditMainTemplate() {
                                     <span id="val-cum-purchase" class="text-sm">0</span>
                                 </div>
                             </div>
-                            <div class="flex items-center justify-between text-[11px] text-slate-400">
-                                <input type="text" id="desc-memos" value="মেমো নং: (১০৩-১১২) = ১০টি" placeholder="মেমো নম্বর ও সংখ্যা" class="bg-transparent border-b border-dotted border-slate-700 text-[11px] text-slate-400 focus:text-sky-300 outline-none w-64">
-                                <span class="text-slate-500 text-[10px]"><i class="fa-solid fa-minus text-amber-400 mr-1"></i> বিয়োগ</span>
+
+                            <!-- Start Memo, End Memo & Auto Count System Bar -->
+                            <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[11px] text-slate-400 font-bold">শুরু মেমো:</span>
+                                        <input type="number" id="memo-range-start" placeholder="৮৮" oninput="window.handleMemoRangeChange()" class="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-amber-300 font-bold font-mono text-center focus:border-amber-400 outline-none">
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[11px] text-slate-400 font-bold">শেষ মেমো:</span>
+                                        <input type="number" id="memo-range-end" placeholder="৯৫" oninput="window.handleMemoRangeChange()" class="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-amber-300 font-bold font-mono text-center focus:border-amber-400 outline-none">
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[11px] text-slate-500">=</span>
+                                        <span id="memo-auto-count-badge" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-amber-400 border border-amber-500/30 whitespace-nowrap">
+                                            ০টি মেমো
+                                        </span>
+                                    </div>
+                                    <input type="text" id="desc-memos" value="মেমো নং: (৮৮-৯৫) = ৮টি" placeholder="মেমো বিবরণ" class="bg-transparent border-b border-dotted border-slate-700 text-[11px] text-slate-300 font-bold focus:text-sky-300 outline-none w-44">
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="window.openDubaiMemoDetailsModal()" class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer" title="প্রতিটি মেমোর টাকা আলাদা লিখতে ক্লিক করুন">
+                                        <i class="fa-solid fa-list-check text-[10px]"></i>
+                                        <span>মেমো এন্ট্রি</span>
+                                    </button>
+                                    <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-amber-400 mr-1"></i> বিয়োগ</span>
+                                </div>
                             </div>
                         </div>
                         <div class="col-span-4 p-2.5 flex items-center">

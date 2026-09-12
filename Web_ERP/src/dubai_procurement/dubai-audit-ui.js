@@ -7,6 +7,7 @@ import { DubaiActions } from './dubai-audit-actions.js';
 import { printDubaiAuditSheet } from './dubai-print.js';
 import { getDubaiAuditMainTemplate } from './dubai-audit-template.js';
 import { DubaiMemoModal } from './dubai-memo-modal.js';
+import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
     showToast 
@@ -30,11 +31,18 @@ export async function renderDubaiProcurement(container) {
         const memoDescInp = document.getElementById('desc-memos');
         if (memoDescInp && memoRangeText) memoDescInp.value = memoRangeText;
 
+        const mStart = document.getElementById('modal-memo-start')?.value;
+        const mEnd = document.getElementById('modal-memo-end')?.value;
+        if (mStart) document.getElementById('memo-range-start').value = mStart;
+        if (mEnd) document.getElementById('memo-range-end').value = mEnd;
+        window.handleMemoRangeChange();
+
         updateLiveWaterfall();
     });
 
     setupActionButtons();
     renderDynamicHoldings();
+    window.handleMemoRangeChange();
     updateLiveWaterfall();
     listenToHistory();
 }
@@ -136,6 +144,45 @@ export function updateLiveWaterfall() {
 
 window.handleDubaiWaterfallChange = function() {
     updateLiveWaterfall();
+};
+
+window.handleMemoRangeChange = function() {
+    const startInp = document.getElementById('memo-range-start');
+    const endInp = document.getElementById('memo-range-end');
+    const badgeEl = document.getElementById('memo-auto-count-badge');
+    const descEl = document.getElementById('desc-memos');
+
+    const startVal = parseInt(startInp?.value, 10);
+    const endVal = parseInt(endInp?.value, 10);
+
+    if (!isNaN(startVal) && !isNaN(endVal) && endVal >= startVal) {
+        const count = endVal - startVal + 1;
+        if (badgeEl) badgeEl.textContent = `${count}টি মেমো`;
+        if (descEl) descEl.value = `মেমো নং: (${startVal}-${endVal}) = ${count}টি`;
+
+        const modalStart = document.getElementById('modal-memo-start');
+        const modalEnd = document.getElementById('modal-memo-end');
+        if (modalStart) modalStart.value = startVal;
+        if (modalEnd) modalEnd.value = endVal;
+    } else if (!isNaN(startVal) && isNaN(endVal)) {
+        if (badgeEl) badgeEl.textContent = `১টি মেমো`;
+        if (descEl) descEl.value = `মেমো নং: (${startVal})`;
+    } else {
+        if (badgeEl) badgeEl.textContent = `০টি মেমো`;
+    }
+};
+
+window.openDubaiMemoDetailsModal = function() {
+    const startVal = parseInt(document.getElementById('memo-range-start')?.value, 10);
+    const endVal = parseInt(document.getElementById('memo-range-end')?.value, 10);
+    if (!isNaN(startVal) && !isNaN(endVal) && endVal >= startVal) {
+        const modalStart = document.getElementById('modal-memo-start');
+        const modalEnd = document.getElementById('modal-memo-end');
+        if (modalStart) modalStart.value = startVal;
+        if (modalEnd) modalEnd.value = endVal;
+        DubaiMemoModal.generateMemos();
+    }
+    DubaiMemoModal.toggle(true);
 };
 
 window.addDubaiHoldingPreset = function(presetName) {
@@ -249,6 +296,9 @@ async function onSaveAuditClick() {
             cash: document.getElementById('desc-cash')?.value || '',
             status: document.getElementById('desc-final-status')?.value || ''
         },
+        memoRangeStart: document.getElementById('memo-range-start')?.value || '',
+        memoRangeEnd: document.getElementById('memo-range-end')?.value || '',
+        memoCount: Math.max(0, (parseInt(document.getElementById('memo-range-end')?.value, 10) - parseInt(document.getElementById('memo-range-start')?.value, 10) + 1) || 0),
         prevRemittance: prevRem,
         weeklyRemittanceTotal: runningSent,
         cumulativeRemittance: cumSent,
@@ -317,6 +367,9 @@ function buildCurrentAuditObject() {
             cash: document.getElementById('desc-cash')?.value || 'নগদ ক্যাশ আছে (Cash in Hand)',
             status: document.getElementById('desc-final-status')?.value || '(ক্যাশ বাড়তি)'
         },
+        memoRangeStart: document.getElementById('memo-range-start')?.value || '',
+        memoRangeEnd: document.getElementById('memo-range-end')?.value || '',
+        memoCount: Math.max(0, (parseInt(document.getElementById('memo-range-end')?.value, 10) - parseInt(document.getElementById('memo-range-start')?.value, 10) + 1) || 0),
         cumulativeRemittance: cumSent,
         weeklyRemittanceTotal: runningSent,
         cumulativePurchaseTotal: cumPur,
@@ -342,6 +395,12 @@ function onNewAuditClick() {
     document.getElementById('input-running-expense').value = '';
     document.getElementById('val-market-ad').value = '';
     document.getElementById('val-cash-in-hand').value = '';
+    if (document.getElementById('memo-range-start')) document.getElementById('memo-range-start').value = '';
+    if (document.getElementById('memo-range-end')) document.getElementById('memo-range-end').value = '';
+    const badgeEl = document.getElementById('memo-auto-count-badge');
+    if (badgeEl) badgeEl.textContent = '০টি মেমো';
+    const descMemos = document.getElementById('desc-memos');
+    if (descMemos) descMemos.value = '';
     dynamicHoldings = [{ desc: 'আলতাফ / জাবেদ', amount: 0 }];
     DubaiMemoModal.setMemos([]);
     renderDynamicHoldings();
@@ -352,50 +411,8 @@ function onNewAuditClick() {
 function listenToHistory() {
     DubaiActions.listenAudits(audits => {
         auditHistory = audits;
-        renderHistoryRows();
+        renderDubaiHistoryTable('dubai-history-tbody', auditHistory);
     });
-}
-
-function renderHistoryRows() {
-    const tbody = document.getElementById('dubai-history-tbody');
-    if (!tbody) return;
-
-    if (auditHistory.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-500 italic">কোনো পূর্ববর্তী অডিট হিস্ট্রি পাওয়া যায়নি।</td></tr>`;
-        return;
-    }
-
-    let html = '';
-    auditHistory.forEach(a => {
-        const vAmt = safeRound(parseAmount(a.varianceAmount));
-        const vClass = vAmt >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
-        html += `
-            <tr class="border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors">
-                <td class="p-2.5 font-bold font-mono text-white">${a.weekEndDate || ''}</td>
-                <td class="p-2.5 text-slate-400">${a.containerNo || ''}</td>
-                <td class="p-2.5 text-right font-mono text-emerald-400">${formatAmountWithComma(a.cumulativeRemittance)}</td>
-                <td class="p-2.5 text-right font-mono text-amber-400">${formatAmountWithComma(a.cumulativePurchaseTotal)}</td>
-                <td class="p-2.5 text-right font-mono text-red-400">${formatAmountWithComma(a.cumulativeExpenseTotal)}</td>
-                <td class="p-2.5 text-right font-mono text-cyan-400">${formatAmountWithComma(a.marketAdvance)}</td>
-                <td class="p-2.5 text-right font-mono text-emerald-400">${formatAmountWithComma(a.cashInHand)}</td>
-                <td class="p-2.5 text-right font-mono ${vClass}">${formatAmountWithComma(vAmt)}</td>
-                <td class="p-2.5 text-center">
-                    <div class="flex items-center justify-center gap-1.5">
-                        <button type="button" onclick="window.loadDubaiAuditHistory('${a.id}')" class="p-1 rounded hover:bg-slate-700 text-sky-400 cursor-pointer" title="লোড করুন">
-                            <i class="fa-solid fa-folder-open text-xs"></i>
-                        </button>
-                        <button type="button" onclick="window.printDubaiAuditHistory('${a.id}')" class="p-1 rounded hover:bg-slate-700 text-slate-300 cursor-pointer" title="প্রিন্ট করুন">
-                            <i class="fa-solid fa-print text-xs"></i>
-                        </button>
-                        <button type="button" onclick="window.deleteDubaiAuditHistory('${a.id}')" class="p-1 rounded hover:bg-red-500/20 text-red-400 cursor-pointer" title="মুছে ফেলুন">
-                            <i class="fa-solid fa-trash-can text-xs"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    });
-    tbody.innerHTML = html;
 }
 
 window.loadDubaiAuditHistory = async function(id) {
@@ -417,6 +434,14 @@ window.loadDubaiAuditHistory = async function(id) {
         if (audit.descriptions.cash) document.getElementById('desc-cash').value = audit.descriptions.cash;
         if (audit.descriptions.status) document.getElementById('desc-final-status').value = audit.descriptions.status;
     }
+
+    if (document.getElementById('memo-range-start')) {
+        document.getElementById('memo-range-start').value = audit.memoRangeStart || '';
+    }
+    if (document.getElementById('memo-range-end')) {
+        document.getElementById('memo-range-end').value = audit.memoRangeEnd || '';
+    }
+    window.handleMemoRangeChange();
 
     document.getElementById('dubai-prev-rem-input').value = formatAmountWithComma(audit.prevRemittance || 0);
     document.getElementById('dubai-prev-pur-input').value = formatAmountWithComma(audit.prevPurchaseTotal || 0);
