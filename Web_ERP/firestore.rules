@@ -158,5 +158,24 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('addLedgerEntry', false) == true);
     }
+
+    // Dubai Procurement & Weekly Audits (Isolated Overseas Ledger)
+    match /dubai_weekly_audits/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+    }
+    match /dubai_memos/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+    }
+    match /dubai_remittances/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+    }
+    match /dubai_expenses/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+    }
   }
 }
+

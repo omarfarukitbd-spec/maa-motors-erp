@@ -14,6 +14,7 @@ import { renderZoneReports } from '../zone_reports/index.js';
 import { renderFinancialSummary } from '../financial_summary/index.js';
 import { renderTreasury, unsubscribeTreasury } from '../treasury/index.js';
 import { renderMemoSearch } from '../memo_search/index.js';
+import { renderDubaiProcurement, unsubscribeDubaiAudits } from '../dubai_procurement/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
 import { initDatePickers } from '../utils/date-logic/date-picker.js';
@@ -111,6 +112,7 @@ export function navigate(view, params = {}) {
     if (AppState.currentView === 'audit' && view !== 'audit') unsubscribeAuditLogs();
     if (AppState.currentView === 'recycle-bin' && view !== 'recycle-bin') unsubscribeRecycleBinData();
     if (AppState.currentView === 'treasury' && view !== 'treasury') unsubscribeTreasury();
+    if (AppState.currentView === 'dubai-procurement' && view !== 'dubai-procurement') unsubscribeDubaiAudits();
 
     AppState.currentView = view;
     const sidebar = document.getElementById('app-sidebar');
@@ -145,6 +147,7 @@ export function navigate(view, params = {}) {
         case 'memo_search': renderMemoSearch(container, params); break;
         case 'treasury': renderTreasury(container, params); break;
         case 'recycle-bin': renderRecycleBin(container); break;
+        case 'dubai-procurement': renderDubaiProcurement(container, params); break;
     }
 
     // Refresh date pickers after render
