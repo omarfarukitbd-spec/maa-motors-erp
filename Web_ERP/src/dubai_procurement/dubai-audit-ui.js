@@ -123,6 +123,23 @@ window.handleDubaiWaterfallChange = function() {
     updateLiveWaterfall();
 };
 
+window.handleCumChange = function(type) {
+    const map = {
+        sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
+        purchase: ['dubai-prev-pur-input', 'input-cum-purchase', 'input-running-purchase'],
+        expense: ['dubai-prev-exp-input', 'input-cum-expense', 'input-running-expense']
+    };
+    const [pId, cId, rId] = map[type] || [];
+    if (pId && cId && rId) {
+        const prev = getVal(pId);
+        const curr = getVal(cId);
+        const diff = Math.abs(safeRound(curr - prev));
+        const runInp = document.getElementById(rId);
+        if (runInp) runInp.value = diff > 0 ? formatAmountWithComma(diff) : '';
+    }
+    updateLiveWaterfall();
+};
+
 window.handleRunningChange = function(type) {
     const map = {
         sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
@@ -130,9 +147,11 @@ window.handleRunningChange = function(type) {
         expense: ['dubai-prev-exp-input', 'input-cum-expense', 'input-running-expense']
     };
     const [pId, cId, rId] = map[type] || [];
-    if (pId && getVal(pId) > 0) {
+    if (pId && cId && rId) {
+        const prev = getVal(pId);
+        const running = getVal(rId);
         const cumInp = document.getElementById(cId);
-        if (cumInp) cumInp.value = formatAmountWithComma(safeRound(getVal(pId) + getVal(rId)));
+        if (cumInp) cumInp.value = formatAmountWithComma(safeRound(prev + running));
     }
     updateLiveWaterfall();
 };

@@ -98,7 +98,7 @@ export function getDubaiAuditMainTemplate() {
                             <input type="text" id="desc-sent" value="বৃহস্পতিবার পর্যন্ত টাকা পাঠানো" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none flex-grow">
                             <div class="flex items-center gap-1 shrink-0">
                                 <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                                <input type="text" id="input-cum-sent" value="8,02,395" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
+                                <input type="text" id="input-cum-sent" value="8,02,395" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('sent')" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
                             </div>
                         </div>
                         <div class="col-span-4 p-2.5 flex items-center">
@@ -113,7 +113,7 @@ export function getDubaiAuditMainTemplate() {
                                 <input type="text" id="desc-purchase" value="সর্বমোট মাল ক্রয়" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none flex-grow">
                                 <div class="flex items-center gap-1 shrink-0">
                                     <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                                    <input type="text" id="input-cum-purchase" value="7,04,600" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-amber-400 font-mono text-right font-bold focus:border-amber-500 outline-none">
+                                    <input type="text" id="input-cum-purchase" value="7,04,600" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('purchase')" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-amber-400 font-mono text-right font-bold focus:border-amber-500 outline-none">
                                 </div>
                             </div>
 
@@ -170,7 +170,7 @@ export function getDubaiAuditMainTemplate() {
                             </div>
                             <div class="flex items-center gap-1 shrink-0">
                                 <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                                <input type="text" id="input-cum-expense" value="14,892" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-red-400 font-mono text-right font-bold focus:border-red-500 outline-none">
+                                <input type="text" id="input-cum-expense" value="14,892" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('expense')" class="w-32 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-red-400 font-mono text-right font-bold focus:border-red-500 outline-none">
                             </div>
                         </div>
                         <div class="col-span-4 p-2.5 flex items-center">
