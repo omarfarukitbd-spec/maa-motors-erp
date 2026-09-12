@@ -28,11 +28,25 @@ export async function printDubaiAuditSheet(auditData, memos = [], remittances = 
     const htmlBody = generateAuditPrintHtml(auditData, memos, settings);
 
     const extraCss = `
-        @page { size: A4 portrait; margin: 6mm 8mm; }
-        body { font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif; background: #fff; color: #0f172a; margin: 0; padding: 0; }
+        @page { size: A4 portrait; margin: 0 !important; }
+        html, body {
+            font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important;
+            background: #fff !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
         .num-font { font-family: 'Inter', monospace; }
         table { border-collapse: collapse; width: 100%; }
         .print-row-no-break { page-break-inside: avoid; break-inside: avoid; }
+        .dubai-print-sheet {
+            width: 100% !important;
+            max-width: 210mm !important;
+            margin: 0 auto !important;
+            box-sizing: border-box !important;
+            padding: 10mm 15mm 8mm 15mm !important;
+            background: #ffffff !important;
+        }
     `;
 
     printViaIframe(htmlBody, extraCss, title);
@@ -112,7 +126,7 @@ function generateAuditPrintHtml(audit, memos, settings) {
     });
 
     return `
-        <div style="width: 100%; box-sizing: border-box; font-size: 11px; line-height: 1.3; background: #ffffff;">
+        <div class="dubai-print-sheet" style="width: 100%; max-width: 210mm; margin: 0 auto; box-sizing: border-box; padding: 10mm 15mm 8mm 15mm; font-size: 11px; line-height: 1.3; background: #ffffff;">
             <!-- Official Corporate Gradient Header -->
             <div style="margin-bottom: 10px;">
                 ${headerHtml}
