@@ -5,7 +5,7 @@
 
 import { DubaiActions } from './dubai-audit-actions.js';
 import { printDubaiAuditSheet } from './dubai-print.js';
-import { getDubaiAuditMainTemplate } from './dubai-audit-template.js';
+import { getDubaiAuditMainTemplate, getDynamicHoldingRowHtml } from './dubai-audit-template.js';
 import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { 
@@ -53,10 +53,10 @@ export async function renderDubaiProcurement(container) {
 
 function setupActionButtons() {
     const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-    ['btn-dubai-save', 'btn-dubai-save-bottom'].forEach(id => bindClick(id, onSaveAuditClick));
-    ['btn-dubai-print', 'btn-dubai-print-bottom'].forEach(id => bindClick(id, onPrintAuditClick));
-    ['btn-dubai-new', 'btn-dubai-new-bottom'].forEach(id => bindClick(id, onNewAuditClick));
-    ['btn-dubai-roll-forward', 'btn-dubai-roll-forward-bottom'].forEach(id => bindClick(id, onRollForwardClick));
+    [['save', onSaveAuditClick], ['print', onPrintAuditClick], ['new', onNewAuditClick], ['roll-forward', onRollForwardClick]].forEach(([k, fn]) => {
+        bindClick(`btn-dubai-${k}`, fn);
+        bindClick(`btn-dubai-${k}-bottom`, fn);
+    });
 
     bindClick('btn-add-waterfall-holding', () => {
         dynamicHoldings.push({ desc: 'নতুন বিবরণ', amount: 0 });
@@ -108,10 +108,7 @@ export function updateLiveWaterfall() {
     const valFinalEl = document.getElementById('val-final-variance');
 
     if (!hasNewEntries) {
-        setTxt('subtotal-1', 0);
-        setTxt('subtotal-2', 0);
-        setTxt('subtotal-3', 0);
-        setTxt('val-final-variance', 0);
+        ['subtotal-1', 'subtotal-2', 'subtotal-3', 'val-final-variance'].forEach(id => setTxt(id, 0));
         if (badgeEl) {
             badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700';
             badgeEl.textContent = 'হিসাবের অপেক্ষায়';
@@ -124,21 +121,13 @@ export function updateLiveWaterfall() {
         setTxt('subtotal-3', sub3);
         setTxt('val-final-variance', finalVariance);
 
-        if (finalVariance >= 0) {
-            if (badgeEl) {
-                badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
-                badgeEl.textContent = 'ক্যাশ বাড়তি';
-            }
-            if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ বাড়তি)';
-            if (valFinalEl) valFinalEl.className = 'text-emerald-400 font-bold';
-        } else {
-            if (badgeEl) {
-                badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-red-500/20 text-red-400 border border-red-500/40';
-                badgeEl.textContent = 'ক্যাশ ঘাটতি';
-            }
-            if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ ঘাটতি)';
-            if (valFinalEl) valFinalEl.className = 'text-red-400 font-bold';
+        const isSurplus = finalVariance >= 0;
+        if (badgeEl) {
+            badgeEl.className = `px-2.5 py-0.5 rounded-full text-xs font-black ${isSurplus ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-red-500/20 text-red-400 border border-red-500/40'}`;
+            badgeEl.textContent = isSurplus ? 'ক্যাশ বাড়তি' : 'ক্যাশ ঘাটতি';
         }
+        if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = isSurplus ? '(ক্যাশ বাড়তি)' : '(ক্যাশ ঘাটতি)';
+        if (valFinalEl) valFinalEl.className = `${isSurplus ? 'text-emerald-400' : 'text-red-400'} font-bold`;
     }
 
     const dateVal = getTxt('dubai-week-date');
@@ -184,16 +173,11 @@ window.toggleUnlockPrevBaseline = function(type) {
     const el = document.getElementById(map[type]);
     if (el) {
         el.readOnly = !el.readOnly;
-        if (!el.readOnly) {
-            el.classList.remove('cursor-default');
-            el.classList.add('bg-slate-900', 'border-sky-500');
-            el.focus();
-            showToast('পূর্বের ব্যালেন্স সম্পাদনের জন্য প্রস্তুত', 'info');
-        } else {
-            el.classList.add('cursor-default');
-            el.classList.remove('bg-slate-900', 'border-sky-500');
-            showToast('পূর্বের ব্যালেন্স লক করা হয়েছে', 'info');
-        }
+        el.classList.toggle('cursor-default', el.readOnly);
+        el.classList.toggle('bg-slate-900', !el.readOnly);
+        el.classList.toggle('border-sky-500', !el.readOnly);
+        if (!el.readOnly) el.focus();
+        showToast(el.readOnly ? 'পূর্বের ব্যালেন্স লক করা হয়েছে' : 'পূর্বের ব্যালেন্স সম্পাদনের জন্য প্রস্তুত', 'info');
     }
 };
 
@@ -257,35 +241,15 @@ window.addDubaiHoldingPreset = function(presetName) {
     updateLiveWaterfall();
 };
 
+function clearNewWeekFields() {
+    ['input-cum-sent', 'input-cum-purchase', 'input-cum-expense',
+     'input-running-sent', 'input-running-purchase', 'input-running-expense',
+     'val-market-ad', 'val-cash-in-hand'].forEach(id => setInp(id, ''));
+}
+
 function renderDynamicHoldings() {
     const cont = document.getElementById('dubai-dynamic-holdings-container');
-    if (!cont) return;
-
-    let html = '';
-    dynamicHoldings.forEach((h, idx) => {
-        const amt = safeRound(parseAmount(h.amount));
-        html += `
-            <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center">
-                <div class="col-span-6 p-2.5 border-r border-slate-800 flex items-center justify-between gap-2">
-                    <input type="text" value="${h.desc || ''}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-purple-300 text-xs font-bold focus:border-purple-400 outline-none flex-grow">
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-purple-400 mr-0.5"></i> বিয়োগ</span>
-                        <button type="button" onclick="window.removeDubaiHoldingRow(${idx})" class="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer" title="মুছে ফেলুন">
-                            <i class="fa-solid fa-xmark text-[10px]"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
-                    <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                    <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${idx}, this.value)" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-purple-300 font-mono text-right font-bold focus:border-purple-500 outline-none">
-                </div>
-                <div class="col-span-3 p-2.5 text-slate-400 text-xs text-right pr-3">
-                    ব্যক্তিগত হস্তান্তর / মেস
-                </div>
-            </div>
-        `;
-    });
-    cont.innerHTML = html;
+    if (cont) cont.innerHTML = dynamicHoldings.map((h, idx) => getDynamicHoldingRowHtml(h, idx)).join('');
 }
 
 window.handleDubaiHoldingDescChange = function(idx, val) {
@@ -318,19 +282,14 @@ async function onRollForwardClick() {
     const prevExp = latest.cumulativeExpenseTotal || 0;
 
     // Set locked previous baseline on the left
-    setInp('dubai-prev-rem-input', formatAmountWithComma(prevRem));
-    setInp('dubai-prev-pur-input', formatAmountWithComma(prevPur));
-    setInp('dubai-prev-exp-input', formatAmountWithComma(prevExp));
-
-    ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => {
+    [['dubai-prev-rem-input', prevRem], ['dubai-prev-pur-input', prevPur], ['dubai-prev-exp-input', prevExp]].forEach(([id, v]) => {
+        setInp(id, formatAmountWithComma(v));
         const el = document.getElementById(id);
         if (el) el.readOnly = true;
     });
 
     // Keep ALL new week entry fields completely EMPTY!
-    ['input-cum-sent', 'input-cum-purchase', 'input-cum-expense',
-     'input-running-sent', 'input-running-purchase', 'input-running-expense',
-     'val-market-ad', 'val-cash-in-hand'].forEach(id => setInp(id, ''));
+    clearNewWeekFields();
 
     // Auto-advance date by 7 days to next Thursday
     if (latest.weekEndDate) {
@@ -397,18 +356,16 @@ function buildCurrentAuditObject() {
     let runningPur = getVal('input-running-purchase');
     let runningExp = getVal('input-running-expense');
 
-    if (cumSent === 0 && runningSent > 0) cumSent = safeRound(prevRem + runningSent);
-    else if (cumSent === 0 && runningSent === 0) cumSent = prevRem;
-
-    if (cumPur === 0 && runningPur > 0) cumPur = safeRound(prevPur + runningPur);
-    else if (cumPur === 0 && runningPur === 0) cumPur = prevPur;
-
-    if (cumExp === 0 && runningExp > 0) cumExp = safeRound(prevExp + runningExp);
-    else if (cumExp === 0 && runningExp === 0) cumExp = prevExp;
-
-    if (runningSent === 0 && cumSent > prevRem) runningSent = safeRound(cumSent - prevRem);
-    if (runningPur === 0 && cumPur > prevPur) runningPur = safeRound(cumPur - prevPur);
-    if (runningExp === 0 && cumExp > prevExp) runningExp = safeRound(cumExp - prevExp);
+    const syncVal = (cum, run, prev) => {
+        let c = cum, r = run;
+        if (c === 0 && r > 0) c = safeRound(prev + r);
+        else if (c === 0 && r === 0) c = prev;
+        if (r === 0 && c > prev) r = safeRound(c - prev);
+        return [c, r];
+    };
+    [cumSent, runningSent] = syncVal(cumSent, runningSent, prevRem);
+    [cumPur, runningPur] = syncVal(cumPur, runningPur, prevPur);
+    [cumExp, runningExp] = syncVal(cumExp, runningExp, prevExp);
 
     const marketAd = getVal('val-market-ad');
     const cashInHand = getVal('val-cash-in-hand');
@@ -441,34 +398,21 @@ function buildCurrentAuditObject() {
             cash: getTxt('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)'),
             status: getTxt('desc-final-status', '(ক্যাশ বাড়তি)')
         },
-        memoRangeStart: mStart,
-        memoRangeEnd: mEnd,
-        memoCount: memoCount,
-        prevRemittance: prevRem,
-        weeklyRemittanceTotal: runningSent,
-        cumulativeRemittance: cumSent,
-        prevPurchaseTotal: prevPur,
-        weeklyPurchaseTotal: runningPur,
-        cumulativePurchaseTotal: cumPur,
-        prevExpenseTotal: prevExp,
-        weeklyExpenseTotal: runningExp,
-        cumulativeExpenseTotal: cumExp,
-        marketAdvance: marketAd,
-        cashInHand: cashInHand,
-        personalHoldings: [...dynamicHoldings],
-        totalPhysicalAssets: totalPhysical,
-        calculatedCashBalance: theoreticalCash,
-        varianceAmount: finalVariance,
-        status: 'CLOSED'
+        memoRangeStart: mStart, memoRangeEnd: mEnd, memoCount,
+        prevRemittance: prevRem, weeklyRemittanceTotal: runningSent, cumulativeRemittance: cumSent,
+        prevPurchaseTotal: prevPur, weeklyPurchaseTotal: runningPur, cumulativePurchaseTotal: cumPur,
+        prevExpenseTotal: prevExp, weeklyExpenseTotal: runningExp, cumulativeExpenseTotal: cumExp,
+        marketAdvance: marketAd, cashInHand: cashInHand, personalHoldings: [...dynamicHoldings],
+        totalPhysicalAssets: totalPhysical, calculatedCashBalance: theoreticalCash,
+        varianceAmount: finalVariance, status: 'CLOSED'
     };
 }
 
 function onNewAuditClick() {
     currentAuditId = null;
     setInp('dubai-week-date', getTodayLocalDateString());
-    ['dubai-audit-note', 'input-cum-sent', 'input-cum-purchase', 'input-cum-expense',
-     'input-running-sent', 'input-running-purchase', 'input-running-expense',
-     'val-market-ad', 'val-cash-in-hand', 'memo-range-start', 'memo-range-end', 'desc-memos'].forEach(id => setInp(id, ''));
+    ['dubai-audit-note', 'memo-range-start', 'memo-range-end', 'desc-memos'].forEach(id => setInp(id, ''));
+    clearNewWeekFields();
     ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => {
         setInp(id, '0');
         const el = document.getElementById(id);
@@ -510,20 +454,19 @@ window.loadDubaiAuditHistory = async function(id) {
     setInp('memo-range-end', audit.memoRangeEnd || '');
     window.handleMemoRangeChange();
 
-    setInp('dubai-prev-rem-input', formatAmountWithComma(audit.prevRemittance || 0));
-    setInp('dubai-prev-pur-input', formatAmountWithComma(audit.prevPurchaseTotal || 0));
-    setInp('dubai-prev-exp-input', formatAmountWithComma(audit.prevExpenseTotal || 0));
-
-    setInp('input-cum-sent', formatAmountWithComma(audit.cumulativeRemittance || 0));
-    setInp('input-cum-purchase', formatAmountWithComma(audit.cumulativePurchaseTotal || 0));
-    setInp('input-cum-expense', formatAmountWithComma(audit.cumulativeExpenseTotal || 0));
-
-    setInp('input-running-sent', formatAmountWithComma(audit.weeklyRemittanceTotal || 0));
-    setInp('input-running-purchase', formatAmountWithComma(audit.weeklyPurchaseTotal || 0));
-    setInp('input-running-expense', formatAmountWithComma(audit.weeklyExpenseTotal || 0));
-
-    setInp('val-market-ad', formatAmountWithComma(audit.marketAdvance || 0));
-    setInp('val-cash-in-hand', formatAmountWithComma(audit.cashInHand || 0));
+    [
+        ['dubai-prev-rem-input', audit.prevRemittance],
+        ['dubai-prev-pur-input', audit.prevPurchaseTotal],
+        ['dubai-prev-exp-input', audit.prevExpenseTotal],
+        ['input-cum-sent', audit.cumulativeRemittance],
+        ['input-cum-purchase', audit.cumulativePurchaseTotal],
+        ['input-cum-expense', audit.cumulativeExpenseTotal],
+        ['input-running-sent', audit.weeklyRemittanceTotal],
+        ['input-running-purchase', audit.weeklyPurchaseTotal],
+        ['input-running-expense', audit.weeklyExpenseTotal],
+        ['val-market-ad', audit.marketAdvance],
+        ['val-cash-in-hand', audit.cashInHand]
+    ].forEach(([id, val]) => setInp(id, formatAmountWithComma(val || 0)));
 
     dynamicHoldings = Array.isArray(audit.personalHoldings) && audit.personalHoldings.length > 0 
         ? [...audit.personalHoldings] 
