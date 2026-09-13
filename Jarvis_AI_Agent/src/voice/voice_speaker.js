@@ -222,50 +222,43 @@ export class VoiceSpeaker {
         const endpoints = isLocal
             ? [
                 `/api/tts?q=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`,
-                `https://edge-tts.vercel.app/api/tts?text=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`
+                `https://translate.google.com/translate_tts?ie=UTF-8&tl=bn&client=tw-ob&q=${encodeURIComponent(chunk)}`
             ]
             : [
-                `https://edge-tts.vercel.app/api/tts?text=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`,
+                `https://translate.google.com/translate_tts?ie=UTF-8&tl=bn&client=tw-ob&q=${encodeURIComponent(chunk)}`,
                 `/api/tts?q=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`
             ];
 
         for (const url of endpoints) {
             try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const blob = await res.blob();
-                if (!blob || blob.size === 0) throw new Error('Empty audio');
-
-                const audioUrl = URL.createObjectURL(blob);
+                const audio = new Audio();
                 await new Promise((resolve, reject) => {
                     const watchdog = setTimeout(() => {
-                        URL.revokeObjectURL(audioUrl);
+                        try { audio.pause(); } catch (e) {}
                         resolve();
                     }, 14000);
 
-                    this.audio.src = audioUrl;
-                    this.audio.onended = () => {
+                    audio.onended = () => {
                         clearTimeout(watchdog);
-                        URL.revokeObjectURL(audioUrl);
                         resolve();
                     };
-                    this.audio.onerror = (e) => {
+                    audio.onerror = (e) => {
                         clearTimeout(watchdog);
-                        URL.revokeObjectURL(audioUrl);
                         reject(e);
                     };
-                    const playPromise = this.audio.play();
+
+                    audio.src = url;
+                    const playPromise = audio.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(err => {
                             clearTimeout(watchdog);
-                            URL.revokeObjectURL(audioUrl);
                             reject(err);
                         });
                     }
                 });
                 return; // Successfully played
             } catch (err) {
-                console.warn(`[VoiceSpeaker] Neural audio endpoint failed (${url}):`, err);
+                console.warn(`[VoiceSpeaker] Audio endpoint failed (${url}):`, err);
             }
         }
     }
