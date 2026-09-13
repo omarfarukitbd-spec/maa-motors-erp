@@ -5,7 +5,7 @@
   "description": "Ultra-Advanced Autonomous Voice Assistant with Long-Term Memory & Skill Registry for Maa Motors ERP",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 5180",
+    "dev": "vite --host 0.0.0.0 --port 5180",
     "build": "vite build",
     "preview": "vite preview"
   },
