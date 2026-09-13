@@ -293,10 +293,21 @@ if (voiceSelector) {
 
 // 5. Firebase Google Authentication Integration
 import { auth, googleProvider } from './config.js';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'firebase/auth';
 
 const authBtn = document.getElementById('auth-btn');
 const authBtnText = document.getElementById('auth-btn-text');
+
+// Check redirect login result on page load
+if (auth) {
+    getRedirectResult(auth).then((result) => {
+        if (result && result.user) {
+            console.log('✅ [Jarvis Auth] Google Redirect sign-in success:', result.user.email);
+        }
+    }).catch((err) => {
+        console.warn('Redirect auth result error:', err);
+    });
+}
 
 window.triggerGoogleAuth = async () => {
     if (!auth) return;
@@ -309,10 +320,27 @@ window.triggerGoogleAuth = async () => {
         try {
             await signInWithPopup(auth, googleProvider);
         } catch (err) {
-            console.warn('Google sign-in popup error:', err);
-            if (err.code !== 'auth/popup-closed-by-user') {
-                window.alert('গুগল লগইন করতে সমস্যা হয়েছে: ' + (err.message || 'ত্রুটি'));
+            console.warn('Google popup sign-in error:', err);
+            if (err.code === 'auth/popup-closed-by-user') {
+                return;
             }
+            if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+                try {
+                    // Fallback to full-page Google redirect for mobile browsers or popup-blocked desktops
+                    await signInWithRedirect(auth, googleProvider);
+                    return;
+                } catch (redirectErr) {
+                    console.error('Redirect sign-in error:', redirectErr);
+                    window.alert('গুগল লগইন করতে সমস্যা হয়েছে: ' + (redirectErr.message || 'ত্রুটি'));
+                    return;
+                }
+            }
+            if (err.code === 'auth/unauthorized-domain') {
+                const host = window.location.hostname;
+                window.alert(`লগইন ডোমেইন ত্রুটি:\nবর্তমান ডোমেন বা আইপি "${host}" ফায়ারবেসে অথোরাইজড তালিকায় নেই।\n\nসরাসরি লাইভ লিংক থেকে ওপেন করুন:\nhttps://maa-motors-jarvis.web.app\nঅথবা লোকালহোস্টে: http://localhost:5180`);
+                return;
+            }
+            window.alert('গুগল লগইন ত্রুটি: ' + (err.message || 'ত্রুটি'));
         }
     }
 };
