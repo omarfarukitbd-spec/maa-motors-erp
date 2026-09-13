@@ -20,7 +20,7 @@ export class LLMAgent {
         }
 
         this.openaiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_model')) || 'gpt-4o-mini';
-        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-1.5-flash';
+        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-flash-latest';
     }
 
     getApiKey() {
@@ -348,7 +348,7 @@ ${memoryContext}`;
     }
 
     /**
-     * Google Gemini 1.5/2.0 Flash with Native Tool Calling
+     * Google Gemini Flash with Native Tool Calling and Multi-Model Fallback
      */
     async chatGemini(history, userMessage, key) {
         const cleanKey = String(key || '').trim();
@@ -356,7 +356,8 @@ ${memoryContext}`;
             throw new Error('জেমিনি এআই কী পাওয়া যায়নি');
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${cleanKey}`;
+        const modelsToTry = [this.geminiModel, 'gemini-flash-latest', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+        const candidateModels = [...new Set(modelsToTry.filter(Boolean))];
 
         const systemInstruction = {
             parts: [{ text: this.getSystemPrompt() }]
@@ -416,29 +417,57 @@ ${memoryContext}`;
             })
         }];
 
-        let response;
-        try {
-            response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: systemInstruction,
-                    contents: cleanTurns,
-                    tools: geminiTools
-                })
-            });
-        } catch (fetchErr) {
-            throw new Error(`নেটওয়ার্ক ত্রুটি: ${fetchErr.message}`);
+        let response = null;
+        let activeModel = this.geminiModel;
+        let lastErrData = null;
+
+        for (const model of candidateModels) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`;
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: systemInstruction,
+                        contents: cleanTurns,
+                        tools: geminiTools
+                    })
+                });
+
+                if (res.ok) {
+                    response = res;
+                    activeModel = model;
+                    this.geminiModel = model;
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('jarvis_gemini_model', model);
+                    }
+                    break;
+                }
+
+                lastErrData = await res.json().catch(() => ({}));
+                console.warn(`[LLMAgent] Gemini model ${model} returned error:`, lastErrData);
+
+                // If not found or deprecated, try next model in candidateModels
+                if (res.status === 404 || res.status === 503) {
+                    continue;
+                }
+
+                // If tools payload was rejected (e.g. 400), break and try conversational fallback below
+                response = res;
+                activeModel = model;
+                break;
+            } catch (fetchErr) {
+                console.error(`[LLMAgent] Fetch error with model ${model}:`, fetchErr);
+            }
         }
 
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            console.warn('[LLMAgent] Gemini Tools attempt rejected:', errData);
+        const activeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${cleanKey}`;
 
+        if (!response || !response.ok) {
             // Fallback attempt: Try pure conversational without tools
             let simpleResp;
             try {
-                simpleResp = await fetch(url, {
+                simpleResp = await fetch(activeUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -447,17 +476,20 @@ ${memoryContext}`;
                     })
                 });
             } catch (simpleFetchErr) {
+                console.error('[LLMAgent] Simple conversational fallback error:', simpleFetchErr);
                 throw new Error(`নেটওয়ার্ক ত্রুটি: ${simpleFetchErr.message}`);
             }
 
             if (!simpleResp.ok) {
                 const fatalErr = await simpleResp.json().catch(() => ({}));
-                const errMsg = fatalErr.error?.message || errData.error?.message || `HTTP ${response.status}`;
+                const errMsg = fatalErr.error?.message || lastErrData?.error?.message || 'গুগল সার্ভার থেকে কোনো উত্তর পাওয়া যায়নি।';
                 throw new Error(errMsg);
             }
 
             const simpleResult = await simpleResp.json();
-            const spoken = simpleResult.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, আমি আপনার কথা শুনেছি।';
+            const parts = simpleResult.candidates?.[0]?.content?.parts || [];
+            const textPart = parts.find(p => p.text);
+            const spoken = textPart?.text || 'জি ভাইয়া, আমি আপনার কথা শুনেছি।';
             return { spoken, data: null };
         }
 
@@ -481,23 +513,32 @@ ${memoryContext}`;
             });
 
             // Second round with function result
-            const secondResp = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: systemInstruction,
-                    contents: cleanTurns
-                })
-            });
+            let secondResp;
+            try {
+                secondResp = await fetch(activeUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: systemInstruction,
+                        contents: cleanTurns
+                    })
+                });
+            } catch (secErr) {
+                console.error('[LLMAgent] Second round error:', secErr);
+            }
 
-            if (secondResp.ok) {
+            if (secondResp && secondResp.ok) {
                 const secondResult = await secondResp.json();
-                const spoken = secondResult.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, হিসাবটি যাচাই করেছি।';
+                const secParts = secondResult.candidates?.[0]?.content?.parts || [];
+                const textPart = secParts.find(p => p.text);
+                const spoken = textPart?.text || 'জি ভাইয়া, হিসাবটি যাচাই করেছি।';
                 return { spoken, data: toolResult };
             }
         }
 
-        const spoken = candidate?.parts?.[0]?.text || 'জি ভাইয়া, আমি আপনার নির্দেশ অনুযায়ী হিসাব দেখতে প্রস্তুত আছি।';
+        const parts = candidate?.parts || [];
+        const textPart = parts.find(p => p.text);
+        const spoken = textPart?.text || 'জি ভাইয়া, আমি আপনার নির্দেশ অনুযায়ী হিসাব দেখতে প্রস্তুত আছি।';
         return { spoken, data: null };
     }
 

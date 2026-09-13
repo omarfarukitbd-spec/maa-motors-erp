@@ -178,31 +178,44 @@ export class AISettingsModal {
 
     async validateGeminiKey(key) {
         const cleanKey = (key || '').trim();
-        if (!cleanKey.startsWith('AIza')) {
+        if (!cleanKey || cleanKey.length < 15) {
             return {
                 valid: false,
-                message: 'আপনি যে কোডটি দিয়েছেন তা আসল API Key নয় (এটি ব্রাউজার টোকেন)। গুগল জেমিনির এপিআই কী সর্বদা "AIzaSy..." দিয়ে শুরু হয়।'
+                message: 'দয়া করে একটি সঠিক জেমিনি এপিআই কী প্রদান করুন।'
             };
         }
 
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(cleanKey)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: 'test' }] }]
-                })
-            });
-            if (res.ok) return { valid: true };
-            const data = await res.json().catch(() => ({}));
-            let errMsg = data.error?.message || `HTTP ${res.status}`;
-            if (errMsg.includes('not found') || errMsg.includes('401') || errMsg.includes('INVALID_ARGUMENT') || errMsg.includes('API key not valid')) {
-                errMsg = 'গুগল সার্ভারে এই কী-টি সঠিক নয়। দয়া করে aistudio.google.com থেকে "Create API key" চেপে তৈরি করা কী কপি করুন।';
+        const modelsToTry = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+        let lastError = '';
+
+        for (const model of modelsToTry) {
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: 'user', parts: [{ text: 'test' }] }]
+                    })
+                });
+                if (res.ok) {
+                    localStorage.setItem('jarvis_gemini_model', model);
+                    if (typeof llmAgent !== 'undefined' && llmAgent) {
+                        llmAgent.geminiModel = model;
+                    }
+                    return { valid: true };
+                }
+                const data = await res.json().catch(() => ({}));
+                lastError = data.error?.message || `HTTP ${res.status}`;
+            } catch (err) {
+                console.error('[AISettingsModal] Gemini validation model error:', err);
+                lastError = err.message;
             }
-            return { valid: false, message: errMsg };
-        } catch (err) {
-            return { valid: false, message: err.message };
         }
+
+        if (lastError.includes('401') || lastError.includes('INVALID_ARGUMENT') || lastError.includes('API key not valid')) {
+            lastError = 'গুগল সার্ভারে এই কী-টি সঠিক নয়। দয়া করে Google AI Studio থেকে সঠিক API Key কপি করুন।';
+        }
+        return { valid: false, message: lastError };
     }
 
     async validateOpenAIKey(key) {
