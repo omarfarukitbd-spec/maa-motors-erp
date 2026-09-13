@@ -7,14 +7,42 @@ import { JARVIS_CONFIG } from '../config.js';
  */
 export class VoiceSpeaker {
     constructor() {
-        this.synth = window.speechSynthesis;
+        this.synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
         this.isSpeaking = false;
-        this.currentAudio = null;
         this.onStartCallback = () => {};
         this.onEndCallback = () => {};
         this.selectedVoice = null;
+        this.isUnlocked = false;
+
+        // Persistent reusable audio element
+        if (typeof window !== 'undefined') {
+            this.audio = new Audio();
+            this.audio.preload = 'auto';
+            this.setupUnlockListeners();
+        }
 
         this.initNativeVoices();
+    }
+
+    /**
+     * Unlock audio playback permissions across modern browsers (Chrome/Safari/Edge)
+     */
+    setupUnlockListeners() {
+        const unlock = () => {
+            if (this.isUnlocked) return;
+            // Play a short silent data URL to grant persistent audio playback permissions
+            this.audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+            this.audio.play().then(() => {
+                this.isUnlocked = true;
+                console.log('🔊 [VoiceSpeaker] Audio pipeline successfully unlocked by user interaction.');
+            }).catch(() => {
+                // Will retry on next interaction
+            });
+        };
+
+        window.addEventListener('click', unlock, { once: true, passive: true });
+        window.addEventListener('touchstart', unlock, { once: true, passive: true });
+        window.addEventListener('keydown', unlock, { once: true, passive: true });
     }
 
     initNativeVoices() {
@@ -44,6 +72,7 @@ export class VoiceSpeaker {
 
         const cleanText = String(text)
             .replace(/[*_#`৳]/g, '')
+            .replace(/https?:\/\/[^\s]+/g, '')
             .replace(/\s+/g, ' ')
             .trim();
 
@@ -65,11 +94,10 @@ export class VoiceSpeaker {
     }
 
     /**
-     * Engine 1: Online Google Bengali Audio Stream
+     * Engine 1: Online Google Bengali Audio Stream via /api/tts proxy
      */
     speakOnlineNeural(text) {
         return new Promise((resolve, reject) => {
-            // Split into sentences for fast buffer and natural cadence
             const chunks = this.splitIntoSentences(text);
             if (chunks.length === 0) {
                 resolve();
@@ -85,24 +113,26 @@ export class VoiceSpeaker {
                 }
 
                 const chunk = chunks[index++];
-                const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=bn&client=tw-ob`;
+                const url = `/api/tts?q=${encodeURIComponent(chunk)}`;
                 
-                const audio = new Audio(url);
-                this.currentAudio = audio;
+                this.audio.src = url;
 
-                audio.onended = () => {
+                this.audio.onended = () => {
                     playNext();
                 };
 
-                audio.onerror = (e) => {
-                    console.warn('[VoiceSpeaker] Audio element error on chunk:', e);
+                this.audio.onerror = (e) => {
+                    console.warn('[VoiceSpeaker] Audio stream error on chunk:', chunk, e);
                     reject(e);
                 };
 
-                audio.play().catch(playErr => {
-                    console.warn('[VoiceSpeaker] Autoplay blocked or network issue:', playErr);
-                    reject(playErr);
-                });
+                const playPromise = this.audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(playErr => {
+                        console.warn('[VoiceSpeaker] Autoplay blocked or interrupted:', playErr);
+                        reject(playErr);
+                    });
+                }
             };
 
             playNext();
@@ -132,7 +162,7 @@ export class VoiceSpeaker {
 
             utterance.onend = () => resolve();
             utterance.onerror = (e) => {
-                console.warn('Native speech error:', e);
+                console.warn('[VoiceSpeaker] Native speech error:', e);
                 resolve();
             };
 
@@ -140,33 +170,56 @@ export class VoiceSpeaker {
         });
     }
 
+    /**
+     * Splits into natural sentence chunks for fluid Bengali prosody
+     * Preserves punctuation inside chunks and keeps sentences together up to 130 chars
+     */
     splitIntoSentences(text) {
-        // Split by Bengali danda (।), comma, question mark, newline
-        const raw = text.split(/([।?!,\n]+)/);
+        // Split on Bengali full stops (।), question marks (?), exclamation marks (!), or newlines
+        const rawSentences = text.split(/([।?!]+[\s\n]*)/);
         const chunks = [];
-        let cur = '';
+        let buffer = '';
 
-        for (let i = 0; i < raw.length; i++) {
-            cur += raw[i];
-            // Flush chunk if punctuation or length > 80 chars
-            if (raw[i].match(/[।?!,\n]/) || cur.length >= 80) {
-                const trimmed = cur.trim();
-                if (trimmed) chunks.push(trimmed);
-                cur = '';
+        for (let i = 0; i < rawSentences.length; i++) {
+            buffer += rawSentences[i];
+            // If we have a full sentence or buffer exceeds 120 chars
+            if (rawSentences[i].match(/[।?!]/) || buffer.length >= 120) {
+                const trimmed = buffer.trim();
+                if (trimmed) {
+                    // If a single chunk is still extraordinarily long (> 150), split by comma or space
+                    if (trimmed.length > 150) {
+                        const subParts = trimmed.split(/([,;]+|\s{2,})/);
+                        let subBuffer = '';
+                        for (const part of subParts) {
+                            subBuffer += part;
+                            if (subBuffer.length >= 100) {
+                                if (subBuffer.trim()) chunks.push(subBuffer.trim());
+                                subBuffer = '';
+                            }
+                        }
+                        if (subBuffer.trim()) chunks.push(subBuffer.trim());
+                    } else {
+                        chunks.push(trimmed);
+                    }
+                }
+                buffer = '';
             }
         }
-        if (cur.trim()) chunks.push(cur.trim());
+
+        if (buffer.trim()) {
+            chunks.push(buffer.trim());
+        }
+
         return chunks.filter(c => c.length > 0 && !c.match(/^[।?!,\s]+$/));
     }
 
     stop() {
         this.isSpeaking = false;
-        if (this.currentAudio) {
+        if (this.audio) {
             try {
-                this.currentAudio.pause();
-                this.currentAudio.currentTime = 0;
+                this.audio.pause();
+                this.audio.currentTime = 0;
             } catch (e) {}
-            this.currentAudio = null;
         }
         if (this.synth) {
             try { this.synth.cancel(); } catch (e) {}
