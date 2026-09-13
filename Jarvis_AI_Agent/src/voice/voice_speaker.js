@@ -29,9 +29,9 @@ export class VoiceSpeaker {
             || JARVIS_CONFIG.voice.azureDefault 
             || 'bn-BD-PradeepNeural';
 
-        // Persistent reusable audio element
+        // Persistent reusable audio element (bound to document DOM)
         if (typeof window !== 'undefined') {
-            this.audio = new Audio();
+            this.audio = document.getElementById('jarvis-persistent-audio') || new Audio();
             this.audio.preload = 'auto';
             this.setupUnlockListeners();
         }
@@ -65,24 +65,31 @@ export class VoiceSpeaker {
      */
     setupUnlockListeners() {
         const unlock = async () => {
-            if (this.isUnlocked) return;
             await this.unlockAudio();
         };
 
-        ['click', 'touchstart', 'keydown'].forEach(evt => {
-            window.addEventListener(evt, unlock, { once: true, passive: true });
+        ['click', 'touchstart', 'keydown', 'mousedown', 'pointerdown'].forEach(evt => {
+            window.addEventListener(evt, unlock, { passive: true });
         });
     }
 
     async unlockAudio() {
-        if (this.isUnlocked || !this.audio) return;
+        if (!this.audio && typeof window !== 'undefined') {
+            this.audio = document.getElementById('jarvis-persistent-audio') || new Audio();
+        }
+        if (!this.audio) return;
         try {
-            this.audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-            await this.audio.play();
-            this.isUnlocked = true;
-            console.log('🔊 [VoiceSpeaker] Audio pipeline successfully unlocked.');
+            if (!this.isUnlocked) {
+                this.audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+                const p = this.audio.play();
+                if (p !== undefined) {
+                    await p;
+                }
+                this.isUnlocked = true;
+                console.log('🔊 [VoiceSpeaker] Audio pipeline successfully unlocked.');
+            }
         } catch (err) {
-            console.warn('[VoiceSpeaker] Audio unlock pending user interaction:', err.message);
+            // User hasn't interacted yet
         }
     }
 
@@ -218,6 +225,10 @@ export class VoiceSpeaker {
      * Play single sentence chunk with dual endpoint fallback and blob memory decoding
      */
     async playNeuralChunk(chunk, voice) {
+        if (!this.audio && typeof window !== 'undefined') {
+            this.audio = document.getElementById('jarvis-persistent-audio') || new Audio();
+        }
+
         const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
         const endpoints = isLocal
             ? [
@@ -231,27 +242,35 @@ export class VoiceSpeaker {
 
         for (const url of endpoints) {
             try {
-                const audio = new Audio();
                 await new Promise((resolve, reject) => {
                     const watchdog = setTimeout(() => {
-                        try { audio.pause(); } catch (e) {}
+                        if (this.audio) {
+                            this.audio.onended = null;
+                            this.audio.onerror = null;
+                        }
                         resolve();
                     }, 14000);
 
-                    audio.onended = () => {
+                    this.audio.onended = () => {
                         clearTimeout(watchdog);
+                        this.audio.onended = null;
+                        this.audio.onerror = null;
                         resolve();
                     };
-                    audio.onerror = (e) => {
+                    this.audio.onerror = (e) => {
                         clearTimeout(watchdog);
+                        this.audio.onended = null;
+                        this.audio.onerror = null;
                         reject(e);
                     };
 
-                    audio.src = url;
-                    const playPromise = audio.play();
+                    this.audio.src = url;
+                    const playPromise = this.audio.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(err => {
                             clearTimeout(watchdog);
+                            this.audio.onended = null;
+                            this.audio.onerror = null;
                             reject(err);
                         });
                     }
