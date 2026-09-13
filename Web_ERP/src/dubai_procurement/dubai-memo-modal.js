@@ -78,7 +78,7 @@ export const DubaiMemoModal = {
             html += `
                 <div class="flex items-center gap-2 p-1.5 bg-slate-950 border border-slate-800 rounded-lg">
                     <span class="text-xs font-bold text-slate-400 w-20 shrink-0">মেমো #${m.memoNo}:</span>
-                    <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this)" onchange="window.handleModalMemoAmtChange(${idx}, this.value)" class="modal-memo-inp flex-grow bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-amber-400 font-mono font-bold text-right outline-none">
+                    <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleModalMemoAmtChange(${idx}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextMemoInp(${idx});}" class="modal-memo-inp flex-grow bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-amber-400 font-mono font-bold text-right outline-none">
                 </div>
             `;
         });
@@ -116,3 +116,10 @@ export const DubaiMemoModal = {
 
 window.toggleDubaiMemoModal = (show) => DubaiMemoModal.toggle(show);
 window.handleModalMemoAmtChange = (idx, val) => DubaiMemoModal.handleAmtChange(idx, val);
+window.focusNextMemoInp = (idx) => {
+    const inputs = document.querySelectorAll('.modal-memo-inp');
+    if (inputs && inputs[idx + 1]) {
+        inputs[idx + 1].focus();
+        inputs[idx + 1].select();
+    }
+};

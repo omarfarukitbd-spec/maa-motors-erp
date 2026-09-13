@@ -196,7 +196,7 @@ export function getDubaiAuditMainTemplate() {
                                 <span class="text-slate-500 text-[10px]"><i class="fa-solid fa-minus text-cyan-400 mr-1"></i> বিয়োগ</span>
                             </div>
                             <div class="relative w-36 shrink-0">
-                                <input type="text" id="val-market-ad" value="10,200" placeholder="০.০০" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiWaterfallChange()" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-cyan-400 font-mono text-right font-bold focus:border-cyan-500 outline-none">
+                                <input type="text" id="val-market-ad" value="10,200" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-cyan-400 font-mono text-right font-bold focus:border-cyan-500 outline-none">
                             </div>
                         </div>
                         <div class="col-span-4 p-2.5 bg-slate-950/20 text-slate-500 text-[10px] flex items-center">
@@ -212,7 +212,7 @@ export function getDubaiAuditMainTemplate() {
                                 <span class="text-slate-500 text-[10px]"><i class="fa-solid fa-minus text-emerald-400 mr-1"></i> বিয়োগ</span>
                             </div>
                             <div class="relative w-36 shrink-0">
-                                <input type="text" id="val-cash-in-hand" value="22,213" placeholder="০.০০" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiWaterfallChange()" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
+                                <input type="text" id="val-cash-in-hand" value="22,213" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
                             </div>
                         </div>
                         <div class="col-span-4 p-2.5 bg-slate-950/20 text-slate-500 text-[10px] flex items-center">
@@ -279,6 +279,41 @@ export function getDubaiAuditMainTemplate() {
                             <span>অডিট সমন্বয় সফল</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Executive Bottom Action Bar (Ergonomic Post-Audit Footer) -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900/95 border border-slate-800 p-4 sm:p-5 rounded-3xl backdrop-blur-xl shadow-2xl">
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shrink-0">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-slate-400 font-bold">সাপ্তাহিক রিকনসিলিয়েশন স্থিতি:</div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span id="final-variance-badge-bottom" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                                ক্যাশ বাড়তি
+                            </span>
+                            <span class="text-white font-mono font-bold text-sm">
+                                AED <span id="val-final-variance-bottom" class="text-emerald-400 font-black">0</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
+                    <button type="button" id="btn-dubai-new-bottom" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>নতুন সপ্তাহ</span>
+                    </button>
+                    <button type="button" id="btn-dubai-print-bottom" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+                        <i class="fa-solid fa-print text-slate-400 text-xs"></i>
+                        <span>১-পাতা প্রিন্ট</span>
+                    </button>
+                    <button type="button" id="btn-dubai-save-bottom" class="px-6 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-sky-600/30">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                        <span class="text-sm tracking-wide">অডিট সংরক্ষণ করুন</span>
+                    </button>
                 </div>
             </div>
 

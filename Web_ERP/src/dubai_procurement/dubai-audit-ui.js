@@ -21,6 +21,7 @@ let dynamicHoldings = [
 
 const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
 const getTxt = (id, def = '') => document.getElementById(id)?.value?.trim() || def;
+const setInp = (id, val = '') => { const el = document.getElementById(id); if (el) el.value = val; };
 
 export async function renderDubaiProcurement(container) {
     if (!container) return;
@@ -60,6 +61,15 @@ function setupActionButtons() {
     const btnNew = document.getElementById('btn-dubai-new');
     if (btnNew) btnNew.onclick = () => onNewAuditClick();
 
+    const btnSaveBottom = document.getElementById('btn-dubai-save-bottom');
+    if (btnSaveBottom) btnSaveBottom.onclick = () => onSaveAuditClick();
+
+    const btnPrintBottom = document.getElementById('btn-dubai-print-bottom');
+    if (btnPrintBottom) btnPrintBottom.onclick = () => onPrintAuditClick();
+
+    const btnNewBottom = document.getElementById('btn-dubai-new-bottom');
+    if (btnNewBottom) btnNewBottom.onclick = () => onNewAuditClick();
+
     const btnRoll = document.getElementById('btn-dubai-roll-forward');
     if (btnRoll) btnRoll.onclick = () => onRollForwardClick();
 
@@ -93,25 +103,38 @@ export function updateLiveWaterfall() {
     setTxt('subtotal-2', sub2);
     setTxt('subtotal-3', sub3);
     setTxt('val-final-variance', finalVariance);
+    setTxt('val-final-variance-bottom', finalVariance);
 
     const badgeEl = document.getElementById('final-variance-badge');
+    const badgeElBottom = document.getElementById('final-variance-badge-bottom');
     const statusDescEl = document.getElementById('desc-final-status');
     const valFinalEl = document.getElementById('val-final-variance');
+    const valFinalElBottom = document.getElementById('val-final-variance-bottom');
 
     if (finalVariance >= 0) {
         if (badgeEl) {
             badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
             badgeEl.textContent = 'ক্যাশ বাড়তি';
         }
+        if (badgeElBottom) {
+            badgeElBottom.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+            badgeElBottom.textContent = 'ক্যাশ বাড়তি';
+        }
         if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ বাড়তি)';
         if (valFinalEl) valFinalEl.className = 'text-emerald-400 font-bold';
+        if (valFinalElBottom) valFinalElBottom.className = 'text-emerald-400 font-black';
     } else {
         if (badgeEl) {
             badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-red-500/20 text-red-400 border border-red-500/40';
             badgeEl.textContent = 'ক্যাশ ঘাটতি';
         }
+        if (badgeElBottom) {
+            badgeElBottom.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-red-500/20 text-red-400 border border-red-500/40';
+            badgeElBottom.textContent = 'ক্যাশ ঘাটতি';
+        }
         if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ ঘাটতি)';
         if (valFinalEl) valFinalEl.className = 'text-red-400 font-bold';
+        if (valFinalElBottom) valFinalElBottom.className = 'text-red-400 font-black';
     }
 
     const dateVal = getTxt('dubai-week-date');
@@ -212,11 +235,11 @@ function renderDynamicHoldings() {
             <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors">
                 <div class="col-span-8 p-2.5 border-r border-slate-800 flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2 flex-grow">
-                        <input type="text" value="${h.desc || ''}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" onchange="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-purple-300 text-xs font-bold focus:border-purple-400 outline-none w-64">
+                        <input type="text" value="${h.desc || ''}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-purple-300 text-xs font-bold focus:border-purple-400 outline-none w-64">
                         <span class="text-slate-500 text-[10px]"><i class="fa-solid fa-minus text-purple-400 mr-1"></i> বিয়োগ</span>
                     </div>
                     <div class="relative w-36 shrink-0 flex items-center gap-1.5">
-                        <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this)" onchange="window.handleDubaiHoldingAmtChange(${idx}, this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-purple-300 font-mono text-right font-bold focus:border-purple-500 outline-none">
+                        <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${idx}, this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-purple-300 font-mono text-right font-bold focus:border-purple-500 outline-none">
                         <button type="button" onclick="window.removeDubaiHoldingRow(${idx})" class="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer" title="মুছে ফেলুন">
                             <i class="fa-solid fa-xmark text-[10px]"></i>
                         </button>
@@ -260,17 +283,15 @@ async function onRollForwardClick() {
     const prevPur = latest.cumulativePurchaseTotal || 0;
     const prevExp = latest.cumulativeExpenseTotal || 0;
 
-    document.getElementById('dubai-prev-rem-input').value = formatAmountWithComma(prevRem);
-    document.getElementById('dubai-prev-pur-input').value = formatAmountWithComma(prevPur);
-    document.getElementById('dubai-prev-exp-input').value = formatAmountWithComma(prevExp);
+    setInp('dubai-prev-rem-input', formatAmountWithComma(prevRem));
+    setInp('dubai-prev-pur-input', formatAmountWithComma(prevPur));
+    setInp('dubai-prev-exp-input', formatAmountWithComma(prevExp));
 
-    document.getElementById('input-cum-sent').value = formatAmountWithComma(prevRem);
-    document.getElementById('input-cum-purchase').value = formatAmountWithComma(prevPur);
-    document.getElementById('input-cum-expense').value = formatAmountWithComma(prevExp);
+    setInp('input-cum-sent', formatAmountWithComma(prevRem));
+    setInp('input-cum-purchase', formatAmountWithComma(prevPur));
+    setInp('input-cum-expense', formatAmountWithComma(prevExp));
 
-    document.getElementById('input-running-sent').value = '';
-    document.getElementById('input-running-purchase').value = '';
-    document.getElementById('input-running-expense').value = '';
+    ['input-running-sent', 'input-running-purchase', 'input-running-expense'].forEach(id => setInp(id, ''));
 
     // Auto-advance date by 7 days to next Thursday
     if (latest.weekEndDate) {
@@ -389,25 +410,13 @@ function buildCurrentAuditObject() {
 
 function onNewAuditClick() {
     currentAuditId = null;
-    document.getElementById('dubai-week-date').value = getTodayLocalDateString();
-    document.getElementById('dubai-audit-note').value = '';
-    document.getElementById('dubai-prev-rem-input').value = '0';
-    document.getElementById('dubai-prev-pur-input').value = '0';
-    document.getElementById('dubai-prev-exp-input').value = '0';
-    document.getElementById('input-cum-sent').value = '';
-    document.getElementById('input-cum-purchase').value = '';
-    document.getElementById('input-cum-expense').value = '';
-    document.getElementById('input-running-sent').value = '';
-    document.getElementById('input-running-purchase').value = '';
-    document.getElementById('input-running-expense').value = '';
-    document.getElementById('val-market-ad').value = '';
-    document.getElementById('val-cash-in-hand').value = '';
-    if (document.getElementById('memo-range-start')) document.getElementById('memo-range-start').value = '';
-    if (document.getElementById('memo-range-end')) document.getElementById('memo-range-end').value = '';
+    setInp('dubai-week-date', getTodayLocalDateString());
+    ['dubai-audit-note', 'input-cum-sent', 'input-cum-purchase', 'input-cum-expense',
+     'input-running-sent', 'input-running-purchase', 'input-running-expense',
+     'val-market-ad', 'val-cash-in-hand', 'memo-range-start', 'memo-range-end', 'desc-memos'].forEach(id => setInp(id, ''));
+    ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => setInp(id, '0'));
     const badgeEl = document.getElementById('memo-auto-count-badge');
     if (badgeEl) badgeEl.textContent = '০টি মেমো';
-    const descMemos = document.getElementById('desc-memos');
-    if (descMemos) descMemos.value = '';
     dynamicHoldings = [{ desc: 'আলতাফ + মেছ', amount: 0 }];
     DubaiMemoModal.setMemos([]);
     renderDynamicHoldings();
@@ -428,42 +437,38 @@ window.loadDubaiAuditHistory = async function(id) {
     const { audit, memos } = data;
 
     currentAuditId = audit.id;
-    document.getElementById('dubai-container-no').value = audit.containerNo || 'CT-2026-DXB-01';
-    document.getElementById('dubai-week-date').value = audit.weekEndDate || '';
-    document.getElementById('dubai-audit-note').value = audit.note || '';
+    setInp('dubai-container-no', audit.containerNo || 'CT-2026-DXB-01');
+    setInp('dubai-week-date', audit.weekEndDate || '');
+    setInp('dubai-audit-note', audit.note || '');
 
     if (audit.descriptions) {
-        if (audit.descriptions.sent) document.getElementById('desc-sent').value = audit.descriptions.sent;
-        if (audit.descriptions.purchase) document.getElementById('desc-purchase').value = audit.descriptions.purchase;
-        if (audit.descriptions.memos) document.getElementById('desc-memos').value = audit.descriptions.memos;
-        if (audit.descriptions.expense) document.getElementById('desc-expense').value = audit.descriptions.expense;
-        if (audit.descriptions.ad) document.getElementById('desc-ad').value = audit.descriptions.ad;
-        if (audit.descriptions.cash) document.getElementById('desc-cash').value = audit.descriptions.cash;
-        if (audit.descriptions.status) document.getElementById('desc-final-status').value = audit.descriptions.status;
+        if (audit.descriptions.sent) setInp('desc-sent', audit.descriptions.sent);
+        if (audit.descriptions.purchase) setInp('desc-purchase', audit.descriptions.purchase);
+        if (audit.descriptions.memos) setInp('desc-memos', audit.descriptions.memos);
+        if (audit.descriptions.expense) setInp('desc-expense', audit.descriptions.expense);
+        if (audit.descriptions.ad) setInp('desc-ad', audit.descriptions.ad);
+        if (audit.descriptions.cash) setInp('desc-cash', audit.descriptions.cash);
+        if (audit.descriptions.status) setInp('desc-final-status', audit.descriptions.status);
     }
 
-    if (document.getElementById('memo-range-start')) {
-        document.getElementById('memo-range-start').value = audit.memoRangeStart || '';
-    }
-    if (document.getElementById('memo-range-end')) {
-        document.getElementById('memo-range-end').value = audit.memoRangeEnd || '';
-    }
+    setInp('memo-range-start', audit.memoRangeStart || '');
+    setInp('memo-range-end', audit.memoRangeEnd || '');
     window.handleMemoRangeChange();
 
-    document.getElementById('dubai-prev-rem-input').value = formatAmountWithComma(audit.prevRemittance || 0);
-    document.getElementById('dubai-prev-pur-input').value = formatAmountWithComma(audit.prevPurchaseTotal || 0);
-    document.getElementById('dubai-prev-exp-input').value = formatAmountWithComma(audit.prevExpenseTotal || 0);
+    setInp('dubai-prev-rem-input', formatAmountWithComma(audit.prevRemittance || 0));
+    setInp('dubai-prev-pur-input', formatAmountWithComma(audit.prevPurchaseTotal || 0));
+    setInp('dubai-prev-exp-input', formatAmountWithComma(audit.prevExpenseTotal || 0));
 
-    document.getElementById('input-cum-sent').value = formatAmountWithComma(audit.cumulativeRemittance || 0);
-    document.getElementById('input-cum-purchase').value = formatAmountWithComma(audit.cumulativePurchaseTotal || 0);
-    document.getElementById('input-cum-expense').value = formatAmountWithComma(audit.cumulativeExpenseTotal || 0);
+    setInp('input-cum-sent', formatAmountWithComma(audit.cumulativeRemittance || 0));
+    setInp('input-cum-purchase', formatAmountWithComma(audit.cumulativePurchaseTotal || 0));
+    setInp('input-cum-expense', formatAmountWithComma(audit.cumulativeExpenseTotal || 0));
 
-    document.getElementById('input-running-sent').value = formatAmountWithComma(audit.weeklyRemittanceTotal || 0);
-    document.getElementById('input-running-purchase').value = formatAmountWithComma(audit.weeklyPurchaseTotal || 0);
-    document.getElementById('input-running-expense').value = formatAmountWithComma(audit.weeklyExpenseTotal || 0);
+    setInp('input-running-sent', formatAmountWithComma(audit.weeklyRemittanceTotal || 0));
+    setInp('input-running-purchase', formatAmountWithComma(audit.weeklyPurchaseTotal || 0));
+    setInp('input-running-expense', formatAmountWithComma(audit.weeklyExpenseTotal || 0));
 
-    document.getElementById('val-market-ad').value = formatAmountWithComma(audit.marketAdvance || 0);
-    document.getElementById('val-cash-in-hand').value = formatAmountWithComma(audit.cashInHand || 0);
+    setInp('val-market-ad', formatAmountWithComma(audit.marketAdvance || 0));
+    setInp('val-cash-in-hand', formatAmountWithComma(audit.cashInHand || 0));
 
     dynamicHoldings = Array.isArray(audit.personalHoldings) && audit.personalHoldings.length > 0 
         ? [...audit.personalHoldings] 
