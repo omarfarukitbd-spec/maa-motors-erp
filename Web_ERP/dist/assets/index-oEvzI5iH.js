@@ -6436,164 +6436,164 @@ _Maa Motors ERP সিস্টেম থেকে স্বয়ংক্রি�
                 <!-- The Balanced 3-Column Grid -->
                 <div class="border border-slate-700 rounded-2xl overflow-hidden text-xs shadow-inner">
                     <!-- Table Header: 6 cols (Description) | 3 cols (Cumulative AED) | 3 cols (Running Week) -->
-                    <div class="grid grid-cols-12 bg-slate-950 border-b border-slate-700 font-bold text-slate-300">
-                        <div class="col-span-6 p-3 flex items-center justify-between border-r border-slate-700">
+                    <div class="grid grid-cols-12 bg-slate-950 border-b border-slate-700 font-bold text-slate-300 text-xs sm:text-sm">
+                        <div class="col-span-6 p-3 sm:p-3.5 flex items-center justify-between border-r border-slate-700">
                             <span id="label-table-date" class="text-sky-300 font-black">তারিখ: অডিট বৃহস্পতিবার</span>
-                            <span class="text-[10px] text-slate-500 uppercase tracking-wider">বিবরণী ও হিসাব</span>
+                            <span class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">বিবরণী ও হিসাব</span>
                         </div>
-                        <div class="col-span-3 p-3 text-right text-sky-400 border-r border-slate-700 pr-3">
+                        <div class="col-span-3 p-3 sm:p-3.5 text-right text-sky-400 font-black border-r border-slate-700 pr-3 sm:pr-4">
                             মোট ক্রমপুঞ্জিত (AED)
                         </div>
-                        <div class="col-span-3 p-3 text-right text-emerald-400 pr-3">
+                        <div class="col-span-3 p-3 sm:p-3.5 text-right text-emerald-400 font-black pr-3 sm:pr-4">
                             রানিং সপ্তাহ / স্থিতি (AED)
                         </div>
                     </div>
 
                     <!-- Row 1: টাকা পাঠানো (Remittance) -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition-colors items-center">
-                        <div class="col-span-6 p-2.5 border-r border-slate-800 flex flex-col gap-1">
-                            <input type="text" id="desc-sent" value="বৃহস্পতিবার পর্যন্ত টাকা পাঠানো" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none w-full">
-                            <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                <i class="fa-solid fa-lock text-sky-400 text-[9px]" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-3 border-r border-slate-800 flex flex-col gap-1.5">
+                            <input type="text" id="desc-sent" value="বৃহস্পতিবার পর্যন্ত টাকা পাঠানো" class="bg-transparent border-b border-dashed border-slate-700 text-slate-100 text-sm sm:text-base font-bold focus:border-sky-400 outline-none w-full">
+                            <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                                <i class="fa-solid fa-lock text-sky-400 text-xs" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
                                 <span class="text-slate-400 font-semibold">পূর্বের মোট:</span>
-                                <input type="text" id="dubai-prev-rem-input" value="11,52,395" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('sent')" class="w-24 bg-slate-950/70 border border-slate-700/60 rounded px-1.5 py-0.5 text-[10px] text-emerald-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী ব্যালেন্স (লক করা)">
+                                <input type="text" id="dubai-prev-rem-input" value="11,52,395" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('sent')" class="w-28 sm:w-32 h-7 bg-slate-950/90 border border-slate-700/70 rounded-lg px-2 text-xs sm:text-sm text-emerald-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী ব্যালেন্স (লক করা)">
                                 <span class="text-slate-500 font-bold">AED</span>
-                                <button type="button" onclick="window.toggleUnlockPrevBaseline('sent')" class="text-[9px] text-slate-500 hover:text-sky-400 px-0.5 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button type="button" onclick="window.toggleUnlockPrevBaseline('sent')" class="text-xs text-slate-500 hover:text-sky-400 px-1 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </div>
-                        <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
-                            <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="input-cum-sent" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('sent')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
+                        <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
+                            <input type="text" id="input-cum-sent" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('sent')" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-emerald-400 font-mono text-right font-black focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-2.5 flex items-center justify-end pr-2">
-                            <input type="text" id="input-running-sent" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('sent')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-emerald-400 font-bold font-mono text-right focus:border-emerald-500 outline-none">
+                        <div class="col-span-3 p-3 flex items-center justify-end pr-3 sm:pr-4">
+                            <input type="text" id="input-running-sent" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('sent')" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-emerald-400 font-mono text-right font-black focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 outline-none shadow-inner">
                         </div>
                     </div>
 
                     <!-- Row 2: মাল ক্রয় (Purchases) - Balanced with 1-Line Memo Sub-bar -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition-colors items-center">
-                        <div class="col-span-6 p-2.5 border-r border-slate-800 flex flex-col gap-1.5">
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-3 border-r border-slate-800 flex flex-col gap-1.5">
                             <div class="flex items-center justify-between gap-2">
-                                <input type="text" id="desc-purchase" value="সর্বমোট মাল ক্রয়" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none flex-grow">
-                                <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-amber-400 mr-0.5"></i> বিয়োগ</span>
+                                <input type="text" id="desc-purchase" value="সর্বমোট মাল ক্রয়" class="bg-transparent border-b border-dashed border-slate-700 text-slate-100 text-sm sm:text-base font-bold focus:border-sky-400 outline-none flex-grow">
+                                <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-amber-400 mr-0.5"></i> বিয়োগ</span>
                             </div>
                             <!-- Compact Inline Memo Range Toolbar -->
-                            <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/80 px-2 py-1 rounded-lg border border-slate-800 text-[11px]">
-                                <span class="text-slate-400 text-[10px]">মেমো:</span>
-                                <input type="number" id="memo-range-start" value="113" placeholder="শুরু" oninput="window.handleMemoRangeChange()" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[11px] text-amber-300 font-mono text-center outline-none">
-                                <span class="text-slate-500 text-[10px]">থেকে</span>
-                                <input type="number" id="memo-range-end" value="" placeholder="শেষ" oninput="window.handleMemoRangeChange()" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[11px] text-amber-300 font-mono text-center outline-none">
-                                <span id="memo-auto-count-badge" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold whitespace-nowrap">০টি মেমো</span>
+                            <div class="flex flex-wrap items-center gap-2 bg-slate-950/80 px-2.5 py-1.5 rounded-xl border border-slate-800 text-xs">
+                                <span class="text-slate-400 font-semibold">মেমো:</span>
+                                <input type="number" id="memo-range-start" value="113" placeholder="শুরু" oninput="window.handleMemoRangeChange()" class="w-16 h-7 bg-slate-900 border border-slate-700 rounded-lg px-2 text-xs text-amber-300 font-mono font-bold text-center outline-none">
+                                <span class="text-slate-500 font-semibold">থেকে</span>
+                                <input type="number" id="memo-range-end" value="" placeholder="শেষ" oninput="window.handleMemoRangeChange()" class="w-16 h-7 bg-slate-900 border border-slate-700 rounded-lg px-2 text-xs text-amber-300 font-mono font-bold text-center outline-none">
+                                <span id="memo-auto-count-badge" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold whitespace-nowrap">০টি মেমো</span>
                                 <input type="hidden" id="desc-memos" value="">
-                                <button type="button" onclick="window.openDubaiMemoDetailsModal()" class="ml-auto px-1.5 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer">
-                                    <i class="fa-solid fa-list-check text-[9px]"></i> মেমো এন্ট্রি
+                                <button type="button" onclick="window.openDubaiMemoDetailsModal()" class="ml-auto px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                                    <i class="fa-solid fa-list-check text-xs"></i> মেমো এন্ট্রি
                                 </button>
                             </div>
-                            <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                <i class="fa-solid fa-lock text-sky-400 text-[9px]" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
+                            <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                                <i class="fa-solid fa-lock text-sky-400 text-xs" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
                                 <span class="text-slate-400 font-semibold">পূর্বের মোট ক্রয়:</span>
-                                <input type="text" id="dubai-prev-pur-input" value="8,59,860" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('purchase')" class="w-24 bg-slate-950/70 border border-slate-700/60 rounded px-1.5 py-0.5 text-[10px] text-amber-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী ক্রয় (লক করা)">
+                                <input type="text" id="dubai-prev-pur-input" value="8,59,860" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('purchase')" class="w-28 sm:w-32 h-7 bg-slate-950/90 border border-slate-700/70 rounded-lg px-2 text-xs sm:text-sm text-amber-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী ক্রয় (লক করা)">
                                 <span class="text-slate-500 font-bold">AED</span>
-                                <button type="button" onclick="window.toggleUnlockPrevBaseline('purchase')" class="text-[9px] text-slate-500 hover:text-sky-400 px-0.5 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button type="button" onclick="window.toggleUnlockPrevBaseline('purchase')" class="text-xs text-slate-500 hover:text-sky-400 px-1 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </div>
-                        <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
-                            <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="input-cum-purchase" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('purchase')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-400 font-mono text-right font-bold focus:border-amber-500 outline-none">
+                        <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
+                            <input type="text" id="input-cum-purchase" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('purchase')" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-amber-400 font-mono text-right font-black focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-2.5 flex items-center justify-end pr-2">
-                            <input type="text" id="input-running-purchase" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('purchase')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-amber-400 font-bold font-mono text-right focus:border-amber-500 outline-none">
+                        <div class="col-span-3 p-3 flex items-center justify-end pr-3 sm:pr-4">
+                            <input type="text" id="input-running-purchase" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('purchase')" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-amber-400 font-mono text-right font-black focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none shadow-inner">
                         </div>
                     </div>
 
                     <!-- Subtotal 1: টাকা পাঠানো - মাল ক্রয় -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center">
-                        <div class="col-span-6 p-2 border-r border-slate-800 flex items-center text-sky-300 pl-3">
-                            <span class="text-[11px] text-slate-400">অবশিষ্ট ফান্ড (টাকা পাঠানো – মাল ক্রয়):</span>
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-sky-300 pl-3 sm:pl-4">
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold">অবশিষ্ট ফান্ড (টাকা পাঠানো – মাল ক্রয়):</span>
                         </div>
-                        <div class="col-span-3 p-2 border-r border-slate-800 flex items-center justify-end gap-1.5 text-sky-400 font-mono text-sm pr-2">
-                            <span class="text-xs text-slate-500 font-normal">AED =</span>
+                        <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-sky-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-normal">AED =</span>
                             <span id="subtotal-1" class="font-black">0</span>
                         </div>
-                        <div class="col-span-3 p-2 text-center text-slate-600 text-xs">—</div>
+                        <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
                     </div>
 
                     <!-- Row 3: খরচ (Expenses) -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition-colors items-center">
-                        <div class="col-span-6 p-2.5 border-r border-slate-800 flex flex-col gap-1">
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-3 border-r border-slate-800 flex flex-col gap-1.5">
                             <div class="flex items-center justify-between gap-2">
-                                <input type="text" id="desc-expense" value="সর্বমোট খরচ" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none flex-grow">
-                                <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-red-400 mr-0.5"></i> বিয়োগ</span>
+                                <input type="text" id="desc-expense" value="সর্বমোট খরচ" class="bg-transparent border-b border-dashed border-slate-700 text-slate-100 text-sm sm:text-base font-bold focus:border-sky-400 outline-none flex-grow">
+                                <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-red-400 mr-0.5"></i> বিয়োগ</span>
                             </div>
-                            <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                <i class="fa-solid fa-lock text-sky-400 text-[9px]" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
+                            <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                                <i class="fa-solid fa-lock text-sky-400 text-xs" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
                                 <span class="text-slate-400 font-semibold">পূর্বের মোট খরচ:</span>
-                                <input type="text" id="dubai-prev-exp-input" value="18,069" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('expense')" class="w-24 bg-slate-950/70 border border-slate-700/60 rounded px-1.5 py-0.5 text-[10px] text-red-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী খরচ (লক করা)">
+                                <input type="text" id="dubai-prev-exp-input" value="18,069" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('expense')" class="w-28 sm:w-32 h-7 bg-slate-950/90 border border-slate-700/70 rounded-lg px-2 text-xs sm:text-sm text-red-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী খরচ (লক করা)">
                                 <span class="text-slate-500 font-bold">AED</span>
-                                <button type="button" onclick="window.toggleUnlockPrevBaseline('expense')" class="text-[9px] text-slate-500 hover:text-sky-400 px-0.5 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button type="button" onclick="window.toggleUnlockPrevBaseline('expense')" class="text-xs text-slate-500 hover:text-sky-400 px-1 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </div>
-                        <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
-                            <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="input-cum-expense" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('expense')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-red-400 font-mono text-right font-bold focus:border-red-500 outline-none">
+                        <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
+                            <input type="text" id="input-cum-expense" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('expense')" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-red-400 font-mono text-right font-black focus:border-red-500 focus:ring-1 focus:ring-red-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-2.5 flex items-center justify-end pr-2">
-                            <input type="text" id="input-running-expense" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('expense')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-red-400 font-bold font-mono text-right focus:border-red-500 outline-none">
+                        <div class="col-span-3 p-3 flex items-center justify-end pr-3 sm:pr-4">
+                            <input type="text" id="input-running-expense" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('expense')" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-red-400 font-mono text-right font-black focus:border-red-500 focus:ring-1 focus:ring-red-500/30 outline-none shadow-inner">
                         </div>
                     </div>
 
                     <!-- Subtotal 2: নিট ক্যাশ স্থিতি (Subtotal 1 - খরচ) -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center">
-                        <div class="col-span-6 p-2 border-r border-slate-800 flex items-center text-sky-300 pl-3">
-                            <span class="text-[11px] text-slate-400">নিট ক্যাশ স্থিতি (হাতে থাকার কথা):</span>
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-sky-300 pl-3 sm:pl-4">
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold">নিট ক্যাশ স্থিতি (হাতে থাকার কথা):</span>
                         </div>
-                        <div class="col-span-3 p-2 border-r border-slate-800 flex items-center justify-end gap-1.5 text-sky-400 font-mono text-sm pr-2">
-                            <span class="text-xs text-slate-500 font-normal">AED =</span>
+                        <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-sky-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-normal">AED =</span>
                             <span id="subtotal-2" class="font-black">0</span>
                         </div>
-                        <div class="col-span-3 p-2 text-center text-slate-600 text-xs">—</div>
+                        <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
                     </div>
 
                     <!-- Row 4: মার্কেট এডভান্স (সম্পূর্ণ আলাদা সারি) -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center">
-                        <div class="col-span-6 p-2.5 border-r border-slate-800 flex items-center justify-between gap-2">
-                            <input type="text" id="desc-ad" value="মার্কেট এডভান্স (AD)" class="bg-transparent border-b border-dashed border-slate-700 text-cyan-300 text-xs font-bold focus:border-cyan-400 outline-none flex-grow">
-                            <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-cyan-400 mr-0.5"></i> বিয়োগ</span>
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
+                            <input type="text" id="desc-ad" value="মার্কেট এডভান্স (AD)" class="bg-transparent border-b border-dashed border-slate-700 text-cyan-300 text-sm sm:text-base font-bold focus:border-cyan-400 outline-none flex-grow">
+                            <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-cyan-400 mr-0.5"></i> বিয়োগ</span>
                         </div>
-                        <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
-                            <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="val-market-ad" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-400 font-mono text-right font-bold focus:border-cyan-500 outline-none">
+                        <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
+                            <input type="text" id="val-market-ad" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-cyan-400 font-mono text-right font-black focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-2.5 text-slate-400 text-xs text-right pr-3">
+                        <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold">
                             সাপ্লায়ারদের অগ্রিম
                         </div>
                     </div>
 
                     <!-- Row 5: নগদ ক্যাশ আছে (সম্পূর্ণ আলাদা সারি) -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center">
-                        <div class="col-span-6 p-2.5 border-r border-slate-800 flex items-center justify-between gap-2">
-                            <input type="text" id="desc-cash" value="নগদ ক্যাশ আছে (Cash in Hand)" class="bg-transparent border-b border-dashed border-slate-700 text-emerald-300 text-xs font-bold focus:border-emerald-400 outline-none flex-grow">
-                            <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-emerald-400 mr-0.5"></i> বিয়োগ</span>
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
+                            <input type="text" id="desc-cash" value="নগদ ক্যাশ আছে (Cash in Hand)" class="bg-transparent border-b border-dashed border-slate-700 text-emerald-300 text-sm sm:text-base font-bold focus:border-emerald-400 outline-none flex-grow">
+                            <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-emerald-400 mr-0.5"></i> বিয়োগ</span>
                         </div>
-                        <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
-                            <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="val-cash-in-hand" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
+                        <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
+                            <input type="text" id="val-cash-in-hand" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-emerald-400 font-mono text-right font-black focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-2.5 text-slate-400 text-xs text-right pr-3">
+                        <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold">
                             ক্যাশ বাক্সে নগদ দেরহাম
                         </div>
                     </div>
 
                     <!-- Subtotal 3: ক্যাশ ও এডভান্স বিয়োগের পর অবশিষ্ট -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center">
-                        <div class="col-span-6 p-2 border-r border-slate-800 flex items-center text-purple-300 pl-3">
-                            <span class="text-[11px] text-slate-400">অবশিষ্ট ব্যালেন্স (এডভান্স ও ক্যাশ বাদে):</span>
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-purple-300 pl-3 sm:pl-4">
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold">অবশিষ্ট ব্যালেন্স (এডভান্স ও ক্যাশ বাদে):</span>
                         </div>
-                        <div class="col-span-3 p-2 border-r border-slate-800 flex items-center justify-end gap-1.5 text-purple-400 font-mono text-sm pr-2">
-                            <span class="text-xs text-slate-500 font-normal">AED =</span>
+                        <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-purple-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-normal">AED =</span>
                             <span id="subtotal-3" class="font-black">0</span>
                         </div>
-                        <div class="col-span-3 p-2 text-center text-slate-600 text-xs">—</div>
+                        <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
                     </div>
 
                     <!-- Row 6+: Dynamic Custody Holdings (আলতাফ, মেছ, এমরান ইত্যাদি) -->
@@ -6602,35 +6602,35 @@ _Maa Motors ERP সিস্টেম থেকে স্বয়ংক্রি�
                     </div>
 
                     <!-- Add Custody Item Button Row with Quick Preset Chips -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/40 p-2.5 items-center">
-                        <div class="col-span-6 flex flex-wrap items-center gap-1.5 border-r border-slate-800 pr-2">
-                            <span class="text-[10px] text-slate-500 font-bold mr-1">বিবরণ যোগ:</span>
-                            <button type="button" onclick="window.addDubaiHoldingPreset('আলতাফ')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded text-[11px] font-semibold cursor-pointer">+ আলতাফ</button>
-                            <button type="button" onclick="window.addDubaiHoldingPreset('এমরান মামা')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded text-[11px] font-semibold cursor-pointer">+ এমরান মামা</button>
-                            <button type="button" onclick="window.addDubaiHoldingPreset('জাবেদ')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded text-[11px] font-semibold cursor-pointer">+ জাবেদ</button>
-                            <button type="button" onclick="window.addDubaiHoldingPreset('মেছ (মেস)')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded text-[11px] font-semibold cursor-pointer">+ মেছ</button>
-                            <button type="button" id="btn-add-waterfall-holding" class="px-2 py-0.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded text-[11px] font-bold cursor-pointer"><i class="fa-solid fa-plus text-[10px]"></i> নতুন</button>
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/40 p-2.5 sm:p-3 items-center">
+                        <div class="col-span-6 flex flex-wrap items-center gap-2 border-r border-slate-800 pr-2">
+                            <span class="text-xs text-slate-400 font-bold mr-1">বিবরণ যোগ:</span>
+                            <button type="button" onclick="window.addDubaiHoldingPreset('আলতাফ')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-colors">+ আলতাফ</button>
+                            <button type="button" onclick="window.addDubaiHoldingPreset('এমরান মামা')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-colors">+ এমরান মামা</button>
+                            <button type="button" onclick="window.addDubaiHoldingPreset('জাবেদ')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-colors">+ জাবেদ</button>
+                            <button type="button" onclick="window.addDubaiHoldingPreset('মেছ (মেস)')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-colors">+ মেছ</button>
+                            <button type="button" id="btn-add-waterfall-holding" class="px-2.5 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-lg text-xs font-bold cursor-pointer transition-colors"><i class="fa-solid fa-plus text-xs"></i> নতুন</button>
                         </div>
-                        <div class="col-span-6 text-slate-500 text-[10px] flex items-center justify-end pr-2">
-                            <i class="fa-solid fa-pen-to-square mr-1 text-slate-600"></i> যেকোনো নাম ও অংক পরিবর্তনযোগ্য
+                        <div class="col-span-6 text-slate-400 text-xs flex items-center justify-end pr-3">
+                            <i class="fa-solid fa-pen-to-square mr-1.5 text-slate-500"></i> যেকোনো নাম ও অংক পরিবর্তনযোগ্য
                         </div>
                     </div>
 
                     <!-- FINAL ROW: ক্যাশ সমন্বয় (Surplus / Deficit) - No duplicate text! -->
-                    <div class="grid grid-cols-12 bg-slate-950 p-3 items-center font-black">
-                        <div class="col-span-6 border-r border-slate-700 flex items-center gap-2 pl-2">
-                            <span id="final-variance-badge" class="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5">
+                    <div class="grid grid-cols-12 bg-slate-950 p-3.5 sm:p-4 items-center font-black">
+                        <div class="col-span-6 border-r border-slate-700 flex items-center gap-2.5 pl-3 sm:pl-4">
+                            <span id="final-variance-badge" class="px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
                                 <i class="fa-solid fa-circle-check text-emerald-400"></i>
                                 <span>ক্যাশ বাড়তি</span>
                             </span>
                             <input type="hidden" id="desc-final-status" value="(ক্যাশ বাড়তি)">
                         </div>
-                        <div class="col-span-3 border-r border-slate-700 flex items-center justify-end gap-1.5 font-mono text-base sm:text-lg pr-3">
-                            <span class="text-xs text-slate-500">AED =</span>
-                            <span id="val-final-variance" class="text-emerald-400">0</span>
+                        <div class="col-span-3 border-r border-slate-700 flex items-center justify-end gap-2 font-mono text-lg sm:text-xl pr-3 sm:pr-4">
+                            <span class="text-xs sm:text-sm text-slate-400 font-bold">AED =</span>
+                            <span id="val-final-variance" class="text-emerald-400 font-black">0</span>
                         </div>
-                        <div class="col-span-3 px-3 text-[11px] text-slate-400 text-center flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-shield-check text-emerald-400"></i>
+                        <div class="col-span-3 px-3 sm:px-4 text-xs sm:text-sm text-slate-300 text-center flex items-center justify-center gap-2 font-bold">
+                            <i class="fa-solid fa-shield-check text-emerald-400 text-base"></i>
                             <span>অডিট সমন্বয় সফল</span>
                         </div>
                     </div>
@@ -6746,28 +6746,28 @@ _Maa Motors ERP সিস্টেম থেকে স্বয়ংক্রি�
             </div>
         </div>
     `}function bc(e,t){let n=T(I(e.amount));return`
-        <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center">
-            <div class="col-span-6 p-2.5 border-r border-slate-800 flex items-center justify-between gap-2">
-                <input type="text" value="${e.desc||``}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${t}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-purple-300 text-xs font-bold focus:border-purple-400 outline-none flex-grow">
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-purple-400 mr-0.5"></i> বিয়োগ</span>
-                    <button type="button" onclick="window.removeDubaiHoldingRow(${t})" class="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer" title="মুছে ফেলুন">
-                        <i class="fa-solid fa-xmark text-[10px]"></i>
+        <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
+            <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
+                <input type="text" value="${e.desc||``}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${t}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-purple-300 text-sm sm:text-base font-bold focus:border-purple-400 outline-none flex-grow">
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-purple-400 mr-0.5"></i> বিয়োগ</span>
+                    <button type="button" onclick="window.removeDubaiHoldingRow(${t})" class="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer transition-colors" title="মুছে ফেলুন">
+                        <i class="fa-solid fa-xmark text-xs"></i>
                     </button>
                 </div>
             </div>
-            <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
-                <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                <input type="text" value="${n>0?C(n):``}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${t}, this.value)" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-purple-300 font-mono text-right font-bold focus:border-purple-500 outline-none">
+            <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
+                <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
+                <input type="text" value="${n>0?C(n):``}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${t}, this.value)" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-purple-300 font-mono text-right font-black focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 outline-none shadow-inner">
             </div>
-            <div class="col-span-3 p-2.5 text-slate-400 text-xs text-right pr-3">
+            <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold">
                 ব্যক্তিগত হস্তান্তর / মেস
             </div>
         </div>
     `}var Y=[],xc=null,Sc={init(e){xc=e;let t=document.getElementById(`btn-modal-gen-memo`);t&&(t.onclick=()=>this.generateMemos());let n=document.getElementById(`btn-modal-apply-memo`);n&&(n.onclick=()=>this.applyToWaterfall())},toggle(e){let t=document.getElementById(`dubai-memo-popup`);t&&(e?(t.classList.remove(`hidden`),this.renderList()):t.classList.add(`hidden`))},setMemos(e){Y=Array.isArray(e)?[...e]:[],this.renderList()},getMemos(){return[...Y]},generateMemos(){let e=parseInt(document.getElementById(`modal-memo-start`)?.value,10),t=parseInt(document.getElementById(`modal-memo-end`)?.value,10);if(isNaN(e)||isNaN(t)||t<e){N(`সঠিক শুরু ও শেষ মেমো নম্বর দিন`,`error`);return}if(t-e+1>200){N(`একবারে সর্বোচ্চ ২০০টি মেমো জেনারেট করা যাবে`,`error`);return}let n=[];for(let r=e;r<=t;r++)n.push({memoNo:String(r),amount:0});Y=n,this.renderList()},renderList(){let e=document.getElementById(`modal-memo-list-container`),t=document.getElementById(`modal-memo-total-amt`);if(!e)return;if(Y.length===0){e.innerHTML=`<div class="text-xs text-slate-500 text-center py-6">শুরুর ও শেষ মেমো নম্বর দিয়ে রো জেনারেট করুন।</div>`,t&&(t.textContent=`0 AED`);return}let n=``,r=0;Y.forEach((e,t)=>{let i=T(I(e.amount));r=T(r+i),n+=`
-                <div class="flex items-center gap-2 p-1.5 bg-slate-950 border border-slate-800 rounded-lg">
-                    <span class="text-xs font-bold text-slate-400 w-20 shrink-0">মেমো #${e.memoNo}:</span>
-                    <input type="text" value="${i>0?C(i):``}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleModalMemoAmtChange(${t}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextMemoInp(${t});}" class="modal-memo-inp flex-grow bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-amber-400 font-mono font-bold text-right outline-none">
+                <div class="flex items-center gap-2.5 p-2 bg-slate-950 border border-slate-800/90 rounded-xl">
+                    <span class="text-xs sm:text-sm font-bold text-slate-300 w-24 shrink-0">মেমো #${e.memoNo}:</span>
+                    <input type="text" value="${i>0?C(i):``}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleModalMemoAmtChange(${t}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextMemoInp(${t});}" class="modal-memo-inp flex-grow h-9 bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1 text-sm text-amber-400 font-mono font-black text-right outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30">
                 </div>
             `}),e.innerHTML=n,t&&(t.textContent=`${C(r)} AED`)},handleAmtChange(e,t){if(Y[e]){Y[e].amount=T(I(t));let n=0;Y.forEach(e=>{n=T(n+T(I(e.amount)))});let r=document.getElementById(`modal-memo-total-amt`);r&&(r.textContent=`${C(n)} AED`)}},applyToWaterfall(){let e=0;Y.forEach(t=>{e=T(e+T(I(t.amount)))});let t=Y.length,n=t>0?`মেমো নং: (${Y[0].memoNo}-${Y[t-1].memoNo}) = ${t}টি`:``;typeof xc==`function`&&xc(e,n,Y),this.toggle(!1),N(`মেমোর মোট ক্রয় ${C(e)} AED যুক্ত হয়েছে`,`success`)}};window.toggleDubaiMemoModal=e=>Sc.toggle(e),window.handleModalMemoAmtChange=(e,t)=>Sc.handleAmtChange(e,t),window.focusNextMemoInp=e=>{let t=document.querySelectorAll(`.modal-memo-inp`);t&&t[e+1]&&(t[e+1].focus(),t[e+1].select())};function Cc(e,t=[]){let n=document.getElementById(e);if(!n)return;if(!Array.isArray(t)||t.length===0){n.innerHTML=`<tr><td colspan="10" class="p-4 text-center text-slate-500 italic">কোনো পূর্ববর্তী অডিট হিস্ট্রি পাওয়া যায়নি।</td></tr>`;return}let r=``;t.forEach(e=>{let t=T(I(e.varianceAmount)),n=t>=0?`text-emerald-400 font-bold`:`text-red-400 font-bold`,i=0;Array.isArray(e.personalHoldings)&&e.personalHoldings.forEach(e=>{i=T(i+T(I(e.amount)))}),r+=`
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors">

@@ -76,9 +76,9 @@ export const DubaiMemoModal = {
             const amt = safeRound(parseAmount(m.amount));
             total = safeRound(total + amt);
             html += `
-                <div class="flex items-center gap-2 p-1.5 bg-slate-950 border border-slate-800 rounded-lg">
-                    <span class="text-xs font-bold text-slate-400 w-20 shrink-0">মেমো #${m.memoNo}:</span>
-                    <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleModalMemoAmtChange(${idx}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextMemoInp(${idx});}" class="modal-memo-inp flex-grow bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-amber-400 font-mono font-bold text-right outline-none">
+                <div class="flex items-center gap-2.5 p-2 bg-slate-950 border border-slate-800/90 rounded-xl">
+                    <span class="text-xs sm:text-sm font-bold text-slate-300 w-24 shrink-0">মেমো #${m.memoNo}:</span>
+                    <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleModalMemoAmtChange(${idx}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextMemoInp(${idx});}" class="modal-memo-inp flex-grow h-9 bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1 text-sm text-amber-400 font-mono font-black text-right outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30">
                 </div>
             `;
         });
