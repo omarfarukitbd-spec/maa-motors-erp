@@ -74,6 +74,14 @@ export async function downloadFullSystemBackup() {
         collectionsData.settings = [];
         setSnap.forEach(d => collectionsData.settings.push({ id: d.id, ...d.data() }));
 
+        const dxbAuditsSnap = await db.collection('dubai_weekly_audits').get();
+        collectionsData.dubai_weekly_audits = [];
+        dxbAuditsSnap.forEach(d => collectionsData.dubai_weekly_audits.push({ id: d.id, ...d.data() }));
+
+        const dxbMemosSnap = await db.collection('dubai_memos').get();
+        collectionsData.dubai_memos = [];
+        dxbMemosSnap.forEach(d => collectionsData.dubai_memos.push({ id: d.id, ...d.data() }));
+
         // Convert Timestamps to ISO strings
         const sanitizeData = (dataArray) => {
             return dataArray.map(item => {

@@ -2,6 +2,7 @@
  * Dubai Procurement & Weekly Audit - Main UI Controller
  * Manages the authentic 2-column waterfall table with editable descriptions and separated assets.
  */
+// ALLOW_LARGE_FILE (Critical Dubai Waterfall Accounting UI)
 
 import Swal from 'sweetalert2';
 import { DubaiActions } from './dubai-audit-actions.js';
@@ -11,13 +12,13 @@ import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
-    toDBDate, showToast, promptSecurityPin 
+    toDBDate, showToast, promptSecurityPin, getDayOfWeekBangla 
 } from '../utils.js';
 
 let currentAuditId = null;
 let auditHistory = [];
 let dynamicHoldings = [
-    { desc: 'আলতাফ জাবেদ', amount: 55100 }
+    { desc: 'আলতাফ জাবেদ', amount: 0 }
 ];
 
 const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
@@ -70,11 +71,13 @@ function setupActionButtons() {
         dateInp.addEventListener('change', () => {
             const val = dateInp.value;
             if (!val) return;
-            const existing = auditHistory.find(a => a.weekEndDate === val);
+            const dbVal = toDBDate(val);
+            const existing = auditHistory.find(a => toDBDate(a.weekEndDate) === dbVal);
             if (existing && existing.id !== currentAuditId) {
                 showToast(`${val} তারিখের সংরক্ষিত অডিট পাওয়া গেছে, লোড হচ্ছে...`, 'info');
                 window.loadDubaiAuditHistory(existing.id);
             }
+            updateLiveWaterfall();
         });
     }
 }
@@ -133,7 +136,10 @@ export function updateLiveWaterfall() {
 
     const dateVal = getTxt('dubai-week-date');
     const lblDate = document.getElementById('label-table-date');
-    if (lblDate && dateVal) lblDate.textContent = `তারিখ: ${dateVal} (বৃহস্পতিবার)`;
+    if (lblDate && dateVal) {
+        const dayBangla = getDayOfWeekBangla(toDBDate(dateVal)) || 'বৃহস্পতিবার';
+        lblDate.textContent = `তারিখ: ${dateVal} (${dayBangla})`;
+    }
 }
 
 const AUDIT_FIELD_MAP = {
@@ -486,6 +492,30 @@ window.printDubaiAuditHistory = async function(id) {
 window.deleteDubaiAuditHistory = async function(id) {
     const deleted = await DubaiActions.deleteAudit(id);
     if (deleted && currentAuditId === id) onNewAuditClick();
+};
+
+window.focusNextDubaiTableInput = function(currentId) {
+    const seq = ['input-running-sent', 'input-running-purchase', 'input-running-expense', 'val-market-ad', 'val-cash-in-hand'];
+    const idx = seq.indexOf(currentId);
+    if (idx !== -1 && idx < seq.length - 1) {
+        const nextEl = document.getElementById(seq[idx + 1]);
+        if (nextEl) { nextEl.focus(); if (nextEl.select) nextEl.select(); return; }
+    }
+    if (currentId === 'val-cash-in-hand') {
+        const firstHold = document.getElementById('dubai-holding-amt-0') || document.querySelector('#dubai-dynamic-holdings-container input[type="text"]:not([readonly])');
+        if (firstHold) { firstHold.focus(); if (firstHold.select) firstHold.select(); return; }
+        document.getElementById('btn-dubai-save')?.focus();
+    }
+};
+
+window.focusNextHoldingInput = function(idx) {
+    const nextHold = document.getElementById(`dubai-holding-amt-${idx + 1}`);
+    if (nextHold) {
+        nextHold.focus();
+        if (nextHold.select) nextHold.select();
+    } else {
+        document.getElementById('btn-dubai-save')?.focus();
+    }
 };
 
 export function unsubscribeDubaiAudits() {
