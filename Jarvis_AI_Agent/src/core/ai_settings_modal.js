@@ -22,6 +22,7 @@ export class AISettingsModal {
         this.openaiKeyInput = document.getElementById('input-openai-key');
         this.geminiKeyInput = document.getElementById('input-gemini-key');
         this.openaiVoiceSelect = document.getElementById('select-openai-voice');
+        this.geminiVoiceSelect = document.getElementById('select-gemini-voice');
         this.toggleOpenAIKeyVis = document.getElementById('toggle-openai-key-vis');
         this.toggleGeminiKeyVis = document.getElementById('toggle-gemini-key-vis');
 
@@ -107,6 +108,7 @@ export class AISettingsModal {
         const openAIKey = localStorage.getItem('jarvis_openai_key') || '';
         const geminiKey = localStorage.getItem('jarvis_gemini_key') || '';
         const selectedVoice = localStorage.getItem('jarvis_openai_voice') || 'onyx';
+        const selectedAzureVoice = localStorage.getItem('jarvis_azure_voice') || 'bn-BD-PradeepNeural';
 
         let provider = localStorage.getItem('jarvis_ai_provider') || 'openai';
         if (!openAIKey && geminiKey) {
@@ -118,13 +120,24 @@ export class AISettingsModal {
         if (this.openaiKeyInput) this.openaiKeyInput.value = openAIKey;
         if (this.geminiKeyInput) this.geminiKeyInput.value = geminiKey;
         if (this.openaiVoiceSelect) this.openaiVoiceSelect.value = selectedVoice;
+        if (this.geminiVoiceSelect) this.geminiVoiceSelect.value = selectedAzureVoice;
     }
 
     async testCurrentVoice() {
-        const selectedVoice = this.openaiVoiceSelect?.value || 'onyx';
-        voiceSpeaker.setOpenAIVoice(selectedVoice);
+        await voiceSpeaker.unlockAudio();
+        const isGemini = this.geminiTab?.classList.contains('active');
 
-        const testPhrase = 'আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের ব্যবসায়িক হিসাব দেখার জন্য সম্পূর্ণ প্রস্তুত আছি।';
+        if (isGemini) {
+            const selectedAzure = this.geminiVoiceSelect?.value || 'bn-BD-PradeepNeural';
+            voiceSpeaker.setAzureVoice(selectedAzure);
+            voiceSpeaker.setEngine('azure-neural');
+        } else {
+            const selectedVoice = this.openaiVoiceSelect?.value || 'onyx';
+            voiceSpeaker.setOpenAIVoice(selectedVoice);
+            voiceSpeaker.setEngine('openai');
+        }
+
+        const testPhrase = 'আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।';
         
         if (this.previewBtn) {
             const originalHtml = this.previewBtn.innerHTML;
@@ -140,12 +153,13 @@ export class AISettingsModal {
     }
 
     saveSettings() {
-        const isOpneAI = this.openaiTab?.classList.contains('active');
-        let provider = isOpneAI ? 'openai' : 'gemini';
+        const isGemini = this.geminiTab?.classList.contains('active');
+        let provider = isGemini ? 'gemini' : 'openai';
 
         const openAIKey = (this.openaiKeyInput?.value || '').trim();
         const geminiKey = (this.geminiKeyInput?.value || '').trim();
         const selectedVoice = this.openaiVoiceSelect?.value || 'onyx';
+        const selectedAzureVoice = this.geminiVoiceSelect?.value || 'bn-BD-PradeepNeural';
 
         // Auto prioritize Gemini if user only provided Gemini key
         if (!openAIKey && geminiKey) {
@@ -156,10 +170,23 @@ export class AISettingsModal {
         localStorage.setItem('jarvis_openai_key', openAIKey);
         localStorage.setItem('jarvis_gemini_key', geminiKey);
         localStorage.setItem('jarvis_openai_voice', selectedVoice);
+        localStorage.setItem('jarvis_azure_voice', selectedAzureVoice);
 
         // Update active instances
         llmAgent.setProvider(provider);
-        voiceSpeaker.setOpenAIVoice(selectedVoice);
+        if (provider === 'gemini') {
+            voiceSpeaker.setAzureVoice(selectedAzureVoice);
+            voiceSpeaker.setEngine('azure-neural');
+        } else {
+            voiceSpeaker.setOpenAIVoice(selectedVoice);
+            voiceSpeaker.setEngine('openai');
+        }
+
+        // Sync header voice selector
+        const headerVoiceSelector = document.getElementById('voice-selector');
+        if (headerVoiceSelector) {
+            headerVoiceSelector.value = provider === 'gemini' ? selectedAzureVoice : selectedVoice;
+        }
 
         if (this.feedbackEl) {
             this.feedbackEl.className = 'settings-feedback-msg success';

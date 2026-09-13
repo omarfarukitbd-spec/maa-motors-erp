@@ -34,9 +34,15 @@ const stopSpeechBtn = document.getElementById('stop-speech-btn');
 voiceSpeaker.onStart(() => {
     visualizer.setState('speaking');
     if (stopSpeechBtn) stopSpeechBtn.classList.remove('hidden');
+    const statusEl = document.getElementById('mic-status-text');
+    if (statusEl) statusEl.innerText = 'জার্ভিস কথা বলছে...';
 });
 voiceSpeaker.onEnd(() => {
     if (stopSpeechBtn) stopSpeechBtn.classList.add('hidden');
+    const statusEl = document.getElementById('mic-status-text');
+    if (statusEl && !listener.isListening) {
+        statusEl.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+    }
     if (!listener.isListening) visualizer.setState('idle');
 });
 
@@ -45,6 +51,8 @@ if (stopSpeechBtn) {
         voiceSpeaker.stop();
         stopSpeechBtn.classList.add('hidden');
         visualizer.setState('idle');
+        const statusEl = document.getElementById('mic-status-text');
+        if (statusEl) statusEl.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
     });
 }
 
@@ -130,7 +138,14 @@ listener.on('onInterim', (interimText) => {
 listener.on('onFinal', async (finalText) => {
     micStatusText.innerText = 'প্রসেস করছি... (Reasoning)';
     visualizer.setState('thinking');
-    await jarvisBrain.processCommand(finalText);
+    try {
+        await jarvisBrain.processCommand(finalText);
+    } finally {
+        if (!voiceSpeaker.isSpeaking && !listener.isListening) {
+            micStatusText.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+            visualizer.setState('idle');
+        }
+    }
 });
 
 // Manual Text Input Command
@@ -138,8 +153,17 @@ async function handleManualSubmit() {
     const text = textInput.value.trim();
     if (!text) return;
     textInput.value = '';
+    await voiceSpeaker.unlockAudio();
+    micStatusText.innerText = 'প্রসেস করছি... (Reasoning)';
     visualizer.setState('thinking');
-    await jarvisBrain.processCommand(text);
+    try {
+        await jarvisBrain.processCommand(text);
+    } finally {
+        if (!voiceSpeaker.isSpeaking && !listener.isListening) {
+            micStatusText.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+            visualizer.setState('idle');
+        }
+    }
 }
 
 sendBtn.addEventListener('click', handleManualSubmit);
@@ -152,8 +176,17 @@ document.querySelectorAll('.prompt-chip').forEach(chip => {
     chip.addEventListener('click', async () => {
         const cmd = chip.getAttribute('data-command');
         if (cmd) {
+            await voiceSpeaker.unlockAudio();
+            micStatusText.innerText = 'প্রসেস করছি... (Reasoning)';
             visualizer.setState('thinking');
-            await jarvisBrain.processCommand(cmd);
+            try {
+                await jarvisBrain.processCommand(cmd);
+            } finally {
+                if (!voiceSpeaker.isSpeaking && !listener.isListening) {
+                    micStatusText.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+                    visualizer.setState('idle');
+                }
+            }
         }
     });
 });
@@ -279,16 +312,35 @@ window.triggerAISettings = () => {
 };
 
 window.triggerVoiceTest = async () => {
+    await voiceSpeaker.unlockAudio();
     visualizer.setState('speaking');
-    await voiceSpeaker.speak('আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।');
-    visualizer.setState('idle');
+    const statusEl = document.getElementById('mic-status-text');
+    if (statusEl) statusEl.innerText = 'ভয়েস টেস্ট চলছে...';
+    try {
+        await voiceSpeaker.speak('আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।');
+    } finally {
+        if (!listener.isListening) {
+            visualizer.setState('idle');
+            if (statusEl) statusEl.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+        }
+    }
 };
 
-window.triggerReplay = (btn) => {
+window.triggerReplay = async (btn) => {
     const text = btn.getAttribute('data-msg');
     if (text) {
+        await voiceSpeaker.unlockAudio();
         visualizer.setState('speaking');
-        voiceSpeaker.speak(text);
+        const statusEl = document.getElementById('mic-status-text');
+        if (statusEl) statusEl.innerText = 'জার্ভিস কথা বলছে...';
+        try {
+            await voiceSpeaker.speak(text);
+        } finally {
+            if (!listener.isListening) {
+                visualizer.setState('idle');
+                if (statusEl) statusEl.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+            }
+        }
     }
 };
 
@@ -299,8 +351,21 @@ if (testVoiceBtn) {
 
 const voiceSelector = document.getElementById('voice-selector');
 if (voiceSelector) {
-    const currentVoice = localStorage.getItem('jarvis_openai_voice') || 'onyx';
-    voiceSelector.value = currentVoice;
+    const hasOpenAIKey = Boolean((localStorage.getItem('jarvis_openai_key') || '').trim());
+    const savedAzureVoice = localStorage.getItem('jarvis_azure_voice') || 'bn-BD-PradeepNeural';
+    const savedOpenAIVoice = localStorage.getItem('jarvis_openai_voice') || 'onyx';
+
+    // If no OpenAI key, default to authentic Bangladeshi Azure neural voice
+    if (!hasOpenAIKey) {
+        voiceSelector.value = savedAzureVoice;
+        voiceSpeaker.setAzureVoice(savedAzureVoice);
+        voiceSpeaker.setEngine('azure-neural');
+    } else {
+        voiceSelector.value = savedOpenAIVoice;
+        voiceSpeaker.setOpenAIVoice(savedOpenAIVoice);
+        voiceSpeaker.setEngine('openai');
+    }
+
     voiceSelector.addEventListener('change', (e) => {
         const val = e.target.value;
         if (val.startsWith('bn-BD-')) {
