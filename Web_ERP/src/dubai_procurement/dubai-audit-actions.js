@@ -13,9 +13,7 @@ export const DubaiActions = {
     async saveAudit(auditPayload, memoItems) {
         try {
             const savedId = await DubaiDAO.saveWeeklyAudit(auditPayload);
-            if (Array.isArray(memoItems) && memoItems.length > 0) {
-                await DubaiDAO.saveMemos(savedId, memoItems);
-            }
+            await DubaiDAO.saveMemos(savedId, Array.isArray(memoItems) ? memoItems : []);
             showToast('দুবাই সাপ্তাহিক অডিট সফলভাবে সংরক্ষিত হয়েছে!', 'success');
             return savedId;
         } catch (err) {

@@ -295,9 +295,9 @@ function generateAuditPrintHtml(audit, memos, settings) {
             <!-- Attached Memos Section (if available) -->
             ${memosSummaryHtml ? `
                 <div style="margin-top: 8px; padding: 5px 8px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 6px;">
-                    <div style="font-size: 9.5px; font-weight: 800; color: #334155; margin-bottom: 3px; display: flex; justify-content: space-between;">
-                        <span>সংযুক্ত ক্রয় মেমো তালিকা (${memos.length}টি মেমো):</span>
-                        <span style="color: #64748b;">মোট ক্রয়: <b class="num-font" style="color: #0f172a;">${formatAED(cumPur)} AED</b></span>
+                    <div style="font-size: 9.5px; font-weight: 800; color: #334155; margin-bottom: 3px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                        <span>সংযুক্ত চলতি সপ্তাহের মেমো তালিকা (${memos.length}টি মেমো):</span>
+                        <span style="color: #64748b;">এই সপ্তাহের মেমো মোট: <b class="num-font" style="color: #b45309;">${formatAED(runningPur > 0 ? runningPur : cumPur)} AED</b> (সর্বমোট ক্রয়: <b class="num-font" style="color: #0f172a;">${formatAED(cumPur)} AED</b>)</span>
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 3px;">
                         ${memosSummaryHtml}

@@ -121,5 +121,8 @@ window.focusNextMemoInp = (idx) => {
     if (inputs && inputs[idx + 1]) {
         inputs[idx + 1].focus();
         inputs[idx + 1].select();
+    } else {
+        const btnApply = document.getElementById('btn-modal-apply-memo');
+        if (btnApply) btnApply.focus();
     }
 };

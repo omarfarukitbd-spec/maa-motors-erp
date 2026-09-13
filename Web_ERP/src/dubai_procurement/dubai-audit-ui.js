@@ -11,7 +11,7 @@ import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
-    showToast, promptSecurityPin 
+    toDBDate, showToast, promptSecurityPin 
 } from '../utils.js';
 
 let currentAuditId = null;
@@ -80,19 +80,19 @@ function setupActionButtons() {
 }
 
 export function updateLiveWaterfall() {
-    const cumSent = getVal('input-cum-sent');
-    const cumPur = getVal('input-cum-purchase');
-    const cumExp = getVal('input-cum-expense');
-    const runSent = getVal('input-running-sent');
-    const runPur = getVal('input-running-purchase');
-    const runExp = getVal('input-running-expense');
-    const mAd = getVal('val-market-ad');
-    const cHand = getVal('val-cash-in-hand');
+    const prevRem = getVal('dubai-prev-rem-input'), prevPur = getVal('dubai-prev-pur-input'), prevExp = getVal('dubai-prev-exp-input');
+    const cumSent = getVal('input-cum-sent'), cumPur = getVal('input-cum-purchase'), cumExp = getVal('input-cum-expense');
+    const runSent = getVal('input-running-sent'), runPur = getVal('input-running-purchase'), runExp = getVal('input-running-expense');
+    const mAd = getVal('val-market-ad'), cHand = getVal('val-cash-in-hand');
 
     const hasNewEntries = (cumSent > 0 || runSent > 0 || cumPur > 0 || runPur > 0 || cumExp > 0 || runExp > 0 || mAd > 0 || cHand > 0);
 
-    const sub1 = safeRound(cumSent - cumPur);
-    const sub2 = safeRound(sub1 - cumExp);
+    const effSent = cumSent > 0 ? cumSent : (runSent > 0 ? safeRound(prevRem + runSent) : prevRem);
+    const effPur = cumPur > 0 ? cumPur : (runPur > 0 ? safeRound(prevPur + runPur) : prevPur);
+    const effExp = cumExp > 0 ? cumExp : (runExp > 0 ? safeRound(prevExp + runExp) : prevExp);
+
+    const sub1 = safeRound(effSent - effPur);
+    const sub2 = safeRound(sub1 - effExp);
     const sub3 = safeRound(sub2 - mAd - cHand);
 
     let holdingsTotal = 0;
@@ -149,9 +149,13 @@ window.handleDubaiWaterfallChange = function() {
 window.handleCumChange = function(type) {
     const [pId, cId, rId] = AUDIT_FIELD_MAP[type] || [];
     if (pId && cId && rId) {
-        const diff = Math.abs(safeRound(getVal(cId) - getVal(pId)));
-        const runInp = document.getElementById(rId);
-        if (runInp) runInp.value = diff > 0 ? formatAmountWithComma(diff) : '';
+        const cVal = getVal(cId), pVal = getVal(pId), runInp = document.getElementById(rId);
+        if (runInp) {
+            const hasText = Boolean(document.getElementById(cId)?.value.trim());
+            runInp.value = (cVal >= pVal && hasText) 
+                ? (safeRound(cVal - pVal) > 0 ? formatAmountWithComma(safeRound(cVal - pVal)) : '') 
+                : '';
+        }
     }
     updateLiveWaterfall();
 };
@@ -159,8 +163,11 @@ window.handleCumChange = function(type) {
 window.handleRunningChange = function(type) {
     const [pId, cId, rId] = AUDIT_FIELD_MAP[type] || [];
     if (pId && cId && rId) {
-        const cumInp = document.getElementById(cId);
-        if (cumInp) cumInp.value = formatAmountWithComma(safeRound(getVal(pId) + getVal(rId)));
+        const rVal = getVal(rId), pVal = getVal(pId), cumInp = document.getElementById(cId);
+        if (cumInp) {
+            const hasText = Boolean(document.getElementById(rId)?.value.trim());
+            cumInp.value = (rVal > 0 && hasText) ? formatAmountWithComma(safeRound(pVal + rVal)) : '';
+        }
     }
     updateLiveWaterfall();
 };
@@ -275,7 +282,7 @@ window.removeDubaiHoldingRow = async function(idx) {
 };
 
 // --- Actions & History Handlers ---
-async function onRollForwardClick() {
+async function onRollForwardClick(silent = false) {
     const latest = await DubaiActions.rollForward();
     if (!latest) return;
     currentAuditId = null;
@@ -294,7 +301,7 @@ async function onRollForwardClick() {
 
     if (latest.weekEndDate) {
         try {
-            const parts = String(latest.weekEndDate).split('-');
+            const parts = String(toDBDate(latest.weekEndDate)).split('-');
             if (parts.length === 3) {
                 const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10) + 7);
                 setInp('dubai-week-date', `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
@@ -317,7 +324,7 @@ async function onRollForwardClick() {
     renderDynamicHoldings();
     DubaiMemoModal.setMemos([]);
     updateLiveWaterfall();
-    showToast(`পূর্ববর্তী অডিট (${latest.weekEndDate || ''}) থেকে ব্যালেন্স লক করা হয়েছে। নতুন সপ্তাহের ডাটা ফাঁকা রাখা হয়েছে।`, 'success');
+    if (!silent) showToast(`পূর্ববর্তী অডিট (${latest.weekEndDate || ''}) থেকে ব্যালেন্স লক করা হয়েছে। নতুন সপ্তাহের ডাটা ফাঁকা রাখা হয়েছে।`, 'success');
 }
 
 async function onSaveAuditClick() {
@@ -337,16 +344,9 @@ function onPrintAuditClick() {
 }
 
 function buildCurrentAuditObject() {
-    const prevRem = getVal('dubai-prev-rem-input');
-    const prevPur = getVal('dubai-prev-pur-input');
-    const prevExp = getVal('dubai-prev-exp-input');
-
-    let cumSent = getVal('input-cum-sent');
-    let cumPur = getVal('input-cum-purchase');
-    let cumExp = getVal('input-cum-expense');
-    let runningSent = getVal('input-running-sent');
-    let runningPur = getVal('input-running-purchase');
-    let runningExp = getVal('input-running-expense');
+    const prevRem = getVal('dubai-prev-rem-input'), prevPur = getVal('dubai-prev-pur-input'), prevExp = getVal('dubai-prev-exp-input');
+    let cumSent = getVal('input-cum-sent'), cumPur = getVal('input-cum-purchase'), cumExp = getVal('input-cum-expense');
+    let runningSent = getVal('input-running-sent'), runningPur = getVal('input-running-purchase'), runningExp = getVal('input-running-expense');
 
     const syncVal = (cum, run, prev) => {
         let c = cum, r = run;
@@ -379,7 +379,7 @@ function buildCurrentAuditObject() {
 
     return {
         containerNo: getTxt('dubai-container-no', 'CT-2026-DXB-01'),
-        weekEndDate: getTxt('dubai-week-date', getTodayLocalDateString()),
+        weekEndDate: toDBDate(getTxt('dubai-week-date', getTodayLocalDateString())),
         note: getTxt('dubai-audit-note'),
         descriptions: {
             sent: getTxt('desc-sent', 'বৃহস্পতিবার পর্যন্ত টাকা পাঠানো'), purchase: getTxt('desc-purchase', 'সর্বমোট মাল ক্রয়'),
@@ -428,11 +428,15 @@ async function onNewAuditClick() {
     showToast('নতুন সপ্তাহের ব্ল্যাঙ্ক অডিট প্রস্তুত', 'info');
 }
 
-
+let hasAutoLoadedDb = false;
 function listenToHistory() {
     DubaiActions.listenAudits(audits => {
         auditHistory = audits;
         renderDubaiHistoryTable('dubai-history-tbody', auditHistory);
+        if (!hasAutoLoadedDb && !currentAuditId && audits.length > 0) {
+            hasAutoLoadedDb = true;
+            onRollForwardClick(true);
+        }
     });
 }
 
@@ -456,18 +460,10 @@ window.loadDubaiAuditHistory = async function(id) {
     setInp('memo-range-end', audit.memoRangeEnd || '');
     window.handleMemoRangeChange();
 
-    [
-        ['dubai-prev-rem-input', audit.prevRemittance],
-        ['dubai-prev-pur-input', audit.prevPurchaseTotal],
-        ['dubai-prev-exp-input', audit.prevExpenseTotal],
-        ['input-cum-sent', audit.cumulativeRemittance],
-        ['input-cum-purchase', audit.cumulativePurchaseTotal],
-        ['input-cum-expense', audit.cumulativeExpenseTotal],
-        ['input-running-sent', audit.weeklyRemittanceTotal],
-        ['input-running-purchase', audit.weeklyPurchaseTotal],
-        ['input-running-expense', audit.weeklyExpenseTotal],
-        ['val-market-ad', audit.marketAdvance],
-        ['val-cash-in-hand', audit.cashInHand]
+    [['dubai-prev-rem-input', audit.prevRemittance], ['dubai-prev-pur-input', audit.prevPurchaseTotal], ['dubai-prev-exp-input', audit.prevExpenseTotal],
+     ['input-cum-sent', audit.cumulativeRemittance], ['input-cum-purchase', audit.cumulativePurchaseTotal], ['input-cum-expense', audit.cumulativeExpenseTotal],
+     ['input-running-sent', audit.weeklyRemittanceTotal], ['input-running-purchase', audit.weeklyPurchaseTotal], ['input-running-expense', audit.weeklyExpenseTotal],
+     ['val-market-ad', audit.marketAdvance], ['val-cash-in-hand', audit.cashInHand]
     ].forEach(([id, val]) => setInp(id, formatAmountWithComma(val || 0)));
 
     dynamicHoldings = Array.isArray(audit.personalHoldings) && audit.personalHoldings.length > 0 

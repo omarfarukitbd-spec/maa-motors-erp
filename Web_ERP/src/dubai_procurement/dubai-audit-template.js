@@ -51,7 +51,7 @@ export function getDubaiAuditMainTemplate() {
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-400 mb-1">অডিট তারিখ (বৃহস্পতিবার):</label>
-                    <input type="text" id="dubai-week-date" value="2026-08-27" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold font-mono focus:border-sky-500 outline-none datepicker">
+                    <input type="text" id="dubai-week-date" value="${getTodayLocalDateString()}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold font-mono focus:border-sky-500 outline-none datepicker">
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-400 mb-1">অডিট নোট / শিরোনাম:</label>
@@ -66,7 +66,7 @@ export function getDubaiAuditMainTemplate() {
                         <i class="fa-solid fa-table-list text-sky-400"></i>
                         <span>সাপ্তাহিক রিকনসিলিয়েশন শিট (Thursday Cascade Sheet)</span>
                     </div>
-                    <button type="button" onclick="window.toggleDubaiMemoModal(true)" class="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                    <button type="button" onclick="window.openDubaiMemoDetailsModal()" class="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer">
                         <i class="fa-solid fa-receipt text-xs"></i>
                         <span>মেমো রেঞ্জ জেনারেটর</span>
                     </button>
