@@ -93,18 +93,19 @@ export function getDubaiAuditMainTemplate() {
                         <div class="col-span-6 p-2.5 border-r border-slate-800 flex flex-col gap-1">
                             <input type="text" id="desc-sent" value="বৃহস্পতিবার পর্যন্ত টাকা পাঠানো" class="bg-transparent border-b border-dashed border-slate-700 text-slate-200 text-xs font-bold focus:border-sky-400 outline-none w-full">
                             <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                <i class="fa-solid fa-clock-rotate-left text-slate-500 text-[9px]"></i>
-                                <span class="text-slate-500">পূর্বের মোট:</span>
-                                <input type="text" id="dubai-prev-rem-input" value="8,02,395" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('sent')" class="w-24 bg-slate-950/90 border border-slate-700/80 rounded px-1.5 py-0.5 text-[10px] text-emerald-300 font-mono text-right font-bold focus:border-emerald-500 outline-none" title="খাতার উপরের পূর্ববর্তী মোট ব্যালেন্স">
+                                <i class="fa-solid fa-lock text-sky-400 text-[9px]" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
+                                <span class="text-slate-400 font-semibold">পূর্বের মোট:</span>
+                                <input type="text" id="dubai-prev-rem-input" value="11,52,395" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('sent')" class="w-24 bg-slate-950/70 border border-slate-700/60 rounded px-1.5 py-0.5 text-[10px] text-emerald-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী ব্যালেন্স (লক করা)">
                                 <span class="text-slate-500 font-bold">AED</span>
+                                <button type="button" onclick="window.toggleUnlockPrevBaseline('sent')" class="text-[9px] text-slate-500 hover:text-sky-400 px-0.5 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </div>
                         <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
                             <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="input-cum-sent" value="9,02,395" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('sent')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
+                            <input type="text" id="input-cum-sent" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('sent')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
                         </div>
                         <div class="col-span-3 p-2.5 flex items-center justify-end pr-2">
-                            <input type="text" id="input-running-sent" value="1,00,000" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('sent')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-emerald-400 font-bold font-mono text-right focus:border-emerald-500 outline-none">
+                            <input type="text" id="input-running-sent" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('sent')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-emerald-400 font-bold font-mono text-right focus:border-emerald-500 outline-none">
                         </div>
                     </div>
 
@@ -118,28 +119,29 @@ export function getDubaiAuditMainTemplate() {
                             <!-- Compact Inline Memo Range Toolbar -->
                             <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/80 px-2 py-1 rounded-lg border border-slate-800 text-[11px]">
                                 <span class="text-slate-400 text-[10px]">মেমো:</span>
-                                <input type="number" id="memo-range-start" value="88" placeholder="৮৮" oninput="window.handleMemoRangeChange()" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[11px] text-amber-300 font-mono text-center outline-none">
+                                <input type="number" id="memo-range-start" value="113" placeholder="শুরু" oninput="window.handleMemoRangeChange()" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[11px] text-amber-300 font-mono text-center outline-none">
                                 <span class="text-slate-500 text-[10px]">থেকে</span>
-                                <input type="number" id="memo-range-end" value="102" placeholder="১০২" oninput="window.handleMemoRangeChange()" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[11px] text-amber-300 font-mono text-center outline-none">
-                                <span id="memo-auto-count-badge" class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold whitespace-nowrap">১৫টি মেমো</span>
-                                <input type="hidden" id="desc-memos" value="মেমো নং: (৮৮-১০২) = ১৫টি">
+                                <input type="number" id="memo-range-end" value="" placeholder="শেষ" oninput="window.handleMemoRangeChange()" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[11px] text-amber-300 font-mono text-center outline-none">
+                                <span id="memo-auto-count-badge" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold whitespace-nowrap">০টি মেমো</span>
+                                <input type="hidden" id="desc-memos" value="">
                                 <button type="button" onclick="window.openDubaiMemoDetailsModal()" class="ml-auto px-1.5 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer">
                                     <i class="fa-solid fa-list-check text-[9px]"></i> মেমো এন্ট্রি
                                 </button>
                             </div>
                             <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                <i class="fa-solid fa-clock-rotate-left text-slate-500 text-[9px]"></i>
-                                <span class="text-slate-500">পূর্বের মোট ক্রয়:</span>
-                                <input type="text" id="dubai-prev-pur-input" value="6,40,140" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('purchase')" class="w-24 bg-slate-950/90 border border-slate-700/80 rounded px-1.5 py-0.5 text-[10px] text-amber-300 font-mono text-right font-bold focus:border-amber-500 outline-none" title="খাতার উপরের পূর্ববর্তী মোট ক্রয়">
+                                <i class="fa-solid fa-lock text-sky-400 text-[9px]" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
+                                <span class="text-slate-400 font-semibold">পূর্বের মোট ক্রয়:</span>
+                                <input type="text" id="dubai-prev-pur-input" value="8,59,860" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('purchase')" class="w-24 bg-slate-950/70 border border-slate-700/60 rounded px-1.5 py-0.5 text-[10px] text-amber-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী ক্রয় (লক করা)">
                                 <span class="text-slate-500 font-bold">AED</span>
+                                <button type="button" onclick="window.toggleUnlockPrevBaseline('purchase')" class="text-[9px] text-slate-500 hover:text-sky-400 px-0.5 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </div>
                         <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
                             <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="input-cum-purchase" value="7,48,070" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('purchase')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-400 font-mono text-right font-bold focus:border-amber-500 outline-none">
+                            <input type="text" id="input-cum-purchase" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('purchase')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-400 font-mono text-right font-bold focus:border-amber-500 outline-none">
                         </div>
                         <div class="col-span-3 p-2.5 flex items-center justify-end pr-2">
-                            <input type="text" id="input-running-purchase" value="1,07,930" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('purchase')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-amber-400 font-bold font-mono text-right focus:border-amber-500 outline-none">
+                            <input type="text" id="input-running-purchase" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('purchase')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-amber-400 font-bold font-mono text-right focus:border-amber-500 outline-none">
                         </div>
                     </div>
 
@@ -163,18 +165,19 @@ export function getDubaiAuditMainTemplate() {
                                 <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-red-400 mr-0.5"></i> বিয়োগ</span>
                             </div>
                             <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                <i class="fa-solid fa-clock-rotate-left text-slate-500 text-[9px]"></i>
-                                <span class="text-slate-500">পূর্বের মোট খরচ:</span>
-                                <input type="text" id="dubai-prev-exp-input" value="14,586" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('expense')" class="w-24 bg-slate-950/90 border border-slate-700/80 rounded px-1.5 py-0.5 text-[10px] text-red-300 font-mono text-right font-bold focus:border-red-500 outline-none" title="খাতার উপরের পূর্ববর্তী মোট খরচ">
+                                <i class="fa-solid fa-lock text-sky-400 text-[9px]" title="পূর্ববর্তী ক্লোজিং ব্যালেন্স (লক করা)"></i>
+                                <span class="text-slate-400 font-semibold">পূর্বের মোট খরচ:</span>
+                                <input type="text" id="dubai-prev-exp-input" value="18,069" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('expense')" class="w-24 bg-slate-950/70 border border-slate-700/60 rounded px-1.5 py-0.5 text-[10px] text-red-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী খরচ (লক করা)">
                                 <span class="text-slate-500 font-bold">AED</span>
+                                <button type="button" onclick="window.toggleUnlockPrevBaseline('expense')" class="text-[9px] text-slate-500 hover:text-sky-400 px-0.5 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </div>
                         <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
                             <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="input-cum-expense" value="16,055" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('expense')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-red-400 font-mono text-right font-bold focus:border-red-500 outline-none">
+                            <input type="text" id="input-cum-expense" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleCumChange('expense')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-red-400 font-mono text-right font-bold focus:border-red-500 outline-none">
                         </div>
                         <div class="col-span-3 p-2.5 flex items-center justify-end pr-2">
-                            <input type="text" id="input-running-expense" value="1,469" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('expense')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-red-400 font-bold font-mono text-right focus:border-red-500 outline-none">
+                            <input type="text" id="input-running-expense" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleRunningChange('expense')" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-red-400 font-bold font-mono text-right focus:border-red-500 outline-none">
                         </div>
                     </div>
 
@@ -198,7 +201,7 @@ export function getDubaiAuditMainTemplate() {
                         </div>
                         <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
                             <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="val-market-ad" value="10,320" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-400 font-mono text-right font-bold focus:border-cyan-500 outline-none">
+                            <input type="text" id="val-market-ad" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-400 font-mono text-right font-bold focus:border-cyan-500 outline-none">
                         </div>
                         <div class="col-span-3 p-2.5 text-slate-400 text-xs text-right pr-3">
                             সাপ্লায়ারদের অগ্রিম
@@ -213,7 +216,7 @@ export function getDubaiAuditMainTemplate() {
                         </div>
                         <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
                             <span class="text-[10px] text-slate-500 font-bold">AED:</span>
-                            <input type="text" id="val-cash-in-hand" value="72,835" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
+                            <input type="text" id="val-cash-in-hand" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-mono text-right font-bold focus:border-emerald-500 outline-none">
                         </div>
                         <div class="col-span-3 p-2.5 text-slate-400 text-xs text-right pr-3">
                             ক্যাশ বাক্সে নগদ দেরহাম

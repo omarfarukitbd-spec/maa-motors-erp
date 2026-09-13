@@ -82,9 +82,17 @@ export function updateLiveWaterfall() {
     const cumSent = getVal('input-cum-sent');
     const cumPur = getVal('input-cum-purchase');
     const cumExp = getVal('input-cum-expense');
+    const runSent = getVal('input-running-sent');
+    const runPur = getVal('input-running-purchase');
+    const runExp = getVal('input-running-expense');
+    const mAd = getVal('val-market-ad');
+    const cHand = getVal('val-cash-in-hand');
+
+    const hasNewEntries = (cumSent > 0 || runSent > 0 || cumPur > 0 || runPur > 0 || cumExp > 0 || runExp > 0 || mAd > 0 || cHand > 0);
+
     const sub1 = safeRound(cumSent - cumPur);
     const sub2 = safeRound(sub1 - cumExp);
-    const sub3 = safeRound(sub2 - getVal('val-market-ad') - getVal('val-cash-in-hand'));
+    const sub3 = safeRound(sub2 - mAd - cHand);
 
     let holdingsTotal = 0;
     dynamicHoldings.forEach(h => { holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount))); });
@@ -92,31 +100,45 @@ export function updateLiveWaterfall() {
 
     const setTxt = (id, val) => { 
         const el = document.getElementById(id); 
-        if (el) el.textContent = formatAmountWithComma(val); 
+        if (el) el.textContent = val !== 0 ? formatAmountWithComma(val) : '0'; 
     };
-    setTxt('subtotal-1', sub1);
-    setTxt('subtotal-2', sub2);
-    setTxt('subtotal-3', sub3);
-    setTxt('val-final-variance', finalVariance);
 
     const badgeEl = document.getElementById('final-variance-badge');
     const statusDescEl = document.getElementById('desc-final-status');
     const valFinalEl = document.getElementById('val-final-variance');
 
-    if (finalVariance >= 0) {
+    if (!hasNewEntries) {
+        setTxt('subtotal-1', 0);
+        setTxt('subtotal-2', 0);
+        setTxt('subtotal-3', 0);
+        setTxt('val-final-variance', 0);
         if (badgeEl) {
-            badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
-            badgeEl.textContent = 'ক্যাশ বাড়তি';
+            badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700';
+            badgeEl.textContent = 'হিসাবের অপেক্ষায়';
         }
-        if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ বাড়তি)';
-        if (valFinalEl) valFinalEl.className = 'text-emerald-400 font-bold';
+        if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(হিসাবের অপেক্ষায়)';
+        if (valFinalEl) valFinalEl.className = 'text-slate-400 font-bold';
     } else {
-        if (badgeEl) {
-            badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-red-500/20 text-red-400 border border-red-500/40';
-            badgeEl.textContent = 'ক্যাশ ঘাটতি';
+        setTxt('subtotal-1', sub1);
+        setTxt('subtotal-2', sub2);
+        setTxt('subtotal-3', sub3);
+        setTxt('val-final-variance', finalVariance);
+
+        if (finalVariance >= 0) {
+            if (badgeEl) {
+                badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                badgeEl.textContent = 'ক্যাশ বাড়তি';
+            }
+            if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ বাড়তি)';
+            if (valFinalEl) valFinalEl.className = 'text-emerald-400 font-bold';
+        } else {
+            if (badgeEl) {
+                badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-red-500/20 text-red-400 border border-red-500/40';
+                badgeEl.textContent = 'ক্যাশ ঘাটতি';
+            }
+            if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ ঘাটতি)';
+            if (valFinalEl) valFinalEl.className = 'text-red-400 font-bold';
         }
-        if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ ঘাটতি)';
-        if (valFinalEl) valFinalEl.className = 'text-red-400 font-bold';
     }
 
     const dateVal = getTxt('dubai-week-date');
@@ -124,21 +146,20 @@ export function updateLiveWaterfall() {
     if (lblDate && dateVal) lblDate.textContent = `তারিখ: ${dateVal} (বৃহস্পতিবার)`;
 }
 
+const AUDIT_FIELD_MAP = {
+    sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
+    purchase: ['dubai-prev-pur-input', 'input-cum-purchase', 'input-running-purchase'],
+    expense: ['dubai-prev-exp-input', 'input-cum-expense', 'input-running-expense']
+};
+
 window.handleDubaiWaterfallChange = function() {
     updateLiveWaterfall();
 };
 
 window.handleCumChange = function(type) {
-    const map = {
-        sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
-        purchase: ['dubai-prev-pur-input', 'input-cum-purchase', 'input-running-purchase'],
-        expense: ['dubai-prev-exp-input', 'input-cum-expense', 'input-running-expense']
-    };
-    const [pId, cId, rId] = map[type] || [];
+    const [pId, cId, rId] = AUDIT_FIELD_MAP[type] || [];
     if (pId && cId && rId) {
-        const prev = getVal(pId);
-        const curr = getVal(cId);
-        const diff = Math.abs(safeRound(curr - prev));
+        const diff = Math.abs(safeRound(getVal(cId) - getVal(pId)));
         const runInp = document.getElementById(rId);
         if (runInp) runInp.value = diff > 0 ? formatAmountWithComma(diff) : '';
     }
@@ -146,36 +167,34 @@ window.handleCumChange = function(type) {
 };
 
 window.handleRunningChange = function(type) {
-    const map = {
-        sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
-        purchase: ['dubai-prev-pur-input', 'input-cum-purchase', 'input-running-purchase'],
-        expense: ['dubai-prev-exp-input', 'input-cum-expense', 'input-running-expense']
-    };
-    const [pId, cId, rId] = map[type] || [];
+    const [pId, cId, rId] = AUDIT_FIELD_MAP[type] || [];
     if (pId && cId && rId) {
-        const prev = getVal(pId);
-        const running = getVal(rId);
         const cumInp = document.getElementById(cId);
-        if (cumInp) cumInp.value = formatAmountWithComma(safeRound(prev + running));
+        if (cumInp) cumInp.value = formatAmountWithComma(safeRound(getVal(pId) + getVal(rId)));
     }
     updateLiveWaterfall();
 };
 
 window.handlePrevBaselineChange = function(type) {
-    const map = {
-        sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
-        purchase: ['dubai-prev-pur-input', 'input-cum-purchase', 'input-running-purchase'],
-        expense: ['dubai-prev-exp-input', 'input-cum-expense', 'input-running-expense']
-    };
-    const [pId, cId, rId] = map[type] || [];
-    if (pId && cId && rId) {
-        const prev = getVal(pId);
-        const curr = getVal(cId);
-        const diff = Math.abs(safeRound(curr - prev));
-        const runInp = document.getElementById(rId);
-        if (runInp) runInp.value = diff > 0 ? formatAmountWithComma(diff) : '';
+    window.handleCumChange(type);
+};
+
+window.toggleUnlockPrevBaseline = function(type) {
+    const map = { sent: 'dubai-prev-rem-input', purchase: 'dubai-prev-pur-input', expense: 'dubai-prev-exp-input' };
+    const el = document.getElementById(map[type]);
+    if (el) {
+        el.readOnly = !el.readOnly;
+        if (!el.readOnly) {
+            el.classList.remove('cursor-default');
+            el.classList.add('bg-slate-900', 'border-sky-500');
+            el.focus();
+            showToast('পূর্বের ব্যালেন্স সম্পাদনের জন্য প্রস্তুত', 'info');
+        } else {
+            el.classList.add('cursor-default');
+            el.classList.remove('bg-slate-900', 'border-sky-500');
+            showToast('পূর্বের ব্যালেন্স লক করা হয়েছে', 'info');
+        }
     }
-    updateLiveWaterfall();
 };
 
 window.handleMemoRangeChange = function() {
@@ -189,18 +208,33 @@ window.handleMemoRangeChange = function() {
 
     if (!isNaN(startVal) && !isNaN(endVal) && endVal >= startVal) {
         const count = endVal - startVal + 1;
-        if (badgeEl) badgeEl.textContent = `${count}টি মেমো`;
+        if (badgeEl) {
+            badgeEl.className = 'px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold whitespace-nowrap';
+            badgeEl.textContent = `${count}টি মেমো`;
+        }
         if (descEl) descEl.value = `মেমো নং: (${startVal}-${endVal}) = ${count}টি`;
 
         const modalStart = document.getElementById('modal-memo-start');
         const modalEnd = document.getElementById('modal-memo-end');
         if (modalStart) modalStart.value = startVal;
         if (modalEnd) modalEnd.value = endVal;
-    } else if (!isNaN(startVal) && isNaN(endVal)) {
-        if (badgeEl) badgeEl.textContent = `১টি মেমো`;
-        if (descEl) descEl.value = `মেমো নং: (${startVal})`;
+    } else if (!isNaN(startVal) && (!endInp?.value || isNaN(endVal))) {
+        if (badgeEl) {
+            badgeEl.className = 'px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 text-[10px] font-bold whitespace-nowrap';
+            badgeEl.textContent = `শুরু: ${startVal}`;
+        }
+        if (descEl) descEl.value = `মেমো নং: ${startVal} থেকে...`;
+    } else if (!isNaN(startVal) && !isNaN(endVal) && endVal < startVal) {
+        if (badgeEl) {
+            badgeEl.className = 'px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] font-bold whitespace-nowrap';
+            badgeEl.textContent = `ভুল রেঞ্জ`;
+        }
+        if (descEl) descEl.value = `মেমো নং: ভুল ক্রম`;
     } else {
-        if (badgeEl) badgeEl.textContent = `০টি মেমো`;
+        if (badgeEl) {
+            badgeEl.className = 'px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold whitespace-nowrap';
+            badgeEl.textContent = `০টি মেমো`;
+        }
     }
 };
 
@@ -283,15 +317,20 @@ async function onRollForwardClick() {
     const prevPur = latest.cumulativePurchaseTotal || 0;
     const prevExp = latest.cumulativeExpenseTotal || 0;
 
+    // Set locked previous baseline on the left
     setInp('dubai-prev-rem-input', formatAmountWithComma(prevRem));
     setInp('dubai-prev-pur-input', formatAmountWithComma(prevPur));
     setInp('dubai-prev-exp-input', formatAmountWithComma(prevExp));
 
-    setInp('input-cum-sent', formatAmountWithComma(prevRem));
-    setInp('input-cum-purchase', formatAmountWithComma(prevPur));
-    setInp('input-cum-expense', formatAmountWithComma(prevExp));
+    ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.readOnly = true;
+    });
 
-    ['input-running-sent', 'input-running-purchase', 'input-running-expense'].forEach(id => setInp(id, ''));
+    // Keep ALL new week entry fields completely EMPTY!
+    ['input-cum-sent', 'input-cum-purchase', 'input-cum-expense',
+     'input-running-sent', 'input-running-purchase', 'input-running-expense',
+     'val-market-ad', 'val-cash-in-hand'].forEach(id => setInp(id, ''));
 
     // Auto-advance date by 7 days to next Thursday
     if (latest.weekEndDate) {
@@ -312,7 +351,7 @@ async function onRollForwardClick() {
         }
     }
 
-    // Auto-set next memo start number (e.g. 95 -> 96)
+    // Auto-set next memo start number (e.g. 112 -> 113) and keep end EMPTY
     if (latest.memoRangeEnd) {
         const nextStart = parseInt(latest.memoRangeEnd, 10) + 1;
         if (!isNaN(nextStart)) {
@@ -324,14 +363,12 @@ async function onRollForwardClick() {
         }
     }
 
-    document.getElementById('val-market-ad').value = '';
-    document.getElementById('val-cash-in-hand').value = '';
-    dynamicHoldings = [{ desc: 'আলতাফ', amount: 0 }];
+    dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0 }];
     renderDynamicHoldings();
     DubaiMemoModal.setMemos([]);
 
     updateLiveWaterfall();
-    showToast(`পূর্ববর্তী অডিট (${latest.weekEndDate || ''}) থেকে ব্যালেন্স রোল-ফরওয়ার্ড করা হয়েছে`, 'success');
+    showToast(`পূর্ববর্তী অডিট (${latest.weekEndDate || ''}) থেকে ব্যালেন্স লক করা হয়েছে। নতুন সপ্তাহের ডাটা ফাঁকা রাখা হয়েছে।`, 'success');
 }
 
 async function onSaveAuditClick() {
@@ -349,12 +386,30 @@ function onPrintAuditClick() {
 }
 
 function buildCurrentAuditObject() {
-    const cumSent = getVal('input-cum-sent');
-    const cumPur = getVal('input-cum-purchase');
-    const cumExp = getVal('input-cum-expense');
-    const runningSent = getVal('input-running-sent');
-    const runningPur = getVal('input-running-purchase');
-    const runningExp = getVal('input-running-expense');
+    const prevRem = getVal('dubai-prev-rem-input');
+    const prevPur = getVal('dubai-prev-pur-input');
+    const prevExp = getVal('dubai-prev-exp-input');
+
+    let cumSent = getVal('input-cum-sent');
+    let cumPur = getVal('input-cum-purchase');
+    let cumExp = getVal('input-cum-expense');
+    let runningSent = getVal('input-running-sent');
+    let runningPur = getVal('input-running-purchase');
+    let runningExp = getVal('input-running-expense');
+
+    if (cumSent === 0 && runningSent > 0) cumSent = safeRound(prevRem + runningSent);
+    else if (cumSent === 0 && runningSent === 0) cumSent = prevRem;
+
+    if (cumPur === 0 && runningPur > 0) cumPur = safeRound(prevPur + runningPur);
+    else if (cumPur === 0 && runningPur === 0) cumPur = prevPur;
+
+    if (cumExp === 0 && runningExp > 0) cumExp = safeRound(prevExp + runningExp);
+    else if (cumExp === 0 && runningExp === 0) cumExp = prevExp;
+
+    if (runningSent === 0 && cumSent > prevRem) runningSent = safeRound(cumSent - prevRem);
+    if (runningPur === 0 && cumPur > prevPur) runningPur = safeRound(cumPur - prevPur);
+    if (runningExp === 0 && cumExp > prevExp) runningExp = safeRound(cumExp - prevExp);
+
     const marketAd = getVal('val-market-ad');
     const cashInHand = getVal('val-cash-in-hand');
 
@@ -389,13 +444,13 @@ function buildCurrentAuditObject() {
         memoRangeStart: mStart,
         memoRangeEnd: mEnd,
         memoCount: memoCount,
-        prevRemittance: Math.max(0, safeRound(cumSent - runningSent)),
+        prevRemittance: prevRem,
         weeklyRemittanceTotal: runningSent,
         cumulativeRemittance: cumSent,
-        prevPurchaseTotal: Math.max(0, safeRound(cumPur - runningPur)),
+        prevPurchaseTotal: prevPur,
         weeklyPurchaseTotal: runningPur,
         cumulativePurchaseTotal: cumPur,
-        prevExpenseTotal: Math.max(0, safeRound(cumExp - runningExp)),
+        prevExpenseTotal: prevExp,
         weeklyExpenseTotal: runningExp,
         cumulativeExpenseTotal: cumExp,
         marketAdvance: marketAd,
@@ -414,7 +469,11 @@ function onNewAuditClick() {
     ['dubai-audit-note', 'input-cum-sent', 'input-cum-purchase', 'input-cum-expense',
      'input-running-sent', 'input-running-purchase', 'input-running-expense',
      'val-market-ad', 'val-cash-in-hand', 'memo-range-start', 'memo-range-end', 'desc-memos'].forEach(id => setInp(id, ''));
-    ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => setInp(id, '0'));
+    ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => {
+        setInp(id, '0');
+        const el = document.getElementById(id);
+        if (el) el.readOnly = false;
+    });
     const badgeEl = document.getElementById('memo-auto-count-badge');
     if (badgeEl) badgeEl.textContent = '০টি মেমো';
     dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0 }];
@@ -442,13 +501,9 @@ window.loadDubaiAuditHistory = async function(id) {
     setInp('dubai-audit-note', audit.note || '');
 
     if (audit.descriptions) {
-        if (audit.descriptions.sent) setInp('desc-sent', audit.descriptions.sent);
-        if (audit.descriptions.purchase) setInp('desc-purchase', audit.descriptions.purchase);
-        if (audit.descriptions.memos) setInp('desc-memos', audit.descriptions.memos);
-        if (audit.descriptions.expense) setInp('desc-expense', audit.descriptions.expense);
-        if (audit.descriptions.ad) setInp('desc-ad', audit.descriptions.ad);
-        if (audit.descriptions.cash) setInp('desc-cash', audit.descriptions.cash);
-        if (audit.descriptions.status) setInp('desc-final-status', audit.descriptions.status);
+        ['sent', 'purchase', 'memos', 'expense', 'ad', 'cash', 'status'].forEach(k => {
+            if (audit.descriptions[k]) setInp(`desc-${k}`, audit.descriptions[k]);
+        });
     }
 
     setInp('memo-range-start', audit.memoRangeStart || '');
