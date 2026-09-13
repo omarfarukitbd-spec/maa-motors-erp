@@ -293,19 +293,133 @@ if (voiceSelector) {
 
 // 5. Firebase Google Authentication Integration
 import { auth, googleProvider } from './config.js';
-import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, signInWithEmailAndPassword, getRedirectResult, signOut, onAuthStateChanged } from 'firebase/auth';
 
 const authBtn = document.getElementById('auth-btn');
 const authBtnText = document.getElementById('auth-btn-text');
+const authModal = document.getElementById('auth-modal');
+const closeAuthModalBtn = document.getElementById('close-auth-modal');
+const modalGoogleBtn = document.getElementById('modal-google-btn');
+const emailLoginForm = document.getElementById('email-login-form');
+const loginEmailInput = document.getElementById('login-email');
+const loginPasswordInput = document.getElementById('login-password');
+const authErrorMsg = document.getElementById('auth-error-msg');
+
+function showAuthModal() {
+    if (authErrorMsg) {
+        authErrorMsg.classList.add('hidden');
+        authErrorMsg.innerText = '';
+    }
+    if (authModal) authModal.classList.remove('hidden');
+}
+
+function hideAuthModal() {
+    if (authModal) authModal.classList.add('hidden');
+}
+
+if (closeAuthModalBtn) closeAuthModalBtn.addEventListener('click', hideAuthModal);
+if (authModal) {
+    authModal.addEventListener('click', (e) => {
+        if (e.target === authModal) hideAuthModal();
+    });
+}
 
 // Check redirect login result on page load
 if (auth) {
     getRedirectResult(auth).then((result) => {
         if (result && result.user) {
             console.log('✅ [Jarvis Auth] Google Redirect sign-in success:', result.user.email);
+            hideAuthModal();
         }
     }).catch((err) => {
         console.warn('Redirect auth result error:', err);
+    });
+}
+
+// Handle Google Login Flow
+async function handleGoogleLogin() {
+    if (!auth) return;
+    try {
+        await signInWithPopup(auth, googleProvider);
+        hideAuthModal();
+    } catch (err) {
+        console.warn('Google popup sign-in error:', err);
+        if (err.code === 'auth/popup-closed-by-user') {
+            return;
+        }
+        if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+            try {
+                await signInWithRedirect(auth, googleProvider);
+                return;
+            } catch (redirectErr) {
+                console.error('Redirect sign-in error:', redirectErr);
+                if (authErrorMsg) {
+                    authErrorMsg.innerText = 'গুগল রিডাইরেক্ট ত্রুটি: ' + (redirectErr.message || 'ত্রুটি');
+                    authErrorMsg.classList.remove('hidden');
+                }
+                return;
+            }
+        }
+        if (err.code === 'auth/unauthorized-domain') {
+            const host = window.location.hostname;
+            if (authErrorMsg) {
+                authErrorMsg.innerText = `ডোমেইন "${host}" গুগল সাইন-ইনের জন্য অনুমোদিত তালিকায় যুক্ত করতে হবে। তবে আপনি নিচে সরাসরি মা মোটরসের ইমেইল ও পাসওয়ার্ড দিয়ে এখনই নিশ্চিন্তে লগইন করতে পারবেন।`;
+                authErrorMsg.classList.remove('hidden');
+            }
+            return;
+        }
+        if (authErrorMsg) {
+            authErrorMsg.innerText = 'লগইন ত্রুটি: ' + (err.message || 'ত্রুটি');
+            authErrorMsg.classList.remove('hidden');
+        }
+    }
+}
+
+if (modalGoogleBtn) {
+    modalGoogleBtn.addEventListener('click', handleGoogleLogin);
+}
+
+// Handle Email & Password Login Flow (Always works on all domains/IPs/devices)
+if (emailLoginForm) {
+    emailLoginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = (loginEmailInput?.value || '').trim();
+        const pass = (loginPasswordInput?.value || '').trim();
+
+        if (!email || !pass) {
+            if (authErrorMsg) {
+                authErrorMsg.innerText = 'দয়া করে ইমেইল ও পাসওয়ার্ড লিখুন।';
+                authErrorMsg.classList.remove('hidden');
+            }
+            return;
+        }
+
+        const submitBtn = document.getElementById('email-login-submit');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'যাচাই করা হচ্ছে...';
+        }
+
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+            hideAuthModal();
+            console.log('✅ [Jarvis Auth] Signed in via Email/Password successfully.');
+        } catch (err) {
+            console.warn('Email login error:', err);
+            if (authErrorMsg) {
+                if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+                    authErrorMsg.innerText = 'ভুল ইমেইল অথবা পাসওয়ার্ড দিয়েছেন। অনুগ্রহ করে সঠিক তথ্য দিন।';
+                } else {
+                    authErrorMsg.innerText = 'লগইন ব্যর্থ: ' + (err.message || 'ত্রুটি হয়েছে');
+                }
+                authErrorMsg.classList.remove('hidden');
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'লগইন করুন';
+            }
+        }
     });
 }
 
@@ -317,38 +431,14 @@ window.triggerGoogleAuth = async () => {
             await signOut(auth);
         }
     } else {
-        try {
-            await signInWithPopup(auth, googleProvider);
-        } catch (err) {
-            console.warn('Google popup sign-in error:', err);
-            if (err.code === 'auth/popup-closed-by-user') {
-                return;
-            }
-            if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
-                try {
-                    // Fallback to full-page Google redirect for mobile browsers or popup-blocked desktops
-                    await signInWithRedirect(auth, googleProvider);
-                    return;
-                } catch (redirectErr) {
-                    console.error('Redirect sign-in error:', redirectErr);
-                    window.alert('গুগল লগইন করতে সমস্যা হয়েছে: ' + (redirectErr.message || 'ত্রুটি'));
-                    return;
-                }
-            }
-            if (err.code === 'auth/unauthorized-domain') {
-                const host = window.location.hostname;
-                window.alert(`লগইন ডোমেইন ত্রুটি:\nবর্তমান ডোমেন বা আইপি "${host}" ফায়ারবেসে অথোরাইজড তালিকায় নেই।\n\nসরাসরি লাইভ লিংক থেকে ওপেন করুন:\nhttps://maa-motors-jarvis.web.app\nঅথবা লোকালহোস্টে: http://localhost:5180`);
-                return;
-            }
-            window.alert('গুগল লগইন ত্রুটি: ' + (err.message || 'ত্রুটি'));
-        }
+        showAuthModal();
     }
 };
 
 if (auth && authBtn) {
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            const firstName = user.displayName ? user.displayName.split(' ')[0] : 'অ্যাকাউন্ট';
+            const firstName = user.displayName ? user.displayName.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'অ্যাকাউন্ট');
             if (authBtnText) authBtnText.innerText = firstName;
             authBtn.title = `${user.displayName || user.email} হিসেবে সংযুক্ত (ক্লিক করে লগআউট)`;
             authBtn.style.borderColor = '#10b981';
@@ -356,7 +446,7 @@ if (auth && authBtn) {
             console.log('✅ [Jarvis Auth] Signed in as:', user.email);
         } else {
             if (authBtnText) authBtnText.innerText = 'লগইন';
-            authBtn.title = 'গুগল দিয়ে লগইন করুন';
+            authBtn.title = 'লগইন করুন';
             authBtn.style.borderColor = '';
             authBtn.style.color = '';
             console.log('ℹ️ [Jarvis Auth] User not signed in.');
