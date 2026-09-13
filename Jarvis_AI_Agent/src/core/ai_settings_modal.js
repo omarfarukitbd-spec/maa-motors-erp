@@ -177,8 +177,16 @@ export class AISettingsModal {
     }
 
     async validateGeminiKey(key) {
+        const cleanKey = (key || '').trim();
+        if (!cleanKey.startsWith('AIza')) {
+            return {
+                valid: false,
+                message: 'আপনি যে কোডটি দিয়েছেন তা আসল API Key নয় (এটি ব্রাউজার টোকেন)। গুগল জেমিনির এপিআই কী সর্বদা "AIzaSy..." দিয়ে শুরু হয়।'
+            };
+        }
+
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(cleanKey)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -187,7 +195,11 @@ export class AISettingsModal {
             });
             if (res.ok) return { valid: true };
             const data = await res.json().catch(() => ({}));
-            return { valid: false, message: data.error?.message || `HTTP ${res.status}` };
+            let errMsg = data.error?.message || `HTTP ${res.status}`;
+            if (errMsg.includes('not found') || errMsg.includes('401') || errMsg.includes('INVALID_ARGUMENT') || errMsg.includes('API key not valid')) {
+                errMsg = 'গুগল সার্ভারে এই কী-টি সঠিক নয়। দয়া করে aistudio.google.com থেকে "Create API key" চেপে তৈরি করা কী কপি করুন।';
+            }
+            return { valid: false, message: errMsg };
         } catch (err) {
             return { valid: false, message: err.message };
         }
