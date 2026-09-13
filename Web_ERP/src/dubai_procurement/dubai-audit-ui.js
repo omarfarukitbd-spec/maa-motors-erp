@@ -3,6 +3,7 @@
  * Manages the authentic 2-column waterfall table with editable descriptions and separated assets.
  */
 
+import Swal from 'sweetalert2';
 import { DubaiActions } from './dubai-audit-actions.js';
 import { printDubaiAuditSheet } from './dubai-print.js';
 import { getDubaiAuditMainTemplate, getDynamicHoldingRowHtml } from './dubai-audit-template.js';
@@ -10,7 +11,7 @@ import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
-    showToast 
+    showToast, promptSecurityPin 
 } from '../utils.js';
 
 let currentAuditId = null;
@@ -168,10 +169,14 @@ window.handlePrevBaselineChange = function(type) {
     window.handleCumChange(type);
 };
 
-window.toggleUnlockPrevBaseline = function(type) {
+window.toggleUnlockPrevBaseline = async function(type) {
     const map = { sent: 'dubai-prev-rem-input', purchase: 'dubai-prev-pur-input', expense: 'dubai-prev-exp-input' };
     const el = document.getElementById(map[type]);
     if (el) {
+        if (el.readOnly) {
+            const pinOk = await promptSecurityPin('পূর্ববর্তী অডিট ব্যালেন্স আনলক');
+            if (!pinOk) return;
+        }
         el.readOnly = !el.readOnly;
         el.classList.toggle('cursor-default', el.readOnly);
         el.classList.toggle('bg-slate-900', !el.readOnly);
@@ -197,11 +202,8 @@ window.handleMemoRangeChange = function() {
             badgeEl.textContent = `${count}টি মেমো`;
         }
         if (descEl) descEl.value = `মেমো নং: (${startVal}-${endVal}) = ${count}টি`;
-
-        const modalStart = document.getElementById('modal-memo-start');
-        const modalEnd = document.getElementById('modal-memo-end');
-        if (modalStart) modalStart.value = startVal;
-        if (modalEnd) modalEnd.value = endVal;
+        setInp('modal-memo-start', startVal);
+        setInp('modal-memo-end', endVal);
     } else if (!isNaN(startVal) && (!endInp?.value || isNaN(endVal))) {
         if (badgeEl) {
             badgeEl.className = 'px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 text-[10px] font-bold whitespace-nowrap';
@@ -211,14 +213,12 @@ window.handleMemoRangeChange = function() {
     } else if (!isNaN(startVal) && !isNaN(endVal) && endVal < startVal) {
         if (badgeEl) {
             badgeEl.className = 'px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] font-bold whitespace-nowrap';
-            badgeEl.textContent = `ভুল রেঞ্জ`;
+            badgeEl.textContent = 'ভুল রেঞ্জ';
         }
-        if (descEl) descEl.value = `মেমো নং: ভুল ক্রম`;
-    } else {
-        if (badgeEl) {
-            badgeEl.className = 'px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold whitespace-nowrap';
-            badgeEl.textContent = `০টি মেমো`;
-        }
+        if (descEl) descEl.value = 'মেমো নং: ভুল ক্রম';
+    } else if (badgeEl) {
+        badgeEl.className = 'px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold whitespace-nowrap';
+        badgeEl.textContent = '০টি মেমো';
     }
 };
 
@@ -226,10 +226,8 @@ window.openDubaiMemoDetailsModal = function() {
     const startVal = parseInt(document.getElementById('memo-range-start')?.value, 10);
     const endVal = parseInt(document.getElementById('memo-range-end')?.value, 10);
     if (!isNaN(startVal) && !isNaN(endVal) && endVal >= startVal) {
-        const modalStart = document.getElementById('modal-memo-start');
-        const modalEnd = document.getElementById('modal-memo-end');
-        if (modalStart) modalStart.value = startVal;
-        if (modalEnd) modalEnd.value = endVal;
+        setInp('modal-memo-start', startVal);
+        setInp('modal-memo-end', endVal);
         DubaiMemoModal.generateMemos();
     }
     DubaiMemoModal.toggle(true);
@@ -263,8 +261,13 @@ window.handleDubaiHoldingAmtChange = function(idx, val) {
     }
 };
 
-window.removeDubaiHoldingRow = function(idx) {
+window.removeDubaiHoldingRow = async function(idx) {
     if (dynamicHoldings[idx]) {
+        const amt = safeRound(parseAmount(dynamicHoldings[idx].amount));
+        if (amt > 0) {
+            const pinOk = await promptSecurityPin(`${dynamicHoldings[idx].desc || 'হস্তান্তর'} আমানত মুছে ফেলা`);
+            if (!pinOk) return;
+        }
         dynamicHoldings.splice(idx, 1);
         renderDynamicHoldings();
         updateLiveWaterfall();
@@ -275,49 +278,37 @@ window.removeDubaiHoldingRow = function(idx) {
 async function onRollForwardClick() {
     const latest = await DubaiActions.rollForward();
     if (!latest) return;
-    currentAuditId = null; // Prepare for new week's audit
+    currentAuditId = null;
 
     const prevRem = latest.cumulativeRemittance || 0;
     const prevPur = latest.cumulativePurchaseTotal || 0;
     const prevExp = latest.cumulativeExpenseTotal || 0;
 
-    // Set locked previous baseline on the left
     [['dubai-prev-rem-input', prevRem], ['dubai-prev-pur-input', prevPur], ['dubai-prev-exp-input', prevExp]].forEach(([id, v]) => {
         setInp(id, formatAmountWithComma(v));
         const el = document.getElementById(id);
         if (el) el.readOnly = true;
     });
 
-    // Keep ALL new week entry fields completely EMPTY!
     clearNewWeekFields();
 
-    // Auto-advance date by 7 days to next Thursday
     if (latest.weekEndDate) {
         try {
             const parts = String(latest.weekEndDate).split('-');
             if (parts.length === 3) {
-                const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-                d.setDate(d.getDate() + 7);
-                const yr = d.getFullYear();
-                const mo = String(d.getMonth() + 1).padStart(2, '0');
-                const da = String(d.getDate()).padStart(2, '0');
-                const nextDateStr = `${yr}-${mo}-${da}`;
-                const dateInp = document.getElementById('dubai-week-date');
-                if (dateInp) dateInp.value = nextDateStr;
+                const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10) + 7);
+                setInp('dubai-week-date', `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
             }
         } catch (e) {
             console.error('Date advance error:', e);
         }
     }
 
-    // Auto-set next memo start number (e.g. 112 -> 113) and keep end EMPTY
     if (latest.memoRangeEnd) {
         const nextStart = parseInt(latest.memoRangeEnd, 10) + 1;
         if (!isNaN(nextStart)) {
-            const startInp = document.getElementById('memo-range-start');
-            if (startInp) startInp.value = nextStart;
-            const endInp = document.getElementById('memo-range-end');
-            if (endInp) endInp.value = '';
+            setInp('memo-range-start', nextStart);
+            setInp('memo-range-end', '');
             window.handleMemoRangeChange();
         }
     }
@@ -325,12 +316,15 @@ async function onRollForwardClick() {
     dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0 }];
     renderDynamicHoldings();
     DubaiMemoModal.setMemos([]);
-
     updateLiveWaterfall();
     showToast(`পূর্ববর্তী অডিট (${latest.weekEndDate || ''}) থেকে ব্যালেন্স লক করা হয়েছে। নতুন সপ্তাহের ডাটা ফাঁকা রাখা হয়েছে।`, 'success');
 }
 
 async function onSaveAuditClick() {
+    if (currentAuditId) {
+        const pinOk = await promptSecurityPin('সংরক্ষিত অডিট সংশোধন ও পুনরায় সংরক্ষণ');
+        if (!pinOk) return;
+    }
     const payload = buildCurrentAuditObject();
     if (currentAuditId) payload.id = currentAuditId;
     const memos = DubaiMemoModal.getMemos();
@@ -339,9 +333,7 @@ async function onSaveAuditClick() {
 }
 
 function onPrintAuditClick() {
-    const payload = buildCurrentAuditObject();
-    const memos = DubaiMemoModal.getMemos();
-    printDubaiAuditSheet(payload, memos, [], []);
+    printDubaiAuditSheet(buildCurrentAuditObject(), DubaiMemoModal.getMemos(), [], []);
 }
 
 function buildCurrentAuditObject() {
@@ -390,12 +382,9 @@ function buildCurrentAuditObject() {
         weekEndDate: getTxt('dubai-week-date', getTodayLocalDateString()),
         note: getTxt('dubai-audit-note'),
         descriptions: {
-            sent: getTxt('desc-sent', 'বৃহস্পতিবার পর্যন্ত টাকা পাঠানো'),
-            purchase: getTxt('desc-purchase', 'সর্বমোট মাল ক্রয়'),
-            memos: getTxt('desc-memos'),
-            expense: getTxt('desc-expense', 'সর্বমোট খরচ'),
-            ad: getTxt('desc-ad', 'মার্কেট এডভান্স (AD)'),
-            cash: getTxt('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)'),
+            sent: getTxt('desc-sent', 'বৃহস্পতিবার পর্যন্ত টাকা পাঠানো'), purchase: getTxt('desc-purchase', 'সর্বমোট মাল ক্রয়'),
+            memos: getTxt('desc-memos'), expense: getTxt('desc-expense', 'সর্বমোট খরচ'),
+            ad: getTxt('desc-ad', 'মার্কেট এডভান্স (AD)'), cash: getTxt('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)'),
             status: getTxt('desc-final-status', '(ক্যাশ বাড়তি)')
         },
         memoRangeStart: mStart, memoRangeEnd: mEnd, memoCount,
@@ -408,7 +397,19 @@ function buildCurrentAuditObject() {
     };
 }
 
-function onNewAuditClick() {
+async function onNewAuditClick() {
+    const hasUnsaved = (getVal('input-cum-sent') > 0 || getVal('input-running-sent') > 0 || getVal('input-cum-purchase') > 0 || getVal('input-running-purchase') > 0);
+    if (hasUnsaved && !currentAuditId) {
+        const res = await Swal.fire({
+            title: 'নতুন ব্ল্যাঙ্ক অডিট?',
+            text: 'চলতি অডিটের ডাটা মুছে নতুন ফাঁকা ফরম তৈরি হবে। আপনি কি নিশ্চিত?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'হ্যাঁ, নতুন ফরম',
+            cancelButtonText: 'না, বাতিল'
+        });
+        if (!res.isConfirmed) return;
+    }
     currentAuditId = null;
     setInp('dubai-week-date', getTodayLocalDateString());
     ['dubai-audit-note', 'memo-range-start', 'memo-range-end', 'desc-memos'].forEach(id => setInp(id, ''));
@@ -426,6 +427,7 @@ function onNewAuditClick() {
     updateLiveWaterfall();
     showToast('নতুন সপ্তাহের ব্ল্যাঙ্ক অডিট প্রস্তুত', 'info');
 }
+
 
 function listenToHistory() {
     DubaiActions.listenAudits(audits => {
