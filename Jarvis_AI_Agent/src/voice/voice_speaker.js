@@ -136,16 +136,8 @@ export class VoiceSpeaker {
                 }
             }
 
-            // Priority 2: High-Fidelity Azure Bangladeshi Neural Stream (Cloud direct + Local fallback)
-            try {
-                await this.speakOnlineNeural(cleanText);
-                return;
-            } catch (neuralErr) {
-                console.warn('[VoiceSpeaker] Azure Neural stream failed, falling back to Native Speech:', neuralErr);
-            }
-
-            // Priority 3: Browser Native SpeechSynthesis (with watchdog timer)
-            await this.speakNative(cleanText);
+            // Priority 2: High-Fidelity Azure Bangladeshi Neural Stream (Pradeep/Nabanita)
+            await this.speakOnlineNeural(cleanText);
 
         } catch (fatalErr) {
             console.error('[VoiceSpeaker] Fatal speech error:', fatalErr);
@@ -223,118 +215,59 @@ export class VoiceSpeaker {
     }
 
     /**
-     * Play single sentence chunk with dual endpoint fallback and watchdog
+     * Play single sentence chunk with dual endpoint fallback and blob memory decoding
      */
-    playNeuralChunk(chunk, voice) {
-        return new Promise((resolve) => {
-            const cloudUrl = `https://edge-tts.vercel.app/api/tts?text=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`;
-            const localUrl = `/api/tts?q=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`;
+    async playNeuralChunk(chunk, voice) {
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        const endpoints = isLocal
+            ? [
+                `/api/tts?q=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`,
+                `https://edge-tts.vercel.app/api/tts?text=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`
+            ]
+            : [
+                `https://edge-tts.vercel.app/api/tts?text=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`,
+                `/api/tts?q=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(voice)}`
+            ];
 
-            const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-            const primaryUrl = isLocal ? localUrl : cloudUrl;
-            const fallbackUrl = isLocal ? cloudUrl : localUrl;
-
-            let triedFallback = false;
-            let resolved = false;
-
-            const cleanup = () => {
-                resolved = true;
-                this.audio.onended = null;
-                this.audio.onerror = null;
-            };
-
-            // Watchdog timer: If audio playback halts for > 12 seconds, resolve gracefully
-            const watchdog = setTimeout(() => {
-                if (!resolved) {
-                    console.warn('[VoiceSpeaker] Chunk watchdog timed out for:', chunk.slice(0, 30));
-                    cleanup();
-                    resolve();
-                }
-            }, 12000);
-
-            this.audio.onended = () => {
-                clearTimeout(watchdog);
-                cleanup();
-                resolve();
-            };
-
-            const handleFailure = async (err) => {
-                console.warn('[VoiceSpeaker] Audio chunk failure on URL:', err);
-                if (!triedFallback && fallbackUrl) {
-                    triedFallback = true;
-                    console.log('[VoiceSpeaker] Switching to secondary audio stream URL...');
-                    this.audio.src = fallbackUrl;
-                    try {
-                        await this.audio.play();
-                    } catch (playErr) {
-                        console.warn('[VoiceSpeaker] Secondary audio stream failed:', playErr);
-                        clearTimeout(watchdog);
-                        cleanup();
-                        resolve();
-                    }
-                    return;
-                }
-                clearTimeout(watchdog);
-                cleanup();
-                resolve();
-            };
-
-            this.audio.onerror = (e) => {
-                handleFailure(e);
-            };
-
-            this.audio.src = primaryUrl;
-            this.audio.play().catch(playErr => {
-                handleFailure(playErr);
-            });
-        });
-    }
-
-    /**
-     * Engine 3: Native Web Speech API Fallback with 6-second watchdog
-     */
-    speakNative(text) {
-        return new Promise((resolve) => {
-            if (!this.synth) {
-                resolve();
-                return;
-            }
-
-            // Watchdog guard: Chrome on Windows hangs if no Bengali voice is installed
-            const watchdog = setTimeout(() => {
-                console.warn('[VoiceSpeaker] Native SpeechSynthesis watchdog triggered. Resuming UI.');
-                resolve();
-            }, 6000);
-
+        for (const url of endpoints) {
             try {
-                this.synth.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const blob = await res.blob();
+                if (!blob || blob.size === 0) throw new Error('Empty audio');
 
-                if (this.selectedVoice) {
-                    utterance.voice = this.selectedVoice;
-                }
+                const audioUrl = URL.createObjectURL(blob);
+                await new Promise((resolve, reject) => {
+                    const watchdog = setTimeout(() => {
+                        URL.revokeObjectURL(audioUrl);
+                        resolve();
+                    }, 14000);
 
-                utterance.lang = JARVIS_CONFIG.voice.lang;
-                utterance.rate = JARVIS_CONFIG.voice.fallbackRate || 1.0;
-                utterance.pitch = JARVIS_CONFIG.voice.fallbackPitch || 1.0;
-
-                utterance.onend = () => {
-                    clearTimeout(watchdog);
-                    resolve();
-                };
-                utterance.onerror = (e) => {
-                    console.warn('[VoiceSpeaker] Native speech error:', e);
-                    clearTimeout(watchdog);
-                    resolve();
-                };
-
-                this.synth.speak(utterance);
+                    this.audio.src = audioUrl;
+                    this.audio.onended = () => {
+                        clearTimeout(watchdog);
+                        URL.revokeObjectURL(audioUrl);
+                        resolve();
+                    };
+                    this.audio.onerror = (e) => {
+                        clearTimeout(watchdog);
+                        URL.revokeObjectURL(audioUrl);
+                        reject(e);
+                    };
+                    const playPromise = this.audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(err => {
+                            clearTimeout(watchdog);
+                            URL.revokeObjectURL(audioUrl);
+                            reject(err);
+                        });
+                    }
+                });
+                return; // Successfully played
             } catch (err) {
-                console.warn('[VoiceSpeaker] SpeechSynthesis invocation error:', err);
-                clearTimeout(watchdog);
-                resolve();
+                console.warn(`[VoiceSpeaker] Neural audio endpoint failed (${url}):`, err);
             }
-        });
+        }
     }
 
     /**

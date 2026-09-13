@@ -153,20 +153,22 @@ ${memoryContext}`;
         console.log(`[LLMAgent] Executing Tool "${name}" with args:`, args);
         try {
             if (name === 'get_customer_due') {
-                const query = args.query || '';
+                const query = (args?.query || args?.customerName || args?.customer_name || args?.name || args?.searchTerm || '').trim();
                 const results = await ERPBridge.searchCustomers(query);
-                if (!results || results.length === 0) {
-                    return { found: false, message: `"${query}" নামে কোনো কাস্টমার সিস্টেমে পাওয়া যায়নি।` };
+                if (results?.error === 'AUTH_REQUIRED') {
+                    return { found: false, authRequired: true, message: 'কাস্টমারের লাইভ হিসাব দেখতে মা মোটরসের গুগল অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
+                if (!results || !Array.isArray(results) || results.length === 0) {
+                    return { found: false, message: `"${query}" নামে কোনো কাস্টমার মা মোটরসের ডাটাবেজে পাওয়া যায়নি।` };
                 }
                 const top = results[0];
-                const detail = await ERPBridge.getCustomerLedger(top.id);
                 return {
                     found: true,
                     name: top.name,
                     phone: top.phone || 'দেওয়া নেই',
                     address: top.address || 'দেওয়া নেই',
-                    totalDue: detail ? detail.totalDue : (top.totalDue || 0),
-                    lastTransaction: detail?.transactions?.[0] || null
+                    totalDue: top.totalDue || 0,
+                    initialDue: top.initialDue || 0
                 };
             }
 
@@ -503,11 +505,11 @@ ${memoryContext}`;
 
             cleanTurns.push(candidate);
             cleanTurns.push({
-                role: 'function',
+                role: 'user',
                 parts: [{
                     functionResponse: {
                         name,
-                        response: { content: toolResult }
+                        response: { name, content: toolResult }
                     }
                 }]
             });
