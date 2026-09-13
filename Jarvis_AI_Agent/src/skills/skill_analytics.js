@@ -7,7 +7,7 @@ export class AnalyticsSkill extends BaseSkill {
             id: 'skill_analytics',
             name: 'আর্থিক স্থিতি ও ক্যাশ-ব্যাংক স্কিল',
             description: 'শোরুম ক্যাশ, বিভিন্ন ব্যাংক অ্যাকাউন্টের সমাপনী স্থিতি এবং মোট তরল তহবিল হিসাব করে জানায়।',
-            triggers: ['ক্যাশ', 'ব্যাংক', 'স্থিতি', 'ব্যালেন্স', 'টাকা', 'আজকের হিসাব', 'মোট স্থিতি', 'লিকুইড ফান্ড', 'মার্কেট বাকি']
+            triggers: ['ক্যাশ', 'ব্যাংক', 'স্থিতি', 'আজকের হিসাব', 'মোট স্থিতি', 'লিকুইড ফান্ড', 'ক্যাশ কত', 'ব্যাংকে কত', 'ফান্ড', 'তহবিল']
         });
     }
 
@@ -32,6 +32,13 @@ export class AnalyticsSkill extends BaseSkill {
 
     async execute(actionName, params = {}) {
         const snap = await ERPBridge.getFinancialSnapshot();
+
+        if (snap && snap.error === 'AUTH_REQUIRED') {
+            return {
+                success: false,
+                spokenResponse: 'ভাইয়া, ব্যাংক ও ক্যাশ স্থিতি দেখতে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।'
+            };
+        }
 
         if (!snap) {
             return {

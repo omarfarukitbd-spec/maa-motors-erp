@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 /**
  * 🔒 Shared Firebase Database Configuration for Maa Motors ERP
@@ -14,9 +15,11 @@ export const firebaseConfig = {
     measurementId: "G-NHHVNH1B6W"
 };
 
-// Initialize Firebase App
+// Initialize Firebase App & Services
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
 /**
  * 🎙️ Voice & Personality Configuration

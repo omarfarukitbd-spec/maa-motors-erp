@@ -242,6 +242,60 @@ function renderMemories(memories) {
 memoryVault.onChange(renderMemories);
 renderMemories(memoryVault.memories);
 
+// 4. Voice Sound Test Action
+const testVoiceBtn = document.getElementById('test-voice-btn');
+if (testVoiceBtn) {
+    testVoiceBtn.addEventListener('click', async () => {
+        visualizer.setState('speaking');
+        await voiceSpeaker.speak('শুভ অপরাহ্ন ভাইয়া! আমি জার্ভিস, আপনার পার্সোনাল এক্সিকিউটিভ এআই। আমি প্রস্তুত আছি।');
+        visualizer.setState('idle');
+    });
+}
+
+// 5. Firebase Google Authentication Integration
+import { auth, googleProvider } from './config.js';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+
+const authBtn = document.getElementById('auth-btn');
+const authBtnText = document.getElementById('auth-btn-text');
+
+if (auth && authBtn) {
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            const firstName = user.displayName ? user.displayName.split(' ')[0] : 'অ্যাকাউন্ট';
+            if (authBtnText) authBtnText.innerText = firstName;
+            authBtn.title = `${user.displayName || user.email} হিসেবে সংযুক্ত (ক্লিক করে লগআউট)`;
+            authBtn.style.borderColor = '#10b981';
+            authBtn.style.color = '#10b981';
+            console.log('✅ [Jarvis Auth] Signed in as:', user.email);
+        } else {
+            if (authBtnText) authBtnText.innerText = 'লগইন';
+            authBtn.title = 'গুগল দিয়ে লগইন করুন';
+            authBtn.style.borderColor = '';
+            authBtn.style.color = '';
+            console.log('ℹ️ [Jarvis Auth] User not signed in.');
+        }
+    });
+
+    authBtn.addEventListener('click', async () => {
+        if (auth.currentUser) {
+            const proceed = window.confirm(`আপনি কি "${auth.currentUser.displayName || auth.currentUser.email}" থেকে লগআউট করতে চান?`);
+            if (proceed) {
+                await signOut(auth);
+            }
+        } else {
+            try {
+                await signInWithPopup(auth, googleProvider);
+            } catch (err) {
+                console.warn('Google sign-in popup error:', err);
+                if (err.code !== 'auth/popup-closed-by-user') {
+                    window.alert('গুগল লগইন করতে সমস্যা হয়েছে: ' + (err.message || 'ত্রুটি'));
+                }
+            }
+        }
+    });
+}
+
 function escapeHTML(str) {
     return String(str || '').replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)

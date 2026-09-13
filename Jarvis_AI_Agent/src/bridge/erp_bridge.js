@@ -86,34 +86,62 @@ export function numberToSpokenBangla(number) {
  */
 export const ERPBridge = {
     /**
-     * Search Customers by Name, Phone, or Code
+     * Search Customers by Name, Phone, Address, or Zone with Multi-Token Matching
      */
     async searchCustomers(searchTerm) {
-        const term = String(searchTerm || '').trim().toLowerCase();
-        if (!term) return [];
+        const rawTerm = String(searchTerm || '').trim().toLowerCase();
+        if (!rawTerm) return [];
 
-        const snap = await getDocs(collection(db, 'customers'));
-        const list = [];
+        // Extract meaningful tokens, stripping common honorifics/stopwords
+        const tokens = rawTerm
+            .replace(/(কাস্টমার|সাহেব|সাহেবের|ভাই|ভাইয়ের|এর|বকেয়া|বকে|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|টাকা|দেখা|দেখাও|খাতা|রিপোর্ট)/gi, ' ')
+            .split(/\s+/)
+            .filter(t => t.length >= 2);
 
-        snap.forEach(doc => {
-            const data = doc.data();
-            const name = (data.name || '').toLowerCase();
-            const phone = (data.phone || '');
-            const address = (data.address || '').toLowerCase();
+        const searchKeywords = tokens.length > 0 ? tokens : [rawTerm];
 
-            if (name.includes(term) || phone.includes(term) || address.includes(term)) {
-                list.push({
-                    id: doc.id,
-                    name: data.name || 'নামহীন',
-                    phone: data.phone || 'মোবাইল নেই',
-                    address: data.address || '',
-                    totalDue: safeRound(data.totalDue || 0), // Canonical Net Due
-                    initialDue: safeRound(data.initialDue || 0) // Opening Balance
-                });
+        try {
+            const snap = await getDocs(collection(db, 'customers'));
+            const list = [];
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                const name = (data.name || '').toLowerCase();
+                const phone = (data.phone || '');
+                const address = (data.address || '').toLowerCase();
+                const zone = (data.zone || '').toLowerCase();
+                const accountNo = (data.accountNo || '');
+
+                // Check if any search token matches name, phone, address, or zone
+                const isMatch = searchKeywords.some(tok => 
+                    name.includes(tok) || 
+                    phone.includes(tok) || 
+                    address.includes(tok) || 
+                    zone.includes(tok) || 
+                    accountNo.includes(tok)
+                );
+
+                if (isMatch) {
+                    list.push({
+                        id: doc.id,
+                        name: data.name || 'নামহীন',
+                        phone: data.phone || 'মোবাইল নেই',
+                        address: data.address || '',
+                        zone: data.zone || '',
+                        totalDue: safeRound(data.totalDue || 0), // Canonical Net Due
+                        initialDue: safeRound(data.initialDue || 0) // Opening Balance
+                    });
+                }
+            });
+
+            return list;
+        } catch (err) {
+            console.error('ERPBridge searchCustomers error:', err);
+            if (err.code === 'permission-denied') {
+                return { error: 'AUTH_REQUIRED' };
             }
-        });
-
-        return list;
+            return [];
+        }
     },
 
     /**
@@ -123,7 +151,7 @@ export const ERPBridge = {
         try {
             // 1. Get all active banks & cash collectors
             const [banksSnap, cashSnap] = await Promise.all([
-                getDocs(collection(db, 'banks')),
+                getDocs(collection(db, 'bank_accounts')),
                 getDocs(collection(db, 'cash_collectors'))
             ]);
 
@@ -133,8 +161,9 @@ export const ERPBridge = {
             banksSnap.forEach(d => {
                 const data = d.data();
                 if (data.status !== 'inactive') {
-                    const bal = safeRound(data.currentBalance || data.balance || 0);
-                    accounts.push({ name: data.name || 'Bank', balance: bal, isCash: false });
+                    const bal = safeRound(data.currentBalance ?? data.balance ?? 0);
+                    const bName = data.name || data.bankName || 'ব্যাংক অ্যাকাউন্ট';
+                    accounts.push({ name: bName, balance: bal, isCash: false });
                     totalLiquidFund = safeRound(totalLiquidFund + bal);
                 }
             });
@@ -142,8 +171,9 @@ export const ERPBridge = {
             cashSnap.forEach(d => {
                 const data = d.data();
                 if (data.status !== 'inactive') {
-                    const bal = safeRound(data.currentBalance || data.balance || 0);
-                    accounts.push({ name: data.name || 'Cash', balance: bal, isCash: true });
+                    const bal = safeRound(data.currentBalance ?? data.balance ?? 0);
+                    const cName = data.name || 'ক্যাশ কাউন্টার';
+                    accounts.push({ name: cName, balance: bal, isCash: true });
                     totalLiquidFund = safeRound(totalLiquidFund + bal);
                 }
             });
@@ -168,6 +198,9 @@ export const ERPBridge = {
             };
         } catch (err) {
             console.error('ERPBridge getFinancialSnapshot error:', err);
+            if (err.code === 'permission-denied') {
+                return { error: 'AUTH_REQUIRED' };
+            }
             return null;
         }
     },

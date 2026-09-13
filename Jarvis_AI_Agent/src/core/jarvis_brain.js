@@ -1,6 +1,7 @@
 import { skillRegistry } from './skill_registry.js';
 import { memoryVault } from './memory_vault.js';
 import { voiceSpeaker } from '../voice/voice_speaker.js';
+import { ERPBridge } from '../bridge/erp_bridge.js';
 
 export class JarvisBrain {
     constructor() {
@@ -70,7 +71,18 @@ export class JarvisBrain {
                 }
             }
 
-            // 2. Fallback Conversational Response
+            // 2. Smart Intent Fallback: Check if user spoke a customer name, phone, or location
+            const custMatches = await ERPBridge.searchCustomers(text);
+            if (Array.isArray(custMatches) && custMatches.length > 0) {
+                const customerSkill = skillRegistry.get('skill_customer');
+                if (customerSkill) {
+                    const res = await customerSkill.execute('get_customer_due', { customer_name: text });
+                    await this.handleResponse(res.spokenResponse, res.displayData);
+                    return res;
+                }
+            }
+
+            // 3. Fallback Conversational Response
             const memoryContext = memoryVault.getPromptContext();
             let defaultReply = 'জি ভাইয়া, আমি আপনার কথা শুনেছি। আপনি আমাকে কাস্টমারের বকেয়া, আজকের ক্যাশ ও ব্যাংক স্থিতি, দুবাই অডিট জানতে চাইতে পারেন, অথবা কোনো নতুন তথ্য মনে রাখতে বলতে পারেন।';
 

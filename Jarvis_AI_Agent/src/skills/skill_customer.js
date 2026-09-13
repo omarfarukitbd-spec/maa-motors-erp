@@ -7,7 +7,7 @@ export class CustomerSkill extends BaseSkill {
             id: 'skill_customer',
             name: 'কাস্টমার ও বকেয়া লেজার স্কিল',
             description: 'কাস্টমারদের বকেয়া ব্যালেন্স, মোবাইল নম্বর, ঠিকানা এবং বর্তমান হিসাব যাচাই করে।',
-            triggers: ['বকেয়া', 'কাস্টমার', 'বাকী', 'হিসাব', 'ব্যালেন্স', 'ফোন নম্বর', 'মোবাইল', 'ঠিকানা']
+            triggers: ['বকেয়া', 'বকে', 'কাস্টমার', 'বাকী', 'হিসাব', 'ব্যালেন্স', 'ফোন নম্বর', 'মোবাইল', 'ঠিকানা', 'পাওনা', 'খাতা', 'পার্টি']
         });
     }
 
@@ -47,6 +47,13 @@ export class CustomerSkill extends BaseSkill {
     async execute(actionName, params = {}) {
         const query = params.customer_name || params.search_term || '';
         const results = await ERPBridge.searchCustomers(query);
+
+        if (results && results.error === 'AUTH_REQUIRED') {
+            return {
+                success: false,
+                spokenResponse: 'ভাইয়া, কাস্টমার লেজার অ্যাক্সেস করতে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।'
+            };
+        }
 
         if (!results || results.length === 0) {
             return {
