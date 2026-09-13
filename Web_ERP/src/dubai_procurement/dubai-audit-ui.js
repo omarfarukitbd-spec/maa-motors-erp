@@ -16,7 +16,7 @@ import {
 let currentAuditId = null;
 let auditHistory = [];
 let dynamicHoldings = [
-    { desc: 'আলতাফ + মেছ (৫০,০০০ + ৪৮৮)', amount: 50488 }
+    { desc: 'আলতাফ জাবেদ', amount: 55100 }
 ];
 
 const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
@@ -63,6 +63,19 @@ function setupActionButtons() {
         renderDynamicHoldings();
         updateLiveWaterfall();
     });
+
+    const dateInp = document.getElementById('dubai-week-date');
+    if (dateInp) {
+        dateInp.addEventListener('change', () => {
+            const val = dateInp.value;
+            if (!val) return;
+            const existing = auditHistory.find(a => a.weekEndDate === val);
+            if (existing && existing.id !== currentAuditId) {
+                showToast(`${val} তারিখের সংরক্ষিত অডিট পাওয়া গেছে, লোড হচ্ছে...`, 'info');
+                window.loadDubaiAuditHistory(existing.id);
+            }
+        });
+    }
 }
 
 export function updateLiveWaterfall() {
@@ -85,38 +98,25 @@ export function updateLiveWaterfall() {
     setTxt('subtotal-2', sub2);
     setTxt('subtotal-3', sub3);
     setTxt('val-final-variance', finalVariance);
-    setTxt('val-final-variance-bottom', finalVariance);
 
     const badgeEl = document.getElementById('final-variance-badge');
-    const badgeElBottom = document.getElementById('final-variance-badge-bottom');
     const statusDescEl = document.getElementById('desc-final-status');
     const valFinalEl = document.getElementById('val-final-variance');
-    const valFinalElBottom = document.getElementById('val-final-variance-bottom');
 
     if (finalVariance >= 0) {
         if (badgeEl) {
             badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
             badgeEl.textContent = 'ক্যাশ বাড়তি';
         }
-        if (badgeElBottom) {
-            badgeElBottom.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
-            badgeElBottom.textContent = 'ক্যাশ বাড়তি';
-        }
         if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ বাড়তি)';
         if (valFinalEl) valFinalEl.className = 'text-emerald-400 font-bold';
-        if (valFinalElBottom) valFinalElBottom.className = 'text-emerald-400 font-black';
     } else {
         if (badgeEl) {
             badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-red-500/20 text-red-400 border border-red-500/40';
             badgeEl.textContent = 'ক্যাশ ঘাটতি';
         }
-        if (badgeElBottom) {
-            badgeElBottom.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-red-500/20 text-red-400 border border-red-500/40';
-            badgeElBottom.textContent = 'ক্যাশ ঘাটতি';
-        }
         if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(ক্যাশ ঘাটতি)';
         if (valFinalEl) valFinalEl.className = 'text-red-400 font-bold';
-        if (valFinalElBottom) valFinalElBottom.className = 'text-red-400 font-black';
     }
 
     const dateVal = getTxt('dubai-week-date');
@@ -157,6 +157,23 @@ window.handleRunningChange = function(type) {
         const running = getVal(rId);
         const cumInp = document.getElementById(cId);
         if (cumInp) cumInp.value = formatAmountWithComma(safeRound(prev + running));
+    }
+    updateLiveWaterfall();
+};
+
+window.handlePrevBaselineChange = function(type) {
+    const map = {
+        sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
+        purchase: ['dubai-prev-pur-input', 'input-cum-purchase', 'input-running-purchase'],
+        expense: ['dubai-prev-exp-input', 'input-cum-expense', 'input-running-expense']
+    };
+    const [pId, cId, rId] = map[type] || [];
+    if (pId && cId && rId) {
+        const prev = getVal(pId);
+        const curr = getVal(cId);
+        const diff = Math.abs(safeRound(curr - prev));
+        const runInp = document.getElementById(rId);
+        if (runInp) runInp.value = diff > 0 ? formatAmountWithComma(diff) : '';
     }
     updateLiveWaterfall();
 };
@@ -400,7 +417,7 @@ function onNewAuditClick() {
     ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => setInp(id, '0'));
     const badgeEl = document.getElementById('memo-auto-count-badge');
     if (badgeEl) badgeEl.textContent = '০টি মেমো';
-    dynamicHoldings = [{ desc: 'আলতাফ + মেছ', amount: 0 }];
+    dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0 }];
     DubaiMemoModal.setMemos([]);
     renderDynamicHoldings();
     updateLiveWaterfall();
