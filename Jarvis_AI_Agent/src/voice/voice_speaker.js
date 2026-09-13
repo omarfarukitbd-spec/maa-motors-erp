@@ -13,6 +13,9 @@ export class VoiceSpeaker {
         this.onEndCallback = () => {};
         this.selectedVoice = null;
         this.isUnlocked = false;
+        this.selectedNeuralVoice = (typeof window !== 'undefined' && localStorage.getItem('jarvis_neural_voice')) 
+            || JARVIS_CONFIG.voice.defaultVoice 
+            || 'bn-BD-PradeepNeural';
 
         // Persistent reusable audio element
         if (typeof window !== 'undefined') {
@@ -22,6 +25,13 @@ export class VoiceSpeaker {
         }
 
         this.initNativeVoices();
+    }
+
+    setNeuralVoice(voiceId) {
+        this.selectedNeuralVoice = voiceId;
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('jarvis_neural_voice', voiceId);
+        }
     }
 
     /**
@@ -82,10 +92,10 @@ export class VoiceSpeaker {
         this.onStartCallback(cleanText);
 
         try {
-            // Try Online High-Definition Bengali Neural Voice first
+            // Azure Bangladeshi Neural Voice (Natural Human)
             await this.speakOnlineNeural(cleanText);
         } catch (err) {
-            console.warn('[VoiceSpeaker] Online TTS failed, falling back to Native SpeechSynthesis:', err);
+            console.warn('[VoiceSpeaker] Neural voice error, falling back to Native SpeechSynthesis:', err);
             await this.speakNative(cleanText);
         } finally {
             this.isSpeaking = false;
@@ -94,7 +104,7 @@ export class VoiceSpeaker {
     }
 
     /**
-     * Engine 1: Online Google Bengali Audio Stream via /api/tts proxy
+     * Engine 1: Azure Bangladeshi Neural Speech Stream via /api/tts proxy
      */
     speakOnlineNeural(text) {
         return new Promise((resolve, reject) => {
@@ -113,7 +123,7 @@ export class VoiceSpeaker {
                 }
 
                 const chunk = chunks[index++];
-                const url = `/api/tts?q=${encodeURIComponent(chunk)}`;
+                const url = `/api/tts?q=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(this.selectedNeuralVoice)}`;
                 
                 this.audio.src = url;
 

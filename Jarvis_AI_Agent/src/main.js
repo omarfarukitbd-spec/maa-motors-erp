@@ -282,6 +282,15 @@ if (testVoiceBtn) {
     testVoiceBtn.addEventListener('click', window.triggerVoiceTest);
 }
 
+const voiceSelector = document.getElementById('voice-selector');
+if (voiceSelector) {
+    voiceSelector.value = voiceSpeaker.selectedNeuralVoice;
+    voiceSelector.addEventListener('change', (e) => {
+        voiceSpeaker.setNeuralVoice(e.target.value);
+        console.log('🎙️ [Jarvis Voice] Switched neural voice to:', e.target.value);
+    });
+}
+
 // 5. Firebase Google Authentication Integration
 import { auth, googleProvider } from './config.js';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';

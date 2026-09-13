@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import https from 'https';
+import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 
 export default defineConfig({
   base: './',
@@ -11,36 +11,41 @@ export default defineConfig({
   },
   plugins: [
     {
-      name: 'tts-proxy',
+      name: 'azure-neural-tts-proxy',
       configureServer(server) {
-        server.middlewares.use('/api/tts', (req, res) => {
+        server.middlewares.use('/api/tts', async (req, res) => {
           const urlObj = new URL(req.url, 'http://localhost');
           const q = urlObj.searchParams.get('q') || '';
+          const voice = urlObj.searchParams.get('voice') || 'bn-BD-PradeepNeural';
+
           if (!q) {
             res.writeHead(400);
-            res.end('Missing text');
+            res.end('Missing text parameter');
             return;
           }
 
-          const googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(q)}&tl=bn&client=tw-ob`;
-          const proxyReq = https.get(googleUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-            }
-          }, (proxyRes) => {
-            res.writeHead(proxyRes.statusCode, {
+          try {
+            const tts = new MsEdgeTTS();
+            await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+            const { audioStream } = tts.toStream(q);
+
+            res.writeHead(200, {
               'Content-Type': 'audio/mpeg',
               'Access-Control-Allow-Origin': '*',
               'Cache-Control': 'public, max-age=86400'
             });
-            proxyRes.pipe(res);
-          });
 
-          proxyReq.on('error', (err) => {
-            console.error('[TTS Proxy Error]:', err);
-            res.writeHead(500);
-            res.end('TTS Error');
-          });
+            audioStream.pipe(res);
+            audioStream.on('error', (err) => {
+              console.error('[Neural TTS AudioStream Error]:', err);
+              if (!res.headersSent) res.writeHead(500);
+              res.end();
+            });
+          } catch (err) {
+            console.error('[Neural TTS Error]:', err);
+            if (!res.headersSent) res.writeHead(500);
+            res.end('Neural TTS Failed: ' + err.message);
+          }
         });
       }
     }

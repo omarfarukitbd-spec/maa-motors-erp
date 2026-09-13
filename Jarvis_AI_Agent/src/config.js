@@ -30,8 +30,11 @@ export const JARVIS_CONFIG = {
     version: '1.0.0-Enterprise',
     voice: {
         lang: 'bn-BD', // Bangladeshi Bengali
-        neuralVoiceId: 'bn-BD-Neural2-A', // High-fidelity Native Bangladeshi Female or B for Male
-        fallbackRate: 1.05,
+        defaultVoice: 'bn-BD-PradeepNeural', // Microsoft Azure Natural Human Male (Bangladesh)
+        femaleVoice: 'bn-BD-NabanitaNeural', // Microsoft Azure Natural Human Female (Bangladesh)
+        engine: 'azure-neural',
+        codec: 'audio-24khz-48kbitrate-mono-mp3',
+        fallbackRate: 1.0,
         fallbackPitch: 1.0,
         enableAudioWave: true
     },
