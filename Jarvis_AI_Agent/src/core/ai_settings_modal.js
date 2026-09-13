@@ -104,12 +104,16 @@ export class AISettingsModal {
     }
 
     loadSettings() {
-        const provider = localStorage.getItem('jarvis_ai_provider') || 'openai';
-        this.switchProvider(provider);
-
         const openAIKey = localStorage.getItem('jarvis_openai_key') || '';
         const geminiKey = localStorage.getItem('jarvis_gemini_key') || '';
         const selectedVoice = localStorage.getItem('jarvis_openai_voice') || 'onyx';
+
+        let provider = localStorage.getItem('jarvis_ai_provider') || 'openai';
+        if (!openAIKey && geminiKey) {
+            provider = 'gemini';
+        }
+
+        this.switchProvider(provider);
 
         if (this.openaiKeyInput) this.openaiKeyInput.value = openAIKey;
         if (this.geminiKeyInput) this.geminiKeyInput.value = geminiKey;
@@ -137,11 +141,16 @@ export class AISettingsModal {
 
     saveSettings() {
         const isOpneAI = this.openaiTab?.classList.contains('active');
-        const provider = isOpneAI ? 'openai' : 'gemini';
+        let provider = isOpneAI ? 'openai' : 'gemini';
 
         const openAIKey = (this.openaiKeyInput?.value || '').trim();
         const geminiKey = (this.geminiKeyInput?.value || '').trim();
         const selectedVoice = this.openaiVoiceSelect?.value || 'onyx';
+
+        // Auto prioritize Gemini if user only provided Gemini key
+        if (!openAIKey && geminiKey) {
+            provider = 'gemini';
+        }
 
         localStorage.setItem('jarvis_ai_provider', provider);
         localStorage.setItem('jarvis_openai_key', openAIKey);
