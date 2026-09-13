@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, renderPrintHeader, formatAppDate, getDayOfWeekBangla, safeRound, getTodayLocalDateString } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, renderPrintHeader, formatAppDate, getDayOfWeekBangla, safeRound, getTodayLocalDateString, toDBDate } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
 import Swal from 'sweetalert2';
@@ -52,7 +52,17 @@ export async function printCustomerCollectionRegister(summaryData) {
         </div>
     `;
 
-    const rowsArray = customerCollections.map((c, idx) => {
+    // Defensive chronological sort: earliest date first, latest date last
+    const sortedCollections = [...customerCollections].sort((a, b) => {
+        const dA = toDBDate(a.date || startDate), dB = toDBDate(b.date || startDate);
+        if (dA !== dB) return dA.localeCompare(dB);
+        const tA = a.createdAt?.toMillis?.() || (a.createdAt?.toDate?.()?.getTime?.()) || (new Date(a.createdAt || 0).getTime()) || 0;
+        const tB = b.createdAt?.toMillis?.() || (b.createdAt?.toDate?.()?.getTime?.()) || (new Date(b.createdAt || 0).getTime()) || 0;
+        if (tA !== tB) return tA - tB;
+        return (a.customerAccountNo || '').localeCompare(b.customerAccountNo || '', undefined, { numeric: true });
+    });
+
+    const rowsArray = sortedCollections.map((c, idx) => {
         const isEven = idx % 2 === 0;
         const bgStyle = isEven ? 'background: #ffffff;' : 'background: #f8fafc;';
         const methodDisplay = c.receivedType === 'Cash' ? 'ক্যাশ' : (c.receivedFrom || c.receivedType);
@@ -170,7 +180,12 @@ export async function printDayByDayMonthlyRegister(summaryData) {
         </div>
     `;
 
-    const rowsArray = dayByDaySummary.map((d, idx) => {
+    // Defensive chronological sort: Day 1 to Day 30/31
+    const sortedDayByDay = [...dayByDaySummary].sort((a, b) => 
+        (toDBDate(a.date) || '').localeCompare(toDBDate(b.date) || '')
+    );
+
+    const rowsArray = sortedDayByDay.map((d, idx) => {
         const isEven = idx % 2 === 0;
         const bgStyle = isEven ? 'background: #ffffff;' : 'background: #f8fafc;';
 

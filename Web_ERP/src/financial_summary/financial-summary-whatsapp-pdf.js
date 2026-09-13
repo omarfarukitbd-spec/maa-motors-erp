@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, formatAppDate } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, formatAppDate, toDBDate } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
 import Swal from 'sweetalert2';
@@ -174,8 +174,17 @@ export async function printClosingDepositPdfReport(summaryData) {
         </div>
     `;
 
-    // 6. Customer Collections Rows
-    const rowsArray = customerCollections.map((c, idx) => {
+    // 6. Customer Collections Rows (Chronologically Ascending)
+    const sortedCollections = [...customerCollections].sort((a, b) => {
+        const dA = toDBDate(a.date || startDate), dB = toDBDate(b.date || startDate);
+        if (dA !== dB) return dA.localeCompare(dB);
+        const tA = a.createdAt?.toMillis?.() || (a.createdAt?.toDate?.()?.getTime?.()) || (new Date(a.createdAt || 0).getTime()) || 0;
+        const tB = b.createdAt?.toMillis?.() || (b.createdAt?.toDate?.()?.getTime?.()) || (new Date(b.createdAt || 0).getTime()) || 0;
+        if (tA !== tB) return tA - tB;
+        return (a.customerAccountNo || '').localeCompare(b.customerAccountNo || '', undefined, { numeric: true });
+    });
+
+    const rowsArray = sortedCollections.map((c, idx) => {
         const isEven = idx % 2 === 0;
         const bgStyle = isEven ? 'background: #ffffff;' : 'background: #f8fafc;';
         const methodDisplay = c.receivedType === 'Cash' ? 'ক্যাশ' : (c.receivedFrom || c.receivedType || 'ব্যাংক');

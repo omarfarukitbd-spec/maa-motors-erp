@@ -69,7 +69,13 @@ async function executePrintReport(data, start, end) {
     const dateRangeStr = `${formatAppDate(start)} হতে ${formatAppDate(end)}`;
 
     // Sort ascending for chronological report
-    data.sort((a,b) => new Date(a.date) - new Date(b.date));
+    data.sort((a, b) => {
+        const dA = toDBDate(a.date || start), dB = toDBDate(b.date || start);
+        if (dA !== dB) return dA.localeCompare(dB);
+        const tA = a.createdAt?.toMillis?.() || (new Date(a.createdAt || 0).getTime()) || 0;
+        const tB = b.createdAt?.toMillis?.() || (new Date(b.createdAt || 0).getTime()) || 0;
+        return tA - tB;
+    });
 
     let total = 0;
     const catSum = {};

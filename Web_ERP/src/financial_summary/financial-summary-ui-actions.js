@@ -1,7 +1,7 @@
 import { printCustomerCollectionRegister, printDayByDayMonthlyRegister } from './financial-summary-print.js';
 import { openCashReconciliationModal } from './financial-summary-cash-modal.js';
 import { shareDailyClosingViaWhatsApp } from './financial-summary-whatsapp.js';
-import { showToast } from '../utils.js';
+import { showToast, toDBDate } from '../utils.js';
 
 export function setupFinancialSummaryActions(getState) {
     window.fsHandleTopPrint = () => {
@@ -99,7 +99,15 @@ export function setupFinancialSummaryActions(getState) {
             return showToast('এক্সেল ইঞ্জিন লোড হচ্ছে, পুনরায় চেষ্টা করুন...', 'warning', 'Excel');
         }
         try {
-            const rows = cachedSummaryData.customerCollections.map((c, i) => ({
+            const sortedCollections = [...cachedSummaryData.customerCollections].sort((a, b) => {
+                const dA = toDBDate(a.date || cachedSummaryData.startDate), dB = toDBDate(b.date || cachedSummaryData.startDate);
+                if (dA !== dB) return dA.localeCompare(dB);
+                const tA = a.createdAt?.toMillis?.() || (a.createdAt?.toDate?.()?.getTime?.()) || (new Date(a.createdAt || 0).getTime()) || 0;
+                const tB = b.createdAt?.toMillis?.() || (b.createdAt?.toDate?.()?.getTime?.()) || (new Date(b.createdAt || 0).getTime()) || 0;
+                if (tA !== tB) return tA - tB;
+                return (a.customerAccountNo || '').localeCompare(b.customerAccountNo || '', undefined, { numeric: true });
+            });
+            const rows = sortedCollections.map((c, i) => ({
                 'SL': i + 1,
                 'তারিখ': c.date,
                 'A/C নং': c.customerAccountNo,

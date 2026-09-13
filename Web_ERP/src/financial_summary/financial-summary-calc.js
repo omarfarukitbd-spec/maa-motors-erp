@@ -74,13 +74,17 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             bankTxnSnap.forEach(doc => rawBankTxns.push({ id: doc.id, ...doc.data() }));
         }
 
-        const dateDescSort = (a, b) => {
-            if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
-            return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+        const dateAscSort = (a, b) => {
+            const dA = toDBDate(a.date || startDate), dB = toDBDate(b.date || startDate);
+            if (dA !== dB) return dA.localeCompare(dB);
+            const tA = a.createdAt?.toMillis?.() || (a.createdAt?.toDate?.()?.getTime?.()) || (new Date(a.createdAt || 0).getTime()) || 0;
+            const tB = b.createdAt?.toMillis?.() || (b.createdAt?.toDate?.()?.getTime?.()) || (new Date(b.createdAt || 0).getTime()) || 0;
+            if (tA !== tB) return tA - tB;
+            return (a.voucherNo || '').localeCompare(b.voucherNo || '', undefined, { numeric: true });
         };
-        rawTxns.sort(dateDescSort);
-        rawExpenses.sort(dateDescSort);
-        rawBankTxns.sort(dateDescSort);
+        rawTxns.sort(dateAscSort);
+        rawExpenses.sort(dateAscSort);
+        rawBankTxns.sort(dateAscSort);
 
         let totalSales = 0, salesCount = 0, totalCollection = 0, cashCollection = 0, bankCollection = 0, lessDiscount = 0;
         const methodBreakdown = {}, zoneBreakdown = {}, customerCollections = [], dayMap = new Map();
@@ -238,12 +242,12 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             };
         });
 
-        // Convert DayMap to sorted array (Date Descending)
+        // Convert DayMap to sorted array (Chronological Date Ascending)
         const dayByDaySummary = Array.from(dayMap.values()).map(d => ({
             ...d,
             customerCount: d.customerIds.size,
             netCash: safeRound(d.totalPaid - d.expenses)
-        })).sort((a, b) => b.date.localeCompare(a.date));
+        })).sort((a, b) => (toDBDate(a.date) || '').localeCompare(toDBDate(b.date) || ''));
 
         const netCashFlow = safeRound(totalCollection - totalExpenses);
 
