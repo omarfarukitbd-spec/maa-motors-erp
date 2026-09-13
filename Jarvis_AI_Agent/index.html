@@ -49,10 +49,27 @@
         <span>সাউন্ড</span>
       </button>
 
-      <!-- Neural Voice Selector (Pradeep / Nabanita) -->
-      <select id="voice-selector" class="header-action-btn voice-select" title="ভয়েস কণ্ঠস্বর পরিবর্তন করুন">
-        <option value="bn-BD-PradeepNeural">পুরুষ (প্রদীপ)</option>
-        <option value="bn-BD-NabanitaNeural">মহিলা (নবনিতা)</option>
+      <!-- AI Brain & Voice Settings Button -->
+      <button id="open-ai-settings-btn" class="header-action-btn ai-settings-btn" title="ChatGPT ও Gemini AI ভয়েস সেটিংস">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+        </svg>
+        <span>AI সেটিংস</span>
+      </button>
+
+      <!-- Voice Selector (ChatGPT & Azure) -->
+      <select id="voice-selector" class="header-action-btn voice-select" title="ভয়েস কণ্ঠস্বর নির্বাচন করুন">
+        <optgroup label="ChatGPT নিউরাল ভয়েস (OpenAI)">
+          <option value="onyx">Onyx (গম্ভীর পুরুষ - ChatGPT)</option>
+          <option value="echo">Echo (উষ্ণ পুরুষ - ChatGPT)</option>
+          <option value="alloy">Alloy (ব্যালেন্সড - ChatGPT)</option>
+          <option value="nova">Nova (মিষ্টি নারী - ChatGPT)</option>
+          <option value="shimmer">Shimmer (শান্ত নারী - ChatGPT)</option>
+        </optgroup>
+        <optgroup label="Azure বাংলাদেশী কণ্ঠ">
+          <option value="bn-BD-PradeepNeural">প্রদীপ (পুরুষ - Azure)</option>
+          <option value="bn-BD-NabanitaNeural">নবনিতা (নারী - Azure)</option>
+        </optgroup>
       </select>
 
       <!-- Google Sign-In Button -->
@@ -262,6 +279,99 @@
           </svg>
           <span>ইমেইল ও পাসওয়ার্ড দিয়ে যেকোনো মোবাইল, ল্যাপটপ বা আইপিতে সবসময় নিশ্চিতভাবে সরাসরি লগইন করা যায়।</span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Brain & Voice Engine Settings Modal -->
+  <div id="ai-settings-modal" class="auth-modal-backdrop hidden">
+    <div class="auth-modal-card ai-settings-card">
+      <div class="auth-modal-header">
+        <div class="auth-modal-title">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-cyan-400">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          <span>চ্যাটজিপিটি ও জেমিনি এআই সেটিংস</span>
+        </div>
+        <button id="close-ai-settings-modal" class="close-drawer-btn" aria-label="Close Settings">&times;</button>
+      </div>
+
+      <div class="auth-modal-body">
+        <!-- Provider Selector -->
+        <div class="form-group">
+          <label class="form-label">এআই ব্রেন সিলেক্ট করুন (AI Provider)</label>
+          <div class="provider-switch-grid">
+            <button type="button" id="select-provider-openai" class="provider-tab-btn active">
+              <span class="provider-title">OpenAI (ChatGPT)</span>
+              <span class="provider-subtitle">আসল চ্যাটজিপিটি ভয়েস ও মানবিক সহানুভূতি</span>
+            </button>
+            <button type="button" id="select-provider-gemini" class="provider-tab-btn">
+              <span class="provider-title">Google Gemini Flash</span>
+              <span class="provider-subtitle">গুগলের ফ্রি টিয়ার ও হাই-স্পিড বাংলা প্রসেসিং</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- OpenAI Key Section -->
+        <div id="openai-config-section" class="provider-section">
+          <div class="form-group">
+            <div class="label-row">
+              <label for="input-openai-key">OpenAI API Key (ChatGPT Voice & Brain)</label>
+              <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" class="help-link">কী সংগ্রহ করুন &rarr;</a>
+            </div>
+            <div class="key-input-wrapper">
+              <input type="password" id="input-openai-key" placeholder="sk-proj-..." autocomplete="off" />
+              <button type="button" id="toggle-openai-key-vis" class="toggle-vis-btn" title="Show/Hide">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+            <p class="form-hint">আপনার ডিভাইসে কি সুরক্ষিত থাকবে। এর মাধ্যমে চ্যাটজিপিটি-র অফিসিয়াল ভয়েস সরাসরি চলবে।</p>
+          </div>
+
+          <div class="form-group">
+            <label for="select-openai-voice">চ্যাটজিপিটি নিউরাল ভয়েস (Official ChatGPT Voices)</label>
+            <select id="select-openai-voice" class="settings-select">
+              <option value="onyx">Onyx (গম্ভীর পুরুষ নির্বাহী — রিকমেন্ডেড)</option>
+              <option value="echo">Echo (উষ্ণ ও আন্তরিক পুরুষ কণ্ঠ)</option>
+              <option value="alloy">Alloy (আধুনিক ও ব্যালেন্সড কণ্ঠ)</option>
+              <option value="nova">Nova (প্রাণবন্ত ও মিষ্টি নারী কণ্ঠ)</option>
+              <option value="shimmer">Shimmer (শান্ত ও মার্জিত নারী কণ্ঠ)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Gemini Key Section -->
+        <div id="gemini-config-section" class="provider-section hidden">
+          <div class="form-group">
+            <div class="label-row">
+              <label for="input-gemini-key">Google Gemini API Key</label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="help-link">ফ্রি কী নিন &rarr;</a>
+            </div>
+            <div class="key-input-wrapper">
+              <input type="password" id="input-gemini-key" placeholder="AIzaSy..." autocomplete="off" />
+              <button type="button" id="toggle-gemini-key-vis" class="toggle-vis-btn" title="Show/Hide">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+            <p class="form-hint">Google AI Studio থেকে সম্পূর্ণ বিনামূল্যে Gemini 1.5 Flash API Key সংগ্রহ করা যায়।</p>
+          </div>
+        </div>
+
+        <!-- Live Voice Test & Save Actions -->
+        <div class="settings-actions-grid">
+          <button type="button" id="btn-preview-voice" class="voice-preview-btn">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>ভয়েস টেস্ট</span>
+          </button>
+          <button type="button" id="btn-save-ai-settings" class="settings-save-btn">
+            সেটিংস সেভ করুন
+          </button>
+        </div>
+
+        <div id="ai-settings-feedback" class="settings-feedback-msg hidden"></div>
       </div>
     </div>
   </div>

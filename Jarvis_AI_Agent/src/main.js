@@ -5,6 +5,7 @@ import { jarvisBrain } from './core/jarvis_brain.js';
 import { VoiceListener } from './voice/voice_listener.js';
 import { voiceSpeaker } from './voice/voice_speaker.js';
 import { VoiceVisualizer } from './voice/voice_visualizer.js';
+import { aiSettingsModal } from './core/ai_settings_modal.js';
 
 // Import Core Skills
 import { CustomerSkill } from './skills/skill_customer.js';
@@ -198,6 +199,16 @@ jarvisBrain.onMessage((msg) => {
                 </div>
             `;
         }
+        if (msg.text.includes('সেটিংস')) {
+            actionsHtml += `
+                <div class="msg-action-row">
+                    <button class="msg-action-btn" onclick="window.triggerAISettings()">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <span>AI সেটিংস খুলুন</span>
+                    </button>
+                </div>
+            `;
+        }
         actionsHtml += `
             <div>
                 <button class="replay-audio-btn" onclick="window.triggerReplay(this)" data-msg="${escapeHTML(msg.text)}" title="ভয়েস পুনরায় শুনুন">
@@ -263,9 +274,13 @@ memoryVault.onChange(renderMemories);
 renderMemories(memoryVault.memories);
 
 // 4. Voice Global Trigger Handlers
+window.triggerAISettings = () => {
+    aiSettingsModal.open();
+};
+
 window.triggerVoiceTest = async () => {
     visualizer.setState('speaking');
-    await voiceSpeaker.speak('শুভ অপরাহ্ন ভাইয়া! আমি মেসার্স মা মোটরস এর পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস। আমার ভয়েস সিস্টেম এখন সক্রিয় আছে।');
+    await voiceSpeaker.speak('আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।');
     visualizer.setState('idle');
 };
 
@@ -284,10 +299,18 @@ if (testVoiceBtn) {
 
 const voiceSelector = document.getElementById('voice-selector');
 if (voiceSelector) {
-    voiceSelector.value = voiceSpeaker.selectedNeuralVoice;
+    const currentVoice = localStorage.getItem('jarvis_openai_voice') || 'onyx';
+    voiceSelector.value = currentVoice;
     voiceSelector.addEventListener('change', (e) => {
-        voiceSpeaker.setNeuralVoice(e.target.value);
-        console.log('🎙️ [Jarvis Voice] Switched neural voice to:', e.target.value);
+        const val = e.target.value;
+        if (val.startsWith('bn-BD-')) {
+            voiceSpeaker.setAzureVoice(val);
+            voiceSpeaker.setEngine('azure-neural');
+        } else {
+            voiceSpeaker.setOpenAIVoice(val);
+            voiceSpeaker.setEngine('openai');
+        }
+        console.log('🎙️ [Jarvis Voice] Switched active voice to:', val);
     });
 }
 
@@ -326,14 +349,17 @@ if (authModal) {
 
 // Check redirect login result on page load
 if (auth) {
-    getRedirectResult(auth).then((result) => {
-        if (result && result.user) {
-            console.log('✅ [Jarvis Auth] Google Redirect sign-in success:', result.user.email);
-            hideAuthModal();
+    (async () => {
+        try {
+            const result = await getRedirectResult(auth);
+            if (result && result.user) {
+                console.log('✅ [Jarvis Auth] Google Redirect sign-in success:', result.user.email);
+                hideAuthModal();
+            }
+        } catch (err) {
+            console.warn('Redirect auth result error:', err);
         }
-    }).catch((err) => {
-        console.warn('Redirect auth result error:', err);
-    });
+    })();
 }
 
 // Handle Google Login Flow
@@ -460,6 +486,13 @@ function escapeHTML(str) {
     return String(str || '').replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
+}
+
+// Auto open AI settings if requested via URL
+if (typeof window !== 'undefined' && window.location.search.includes('show_settings=true')) {
+    setTimeout(() => {
+        aiSettingsModal.open();
+    }, 400);
 }
 
 console.log('🤖 [Jarvis AI Agent] Core initialized successfully.');

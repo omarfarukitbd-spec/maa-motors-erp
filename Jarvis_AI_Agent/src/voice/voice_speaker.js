@@ -1,9 +1,10 @@
 import { JARVIS_CONFIG } from '../config.js';
 
 /**
- * 🎙️ Dual-Engine Natural Bengali Voice Speaker
- * 1. Primary Engine: Google Online High-Fidelity Bengali Audio Stream (Sounds like Gemini/ChatGPT)
- * 2. Secondary Engine: Browser Native SpeechSynthesis (Offline fallback)
+ * 🎙️ World-Class Natural Voice Speaker (ChatGPT OpenAI TTS & Azure Neural Stream)
+ * 1. Primary Engine: Official OpenAI Speech API (ChatGPT Authentic Voice: Onyx, Echo, Alloy, Nova)
+ * 2. Secondary Engine: Local Azure Bangladeshi Neural Audio Stream (Pradeep/Nabanita)
+ * 3. Fallback Engine: Browser SpeechSynthesis
  */
 export class VoiceSpeaker {
     constructor() {
@@ -13,8 +14,17 @@ export class VoiceSpeaker {
         this.onEndCallback = () => {};
         this.selectedVoice = null;
         this.isUnlocked = false;
-        this.selectedNeuralVoice = (typeof window !== 'undefined' && localStorage.getItem('jarvis_neural_voice')) 
+
+        this.activeEngine = (typeof window !== 'undefined' && localStorage.getItem('jarvis_voice_engine')) 
+            || JARVIS_CONFIG.voice.defaultEngine 
+            || 'openai';
+
+        this.selectedOpenAIVoice = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_voice')) 
             || JARVIS_CONFIG.voice.defaultVoice 
+            || 'onyx';
+
+        this.selectedAzureVoice = (typeof window !== 'undefined' && localStorage.getItem('jarvis_azure_voice')) 
+            || JARVIS_CONFIG.voice.azureDefault 
             || 'bn-BD-PradeepNeural';
 
         // Persistent reusable audio element
@@ -27,27 +37,41 @@ export class VoiceSpeaker {
         this.initNativeVoices();
     }
 
-    setNeuralVoice(voiceId) {
-        this.selectedNeuralVoice = voiceId;
+    setEngine(engine) {
+        this.activeEngine = engine;
         if (typeof window !== 'undefined') {
-            localStorage.setItem('jarvis_neural_voice', voiceId);
+            localStorage.setItem('jarvis_voice_engine', engine);
+        }
+    }
+
+    setOpenAIVoice(voiceId) {
+        this.selectedOpenAIVoice = voiceId;
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('jarvis_openai_voice', voiceId);
+        }
+    }
+
+    setAzureVoice(voiceId) {
+        this.selectedAzureVoice = voiceId;
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('jarvis_azure_voice', voiceId);
         }
     }
 
     /**
-     * Unlock audio playback permissions across modern browsers (Chrome/Safari/Edge)
+     * Unlock audio playback permissions across modern browsers (Chrome/Safari/Edge/iOS)
      */
     setupUnlockListeners() {
-        const unlock = () => {
+        const unlock = async () => {
             if (this.isUnlocked) return;
-            // Play a short silent data URL to grant persistent audio playback permissions
             this.audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-            this.audio.play().then(() => {
+            try {
+                await this.audio.play();
                 this.isUnlocked = true;
                 console.log('🔊 [VoiceSpeaker] Audio pipeline successfully unlocked by user interaction.');
-            }).catch(() => {
-                // Will retry on next interaction
-            });
+            } catch (err) {
+                console.log('Audio unlock awaiting next touch/click interaction.');
+            }
         };
 
         window.addEventListener('click', unlock, { once: true, passive: true });
@@ -59,7 +83,8 @@ export class VoiceSpeaker {
         if (!this.synth) return;
         const load = () => {
             const voices = this.synth.getVoices();
-            this.selectedVoice = voices.find(v => v.lang === 'bn-BD') 
+            this.selectedVoice = voices.find(v => v.lang === 'bn-BD' && (v.name.includes('Natural') || v.name.includes('Online'))) 
+                || voices.find(v => v.lang === 'bn-BD')
                 || voices.find(v => v.lang.startsWith('bn'))
                 || voices.find(v => v.name.toLowerCase().includes('bangla') || v.name.toLowerCase().includes('bengali'));
         };
@@ -70,7 +95,7 @@ export class VoiceSpeaker {
     }
 
     /**
-     * Speak text aloud in natural human Bangladeshi Bengali
+     * Speak text aloud using the best human-like emotional voice available
      * @param {string} text 
      * @returns {Promise<void>}
      */
@@ -91,11 +116,28 @@ export class VoiceSpeaker {
         this.isSpeaking = true;
         this.onStartCallback(cleanText);
 
+        const openAIKey = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_key')) || '';
+
         try {
-            // Azure Bangladeshi Neural Voice (Natural Human)
-            await this.speakOnlineNeural(cleanText);
+            // Priority 1: OpenAI ChatGPT Official Voice (Authentic human voice)
+            if (openAIKey.trim()) {
+                await this.speakOpenAITTS(cleanText, openAIKey.trim());
+                return;
+            }
+
+            // Priority 2: Azure Neural Speech Stream via local proxy
+            if (this.activeEngine === 'azure-neural' || !openAIKey.trim()) {
+                const proxyOk = await this.checkProxyAvailable();
+                if (proxyOk) {
+                    await this.speakOnlineNeural(cleanText);
+                    return;
+                }
+            }
+
+            // Priority 3: Browser Native SpeechSynthesis
+            await this.speakNative(cleanText);
         } catch (err) {
-            console.warn('[VoiceSpeaker] Neural voice error, falling back to Native SpeechSynthesis:', err);
+            console.warn('[VoiceSpeaker] Primary voice failed, falling back to Native Speech:', err);
             await this.speakNative(cleanText);
         } finally {
             this.isSpeaking = false;
@@ -104,7 +146,68 @@ export class VoiceSpeaker {
     }
 
     /**
-     * Engine 1: Azure Bangladeshi Neural Speech Stream via /api/tts proxy
+     * Check if local /api/tts proxy is accessible
+     */
+    async checkProxyAvailable() {
+        try {
+            const res = await fetch('/api/tts?q=test', { method: 'HEAD' });
+            return res.ok && (res.headers.get('content-type') || '').includes('audio');
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * Engine 1: OpenAI ChatGPT TTS (Real human ChatGPT Voice)
+     * High-fidelity 24kHz audio stream directly to browser
+     */
+    async speakOpenAITTS(text, apiKey) {
+        const response = await fetch('https://api.openai.com/v1/audio/speech', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'tts-1',
+                input: text,
+                voice: this.selectedOpenAIVoice || 'onyx',
+                response_format: 'mp3',
+                speed: 1.0
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error?.message || `OpenAI TTS Error: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+
+        return new Promise((resolve, reject) => {
+            this.audio.src = audioUrl;
+
+            this.audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                resolve();
+            };
+
+            this.audio.onerror = (e) => {
+                URL.revokeObjectURL(audioUrl);
+                console.warn('[VoiceSpeaker] OpenAI audio play error:', e);
+                reject(e);
+            };
+
+            const playPromise = this.audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => reject(err));
+            }
+        });
+    }
+
+    /**
+     * Engine 2: Azure Bangladeshi Neural Speech Stream via local proxy
      */
     speakOnlineNeural(text) {
         return new Promise((resolve, reject) => {
@@ -123,7 +226,7 @@ export class VoiceSpeaker {
                 }
 
                 const chunk = chunks[index++];
-                const url = `/api/tts?q=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(this.selectedNeuralVoice)}`;
+                const url = `/api/tts?q=${encodeURIComponent(chunk)}&voice=${encodeURIComponent(this.selectedAzureVoice)}`;
                 
                 this.audio.src = url;
 
@@ -132,14 +235,14 @@ export class VoiceSpeaker {
                 };
 
                 this.audio.onerror = (e) => {
-                    console.warn('[VoiceSpeaker] Audio stream error on chunk:', chunk, e);
+                    console.warn('[VoiceSpeaker] Azure audio stream error on chunk:', chunk, e);
                     reject(e);
                 };
 
                 const playPromise = this.audio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(playErr => {
-                        console.warn('[VoiceSpeaker] Autoplay blocked or interrupted:', playErr);
+                        console.warn('[VoiceSpeaker] Autoplay interrupted:', playErr);
                         reject(playErr);
                     });
                 }
@@ -150,7 +253,7 @@ export class VoiceSpeaker {
     }
 
     /**
-     * Engine 2: Native Web Speech API Fallback
+     * Engine 3: Native Web Speech API Fallback
      */
     speakNative(text) {
         return new Promise((resolve) => {
@@ -181,36 +284,19 @@ export class VoiceSpeaker {
     }
 
     /**
-     * Splits into natural sentence chunks for fluid Bengali prosody
-     * Preserves punctuation inside chunks and keeps sentences together up to 130 chars
+     * Splits text into natural sentence chunks
      */
     splitIntoSentences(text) {
-        // Split on Bengali full stops (।), question marks (?), exclamation marks (!), or newlines
         const rawSentences = text.split(/([।?!]+[\s\n]*)/);
         const chunks = [];
         let buffer = '';
 
         for (let i = 0; i < rawSentences.length; i++) {
             buffer += rawSentences[i];
-            // If we have a full sentence or buffer exceeds 120 chars
             if (rawSentences[i].match(/[।?!]/) || buffer.length >= 120) {
                 const trimmed = buffer.trim();
                 if (trimmed) {
-                    // If a single chunk is still extraordinarily long (> 150), split by comma or space
-                    if (trimmed.length > 150) {
-                        const subParts = trimmed.split(/([,;]+|\s{2,})/);
-                        let subBuffer = '';
-                        for (const part of subParts) {
-                            subBuffer += part;
-                            if (subBuffer.length >= 100) {
-                                if (subBuffer.trim()) chunks.push(subBuffer.trim());
-                                subBuffer = '';
-                            }
-                        }
-                        if (subBuffer.trim()) chunks.push(subBuffer.trim());
-                    } else {
-                        chunks.push(trimmed);
-                    }
+                    chunks.push(trimmed);
                 }
                 buffer = '';
             }
@@ -229,10 +315,16 @@ export class VoiceSpeaker {
             try {
                 this.audio.pause();
                 this.audio.currentTime = 0;
-            } catch (e) {}
+            } catch (err) {
+                console.warn('[VoiceSpeaker] Audio stop non-critical error:', err);
+            }
         }
         if (this.synth) {
-            try { this.synth.cancel(); } catch (e) {}
+            try {
+                this.synth.cancel();
+            } catch (err) {
+                console.warn('[VoiceSpeaker] Synth cancel non-critical error:', err);
+            }
         }
         this.onEndCallback();
     }
@@ -242,4 +334,3 @@ export class VoiceSpeaker {
 }
 
 export const voiceSpeaker = new VoiceSpeaker();
-

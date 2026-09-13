@@ -83,7 +83,11 @@ export class SkillRegistry {
     notifyListeners() {
         const list = this.getAll();
         this.listeners.forEach(fn => {
-            try { fn(list); } catch (e) {}
+            try {
+                fn(list);
+            } catch (err) {
+                console.warn('[SkillRegistry] Listener error:', err);
+            }
         });
     }
 }

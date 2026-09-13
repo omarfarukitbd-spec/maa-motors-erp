@@ -196,7 +196,11 @@ ${prefs ? `### মালিকের ব্যক্তিগত পছন্দ
 
     notifyListeners() {
         this.listeners.forEach(fn => {
-            try { fn(this.memories); } catch (e) {}
+            try {
+                fn(this.memories);
+            } catch (err) {
+                console.warn('[MemoryVault] Listener error:', err);
+            }
         });
     }
 }

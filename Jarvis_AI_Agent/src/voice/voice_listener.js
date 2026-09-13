@@ -80,7 +80,9 @@ export class VoiceListener {
         if (!this.recognition) return;
         try {
             this.recognition.stop();
-        } catch (e) {}
+        } catch (err) {
+            console.warn('[VoiceListener] Stop error:', err);
+        }
     }
 
     toggle() {

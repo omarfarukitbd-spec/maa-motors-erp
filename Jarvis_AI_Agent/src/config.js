@@ -27,17 +27,27 @@ export const googleProvider = new GoogleAuthProvider();
 export const JARVIS_CONFIG = {
     name: 'Jarvis (জার্ভিস)',
     title: 'Maa Motors Personal Executive AI',
-    version: '1.0.0-Enterprise',
+    version: '2.0.0-Cognitive',
     voice: {
         lang: 'bn-BD', // Bangladeshi Bengali
-        defaultVoice: 'bn-BD-PradeepNeural', // Microsoft Azure Natural Human Male (Bangladesh)
-        femaleVoice: 'bn-BD-NabanitaNeural', // Microsoft Azure Natural Human Female (Bangladesh)
-        engine: 'azure-neural',
-        codec: 'audio-24khz-48kbitrate-mono-mp3',
+        defaultEngine: 'openai', // 'openai' | 'azure-neural' | 'native'
+        defaultVoice: 'onyx', // OpenAI ChatGPT Executive Voice
+        azureDefault: 'bn-BD-PradeepNeural',
         fallbackRate: 1.0,
         fallbackPitch: 1.0,
         enableAudioWave: true
     },
+    openaiVoices: [
+        { id: 'onyx', name: 'Onyx (ChatGPT গম্ভীর পুরুষ নির্বাহী)', gender: 'male', desc: 'আত্মবিশ্বাসী, গভীর ও প্রফেশনাল এক্সিকিউটিভ টোন' },
+        { id: 'echo', name: 'Echo (ChatGPT আন্তরিক ও উষ্ণ পুরুষ)', gender: 'male', desc: 'সহজ, প্রাণবন্ত ও বিশ্বস্ত ব্যবসায়িক পার্টনার' },
+        { id: 'alloy', name: 'Alloy (ChatGPT আধুনিক ও ব্যালেন্সড)', gender: 'neutral', desc: 'স্পষ্ট, আধুনিক ও দ্রুত প্রতিক্রিয়াশীল' },
+        { id: 'nova', name: 'Nova (ChatGPT প্রাণবন্ত ও সহযোগী নারী)', gender: 'female', desc: 'বন্ধুত্বপূর্ণ, দ্রুত ও মিষ্টি বাচনভঙ্গি' },
+        { id: 'shimmer', name: 'Shimmer (ChatGPT শান্ত ও বিনয়ী নারী)', gender: 'female', desc: 'ধীরস্থির, মার্জিত ও প্রফেশনাল টোন' }
+    ],
+    azureVoices: [
+        { id: 'bn-BD-PradeepNeural', name: 'Pradeep (বাংলাদেশী পুরুষ - Azure)', gender: 'male', desc: 'খাঁটি বাংলাদেশী উচ্চারণের পুরুষ কণ্ঠ' },
+        { id: 'bn-BD-NabanitaNeural', name: 'Nabanita (বাংলাদেশী নারী - Azure)', gender: 'female', desc: 'খাঁটি বাংলাদেশী উচ্চারণের নারী কণ্ঠ' }
+    ],
     memory: {
         collectionName: 'jarvis_ai_memory',
         syncWithCloud: true
