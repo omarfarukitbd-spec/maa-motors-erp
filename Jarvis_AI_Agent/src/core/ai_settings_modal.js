@@ -66,6 +66,30 @@ export class AISettingsModal {
             });
         }
 
+        // Auto-preserve pasted/typed keys immediately
+        if (this.geminiKeyInput) {
+            this.geminiKeyInput.addEventListener('change', () => {
+                const val = (this.geminiKeyInput.value || '').trim();
+                if (val) {
+                    localStorage.setItem('jarvis_gemini_key', val);
+                    if (!localStorage.getItem('jarvis_openai_key')?.trim()) {
+                        localStorage.setItem('jarvis_ai_provider', 'gemini');
+                        llmAgent.setProvider('gemini');
+                    }
+                }
+            });
+        }
+        if (this.openaiKeyInput) {
+            this.openaiKeyInput.addEventListener('change', () => {
+                const val = (this.openaiKeyInput.value || '').trim();
+                if (val) {
+                    localStorage.setItem('jarvis_openai_key', val);
+                    localStorage.setItem('jarvis_ai_provider', 'openai');
+                    llmAgent.setProvider('openai');
+                }
+            });
+        }
+
         // Voice Preview Button
         if (this.previewBtn) {
             this.previewBtn.addEventListener('click', () => this.testCurrentVoice());
@@ -152,7 +176,37 @@ export class AISettingsModal {
         }
     }
 
-    saveSettings() {
+    async validateGeminiKey(key) {
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: 'test' }] }]
+                })
+            });
+            if (res.ok) return { valid: true };
+            const data = await res.json().catch(() => ({}));
+            return { valid: false, message: data.error?.message || `HTTP ${res.status}` };
+        } catch (err) {
+            return { valid: false, message: err.message };
+        }
+    }
+
+    async validateOpenAIKey(key) {
+        try {
+            const res = await fetch('https://api.openai.com/v1/models', {
+                headers: { 'Authorization': `Bearer ${key}` }
+            });
+            if (res.ok) return { valid: true };
+            const data = await res.json().catch(() => ({}));
+            return { valid: false, message: data.error?.message || `HTTP ${res.status}` };
+        } catch (err) {
+            return { valid: false, message: err.message };
+        }
+    }
+
+    async saveSettings() {
         const isGemini = this.geminiTab?.classList.contains('active');
         let provider = isGemini ? 'gemini' : 'openai';
 
@@ -164,6 +218,33 @@ export class AISettingsModal {
         // Auto prioritize Gemini if user only provided Gemini key
         if (!openAIKey && geminiKey) {
             provider = 'gemini';
+        }
+
+        if (this.feedbackEl) {
+            this.feedbackEl.className = 'settings-feedback-msg';
+            this.feedbackEl.innerText = '🔍 এআই কী যাচাই করা হচ্ছে...';
+            this.feedbackEl.classList.remove('hidden');
+        }
+
+        // Live validation for Gemini key
+        if (provider === 'gemini' && geminiKey) {
+            const valResult = await this.validateGeminiKey(geminiKey);
+            if (!valResult.valid) {
+                if (this.feedbackEl) {
+                    this.feedbackEl.className = 'settings-feedback-msg error';
+                    this.feedbackEl.innerText = `❌ জেমিনি কী সঠিক নয়: ${valResult.message}। দয়া করে Google AI Studio থেকে সঠিক API Key কপি করুন।`;
+                }
+                return;
+            }
+        } else if (provider === 'openai' && openAIKey) {
+            const valResult = await this.validateOpenAIKey(openAIKey);
+            if (!valResult.valid) {
+                if (this.feedbackEl) {
+                    this.feedbackEl.className = 'settings-feedback-msg error';
+                    this.feedbackEl.innerText = `❌ ওপেনএআই কী সঠিক নয়: ${valResult.message}।`;
+                }
+                return;
+            }
         }
 
         localStorage.setItem('jarvis_ai_provider', provider);
@@ -190,7 +271,9 @@ export class AISettingsModal {
 
         if (this.feedbackEl) {
             this.feedbackEl.className = 'settings-feedback-msg success';
-            this.feedbackEl.innerText = '✅ এআই ও ভয়েস সেটিংস সফলভাবে সেভ হয়েছে!';
+            this.feedbackEl.innerText = provider === 'gemini' 
+                ? '✅ গুগল জেমিনি এআই সফলভাবে সংযুক্ত ও সক্রিয় হয়েছে!'
+                : '✅ ওপেনএআই চ্যাটজিপিটি সফলভাবে সক্রিয় হয়েছে!';
             this.feedbackEl.classList.remove('hidden');
 
             setTimeout(() => {

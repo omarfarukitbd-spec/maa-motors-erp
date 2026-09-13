@@ -7,16 +7,31 @@ import { memoryVault } from './memory_vault.js';
  */
 export class LLMAgent {
     constructor() {
-        this.provider = localStorage.getItem('jarvis_ai_provider') || 'openai'; // 'openai' | 'gemini'
-        this.openaiModel = localStorage.getItem('jarvis_openai_model') || 'gpt-4o-mini';
-        this.geminiModel = localStorage.getItem('jarvis_gemini_model') || 'gemini-1.5-flash';
+        const hasOpenAI = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_openai_key') || '').trim());
+        const hasGemini = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_gemini_key') || '').trim());
+        const savedProvider = typeof window !== 'undefined' ? localStorage.getItem('jarvis_ai_provider') : null;
+
+        if (savedProvider) {
+            this.provider = savedProvider;
+        } else if (hasGemini && !hasOpenAI) {
+            this.provider = 'gemini';
+        } else {
+            this.provider = 'openai';
+        }
+
+        this.openaiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_model')) || 'gpt-4o-mini';
+        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-1.5-flash';
     }
 
     getApiKey() {
-        if (this.provider === 'openai') {
-            return localStorage.getItem('jarvis_openai_key') || '';
-        }
-        return localStorage.getItem('jarvis_gemini_key') || '';
+        if (typeof window === 'undefined') return '';
+        const geminiKey = (localStorage.getItem('jarvis_gemini_key') || '').trim();
+        const openAIKey = (localStorage.getItem('jarvis_openai_key') || '').trim();
+
+        if (this.provider === 'gemini' && geminiKey) return geminiKey;
+        if (this.provider === 'openai' && openAIKey) return openAIKey;
+
+        return geminiKey || openAIKey || '';
     }
 
     hasApiKey() {
@@ -103,7 +118,13 @@ ${memoryContext}`;
                     description: 'দুবাই কন্টেইনার পারচেজ, মেমো খরচ, এইডি (AED) ক্যাশ ব্যালেন্স ও অডিট রিপোর্ট জানতে এটি কল করো।',
                     parameters: {
                         type: 'object',
-                        properties: {}
+                        properties: {
+                            query_type: {
+                                type: 'string',
+                                enum: ['container_summary', 'aed_cash'],
+                                description: 'কন্টেইনার সারসংক্ষেপ নাকি ক্যাশ ব্যালেন্স'
+                            }
+                        }
                     }
                 }
             },
@@ -191,28 +212,51 @@ ${memoryContext}`;
      * @returns {Promise<{spoken: string, data?: any}>}
      */
     async chat(history, userMessage) {
-        const key = this.getApiKey();
+        const geminiKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_gemini_key') || '').trim() : '';
+        const openAIKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_openai_key') || '').trim() : '';
 
-        // 1. If OpenAI Key is configured
-        if (this.provider === 'openai' && key) {
+        let activeProvider = this.provider;
+        if (!openAIKey && geminiKey) activeProvider = 'gemini';
+        if (!geminiKey && openAIKey) activeProvider = 'openai';
+
+        let geminiErrorMsg = '';
+        let openAiErrorMsg = '';
+
+        // 1. Try Primary Provider
+        if (activeProvider === 'gemini' && geminiKey) {
             try {
-                return await this.chatOpenAI(history, userMessage, key);
-            } catch (err) {
-                console.warn('[LLMAgent] OpenAI chat failed, trying fallback:', err);
+                return await this.chatGemini(history, userMessage, geminiKey);
+            } catch (geminiErr) {
+                console.error('[LLMAgent] Gemini chat error:', geminiErr);
+                geminiErrorMsg = geminiErr.message;
+                if (openAIKey) {
+                    try {
+                        return await this.chatOpenAI(history, userMessage, openAIKey);
+                    } catch (oaiErr) {
+                        console.error('[LLMAgent] OpenAI fallback error:', oaiErr);
+                        openAiErrorMsg = oaiErr.message;
+                    }
+                }
+            }
+        } else if (activeProvider === 'openai' && openAIKey) {
+            try {
+                return await this.chatOpenAI(history, userMessage, openAIKey);
+            } catch (oaiErr) {
+                console.error('[LLMAgent] OpenAI chat error:', oaiErr);
+                openAiErrorMsg = oaiErr.message;
+                if (geminiKey) {
+                    try {
+                        return await this.chatGemini(history, userMessage, geminiKey);
+                    } catch (geminiErr) {
+                        console.error('[LLMAgent] Gemini fallback error:', geminiErr);
+                        geminiErrorMsg = geminiErr.message;
+                    }
+                }
             }
         }
 
-        // 2. If Gemini Key is configured
-        if (this.provider === 'gemini' && key) {
-            try {
-                return await this.chatGemini(history, userMessage, key);
-            } catch (err) {
-                console.warn('[LLMAgent] Gemini chat failed, trying fallback:', err);
-            }
-        }
-
-        // 3. Fallback: High-Empathy Local Semantic Engine
-        return await this.chatLocalEmpathetic(userMessage);
+        // 2. Fallback to Local Semantic & Tool Engine
+        return await this.chatLocalEmpathetic(userMessage, Boolean(geminiKey || openAIKey), geminiErrorMsg || openAiErrorMsg);
     }
 
     /**
@@ -224,7 +268,7 @@ ${memoryContext}`;
         ];
 
         // Append recent conversation history (last 6 messages)
-        const recentHistory = history.slice(-6);
+        const recentHistory = (history || []).slice(-6);
         for (const item of recentHistory) {
             messages.push({
                 role: item.sender === 'user' ? 'user' : 'assistant',
@@ -236,7 +280,7 @@ ${memoryContext}`;
         const tools = this.getToolsSchema();
 
         // First round: Send to OpenAI
-        let response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -256,12 +300,12 @@ ${memoryContext}`;
             throw new Error(errData.error?.message || `OpenAI API Error: ${response.status}`);
         }
 
-        let result = await response.json();
-        let message = result.choices[0].message;
+        const result = await response.json();
+        const message = result.choices[0].message;
 
         // Check if OpenAI wants to call tools
         if (message.tool_calls && message.tool_calls.length > 0) {
-            messages.push(message); // add assistant's tool_calls message
+            messages.push(message);
 
             let toolDisplayData = null;
 
@@ -307,37 +351,58 @@ ${memoryContext}`;
      * Google Gemini 1.5/2.0 Flash with Native Tool Calling
      */
     async chatGemini(history, userMessage, key) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${key}`;
+        const cleanKey = String(key || '').trim();
+        if (!cleanKey) {
+            throw new Error('জেমিনি এআই কী পাওয়া যায়নি');
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${cleanKey}`;
 
         const systemInstruction = {
             parts: [{ text: this.getSystemPrompt() }]
         };
 
-        const contents = [];
-        const recentHistory = history.slice(-6);
-        for (const item of recentHistory) {
-            contents.push({
-                role: item.sender === 'user' ? 'user' : 'model',
-                parts: [{ text: item.text }]
-            });
+        // Strict Gemini multiturn formatting
+        const cleanTurns = [];
+        const rawHistory = (history || []).slice(-8);
+
+        for (const item of rawHistory) {
+            const role = item.sender === 'user' ? 'user' : 'model';
+            const text = String(item.text || '').replace(/[*_#`]/g, '').trim();
+            if (!text) continue;
+
+            // Merge consecutive turns with identical role to satisfy Gemini requirements
+            if (cleanTurns.length > 0 && cleanTurns[cleanTurns.length - 1].role === role) {
+                cleanTurns[cleanTurns.length - 1].parts[0].text += '\n' + text;
+            } else {
+                cleanTurns.push({ role, parts: [{ text }] });
+            }
         }
-        contents.push({
-            role: 'user',
-            parts: [{ text: userMessage }]
-        });
+
+        // Gemini rule: First turn MUST be 'user'
+        while (cleanTurns.length > 0 && cleanTurns[0].role !== 'user') {
+            cleanTurns.shift();
+        }
+
+        // Add current user message
+        const currentMsg = String(userMessage || '').trim();
+        if (cleanTurns.length > 0 && cleanTurns[cleanTurns.length - 1].role === 'user') {
+            cleanTurns[cleanTurns.length - 1].parts[0].text += '\n' + currentMsg;
+        } else {
+            cleanTurns.push({ role: 'user', parts: [{ text: currentMsg }] });
+        }
 
         // Gemini Function Declarations
-        // Robust Gemini Tool Declarations with uppercase Protobuf types
         const geminiTools = [{
             functionDeclarations: this.getToolsSchema().map(t => {
                 const props = t.function.parameters.properties || {};
                 const uppercaseProps = {};
-                for (const [key, val] of Object.entries(props)) {
-                    uppercaseProps[key] = {
+                for (const [propKey, val] of Object.entries(props)) {
+                    uppercaseProps[propKey] = {
                         type: (val.type || 'STRING').toUpperCase(),
                         description: val.description || ''
                     };
-                    if (val.enum) uppercaseProps[key].enum = val.enum;
+                    if (val.enum) uppercaseProps[propKey].enum = val.enum;
                 }
                 return {
                     name: t.function.name,
@@ -351,46 +416,61 @@ ${memoryContext}`;
             })
         }];
 
-        let response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                system_instruction: systemInstruction,
-                contents,
-                tools: geminiTools
-            })
-        });
-
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            console.warn('[Gemini API Warning]:', errData);
-            // Fallback: try without tools if schema caused issue
-            const simpleResp = await fetch(url, {
+        let response;
+        try {
+            response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     system_instruction: systemInstruction,
-                    contents
+                    contents: cleanTurns,
+                    tools: geminiTools
                 })
             });
-            if (!simpleResp.ok) {
-                throw new Error(errData.error?.message || `Gemini API Error: ${response.status}`);
+        } catch (fetchErr) {
+            throw new Error(`নেটওয়ার্ক ত্রুটি: ${fetchErr.message}`);
+        }
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            console.warn('[LLMAgent] Gemini Tools attempt rejected:', errData);
+
+            // Fallback attempt: Try pure conversational without tools
+            let simpleResp;
+            try {
+                simpleResp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: systemInstruction,
+                        contents: cleanTurns
+                    })
+                });
+            } catch (simpleFetchErr) {
+                throw new Error(`নেটওয়ার্ক ত্রুটি: ${simpleFetchErr.message}`);
             }
-            const simpleRes = await simpleResp.json();
-            const spoken = simpleRes.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, আমি আপনার কথা শুনেছি।';
+
+            if (!simpleResp.ok) {
+                const fatalErr = await simpleResp.json().catch(() => ({}));
+                const errMsg = fatalErr.error?.message || errData.error?.message || `HTTP ${response.status}`;
+                throw new Error(errMsg);
+            }
+
+            const simpleResult = await simpleResp.json();
+            const spoken = simpleResult.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, আমি আপনার কথা শুনেছি।';
             return { spoken, data: null };
         }
 
-        let result = await response.json();
-        let candidate = result.candidates?.[0]?.content;
-        let functionCallPart = candidate?.parts?.find(p => p.functionCall);
+        const result = await response.json();
+        const candidate = result.candidates?.[0]?.content;
+        const functionCallPart = candidate?.parts?.find(p => p.functionCall);
 
         if (functionCallPart) {
             const { name, args } = functionCallPart.functionCall;
             const toolResult = await this.executeToolCall(name, args || {});
 
-            contents.push(candidate);
-            contents.push({
+            cleanTurns.push(candidate);
+            cleanTurns.push({
                 role: 'function',
                 parts: [{
                     functionResponse: {
@@ -401,30 +481,30 @@ ${memoryContext}`;
             });
 
             // Second round with function result
-            let secondResp = await fetch(url, {
+            const secondResp = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     system_instruction: systemInstruction,
-                    contents
+                    contents: cleanTurns
                 })
             });
 
             if (secondResp.ok) {
-                let secondResult = await secondResp.json();
-                let spoken = secondResult.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, হিসাবটি যাচাই করেছি।';
+                const secondResult = await secondResp.json();
+                const spoken = secondResult.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, হিসাবটি যাচাই করেছি।';
                 return { spoken, data: toolResult };
             }
         }
 
-        const spoken = candidate?.parts?.[0]?.text || 'জি ভাইয়া, আমি আপনার কথা শুনেছি।';
+        const spoken = candidate?.parts?.[0]?.text || 'জি ভাইয়া, আমি আপনার নির্দেশ অনুযায়ী হিসাব দেখতে প্রস্তুত আছি।';
         return { spoken, data: null };
     }
 
     /**
-     * Empathetic Local Fallback (When no API key is yet configured)
+     * Empathetic Local Fallback (When API key has errors or is not yet configured)
      */
-    async chatLocalEmpathetic(text) {
+    async chatLocalEmpathetic(text, hasKey = false, errorMsg = '') {
         const lower = text.toLowerCase();
 
         // 1. Emotion / Sentiment Detection
@@ -465,9 +545,17 @@ ${memoryContext}`;
             };
         }
 
-        // 4. Fallback with Guidance
+        // 4. If key was provided but an error occurred
+        if (hasKey && errorMsg) {
+            return {
+                spoken: `জি ভাইয়া, আপনার এআই কী (API Key)-তে সংযোগ করতে একটি সমস্যা হয়েছে: "${errorMsg}"। দয়া করে "AI সেটিংস" থেকে কী-টি সঠিক আছে কিনা তা একটু যাচাই করে নিন।`,
+                data: null
+            };
+        }
+
+        // 5. Fallback with Guidance
         return {
-            spoken: 'জি ভাইয়া, আমি আপনার কথা শুনেছি। চ্যাটজিপিটি (ChatGPT) লেভেলের পূর্ণাঙ্গ কণ্ঠ ও মানবিক বুদ্ধিমত্তা সার্বক্ষণিক সক্রিয় রাখতে উপরের সেটিংস থেকে আপনার এআই কী যুক্ত করে নিতে পারেন। এছাড়া আপনি যেকোনো কাস্টমারের বকেয়া বা ব্যাংক হিসাব সরাসরি জানতে পারেন।',
+            spoken: 'জি ভাইয়া, আমি আপনার কথা শুনেছি। চ্যাটজিপিটি বা জেমিনি এআই-এর পূর্ণাঙ্গ বুদ্ধিমত্তা সক্রিয় রাখতে উপরের AI সেটিংস থেকে আপনার এআই কী যুক্ত করে নিতে পারেন। এছাড়া আপনি যেকোনো কাস্টমারের বকেয়া বা ব্যাংক হিসাব সরাসরি জানতে পারেন।',
             data: null
         };
     }
