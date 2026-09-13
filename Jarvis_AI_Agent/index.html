@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>JARVIS AI AGENT — মেসার্স মা মোটরস পার্সোনাল এক্সিকিউটিভ এআই</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><circle cx='12' cy='12' r='9'/></svg>" />
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+
+  <!-- Backdrop overlay for mobile sliding drawers -->
+  <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
+  <!-- Top App Navigation Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <!-- Mobile Drawer Toggle: Memory -->
+      <button id="toggle-memory-btn" class="drawer-toggle-btn" title="স্মৃতিভাণ্ডার দেখুন" aria-label="Memory Vault">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+        </svg>
+        <span class="mobile-btn-text">স্মৃতি</span>
+      </button>
+
+      <div class="brand-group">
+        <div class="brand-logo">J</div>
+        <div class="brand-titles">
+          <div class="brand-row">
+            <span class="brand-name">JARVIS AI</span>
+            <span class="brand-tag">Maa Motors</span>
+          </div>
+          <span class="brand-subtitle">Bangla Voice Executive</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="header-status">
+        <div class="status-dot"></div>
+        <span class="status-label">সক্রিয় (Active)</span>
+      </div>
+
+      <!-- Stop Speech Synthesis Button -->
+      <button id="stop-speech-btn" class="header-icon-btn hidden" title="কথা বন্ধ করুন" aria-label="Stop Speaking">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+        </svg>
+      </button>
+
+      <!-- Mobile Drawer Toggle: Skills -->
+      <button id="toggle-skills-btn" class="drawer-toggle-btn" title="স্কিল হাব দেখুন" aria-label="Skills Hub">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+        </svg>
+        <span class="mobile-btn-text">স্কিল</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main 3-Column Studio Interface -->
+  <main class="app-body">
+
+    <!-- 1. Left Sidebar / Drawer: Memory Vault (স্মৃতিভাণ্ডার) -->
+    <aside id="memory-sidebar" class="sidebar left-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>স্মৃতিভাণ্ডার (Memory)</span>
+        </div>
+        <button id="close-memory-btn" class="close-drawer-btn" aria-label="Close Memory">&times;</button>
+      </div>
+
+      <!-- Quick Add Memory Input -->
+      <div class="memory-quick-add">
+        <input type="text" id="quick-memory-input" placeholder="নতুন স্মৃতি লিখুন (যেমন: ম্যানেজার সুমন)..." />
+        <button id="quick-memory-btn" title="যোগ করুন">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="card-list" id="memory-list">
+        <!-- Dynamic Memory Cards -->
+      </div>
+    </aside>
+
+    <!-- 2. Central Stage: Arc Reactor Visualizer + Quick Prompts + Transcript + Controls -->
+    <section class="stage">
+      
+      <!-- Visualizer & Glowing Voice Arc Core -->
+      <div class="visualizer-wrapper">
+        <canvas id="visualizer-canvas"></canvas>
+        <div class="mic-btn-container">
+          <button id="mic-toggle-btn" class="mic-btn" title="কথা বলতে চাপুন বা স্পেসবার ধরে রাখুন" aria-label="Voice Input">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="mic-status-label" id="mic-status-text">
+        মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন
+      </div>
+
+      <!-- Quick Voice Prompt Action Chips -->
+      <div class="quick-prompts-bar">
+        <button class="prompt-chip" data-command="করিমের বকেয়া কত?">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+          <span>করিমের বকেয়া কত?</span>
+        </button>
+        <button class="prompt-chip" data-command="আজকের ক্যাশ ও ব্যাংকে কত টাকা আছে?">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>ক্যাশ ও ব্যাংক স্থিতি</span>
+        </button>
+        <button class="prompt-chip" data-command="দুবাই কনটেইনার অডিটের হিসাব বলো">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"></path></svg>
+          <span>দুবাই অডিট (AED)</span>
+        </button>
+        <button class="prompt-chip" data-command="মনে রাখবা বৃহস্পতিবার আমাদের অডিট ডে">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+          <span>নোট সেভ করুন</span>
+        </button>
+      </div>
+
+      <!-- Real-time Conversation Stream -->
+      <div class="transcript-wrapper">
+        <div class="transcript-stream" id="transcript-container">
+          <div class="message-bubble jarvis-msg">
+            <div class="msg-header">
+              <span class="msg-sender">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="msg-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                জার্ভিস এক্সিকিউটিভ
+              </span>
+              <span class="msg-time">এখন</span>
+            </div>
+            <div class="msg-body">
+              শুভ অপরাহ্ন ভাইয়া! আমি মেসার্স মা মোটরস এর পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস। আমি পুরোপুরি সক্রিয় আছি। আপনি মুখে পরিষ্কার বাংলায় কথা বলুন অথবা নিচের বাটনে চাপুন।
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manual Bottom Input Bar -->
+      <div class="input-bar">
+        <input type="text" id="manual-command-input" placeholder="বাংলায় ভয়েস দিন অথবা টাইপ করুন (যেমন: করিমের বকেয়া কত?)..." autocomplete="off" />
+        <button id="manual-send-btn" aria-label="Send">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+          </svg>
+          <span class="send-btn-text">পাঠান</span>
+        </button>
+      </div>
+
+    </section>
+
+    <!-- 3. Right Sidebar / Drawer: Active Skills Hub (সক্রিয় স্কিল তালিকা) -->
+    <aside id="skills-sidebar" class="sidebar right-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+          </svg>
+          <span>সক্রিয় স্কিল হাব (Skills)</span>
+        </div>
+        <button id="close-skills-btn" class="close-drawer-btn" aria-label="Close Skills">&times;</button>
+      </div>
+      <div class="card-list" id="skills-list">
+        <!-- Dynamic Skill Cards -->
+      </div>
+    </aside>
+
+  </main>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
+

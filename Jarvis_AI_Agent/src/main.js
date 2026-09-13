@@ -1,0 +1,252 @@
+import './style.css';
+import { skillRegistry } from './core/skill_registry.js';
+import { memoryVault } from './core/memory_vault.js';
+import { jarvisBrain } from './core/jarvis_brain.js';
+import { VoiceListener } from './voice/voice_listener.js';
+import { voiceSpeaker } from './voice/voice_speaker.js';
+import { VoiceVisualizer } from './voice/voice_visualizer.js';
+
+// Import Core Skills
+import { CustomerSkill } from './skills/skill_customer.js';
+import { AnalyticsSkill } from './skills/skill_analytics.js';
+import { DubaiSkill } from './skills/skill_dubai.js';
+import { MemorySkill } from './skills/skill_memory.js';
+
+// 1. Register Core Skills
+skillRegistry.register(new CustomerSkill());
+skillRegistry.register(new AnalyticsSkill());
+skillRegistry.register(new DubaiSkill());
+skillRegistry.register(new MemorySkill());
+
+// 2. Initialize Voice Components
+const listener = new VoiceListener();
+const canvas = document.getElementById('visualizer-canvas');
+const visualizer = new VoiceVisualizer(canvas);
+
+// Hook Visualizer States
+listener.on('onStart', () => visualizer.setState('listening'));
+listener.on('onEnd', () => {
+    if (!voiceSpeaker.isSpeaking) visualizer.setState('idle');
+});
+
+const stopSpeechBtn = document.getElementById('stop-speech-btn');
+voiceSpeaker.onStart(() => {
+    visualizer.setState('speaking');
+    if (stopSpeechBtn) stopSpeechBtn.classList.remove('hidden');
+});
+voiceSpeaker.onEnd(() => {
+    if (stopSpeechBtn) stopSpeechBtn.classList.add('hidden');
+    if (!listener.isListening) visualizer.setState('idle');
+});
+
+if (stopSpeechBtn) {
+    stopSpeechBtn.addEventListener('click', () => {
+        voiceSpeaker.stop();
+        stopSpeechBtn.classList.add('hidden');
+        visualizer.setState('idle');
+    });
+}
+
+// Sync Cloud Memories
+memoryVault.syncWithCloud();
+
+// 3. UI DOM Bindings
+const micBtn = document.getElementById('mic-toggle-btn');
+const micStatusText = document.getElementById('mic-status-text');
+const transcriptContainer = document.getElementById('transcript-container');
+const textInput = document.getElementById('manual-command-input');
+const sendBtn = document.getElementById('manual-send-btn');
+const skillsListEl = document.getElementById('skills-list');
+const memoryListEl = document.getElementById('memory-list');
+
+// Responsive Drawer Elements
+const drawerBackdrop = document.getElementById('drawer-backdrop');
+const memorySidebar = document.getElementById('memory-sidebar');
+const skillsSidebar = document.getElementById('skills-sidebar');
+const toggleMemoryBtn = document.getElementById('toggle-memory-btn');
+const toggleSkillsBtn = document.getElementById('toggle-skills-btn');
+const closeMemoryBtn = document.getElementById('close-memory-btn');
+const closeSkillsBtn = document.getElementById('close-skills-btn');
+
+function closeAllDrawers() {
+    if (memorySidebar) memorySidebar.classList.remove('drawer-open');
+    if (skillsSidebar) skillsSidebar.classList.remove('drawer-open');
+    if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+}
+
+function openDrawer(sidebarEl) {
+    closeAllDrawers();
+    if (sidebarEl) sidebarEl.classList.add('drawer-open');
+    if (drawerBackdrop) drawerBackdrop.classList.add('active');
+}
+
+if (toggleMemoryBtn) toggleMemoryBtn.addEventListener('click', () => openDrawer(memorySidebar));
+if (closeMemoryBtn) closeMemoryBtn.addEventListener('click', closeAllDrawers);
+if (toggleSkillsBtn) toggleSkillsBtn.addEventListener('click', () => openDrawer(skillsSidebar));
+if (closeSkillsBtn) closeSkillsBtn.addEventListener('click', closeAllDrawers);
+if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeAllDrawers);
+
+// Mic Toggle Logic
+function updateMicUI(isListening) {
+    if (isListening) {
+        micBtn.classList.add('active');
+        micStatusText.innerText = 'শুনছি... (Listening)';
+        micStatusText.classList.add('text-emerald-400');
+    } else {
+        micBtn.classList.remove('active');
+        micStatusText.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+        micStatusText.classList.remove('text-emerald-400');
+    }
+}
+
+micBtn.addEventListener('click', () => {
+    listener.toggle();
+    updateMicUI(listener.isListening);
+});
+
+// Keyboard Shortcut: Press and hold Space for Push-to-Talk (Desktop)
+let spacePressed = false;
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && document.activeElement !== textInput && !spacePressed) {
+        spacePressed = true;
+        listener.start();
+        updateMicUI(true);
+    }
+});
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space' && document.activeElement !== textInput && spacePressed) {
+        spacePressed = false;
+        listener.stop();
+        updateMicUI(false);
+    }
+});
+
+// Live Speech Result Handling
+listener.on('onInterim', (interimText) => {
+    micStatusText.innerText = `"${interimText}..."`;
+});
+
+listener.on('onFinal', async (finalText) => {
+    micStatusText.innerText = 'প্রসেস করছি... (Reasoning)';
+    visualizer.setState('thinking');
+    await jarvisBrain.processCommand(finalText);
+});
+
+// Manual Text Input Command
+async function handleManualSubmit() {
+    const text = textInput.value.trim();
+    if (!text) return;
+    textInput.value = '';
+    visualizer.setState('thinking');
+    await jarvisBrain.processCommand(text);
+}
+
+sendBtn.addEventListener('click', handleManualSubmit);
+textInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleManualSubmit();
+});
+
+// Quick Prompt Chips Click
+document.querySelectorAll('.prompt-chip').forEach(chip => {
+    chip.addEventListener('click', async () => {
+        const cmd = chip.getAttribute('data-command');
+        if (cmd) {
+            visualizer.setState('thinking');
+            await jarvisBrain.processCommand(cmd);
+        }
+    });
+});
+
+// Quick Memory Add Action
+const quickMemoryInput = document.getElementById('quick-memory-input');
+const quickMemoryBtn = document.getElementById('quick-memory-btn');
+
+async function handleQuickMemoryAdd() {
+    if (!quickMemoryInput) return;
+    const content = quickMemoryInput.value.trim();
+    if (!content) return;
+    
+    await memoryVault.rememberFact(content);
+    quickMemoryInput.value = '';
+    closeAllDrawers();
+}
+
+if (quickMemoryBtn) quickMemoryBtn.addEventListener('click', handleQuickMemoryAdd);
+if (quickMemoryInput) {
+    quickMemoryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleQuickMemoryAdd();
+    });
+}
+
+// Render Transcript Stream
+jarvisBrain.onMessage((msg) => {
+    const isUser = msg.sender === 'user';
+    const msgEl = document.createElement('div');
+    msgEl.className = `message-bubble ${isUser ? 'user-msg' : 'jarvis-msg'}`;
+    
+    const senderIcon = isUser 
+        ? `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="msg-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`
+        : `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="msg-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>`;
+
+    msgEl.innerHTML = `
+        <div class="msg-header">
+            <span class="msg-sender">${senderIcon} ${isUser ? 'আপনি' : 'জার্ভিস এক্সিকিউটিভ'}</span>
+            <span class="msg-time">${msg.time}</span>
+        </div>
+        <div class="msg-body">${escapeHTML(msg.text)}</div>
+    `;
+
+    transcriptContainer.appendChild(msgEl);
+    transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+});
+
+// Render Skills List
+function renderSkills() {
+    const skills = skillRegistry.getAll();
+    skillsListEl.innerHTML = skills.map(s => `
+        <div class="skill-card">
+            <div class="skill-title">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-cyan-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>${escapeHTML(s.name)}</span>
+            </div>
+            <div class="skill-desc">${escapeHTML(s.description)}</div>
+            <div class="skill-tags">${s.triggers.map(t => `<span class="badge">${escapeHTML(t)}</span>`).join('')}</div>
+        </div>
+    `).join('');
+}
+skillRegistry.onChange(renderSkills);
+renderSkills();
+
+// Render Memory Vault
+function renderMemories(memories) {
+    memoryListEl.innerHTML = memories.map(m => `
+        <div class="memory-card ${m.category}">
+            <div class="mem-header">
+                <span class="mem-cat">${m.category.toUpperCase()}</span>
+                <button class="del-mem-btn" data-id="${m.id}" title="মুছে ফেলুন">&times;</button>
+            </div>
+            <div class="mem-content">${escapeHTML(m.content)}</div>
+        </div>
+    `).join('');
+
+    // Attach delete listeners
+    document.querySelectorAll('.del-mem-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.target.getAttribute('data-id');
+            memoryVault.deleteMemory(id);
+        });
+    });
+}
+memoryVault.onChange(renderMemories);
+renderMemories(memoryVault.memories);
+
+function escapeHTML(str) {
+    return String(str || '').replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+}
+
+console.log('🤖 [Jarvis AI Agent] Core initialized successfully.');
+
