@@ -327,12 +327,28 @@ ${memoryContext}`;
         });
 
         // Gemini Function Declarations
+        // Robust Gemini Tool Declarations with uppercase Protobuf types
         const geminiTools = [{
-            functionDeclarations: this.getToolsSchema().map(t => ({
-                name: t.function.name,
-                description: t.function.description,
-                parameters: t.function.parameters
-            }))
+            functionDeclarations: this.getToolsSchema().map(t => {
+                const props = t.function.parameters.properties || {};
+                const uppercaseProps = {};
+                for (const [key, val] of Object.entries(props)) {
+                    uppercaseProps[key] = {
+                        type: (val.type || 'STRING').toUpperCase(),
+                        description: val.description || ''
+                    };
+                    if (val.enum) uppercaseProps[key].enum = val.enum;
+                }
+                return {
+                    name: t.function.name,
+                    description: t.function.description,
+                    parameters: {
+                        type: 'OBJECT',
+                        properties: uppercaseProps,
+                        required: t.function.parameters.required || []
+                    }
+                };
+            })
         }];
 
         let response = await fetch(url, {
@@ -347,7 +363,22 @@ ${memoryContext}`;
 
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error?.message || `Gemini API Error: ${response.status}`);
+            console.warn('[Gemini API Warning]:', errData);
+            // Fallback: try without tools if schema caused issue
+            const simpleResp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    system_instruction: systemInstruction,
+                    contents
+                })
+            });
+            if (!simpleResp.ok) {
+                throw new Error(errData.error?.message || `Gemini API Error: ${response.status}`);
+            }
+            const simpleRes = await simpleResp.json();
+            const spoken = simpleRes.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, আমি আপনার কথা শুনেছি।';
+            return { spoken, data: null };
         }
 
         let result = await response.json();
@@ -360,11 +391,11 @@ ${memoryContext}`;
 
             contents.push(candidate);
             contents.push({
-                role: 'user',
+                role: 'function',
                 parts: [{
                     functionResponse: {
                         name,
-                        response: toolResult
+                        response: { content: toolResult }
                     }
                 }]
             });
@@ -379,9 +410,11 @@ ${memoryContext}`;
                 })
             });
 
-            let secondResult = await secondResp.json();
-            let spoken = secondResult.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, হিসাবটি যাচাই করেছি।';
-            return { spoken, data: toolResult };
+            if (secondResp.ok) {
+                let secondResult = await secondResp.json();
+                let spoken = secondResult.candidates?.[0]?.content?.parts?.[0]?.text || 'জি ভাইয়া, হিসাবটি যাচাই করেছি।';
+                return { spoken, data: toolResult };
+            }
         }
 
         const spoken = candidate?.parts?.[0]?.text || 'জি ভাইয়া, আমি আপনার কথা শুনেছি।';
