@@ -10,7 +10,7 @@ export function renderDubaiHistoryTable(tbodyId, audits = []) {
     if (!tbody) return;
 
     if (!Array.isArray(audits) || audits.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-500 italic">কোনো পূর্ববর্তী অডিট হিস্ট্রি পাওয়া যায়নি।</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-500 italic">কোনো পূর্ববর্তী অডিট হিস্ট্রি পাওয়া যায়নি।</td></tr>`;
         return;
     }
 
@@ -18,6 +18,12 @@ export function renderDubaiHistoryTable(tbodyId, audits = []) {
     audits.forEach(a => {
         const vAmt = safeRound(parseAmount(a.varianceAmount));
         const vClass = vAmt >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
+        let holdingsSum = 0;
+        if (Array.isArray(a.personalHoldings)) {
+            a.personalHoldings.forEach(h => {
+                holdingsSum = safeRound(holdingsSum + safeRound(parseAmount(h.amount)));
+            });
+        }
         html += `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors">
                 <td class="p-2.5 font-bold font-mono text-white">${a.weekEndDate || ''}</td>
@@ -27,6 +33,7 @@ export function renderDubaiHistoryTable(tbodyId, audits = []) {
                 <td class="p-2.5 text-right font-mono text-red-400">${formatAmountWithComma(a.cumulativeExpenseTotal)}</td>
                 <td class="p-2.5 text-right font-mono text-cyan-400">${formatAmountWithComma(a.marketAdvance)}</td>
                 <td class="p-2.5 text-right font-mono text-emerald-400">${formatAmountWithComma(a.cashInHand)}</td>
+                <td class="p-2.5 text-right font-mono text-purple-400">${formatAmountWithComma(holdingsSum)}</td>
                 <td class="p-2.5 text-right font-mono ${vClass}">${formatAmountWithComma(vAmt)}</td>
                 <td class="p-2.5 text-center">
                     <div class="flex items-center justify-center gap-1.5">

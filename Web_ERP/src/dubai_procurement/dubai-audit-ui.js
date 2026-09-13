@@ -52,35 +52,17 @@ export async function renderDubaiProcurement(container) {
 }
 
 function setupActionButtons() {
-    const btnSave = document.getElementById('btn-dubai-save');
-    if (btnSave) btnSave.onclick = () => onSaveAuditClick();
+    const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
+    ['btn-dubai-save', 'btn-dubai-save-bottom'].forEach(id => bindClick(id, onSaveAuditClick));
+    ['btn-dubai-print', 'btn-dubai-print-bottom'].forEach(id => bindClick(id, onPrintAuditClick));
+    ['btn-dubai-new', 'btn-dubai-new-bottom'].forEach(id => bindClick(id, onNewAuditClick));
+    ['btn-dubai-roll-forward', 'btn-dubai-roll-forward-bottom'].forEach(id => bindClick(id, onRollForwardClick));
 
-    const btnPrint = document.getElementById('btn-dubai-print');
-    if (btnPrint) btnPrint.onclick = () => onPrintAuditClick();
-
-    const btnNew = document.getElementById('btn-dubai-new');
-    if (btnNew) btnNew.onclick = () => onNewAuditClick();
-
-    const btnSaveBottom = document.getElementById('btn-dubai-save-bottom');
-    if (btnSaveBottom) btnSaveBottom.onclick = () => onSaveAuditClick();
-
-    const btnPrintBottom = document.getElementById('btn-dubai-print-bottom');
-    if (btnPrintBottom) btnPrintBottom.onclick = () => onPrintAuditClick();
-
-    const btnNewBottom = document.getElementById('btn-dubai-new-bottom');
-    if (btnNewBottom) btnNewBottom.onclick = () => onNewAuditClick();
-
-    const btnRoll = document.getElementById('btn-dubai-roll-forward');
-    if (btnRoll) btnRoll.onclick = () => onRollForwardClick();
-
-    const btnAddHold = document.getElementById('btn-add-waterfall-holding');
-    if (btnAddHold) {
-        btnAddHold.onclick = () => {
-            dynamicHoldings.push({ desc: 'নতুন বিবরণ', amount: 0 });
-            renderDynamicHoldings();
-            updateLiveWaterfall();
-        };
-    }
+    bindClick('btn-add-waterfall-holding', () => {
+        dynamicHoldings.push({ desc: 'নতুন বিবরণ', amount: 0 });
+        renderDynamicHoldings();
+        updateLiveWaterfall();
+    });
 }
 
 export function updateLiveWaterfall() {
@@ -232,20 +214,21 @@ function renderDynamicHoldings() {
     dynamicHoldings.forEach((h, idx) => {
         const amt = safeRound(parseAmount(h.amount));
         html += `
-            <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors">
-                <div class="col-span-8 p-2.5 border-r border-slate-800 flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2 flex-grow">
-                        <input type="text" value="${h.desc || ''}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-purple-300 text-xs font-bold focus:border-purple-400 outline-none w-64">
-                        <span class="text-slate-500 text-[10px]"><i class="fa-solid fa-minus text-purple-400 mr-1"></i> বিয়োগ</span>
-                    </div>
-                    <div class="relative w-36 shrink-0 flex items-center gap-1.5">
-                        <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${idx}, this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-purple-300 font-mono text-right font-bold focus:border-purple-500 outline-none">
+            <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center">
+                <div class="col-span-6 p-2.5 border-r border-slate-800 flex items-center justify-between gap-2">
+                    <input type="text" value="${h.desc || ''}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-purple-300 text-xs font-bold focus:border-purple-400 outline-none flex-grow">
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="text-slate-500 text-[10px] whitespace-nowrap"><i class="fa-solid fa-minus text-purple-400 mr-0.5"></i> বিয়োগ</span>
                         <button type="button" onclick="window.removeDubaiHoldingRow(${idx})" class="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer" title="মুছে ফেলুন">
                             <i class="fa-solid fa-xmark text-[10px]"></i>
                         </button>
                     </div>
                 </div>
-                <div class="col-span-4 p-2.5 bg-slate-950/20 text-slate-500 text-[10px] flex items-center">
+                <div class="col-span-3 p-2.5 border-r border-slate-800 flex items-center justify-end gap-1.5 pr-2">
+                    <span class="text-[10px] text-slate-500 font-bold">AED:</span>
+                    <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${idx}, this.value)" class="w-full max-w-[135px] bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-purple-300 font-mono text-right font-bold focus:border-purple-500 outline-none">
+                </div>
+                <div class="col-span-3 p-2.5 text-slate-400 text-xs text-right pr-3">
                     ব্যক্তিগত হস্তান্তর / মেস
                 </div>
             </div>
