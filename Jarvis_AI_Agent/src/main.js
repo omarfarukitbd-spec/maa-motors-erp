@@ -5,6 +5,7 @@ import { jarvisBrain } from './core/jarvis_brain.js';
 import { VoiceListener } from './voice/voice_listener.js';
 import { voiceSpeaker } from './voice/voice_speaker.js';
 import { VoiceVisualizer } from './voice/voice_visualizer.js';
+import { wakeWordListener } from './voice/wake_word_listener.js';
 import { aiSettingsModal } from './core/ai_settings_modal.js';
 
 // Import Core Skills
@@ -25,13 +26,20 @@ const canvas = document.getElementById('visualizer-canvas');
 const visualizer = new VoiceVisualizer(canvas);
 
 // Hook Visualizer States
-listener.on('onStart', () => visualizer.setState('listening'));
+listener.on('onStart', () => {
+    wakeWordListener.pause();
+    visualizer.setState('listening');
+});
 listener.on('onEnd', () => {
-    if (!voiceSpeaker.isSpeaking) visualizer.setState('idle');
+    if (!voiceSpeaker.isSpeaking) {
+        visualizer.setState('idle');
+        wakeWordListener.resume();
+    }
 });
 
 const stopSpeechBtn = document.getElementById('stop-speech-btn');
 voiceSpeaker.onStart(() => {
+    wakeWordListener.pause();
     visualizer.setState('speaking');
     if (stopSpeechBtn) stopSpeechBtn.classList.remove('hidden');
     const statusEl = document.getElementById('mic-status-text');
@@ -41,9 +49,12 @@ voiceSpeaker.onEnd(() => {
     if (stopSpeechBtn) stopSpeechBtn.classList.add('hidden');
     const statusEl = document.getElementById('mic-status-text');
     if (statusEl && !listener.isListening) {
-        statusEl.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+        statusEl.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
     }
-    if (!listener.isListening) visualizer.setState('idle');
+    if (!listener.isListening) {
+        visualizer.setState('idle');
+        wakeWordListener.resume();
+    }
 });
 
 if (stopSpeechBtn) {
@@ -52,7 +63,8 @@ if (stopSpeechBtn) {
         stopSpeechBtn.classList.add('hidden');
         visualizer.setState('idle');
         const statusEl = document.getElementById('mic-status-text');
-        if (statusEl) statusEl.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+        if (statusEl) statusEl.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
+        wakeWordListener.resume();
     });
 }
 
@@ -103,7 +115,7 @@ function updateMicUI(isListening) {
         micStatusText.classList.add('text-emerald-400');
     } else {
         micBtn.classList.remove('active');
-        micStatusText.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+        micStatusText.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
         micStatusText.classList.remove('text-emerald-400');
     }
 }
@@ -142,11 +154,108 @@ listener.on('onFinal', async (finalText) => {
         await jarvisBrain.processCommand(finalText);
     } finally {
         if (!voiceSpeaker.isSpeaking && !listener.isListening) {
-            micStatusText.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+            micStatusText.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
             visualizer.setState('idle');
         }
+        wakeWordListener.resume();
     }
 });
+
+// ─────────────────────────────────────────────────────────────
+// 🎙️ WAKE WORD HANDLER: "Jarvis" / "জার্ভিস" Hands-Free Detection
+// ─────────────────────────────────────────────────────────────
+wakeWordListener.onWake = async ({ hasCommand, command, rawTranscript }) => {
+    console.log('[Main] ⚡ WAKE WORD TRIGGERED:', { hasCommand, command, rawTranscript });
+    await voiceSpeaker.unlockAudio();
+
+    if (hasCommand && command.trim().length > 1) {
+        // Path 1: User spoke wake word + command together (e.g. "জার্ভিস করিমের বাকি কত?")
+        micStatusText.innerText = `"${command}" প্রসেস করছি...`;
+        visualizer.setState('thinking');
+        try {
+            await jarvisBrain.processCommand(command.trim());
+        } catch (err) {
+            console.error('[Main] Wake word command execution error:', err);
+        } finally {
+            if (!voiceSpeaker.isSpeaking && !listener.isListening) {
+                micStatusText.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
+                visualizer.setState('idle');
+            }
+            wakeWordListener.resume();
+        }
+    } else {
+        // Path 2: User called the name only: "জার্ভিস" or "Hey Jarvis"
+        micStatusText.innerText = 'জি ভাইয়া, শুনছি! বলুন...';
+        visualizer.setState('listening');
+
+        // Quick natural verbal acknowledgment
+        const acks = [
+            'জি ভাইয়া, শুনছি!',
+            'হ্যাঁ ভাইয়া, বলুন?',
+            'জি স্যার, বলুন আমি শুনছি।'
+        ];
+        const ack = acks[Math.floor(Math.random() * acks.length)];
+        await voiceSpeaker.speak(ack);
+
+        // Turn on active listener so user can speak their request hands-free
+        listener.start();
+        updateMicUI(true);
+    }
+};
+
+// Wake Word Toggle UI
+const wakeWordToggleBtn = document.getElementById('wake-word-toggle-btn');
+const wakeWordStatusLabel = document.getElementById('wake-word-status-label');
+
+function updateWakeWordUI(isEnabled) {
+    if (!wakeWordToggleBtn) return;
+    if (isEnabled) {
+        wakeWordToggleBtn.classList.add('active');
+        if (wakeWordStatusLabel) {
+            wakeWordStatusLabel.innerHTML = 'ওয়েক ওয়ার্ড: <strong>\'জার্ভিস\'</strong> সক্রিয়';
+        }
+    } else {
+        wakeWordToggleBtn.classList.remove('active');
+        if (wakeWordStatusLabel) {
+            wakeWordStatusLabel.innerHTML = 'ওয়েক ওয়ার্ড: <strong>বন্ধ</strong> (ক্লিক করুন)';
+        }
+    }
+}
+
+if (wakeWordToggleBtn) {
+    wakeWordToggleBtn.addEventListener('click', async () => {
+        await voiceSpeaker.unlockAudio();
+        const enabled = wakeWordListener.toggle();
+        updateWakeWordUI(enabled);
+        if (enabled) {
+            wakeWordListener.playWakeChime();
+        }
+    });
+}
+
+wakeWordListener.onStatusChange = (isEnabled) => {
+    updateWakeWordUI(isEnabled);
+};
+
+// Start wake word listener on first user interaction gesture if enabled
+const startWakeWordOnGesture = () => {
+    if (wakeWordListener.isEnabled) {
+        wakeWordListener.start();
+    }
+    window.removeEventListener('click', startWakeWordOnGesture);
+    window.removeEventListener('keydown', startWakeWordOnGesture);
+    window.removeEventListener('touchstart', startWakeWordOnGesture);
+};
+window.addEventListener('click', startWakeWordOnGesture, { once: true });
+window.addEventListener('keydown', startWakeWordOnGesture, { once: true });
+window.addEventListener('touchstart', startWakeWordOnGesture, { once: true });
+
+// Attempt initial start
+if (wakeWordListener.isEnabled) {
+    setTimeout(() => {
+        wakeWordListener.start();
+    }, 1000);
+}
 
 // Manual Text Input Command
 async function handleManualSubmit() {
@@ -160,9 +269,10 @@ async function handleManualSubmit() {
         await jarvisBrain.processCommand(text);
     } finally {
         if (!voiceSpeaker.isSpeaking && !listener.isListening) {
-            micStatusText.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+            micStatusText.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
             visualizer.setState('idle');
         }
+        wakeWordListener.resume();
     }
 }
 
@@ -183,9 +293,10 @@ document.querySelectorAll('.prompt-chip').forEach(chip => {
                 await jarvisBrain.processCommand(cmd);
             } finally {
                 if (!voiceSpeaker.isSpeaking && !listener.isListening) {
-                    micStatusText.innerText = 'মাইক অন করতে চাপুন বা স্পেসবার ধরে কথা বলুন';
+                    micStatusText.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
                     visualizer.setState('idle');
                 }
+                wakeWordListener.resume();
             }
         }
     });
