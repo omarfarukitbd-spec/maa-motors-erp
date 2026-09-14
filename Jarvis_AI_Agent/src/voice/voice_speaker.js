@@ -128,19 +128,7 @@ export class VoiceSpeaker {
     initNativeBnVoice() {
         if (!this.synth) return;
         const discover = () => {
-            const voices = this.synth.getVoices();
-            // Prioritize Microsoft Edge Natural Neural voices (Bashkar, Pradeep, Nabanita)
-            this.selectedNativeBnVoice =
-                voices.find(v => v.lang === 'bn-BD' && (v.name.includes('Natural') || v.name.includes('Online'))) ||
-                voices.find(v => v.lang === 'bn-IN' && (v.name.includes('Natural') || v.name.includes('Online'))) ||
-                voices.find(v => (v.name.includes('Natural') || v.name.includes('Online')) && (v.name.includes('Bengali') || v.name.includes('Bangla'))) ||
-                voices.find(v => v.name.includes('Bashkar') || v.name.includes('Pradeep') || v.name.includes('Nabanita') || v.name.includes('Nabaneeta')) ||
-                voices.find(v => v.name.includes('Google') && (v.lang.startsWith('bn') || v.name.includes('Bangla') || v.name.includes('Bengali'))) ||
-                voices.find(v => v.lang === 'bn-BD') ||
-                voices.find(v => v.lang.startsWith('bn')) ||
-                voices.find(v => v.name.toLowerCase().includes('bangla') || v.name.toLowerCase().includes('bengali')) ||
-                null;
-
+            this.getNativeBnVoice();
             if (this.selectedNativeBnVoice) {
                 console.log(`[VoiceSpeaker] 🎙️ Discovered Native Voice: "${this.selectedNativeBnVoice.name}" (${this.selectedNativeBnVoice.lang})`);
             }
@@ -149,6 +137,31 @@ export class VoiceSpeaker {
         if (this.synth.onvoiceschanged !== undefined) {
             this.synth.onvoiceschanged = discover;
         }
+    }
+
+    /**
+     * Dynamically retrieve the best Bengali voice available in the current browser
+     */
+    getNativeBnVoice() {
+        if (!this.synth) return null;
+        const voices = this.synth.getVoices() || [];
+        if (voices.length === 0) return this.selectedNativeBnVoice || null;
+
+        const bestVoice =
+            voices.find(v => (v.name.includes('Bashkar') || v.name.includes('Pradeep') || v.name.includes('Nabanita') || v.name.includes('Nabaneeta')) && (v.name.includes('Natural') || v.name.includes('Online'))) ||
+            voices.find(v => (v.name.includes('Natural') || v.name.includes('Online')) && (v.lang.startsWith('bn') || v.name.includes('Bengali') || v.name.includes('Bangla'))) ||
+            voices.find(v => v.name.includes('Bashkar') || v.name.includes('Pradeep') || v.name.includes('Nabanita') || v.name.includes('Nabaneeta')) ||
+            voices.find(v => v.lang === 'bn-BD') ||
+            voices.find(v => v.lang === 'bn-IN') ||
+            voices.find(v => v.name.includes('Google') && (v.lang.startsWith('bn') || v.name.includes('Bengali') || v.name.includes('Bangla'))) ||
+            voices.find(v => v.lang.startsWith('bn')) ||
+            voices.find(v => v.name.toLowerCase().includes('bangla') || v.name.toLowerCase().includes('bengali')) ||
+            null;
+
+        if (bestVoice) {
+            this.selectedNativeBnVoice = bestVoice;
+        }
+        return this.selectedNativeBnVoice;
     }
 
     // ─────────────────────────────────────────
@@ -197,17 +210,18 @@ export class VoiceSpeaker {
 
             // ── Priority 2: Microsoft Edge Natural Neural Voices via Browser SpeechSynthesis ──
             // If the browser has Microsoft Natural (Online) voices or Google Bengali, use it for zero-latency, human-like voice
-            const isNaturalVoice = this.selectedNativeBnVoice && (
-                this.selectedNativeBnVoice.name.includes('Natural') ||
-                this.selectedNativeBnVoice.name.includes('Online') ||
-                this.selectedNativeBnVoice.name.includes('Bashkar') ||
-                this.selectedNativeBnVoice.name.includes('Pradeep') ||
-                this.selectedNativeBnVoice.name.includes('Google')
+            const activeVoice = this.getNativeBnVoice();
+            const isNaturalVoice = activeVoice && (
+                activeVoice.name.includes('Natural') ||
+                activeVoice.name.includes('Online') ||
+                activeVoice.name.includes('Bashkar') ||
+                activeVoice.name.includes('Pradeep') ||
+                activeVoice.name.includes('Google')
             );
 
             if (isNaturalVoice) {
                 try {
-                    console.log(`[VoiceSpeaker] 🎙️ Speaking with Microsoft Natural Voice: ${this.selectedNativeBnVoice.name}`);
+                    console.log(`[VoiceSpeaker] 🎙️ Speaking with Microsoft Natural Voice: ${activeVoice.name}`);
                     await this.speakBrowser(cleanText, emotion);
                     return;
                 } catch (err) {
@@ -468,14 +482,15 @@ export class VoiceSpeaker {
         for (const chunk of chunks) {
             if (!this.isSpeaking) break;
             await new Promise((resolve) => {
+                const voice = this.getNativeBnVoice();
                 const utt = new SpeechSynthesisUtterance(chunk);
-                utt.lang = 'bn-BD';
+                utt.lang = voice ? voice.lang : 'bn-BD';
                 utt.rate = params.rate;
                 utt.pitch = params.pitch;
                 utt.volume = 1.0;
 
-                if (this.selectedNativeBnVoice) {
-                    utt.voice = this.selectedNativeBnVoice;
+                if (voice) {
+                    utt.voice = voice;
                 }
 
                 // Watchdog: if TTS hangs, move on
