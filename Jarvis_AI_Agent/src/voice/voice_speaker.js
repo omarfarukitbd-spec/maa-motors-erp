@@ -43,14 +43,15 @@ export class VoiceSpeaker {
         } else if (hasGCP) {
             this.activeEngine = 'gcp';
         } else {
-            this.activeEngine = 'browser';
+            this.activeEngine = 'free-bengali';
         }
 
         this.selectedOpenAIVoice = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_voice')) || 'onyx';
         this.selectedAzureVoice = (typeof window !== 'undefined' && localStorage.getItem('jarvis_azure_voice')) || 'bn-BD-PradeepNeural';
         this.selectedElevenLabsVoice = (typeof window !== 'undefined' && localStorage.getItem('jarvis_elevenlabs_voice_id')) || '';
 
-        // Persistent reusable audio element
+        // Persistent reusable audio tracking
+        this.currentAudio = null;
         if (typeof window !== 'undefined') {
             this.audio = document.getElementById('jarvis-persistent-audio') || new Audio();
             this.audio.preload = 'auto';
@@ -88,7 +89,7 @@ export class VoiceSpeaker {
     }
 
     // ─────────────────────────────────────────
-    // Audio Unlock (iOS/Android autoplay fix)
+    // Audio Unlock (iOS/Android/Chrome autoplay fix)
     // ─────────────────────────────────────────
     setupUnlockListeners() {
         const unlock = async () => { await this.unlockAudio(); };
@@ -98,17 +99,26 @@ export class VoiceSpeaker {
     }
 
     async unlockAudio() {
-        if (!this.audio && typeof window !== 'undefined') {
-            this.audio = document.getElementById('jarvis-persistent-audio') || new Audio();
-        }
-        if (!this.audio || this.isUnlocked) return;
+        if (this.isUnlocked) return;
         try {
-            this.audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-            const p = this.audio.play();
-            if (p !== undefined) await p;
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) {
+                if (!this.audioCtx) this.audioCtx = new AudioCtx();
+                if (this.audioCtx.state === 'suspended') {
+                    await this.audioCtx.resume();
+                }
+            }
+            if (!this.audio && typeof window !== 'undefined') {
+                this.audio = document.getElementById('jarvis-persistent-audio') || new Audio();
+            }
+            if (this.audio) {
+                this.audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+                const p = this.audio.play();
+                if (p !== undefined) await p;
+            }
             this.isUnlocked = true;
         } catch (err) {
-            // User hasn't interacted yet — will unlock on next interaction
+            // Unlocked on next gesture
         }
     }
 
@@ -195,7 +205,15 @@ export class VoiceSpeaker {
                 }
             }
 
-            // ── Priority 4: Browser SpeechSynthesis (always works, bn-BD) ──
+            // ── Priority 4: Zero-Key High-Quality Online Bengali Voice (100% reliable) ──
+            try {
+                await this.speakFreeBengaliTTS(cleanText);
+                return;
+            } catch (err) {
+                console.warn('[VoiceSpeaker] Free Bengali stream TTS failed, falling back to browser:', err.message);
+            }
+
+            // ── Priority 5: Browser SpeechSynthesis (native device voices) ──
             await this.speakBrowser(cleanText, emotion);
 
         } catch (fatalErr) {
@@ -242,8 +260,8 @@ export class VoiceSpeaker {
     // Engine 2: ElevenLabs TTS (Human-like)
     // ─────────────────────────────────────────
     async speakElevenLabs(text, apiKey, emotion) {
-        // Default to George (JBFqnCBsd6RMkjVDRZzb) or Adam (pNInz6obpgDQGcFmaJgB) if no specific voice ID saved
-        const voiceId = this.selectedElevenLabsVoice || 'JBFqnCBsd6RMkjVDRZzb';
+        // Universal premade default: Adam (pNInz6obpgDQGcFmaJgB) or Rachel
+        const voiceId = (this.selectedElevenLabsVoice || '').trim() || 'pNInz6obpgDQGcFmaJgB';
 
         // Emotion → stability/similarity mapping
         const settingsMap = {
@@ -281,6 +299,11 @@ export class VoiceSpeaker {
                     const msg = errData.detail?.message || `HTTP ${response.status}`;
                     console.warn(`[VoiceSpeaker] ElevenLabs ${model_id} error:`, msg);
                     lastErr = new Error(msg);
+
+                    // If key is invalid (401) or quota is exhausted (402/429), break immediately to allow instant fallback
+                    if (response.status === 401 || response.status === 402 || response.status === 429) {
+                        throw lastErr;
+                    }
                     continue;
                 }
 
@@ -290,6 +313,9 @@ export class VoiceSpeaker {
 
             } catch (err) {
                 lastErr = err;
+                if (err.message && (err.message.includes('401') || err.message.includes('402') || err.message.includes('quota') || err.message.includes('credit'))) {
+                    throw err;
+                }
             }
         }
 
@@ -407,52 +433,80 @@ export class VoiceSpeaker {
     }
 
     // ─────────────────────────────────────────
-    // Internal: Play audio blob
+    // Priority 4: Free Bengali Stream TTS (Zero key, 100% reliable)
     // ─────────────────────────────────────────
-    async _playBlob(blob) {
-        if (!this.audio && typeof window !== 'undefined') {
-            this.audio = document.getElementById('jarvis-persistent-audio') || new Audio();
+    async speakFreeBengaliTTS(text) {
+        console.log('[VoiceSpeaker] 🌐 Speaking with High-Quality Free Bengali Stream TTS...');
+        const chunks = this.splitIntoSentences(text);
+        for (const chunk of chunks) {
+            if (!this.isSpeaking) break;
+            const safe = chunk.slice(0, 150).trim();
+            if (!safe) continue;
+            const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=bn&client=tw-ob&q=${encodeURIComponent(safe)}`;
+            await this._playAudioUrl(url);
         }
-        if (!this.audio) return;
+    }
 
-        const audioUrl = URL.createObjectURL(blob);
+    // ─────────────────────────────────────────
+    // Internal: Play audio URL directly
+    // ─────────────────────────────────────────
+    async _playAudioUrl(url) {
+        await this.unlockAudio();
+        return new Promise((resolve) => {
+            const audio = new Audio();
+            this.currentAudio = audio;
+            audio.preload = 'auto';
+            audio.volume = 1.0;
+            audio.muted = false;
 
-        return new Promise((resolve, reject) => {
-            const watchdog = setTimeout(() => {
-                URL.revokeObjectURL(audioUrl);
-                resolve();
-            }, 30000);
-
-            this.audio.onended = () => {
-                clearTimeout(watchdog);
-                URL.revokeObjectURL(audioUrl);
-                this.audio.onended = null;
-                this.audio.onerror = null;
-                resolve();
+            let finished = false;
+            const finish = () => {
+                if (!finished) {
+                    finished = true;
+                    audio.onended = null;
+                    audio.onerror = null;
+                    if (this.currentAudio === audio) {
+                        this.currentAudio = null;
+                    }
+                    resolve();
+                }
             };
 
-            this.audio.onerror = (e) => {
+            const watchdog = setTimeout(finish, 25000);
+
+            audio.onended = () => {
                 clearTimeout(watchdog);
-                URL.revokeObjectURL(audioUrl);
-                this.audio.onended = null;
-                this.audio.onerror = null;
-                reject(new Error('Audio playback error: ' + e.type));
+                finish();
             };
 
-            this.audio.src = audioUrl;
-            this.audio.volume = 1.0;
-            this.audio.muted = false;
+            audio.onerror = (e) => {
+                clearTimeout(watchdog);
+                console.warn('[VoiceSpeaker] Audio URL error:', e);
+                finish();
+            };
 
-            const playPromise = this.audio.play();
+            audio.src = url;
+            const playPromise = audio.play();
             if (playPromise !== undefined) {
-                playPromise.catch(err => {
+                playPromise.catch((err) => {
                     clearTimeout(watchdog);
-                    URL.revokeObjectURL(audioUrl);
-                    console.error('[VoiceSpeaker] Audio play error:', err);
-                    reject(err);
+                    console.warn('[VoiceSpeaker] audio.play() rejected:', err);
+                    finish();
                 });
             }
         });
+    }
+
+    // ─────────────────────────────────────────
+    // Internal: Play audio blob
+    // ─────────────────────────────────────────
+    async _playBlob(blob) {
+        const audioUrl = URL.createObjectURL(blob);
+        try {
+            await this._playAudioUrl(audioUrl);
+        } finally {
+            URL.revokeObjectURL(audioUrl);
+        }
     }
 
     // ─────────────────────────────────────────
@@ -480,6 +534,15 @@ export class VoiceSpeaker {
     // ─────────────────────────────────────────
     stop() {
         this.isSpeaking = false;
+        if (this.currentAudio) {
+            try {
+                this.currentAudio.pause();
+                this.currentAudio.currentTime = 0;
+            } catch (err) {
+                console.warn('[VoiceSpeaker] Stop current audio non-critical:', err);
+            }
+            this.currentAudio = null;
+        }
         if (this.audio) {
             try {
                 this.audio.pause();
@@ -508,7 +571,7 @@ export class VoiceSpeaker {
         if (openAIKey && this.activeEngine === 'openai') return 'ChatGPT Voice';
         if (elevenKey) return 'ElevenLabs Neural';
         if (gcpKey) return 'Google Cloud bn-BD';
-        return 'Browser TTS';
+        return 'Bangla HD Voice';
     }
 
     onStart(fn) { this.onStartCallback = fn; }

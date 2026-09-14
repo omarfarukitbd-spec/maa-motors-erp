@@ -68,7 +68,7 @@ export class AISettingsModal {
 
         // Auto-preserve pasted/typed keys immediately
         if (this.geminiKeyInput) {
-            this.geminiKeyInput.addEventListener('change', () => {
+            const saveGemini = () => {
                 const val = (this.geminiKeyInput.value || '').trim();
                 if (val) {
                     localStorage.setItem('jarvis_gemini_key', val);
@@ -77,17 +77,46 @@ export class AISettingsModal {
                         llmAgent.setProvider('gemini');
                     }
                 }
-            });
+            };
+            this.geminiKeyInput.addEventListener('change', saveGemini);
+            this.geminiKeyInput.addEventListener('input', saveGemini);
         }
         if (this.openaiKeyInput) {
-            this.openaiKeyInput.addEventListener('change', () => {
+            const saveOpenAI = () => {
                 const val = (this.openaiKeyInput.value || '').trim();
                 if (val) {
                     localStorage.setItem('jarvis_openai_key', val);
                     localStorage.setItem('jarvis_ai_provider', 'openai');
                     llmAgent.setProvider('openai');
                 }
-            });
+            };
+            this.openaiKeyInput.addEventListener('change', saveOpenAI);
+            this.openaiKeyInput.addEventListener('input', saveOpenAI);
+        }
+
+        const elevenKeyInput = document.getElementById('input-elevenlabs-key');
+        const elevenVoiceInput = document.getElementById('input-elevenlabs-voice-id');
+        if (elevenKeyInput) {
+            const saveEleven = () => {
+                const val = (elevenKeyInput.value || '').trim();
+                if (val) {
+                    localStorage.setItem('jarvis_elevenlabs_key', val);
+                    voiceSpeaker.setEngine('elevenlabs');
+                }
+            };
+            elevenKeyInput.addEventListener('change', saveEleven);
+            elevenKeyInput.addEventListener('input', saveEleven);
+        }
+        if (elevenVoiceInput) {
+            const saveVoice = () => {
+                const val = (elevenVoiceInput.value || '').trim();
+                if (val) {
+                    localStorage.setItem('jarvis_elevenlabs_voice_id', val);
+                    voiceSpeaker.setElevenLabsVoice(val);
+                }
+            };
+            elevenVoiceInput.addEventListener('change', saveVoice);
+            elevenVoiceInput.addEventListener('input', saveVoice);
         }
 
         // Voice Preview Button
@@ -164,21 +193,52 @@ export class AISettingsModal {
         await voiceSpeaker.unlockAudio();
         const isGemini = this.geminiTab?.classList.contains('active');
 
+        // Immediately auto-save keys from inputs right before test so they are never lost
+        const elevenKeyInput = document.getElementById('input-elevenlabs-key');
+        const elevenVoiceInput = document.getElementById('input-elevenlabs-voice-id');
+        const openAIKey = (this.openaiKeyInput?.value || '').trim();
+        const geminiKey = (this.geminiKeyInput?.value || '').trim();
+        const elevenLabsKey = (elevenKeyInput?.value || '').trim();
+        const elevenVoiceId = (elevenVoiceInput?.value || '').trim();
+
+        if (elevenLabsKey) {
+            localStorage.setItem('jarvis_elevenlabs_key', elevenLabsKey);
+            voiceSpeaker.setElevenLabsVoice(elevenVoiceId);
+            voiceSpeaker.setEngine('elevenlabs');
+        }
+        if (geminiKey) {
+            localStorage.setItem('jarvis_gemini_key', geminiKey);
+        }
+        if (openAIKey) {
+            localStorage.setItem('jarvis_openai_key', openAIKey);
+        }
+
         if (isGemini) {
-            const selectedAzure = this.geminiVoiceSelect?.value || 'bn-BD-PradeepNeural';
-            voiceSpeaker.setAzureVoice(selectedAzure);
-            voiceSpeaker.setEngine('azure-neural');
+            if (elevenLabsKey) {
+                voiceSpeaker.setEngine('elevenlabs');
+            } else {
+                voiceSpeaker.setEngine('free-bengali');
+            }
         } else {
             const selectedVoice = this.openaiVoiceSelect?.value || 'onyx';
             voiceSpeaker.setOpenAIVoice(selectedVoice);
             voiceSpeaker.setEngine('openai');
         }
 
+        // Play chime sound first for instant audible confirmation!
+        try {
+            if (window.wakeWordListener && typeof window.wakeWordListener.playWakeChime === 'function') {
+                window.wakeWordListener.playWakeChime();
+            }
+        } catch (e) {
+            console.warn('[AISettingsModal] Chime error:', e);
+        }
+
         const testPhrase = 'আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।';
         
         if (this.previewBtn) {
             const originalHtml = this.previewBtn.innerHTML;
-            this.previewBtn.innerHTML = '<span>প্লে হচ্ছে...</span>';
+            this.previewBtn.innerHTML = '<span>🔊 প্লে হচ্ছে...</span>';
             try {
                 await voiceSpeaker.speak(testPhrase);
             } catch (e) {
@@ -254,9 +314,60 @@ export class AISettingsModal {
         const selectedVoice = this.openaiVoiceSelect?.value || 'onyx';
         const selectedAzureVoice = this.geminiVoiceSelect?.value || 'bn-BD-PradeepNeural';
 
-        // Auto prioritize Gemini if user only provided Gemini key
+        // ElevenLabs & GCP inputs
+        const elevenKeyInput = document.getElementById('input-elevenlabs-key');
+        const elevenVoiceInput = document.getElementById('input-elevenlabs-voice-id');
+        const gcpKeyInput = document.getElementById('input-gcp-tts-key');
+
+        const elevenLabsKey = (elevenKeyInput?.value || '').trim();
+        const elevenLabsVoiceId = (elevenVoiceInput?.value || '').trim();
+        const gcpKey = (gcpKeyInput?.value || '').trim();
+
+        // 🚨 CRITICAL: Save all keys to localStorage FIRST before running any network validation!
+        if (openAIKey) localStorage.setItem('jarvis_openai_key', openAIKey);
+        if (geminiKey) localStorage.setItem('jarvis_gemini_key', geminiKey);
+        if (elevenLabsKey) {
+            localStorage.setItem('jarvis_elevenlabs_key', elevenLabsKey);
+            voiceSpeaker.setElevenLabsVoice(elevenLabsVoiceId);
+            voiceSpeaker.setEngine('elevenlabs');
+        }
+        if (elevenLabsVoiceId) localStorage.setItem('jarvis_elevenlabs_voice_id', elevenLabsVoiceId);
+        if (gcpKey) {
+            localStorage.setItem('jarvis_gcp_tts_key', gcpKey);
+            if (!openAIKey && !elevenLabsKey) voiceSpeaker.setEngine('gcp');
+        }
+
+        // Auto prioritize Gemini if user provided Gemini key
         if (!openAIKey && geminiKey) {
             provider = 'gemini';
+        }
+
+        localStorage.setItem('jarvis_ai_provider', provider);
+        localStorage.setItem('jarvis_openai_voice', selectedVoice);
+        localStorage.setItem('jarvis_azure_voice', selectedAzureVoice);
+
+        // Update active instances
+        llmAgent.setProvider(provider);
+        if (provider === 'gemini') {
+            if (elevenLabsKey) {
+                voiceSpeaker.setEngine('elevenlabs');
+            } else if (gcpKey) {
+                voiceSpeaker.setEngine('gcp');
+            } else if (openAIKey) {
+                voiceSpeaker.setOpenAIVoice(selectedVoice);
+                voiceSpeaker.setEngine('openai');
+            } else {
+                voiceSpeaker.setEngine('free-bengali');
+            }
+        } else {
+            voiceSpeaker.setOpenAIVoice(selectedVoice);
+            voiceSpeaker.setEngine('openai');
+        }
+
+        // Sync header voice selector
+        const headerVoiceSelector = document.getElementById('voice-selector');
+        if (headerVoiceSelector) {
+            headerVoiceSelector.value = provider === 'gemini' ? selectedAzureVoice : selectedVoice;
         }
 
         if (this.feedbackEl) {
@@ -286,61 +397,10 @@ export class AISettingsModal {
             }
         }
 
-        // Save ElevenLabs keys
-        const elevenKeyInput = document.getElementById('input-elevenlabs-key');
-        const elevenVoiceInput = document.getElementById('input-elevenlabs-voice-id');
-        const gcpKeyInput = document.getElementById('input-gcp-tts-key');
-
-        const elevenLabsKey = (elevenKeyInput?.value || '').trim();
-        const elevenLabsVoiceId = (elevenVoiceInput?.value || '').trim();
-        const gcpKey = (gcpKeyInput?.value || '').trim();
-
-        if (elevenLabsKey) {
-            localStorage.setItem('jarvis_elevenlabs_key', elevenLabsKey);
-            voiceSpeaker.setElevenLabsVoice(elevenLabsVoiceId);
-            // If no OpenAI key, use ElevenLabs as TTS
-            if (!openAIKey) voiceSpeaker.setEngine('elevenlabs');
-        }
-        if (gcpKey) {
-            localStorage.setItem('jarvis_gcp_tts_key', gcpKey);
-            if (!openAIKey && !elevenLabsKey) voiceSpeaker.setEngine('gcp');
-        }
-
-        localStorage.setItem('jarvis_ai_provider', provider);
-        localStorage.setItem('jarvis_openai_key', openAIKey);
-        localStorage.setItem('jarvis_gemini_key', geminiKey);
-        localStorage.setItem('jarvis_openai_voice', selectedVoice);
-        localStorage.setItem('jarvis_azure_voice', selectedAzureVoice);
-
-        // Update active instances
-        llmAgent.setProvider(provider);
-        if (provider === 'gemini') {
-            if (elevenLabsKey) {
-                voiceSpeaker.setEngine('elevenlabs');
-            } else if (gcpKey) {
-                voiceSpeaker.setEngine('gcp');
-            } else if (openAIKey) {
-                voiceSpeaker.setOpenAIVoice(selectedVoice);
-                voiceSpeaker.setEngine('openai');
-            } else {
-                voiceSpeaker.setAzureVoice(selectedAzureVoice);
-                voiceSpeaker.setEngine('browser');
-            }
-        } else {
-            voiceSpeaker.setOpenAIVoice(selectedVoice);
-            voiceSpeaker.setEngine('openai');
-        }
-
-        // Sync header voice selector
-        const headerVoiceSelector = document.getElementById('voice-selector');
-        if (headerVoiceSelector) {
-            headerVoiceSelector.value = provider === 'gemini' ? selectedAzureVoice : selectedVoice;
-        }
-
         if (this.feedbackEl) {
             this.feedbackEl.className = 'settings-feedback-msg success';
             this.feedbackEl.innerText = provider === 'gemini' 
-                ? '✅ গুগল জেমিনি এআই সফলভাবে সংযুক্ত ও সক্রিয় হয়েছে!'
+                ? '✅ গুগল জেমিনি এআই ও ভয়েস সফলভাবে সংযুক্ত হয়েছে!'
                 : '✅ ওপেনএআই চ্যাটজিপিটি সফলভাবে সক্রিয় হয়েছে!';
             this.feedbackEl.classList.remove('hidden');
 

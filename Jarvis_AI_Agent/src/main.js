@@ -424,11 +424,22 @@ window.triggerAISettings = () => {
 
 window.triggerVoiceTest = async () => {
     await voiceSpeaker.unlockAudio();
+    // Immediate acoustic chime so the user instantly knows audio is functioning
+    try {
+        if (wakeWordListener && typeof wakeWordListener.playWakeChime === 'function') {
+            wakeWordListener.playWakeChime();
+        }
+    } catch (e) {
+        console.warn('Chime trigger error:', e);
+    }
+
     visualizer.setState('speaking');
     const statusEl = document.getElementById('mic-status-text');
-    if (statusEl) statusEl.innerText = 'ভয়েস টেস্ট চলছে...';
+    if (statusEl) statusEl.innerText = '🔊 জার্ভিসের সাউন্ড টেস্ট চলছে...';
     try {
         await voiceSpeaker.speak('আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।');
+    } catch (err) {
+        console.error('[VoiceTest] Playback error:', err);
     } finally {
         if (!listener.isListening) {
             visualizer.setState('idle');
@@ -436,6 +447,9 @@ window.triggerVoiceTest = async () => {
         }
     }
 };
+
+window.wakeWordListener = wakeWordListener;
+window.voiceSpeaker = voiceSpeaker;
 
 window.triggerReplay = async (btn) => {
     const text = btn.getAttribute('data-msg');
