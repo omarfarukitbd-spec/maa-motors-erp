@@ -7,6 +7,11 @@ import {
     orderBy, 
     limit 
 } from 'firebase/firestore';
+import { getAllBankRunningBalances } from './erp_banking_reader.js';
+import { getZoneWiseAnalytics, getDormantCustomers, getTotalMarketSummary } from './erp_zone_reader.js';
+import { getCategoryExpenseBreakdown } from './erp_expense_reader.js';
+import { getLedgerMathAuditSummary } from './erp_audit_reader.js';
+import { getDubaiDeepCustodianHoldings } from './erp_dubai_deep_reader.js';
 
 /**
  * Mathematical Floating-Point Safe Rounder (Accounting Standard)
@@ -14,6 +19,17 @@ import {
 export function safeRound(num) {
     if (typeof num !== 'number' || isNaN(num)) return 0;
     return Math.round((num + Number.EPSILON) * 100) / 100;
+}
+
+/**
+ * Get Today's Date in YYYY-MM-DD local format
+ */
+export function getTodayLocalDateString() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 /**
@@ -985,5 +1001,54 @@ export const ERPBridge = {
             }
             return null;
         }
+    },
+
+    /**
+     * Live Bank & Cash Running Balances
+     */
+    async getAllBankRunningBalances() {
+        return await getAllBankRunningBalances();
+    },
+
+    /**
+     * Zone-wise Due & Customer Portfolio
+     */
+    async getZoneWiseAnalytics() {
+        return await getZoneWiseAnalytics();
+    },
+
+    /**
+     * Dormant / Inactive Debtors
+     */
+    async getDormantCustomers(days = 30) {
+        return await getDormantCustomers(days);
+    },
+
+    /**
+     * Total Market Due and Portfolio Breakdown
+     */
+    async getTotalMarketSummary() {
+        return await getTotalMarketSummary();
+    },
+
+    /**
+     * Category-wise Expense Breakdown
+     */
+    async getCategoryExpenseBreakdown(days = 30) {
+        return await getCategoryExpenseBreakdown(days);
+    },
+
+    /**
+     * Financial Math & Invariant Ledger Audit
+     */
+    async getLedgerMathAuditSummary(sampleSize = 100) {
+        return await getLedgerMathAuditSummary(sampleSize);
+    },
+
+    /**
+     * Dubai Deep Custodian Holdings (Strict AED)
+     */
+    async getDubaiDeepCustodianHoldings() {
+        return await getDubaiDeepCustodianHoldings();
     }
 };

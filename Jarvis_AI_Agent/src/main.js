@@ -493,6 +493,243 @@ function renderDataCardHtml(data) {
         `;
     }
 
+    // 5. Smart Disambiguation Options Card (Multi-Match Clarifier)
+    if (data.type === 'disambiguation_options') {
+        const chips = (data.options || []).map(opt => `
+            <button type="button" class="disambig-option-btn" onclick="window.triggerDisambiguationSelect('${escapeHTML(String(opt.index))}')">
+                <span class="disambig-index">${Number(opt.index).toLocaleString('bn-BD')}</span>
+                <div class="disambig-info">
+                    <div class="disambig-name">${escapeHTML(opt.name)}</div>
+                    <div class="disambig-sub">${escapeHTML(opt.address || opt.zone || 'সাধারণ')}</div>
+                </div>
+                <span class="disambig-badge ${opt.totalDue > 0 ? 'debit' : 'credit'}">
+                    ${opt.totalDue > 0 ? '৳ ' + Number(opt.totalDue).toLocaleString('bn-BD') : (opt.totalDue < 0 ? 'অগ্রিম ৳ ' + Number(Math.abs(opt.totalDue)).toLocaleString('bn-BD') : 'পরিশোধিত')}
+                </span>
+            </button>
+        `).join('');
+
+        return `
+            <div class="financial-data-card disambig-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        কাছাকাছি একাধিক কাস্টমার পাওয়া গেছে (${(data.options?.length || 0).toLocaleString('bn-BD')} জন)
+                    </span>
+                </div>
+                <div class="disambig-options-list">
+                    ${chips}
+                </div>
+                <div class="disambig-footer-hint">মুখে "১", "২" বা এলাকার নাম বলুন, অথবা বাটনে ট্যাপ করুন।</div>
+            </div>
+        `;
+    }
+
+    // 6. Live Bank Running Balances Card
+    if (data.type === 'bank_running_balances') {
+        const rows = (data.banks || []).map(b => `
+            <tr>
+                <td style="font-weight:700;color:#38bdf8;">${escapeHTML(b.bankName)}</td>
+                <td style="color:#94a3b8;font-size:10.5px;">${escapeHTML(b.accountNo || '-')}</td>
+                <td class="credit" style="font-weight:800;text-align:right;">৳ ${Number(b.currentBalance).toLocaleString('bn-BD')}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m4-11v11m4-11v11m4-11v11m4-11v11"/></svg>
+                        ব্যাংক ও ক্যাশ লাইভ ব্যালেন্স
+                    </span>
+                    <span class="data-card-badge">মোট তারল্য: ৳ ${Number(data.grandTotalLiquidFunds || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>ব্যাংক</th>
+                            <th>হিসাব নং</th>
+                            <th style="text-align:right;">বর্তমান ব্যালেন্স</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                        <tr style="border-top:1px solid rgba(255,255,255,0.1);font-weight:700;">
+                            <td style="color:#fbbf24;">শোরুম ক্যাশ ইন হ্যান্ড</td>
+                            <td style="color:#94a3b8;font-size:10.5px;">নগদ ক্যাশ</td>
+                            <td class="credit" style="text-align:right;">৳ ${Number(data.showroomCashInHand || 0).toLocaleString('bn-BD')}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // 7. Zone-wise Analytics Card
+    if (data.type === 'zone_wise_analytics') {
+        const rows = (data.zones || []).slice(0, 6).map(z => `
+            <tr>
+                <td style="font-weight:700;color:#38bdf8;">${escapeHTML(z.zoneName)}</td>
+                <td style="color:#cbd5e1;">${Number(z.customerCount).toLocaleString('bn-BD')} জন</td>
+                <td class="debit" style="font-weight:800;text-align:right;">৳ ${Number(z.totalDue).toLocaleString('bn-BD')}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        জোনভিত্তিক অবশিষ্ট বকেয়া রিপোর্ট
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#f87171;">মোট: ৳ ${Number(data.grandTotalDue || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>জোন / এলাকা</th>
+                            <th>কাস্টমার</th>
+                            <th style="text-align:right;">মোট বকেয়া</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // 8. Dormant Customers Card
+    if (data.type === 'dormant_customers') {
+        const rows = (data.topDormant || []).map(d => `
+            <tr>
+                <td style="font-weight:700;">${escapeHTML(d.name)}</td>
+                <td class="debit" style="font-weight:800;">৳ ${Number(d.totalDue).toLocaleString('bn-BD')}</td>
+                <td style="color:#94a3b8;font-size:10.5px;text-align:right;">${escapeHTML(d.lastPaymentDate)}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        অলস ও নিষ্ক্রিয় বাকিদার তালিকা (${Number(data.thresholdDays).toLocaleString('bn-BD')}+ দিন)
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#f87171;">${Number(data.dormantCount).toLocaleString('bn-BD')} জন</span>
+                </div>
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার</th>
+                            <th>বকেয়া</th>
+                            <th style="text-align:right;">শেষ পেমেন্ট</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // 9. Category Expense Breakdown Card
+    if (data.type === 'category_expense_breakdown') {
+        const rows = (data.categories || []).map(c => `
+            <tr>
+                <td style="font-weight:700;color:#f87171;">${escapeHTML(c.category)}</td>
+                <td style="color:#cbd5e1;">${Number(c.count).toLocaleString('bn-BD')}টি ভাউচার</td>
+                <td class="debit" style="font-weight:800;text-align:right;">৳ ${Number(c.totalAmount).toLocaleString('bn-BD')} (${Number(c.percentage).toLocaleString('bn-BD')}%)</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        খাতওয়ারী খরচের বিশ্লেষণ (বিগত ${Number(data.days).toLocaleString('bn-BD')} দিন)
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#f87171;">মোট: ৳ ${Number(data.totalExpenseSum || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>খরচের খাত</th>
+                            <th>ভাউচার</th>
+                            <th style="text-align:right;">টাকার অংক</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // 10. Ledger Math Integrity Audit Card
+    if (data.type === 'ledger_audit_summary') {
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        লেজার অ্যাকাউন্টিং অডিট
+                    </span>
+                    <span class="data-card-badge" style="background:${data.isFullySound ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};color:${data.isFullySound ? '#34d399' : '#f87171'};">
+                        ${data.isFullySound ? 'নিখুঁত ও নিরাপদ' : 'গরমিল শনাক্ত'}
+                    </span>
+                </div>
+                <div class="data-card-grid">
+                    <div class="data-stat-box"><div class="data-stat-label">যাচাইকৃত লেনদেন</div><div class="data-stat-value">${Number(data.auditedTxnCount || 0).toLocaleString('bn-BD')} টি</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">গাণিতিক গরমিল</div><div class="data-stat-value ${data.corruptTxnCount > 0 ? 'debit' : 'credit'}">${Number(data.corruptTxnCount || 0).toLocaleString('bn-BD')} টি</div></div>
+                </div>
+                <div style="font-size:11.5px;color:#cbd5e1;padding:4px 2px;">${escapeHTML(data.statusMessage)}</div>
+            </div>
+        `;
+    }
+
+    // 11. Dubai Deep Audit Card (Strict AED)
+    if (data.type === 'dubai_deep_audit') {
+        const rows = (data.personalHoldings || []).map(h => `
+            <tr>
+                <td style="font-weight:700;color:#38bdf8;">${escapeHTML(h.name)}</td>
+                <td style="color:#cbd5e1;">ব্যক্তিগত হেফাজত</td>
+                <td class="credit" style="font-weight:800;text-align:right;">${Number(h.amount).toLocaleString('en-US')} AED</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        দুবাই কন্টেইনার হেফাজত ও এসেট (${data.auditDate})
+                    </span>
+                    <span class="data-card-badge">মোট এসেট: ${Number(data.totalPhysicalAssets || 0).toLocaleString('en-US')} AED</span>
+                </div>
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>হেফাজতকারী</th>
+                            <th>বিবরণ</th>
+                            <th style="text-align:right;">দিরহাম (AED)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                        <tr>
+                            <td style="font-weight:700;color:#fbbf24;">নগদ ক্যাশ (Cash in Hand)</td>
+                            <td style="color:#cbd5e1;">অফিস ক্যাশ</td>
+                            <td class="credit" style="font-weight:800;text-align:right;">${Number(data.cashInHand || 0).toLocaleString('en-US')} AED</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:700;color:#a855f7;">মেস ফান্ড (Mess Balance)</td>
+                            <td style="color:#cbd5e1;">দুবাই মেস</td>
+                            <td class="credit" style="font-weight:800;text-align:right;">${Number(data.messBalance || 0).toLocaleString('en-US')} AED</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
     return '';
 }
 
@@ -571,6 +808,14 @@ window.triggerVoiceTest = async () => {
 
 window.wakeWordListener = wakeWordListener;
 window.voiceSpeaker = voiceSpeaker;
+
+window.triggerDisambiguationSelect = async (val) => {
+    const textInput = document.getElementById('manual-command-input');
+    if (textInput) {
+        textInput.value = val;
+    }
+    await handleManualSubmit();
+};
 
 window.triggerReplay = async (btn) => {
     const text = btn.getAttribute('data-msg');

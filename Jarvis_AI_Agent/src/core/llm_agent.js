@@ -1,5 +1,6 @@
 import { ERPBridge } from '../bridge/erp_bridge.js';
 import { memoryVault } from './memory_vault.js';
+import { disambiguationManager } from './disambiguation_manager.js';
 
 /**
  * 🧠 World-Class Cognitive LLM Agent (OpenAI & Gemini)
@@ -360,6 +361,97 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                         required: ['content']
                     }
                 }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_all_bank_running_balances',
+                    description: 'মা মোটরসের প্রতিটি ব্যাংক অ্যাকাউন্টের (IBBL, OneBank, DBBL ইত্যাদি) বর্তমান লাইভ অবশিষ্ট ব্যালেন্স এবং শোরুমের ক্যাশ ইন হ্যান্ড স্থিতি জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            detail: { type: 'string', description: 'ঐচ্ছিক ফিল্টার' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_zone_wise_analytics',
+                    description: 'এলাকা বা জোন অনুযায়ী (যেমন: চট্টগ্রাম, ঢাকা, নোয়াখালী) মোট বকেয়া, কাস্টমার সংখ্যা ও সেরা কাস্টমারের তালিকা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            zone: { type: 'string', description: 'নির্দিষ্ট জোনের নাম (ঐচ্ছিক)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_dormant_customers',
+                    description: 'যেসব কাস্টমারের বকেয়া রয়েছে কিন্তু বিগত ৩০/৬০/৯০ দিন ধরে কোনো টাকা জমা দেননি (অলস বা ঝুঁকিপূর্ণ বাকিদার) তাদের তালিকা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            days: { type: 'number', description: 'কত দিনের অলস কাস্টমার (ডিফল্ট ৩০ দিন)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_total_market_summary',
+                    description: 'পুরো মার্কেটের মোট বকেয়া, অগ্রিম জমার মোট পরিমাণ এবং মোট কাস্টমারদের আর্থিক পোর্টফোলিও সারসংক্ষেপ জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            type: { type: 'string', description: 'পোর্টফোলিও টাইপ' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_category_expense_breakdown',
+                    description: 'ব্যবসার বিভিন্ন খাতের (যেমন: গাড়ি ভাড়া/যাতায়াত, স্টাফ বেতন, নাস্তা/আপ্যায়ন, অফিস ভাড়া) খরচ ও সর্বোচ্চ খরচের খাত বিশ্লেষণ করতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            days: { type: 'number', description: 'কত দিনের খরচের বিশ্লেষণ (ডিফল্ট ৩০ দিন)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_ledger_math_audit_summary',
+                    description: 'মা মোটরসের লেজার লেনদেনের গাণিতিক নির্ভুলতা ও কোনো ভুল এন্ট্রি আছে কিনা তা অডিট করতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            sampleSize: { type: 'number', description: 'কতটি লেনদেন অডিট করবে (ডিফল্ট ১০০)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_dubai_deep_custodian_holdings',
+                    description: 'দুবাই কন্টেইনার অডিটের এমরান মামা, আলতাফ, জাবেদের কাছে থাকা নগদ দিরহামের (AED) হিসাব ও মেস ফান্ডের ব্যালেন্স জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            detail: { type: 'string', description: 'বিশদ নাকি সংক্ষিপ্ত' }
+                        }
+                    }
+                }
             }
         ];
     }
@@ -425,12 +517,21 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 if (!results || !Array.isArray(results) || results.length === 0) {
                     return { found: false, message: `"${query}" নামে কোনো কাস্টমার মা মোটরসের ডাটাবেজে পাওয়া যায়নি।` };
                 }
+                if (results.length > 1) {
+                    const promptData = disambiguationManager.createPending('customer', query, results, 'get_customer_due');
+                    return {
+                        isDisambiguation: true,
+                        spoken: promptData.spoken,
+                        data: promptData.data
+                    };
+                }
                 const top = results[0];
                 return {
                     found: true,
                     name: top.name,
                     phone: top.phone || 'দেওয়া নেই',
                     address: top.address || 'দেওয়া নেই',
+                    zone: top.zone || '',
                     totalDue: top.totalDue || 0,
                     initialDue: top.initialDue || 0
                 };
@@ -599,6 +700,62 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 };
             }
 
+            if (name === 'get_all_bank_running_balances') {
+                const res = await ERPBridge.getAllBankRunningBalances();
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'ব্যাংকের লাইভ ব্যালেন্স দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'ব্যাংক ব্যালেন্স পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_zone_wise_analytics') {
+                const res = await ERPBridge.getZoneWiseAnalytics();
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'জোনভিত্তিক বকেয়া দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'জোনভিত্তিক রিপোর্ট পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_dormant_customers') {
+                const res = await ERPBridge.getDormantCustomers(args?.days || 30);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'অলস কাস্টমারদের দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'অলস কাস্টমার তথ্য পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_total_market_summary') {
+                const res = await ERPBridge.getTotalMarketSummary();
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'মার্কেট সামারি দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'মার্কেট সামারি পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_category_expense_breakdown') {
+                const res = await ERPBridge.getCategoryExpenseBreakdown(args?.days || 30);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'খাতওয়ারী খরচের বিশ্লেষণ দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'খাতওয়ারী খরচের হিসাব পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_ledger_math_audit_summary') {
+                const res = await ERPBridge.getLedgerMathAuditSummary(args?.sampleSize || 100);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'লেজার অডিট দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'লেজার অডিট সম্পন্ন করা যায়নি।' };
+            }
+
+            if (name === 'get_dubai_deep_custodian_holdings') {
+                const res = await ERPBridge.getDubaiDeepCustodianHoldings();
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'দুবাই কাস্টোডিয়ান হিসাব দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'দুবাই কাস্টোডিয়ান তথ্য পাওয়া যায়নি।' };
+            }
+
             if (name === 'remember_executive_note') {
                 const saved = await memoryVault.rememberFact(args.content, args.category || 'fact');
                 return { success: true, message: 'তথ্যটি জার্ভিস মেমোরিতে সফলভাবে সংরক্ষিত হয়েছে।' };
@@ -618,6 +775,30 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
      * @returns {Promise<{spoken: string, data?: any}>}
      */
     async chat(history, userMessage) {
+        // Step 0: Priority check for active pending disambiguation clarification
+        if (disambiguationManager.hasPending()) {
+            const resolved = disambiguationManager.resolveInput(userMessage);
+            if (resolved) {
+                const addr = resolved.address ? ` (${resolved.address})` : (resolved.zone ? ` (${resolved.zone})` : '');
+                const due = Number(resolved.totalDue || 0);
+                const dueText = due > 0 
+                    ? `বর্তমান অবশিষ্ট বকেয়া হলো ${due.toLocaleString('bn-BD')} টাকা`
+                    : (due < 0 ? `বর্তমান ব্যালেন্সে অগ্রিম জমা রয়েছে ${Math.abs(due).toLocaleString('bn-BD')} টাকা` : 'কোনো বকেয়া নেই, হিসাব সম্পূর্ণ পরিশোধিত');
+                
+                return {
+                    spoken: `জি ভাইয়া! ${resolved.name}${addr}-এর ${dueText}।`,
+                    data: {
+                        name: resolved.name,
+                        phone: resolved.phone || 'দেওয়া নেই',
+                        address: resolved.address || 'দেওয়া নেই',
+                        zone: resolved.zone || '',
+                        totalDue: due,
+                        accountNo: resolved.accountNo || ''
+                    }
+                };
+            }
+        }
+
         const geminiKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_gemini_key') || '').trim() : '';
         const openAIKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_openai_key') || '').trim() : '';
 
@@ -1136,7 +1317,131 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             }
         }
 
-        // 10. Customer Due, Ledger & Accounting Search Check
+        // 10. Live Bank Running Balances & Liquidity (কোন ব্যাংকে কত টাকা আছে / ক্যাশ ব্যালেন্স)
+        if (/কোন.*ব্যাংকে.*কত|ব্যাংক.*ব্যালেন্স|ব্যাংকে.*কত.*টাকা|ক্যাশ.*বাক্সে|ক্যাশ.*ইন.*হ্যান্ড|হাতে.*নগদ|তারল্য/i.test(lower)) {
+            const res = await this.executeToolCall('get_all_bank_running_balances', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, ব্যাংকের বর্তমান লাইভ ব্যালেন্স দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const bankLines = res.banks.map(b => `${b.bankName}-এ ${b.currentBalance.toLocaleString('bn-BD')} টাকা`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! বর্তমানে আমাদের ব্যাংকগুলোতে সর্বমোট ${res.totalBankBalance.toLocaleString('bn-BD')} টাকা ব্যালেন্স রয়েছে এবং শোরুমের ক্যাশ ইন হ্যান্ড রয়েছে ${res.showroomCashInHand.toLocaleString('bn-BD')} টাকা। মোট তারল্য তহবিল হলো ${res.grandTotalLiquidFunds.toLocaleString('bn-BD')} টাকা। এর মধ্যে: ${bankLines}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 11. Zone & Area Analytics (জোনভিত্তিক বকেয়া ও কাস্টমার চিত্র)
+        if (/জোন|এলাকা|চট্টগ্রাম.*বকেয়া|ঢাকা.*বকেয়া|নোয়াখালী.*বকেয়া|কোন.*এলাকায়.*বাকি/i.test(lower)) {
+            const res = await this.executeToolCall('get_zone_wise_analytics', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, জোনভিত্তিক বকেয়া রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const topZones = res.zones.slice(0, 3).map(z => `${z.zoneName}-এ ${z.totalDue.toLocaleString('bn-BD')} টাকা (${z.customerCount} জন কাস্টমার)`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! এলাকাভিত্তিক হিসাব অনুযায়ী বাজারে সর্বমোট ${res.grandTotalDue.toLocaleString('bn-BD')} টাকা অবশিষ্ট বকেয়া রয়েছে। এর মধ্যে শীর্ষ জোনগুলো হলো: ${topZones}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 12. Dormant / Inactive Debtors (অলস কাস্টমার বা অনেকদিন টাকা দেয় না)
+        if (/অলস.*কাস্টমার|নিষ্ক্রিয়|টাকা.*দেয়.*না|পেমেন্ট.*নেই|ঝুঁকিপূর্ণ.*বাকি|কতদিন.*টাকা.*দেয়.*না/i.test(lower)) {
+            const res = await this.executeToolCall('get_dormant_customers', { days: 30 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, অলস কাস্টমারদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const topDormant = res.topDormant.slice(0, 3).map(d => `${d.name} (${d.totalDue.toLocaleString('bn-BD')} টাকা, শেষ পেমেন্ট: ${d.lastPaymentDate})`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! বিগত ৩০ দিন বা তার বেশি সময় ধরে ১ টাকাও জমা দেননি এমন অলস কাস্টমার রয়েছেন ${res.dormantCount} জন। তাদের মোট বকেয়া হলো ${res.totalDormantDue.toLocaleString('bn-BD')} টাকা। শীর্ষ বাকিদারদের মধ্যে: ${topDormant}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 13. Total Market Portfolio Summary (মার্কেটের মোট বকেয়া ও কালেকশন স্থিতি)
+        if (/মার্কেটে.*মোট|বাজারে.*মোট.*বাকি|মার্কেট.*বকেয়া|মোট.*মার্কেট|মার্কেট.*সারসংক্ষেপ/i.test(lower)) {
+            const res = await this.executeToolCall('get_total_market_summary', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, মার্কেটের মোট সারসংক্ষেপ দেখতে লগইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! মা মোটরসের মোট ${res.totalCustomers.toLocaleString('bn-BD')} জন কাস্টমারের মধ্যে দেনাদার কাস্টমার রয়েছেন ${res.debtorCount.toLocaleString('bn-BD')} জন। বাজারে মোট বকেয়া হলো ${res.totalDueSum.toLocaleString('bn-BD')} টাকা, অগ্রিম জমা রয়েছে ${res.totalAdvanceSum.toLocaleString('bn-BD')} টাকা এবং নিট বকেয়া হলো ${res.netMarketDue.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            }
+        }
+
+        // 14. Category-wise Expense Breakdown (খাতওয়ারী খরচ ও সর্বোচ্চ খরচের খাত)
+        if (/কোন.*খাতে.*কত|খরচের.*খাত|বেতন|যাতায়াত|গাড়ি.*ভাড়া|অফিস.*ভাড়া|নাস্তা.*খরচ/i.test(lower) && !/দুবাই/i.test(lower)) {
+            const res = await this.executeToolCall('get_category_expense_breakdown', { days: 30 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, খাতওয়ারী খরচের হিসাব দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const catLines = res.categories.slice(0, 3).map(c => `${c.category}-এ ${c.totalAmount.toLocaleString('bn-BD')} টাকা`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে মা মোটরসের মোট অফিস খরচ হয়েছে ${res.totalExpenseSum.toLocaleString('bn-BD')} টাকা (${res.totalVouchersCount}টি ভাউচারে)। এর মধ্যে সর্বোচ্চ খরচ হয়েছে: ${catLines}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 15. Ledger Math & Integrity Audit (হিসাবে কোনো ভুল বা গড়মিল আছে কিনা)
+        if (/অডিট|গড়মিল|ভুল.*লেনদেন|লেজার.*চেক|হিসাব.*ঠিক|অখণ্ডতা/i.test(lower)) {
+            const res = await this.executeToolCall('get_ledger_math_audit_summary', { sampleSize: 100 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, লেজার অডিট চালাতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! ${res.statusMessage}`,
+                    data: res
+                };
+            }
+        }
+
+        // 16. Dubai Deep Custodian Holdings (এমরান মামা, আলতাফ, জাবেদদের কাছে কত দিরহাম)
+        if (/এমরান.*মামা|আলতাফ|জাবেদ|মেস.*ফান্ড|দুবাই.*কার.*কাছে|দুবাই.*নগদ|দুবাই.*হেফাজত/i.test(lower)) {
+            const res = await this.executeToolCall('get_dubai_deep_custodian_holdings', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, দুবাই কাস্টোডিয়ান হিসাব দেখতে লগইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const holdingLines = res.personalHoldings.map(h => `${h.name}-এর কাছে ${h.amount.toLocaleString('en-US')} এইডি`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! দুবাই অডিটের রেকর্ড অনুযায়ী ব্যক্তিগত ক্যাশ হেফাজতে মোট ${res.holdingsTotal.toLocaleString('en-US')} এইডি (AED) রয়েছে। এর মধ্যে: ${holdingLines}। এছাড়া মেস ফান্ডে রয়েছে ${res.messBalance.toLocaleString('en-US')} এইডি এবং মোট ফিজিক্যাল এসেট হলো ${res.totalPhysicalAssets.toLocaleString('en-US')} এইডি।`,
+                    data: res
+                };
+            }
+        }
+
+        // 17. Customer Due, Ledger & Accounting Search Check (with Disambiguation)
         if (text.includes('বকেয়া') || text.includes('বাকী') || text.includes('হিসাব') || text.includes('ব্যালেন্স') || text.includes('টাকা') || text.includes('লেজার') || text.includes('চালান')) {
             const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও|টাকা|লেজার|চালান)/g, '').trim();
             const res = await this.executeToolCall('get_customer_due', { query: cleanQuery || text });
@@ -1145,6 +1450,12 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 return {
                     spoken: 'জি ভাইয়া, মা মোটরসের কাস্টমার বকেয়া ও লাইভ হিসাব দেখতে প্রথমে উপরের "গুগল লগইন" বাটনে চাপ দিয়ে আপনার অনুমোদিত একাউন্টে সাইন ইন করে নিন।',
                     data: { authRequired: true }
+                };
+            }
+            if (res.isDisambiguation) {
+                return {
+                    spoken: res.spoken,
+                    data: res.data
                 };
             }
             if (res.found) {
@@ -1161,7 +1472,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             }
         }
 
-        // 11. Cash & Bank Status
+        // 18. Cash & Bank Status
         if (text.includes('ক্যাশ') || text.includes('ব্যাংক') || text.includes('টাকা জমা') || text.includes('কালেকশন')) {
             const res = await this.executeToolCall('get_cash_and_bank_status', { detail: 'summary' });
             if (res?.authRequired) {
@@ -1178,13 +1489,19 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             }
         }
 
-        // 12. Direct Name / Shop Search fallback (e.g., user just spoke a customer/shop name)
+        // 19. Direct Name / Shop Search fallback (e.g., user just spoke a customer/shop name)
         if (text.length >= 3 && !text.includes('?') && !text.includes('কি') && !text.includes('কেন')) {
             const directSearch = await this.executeToolCall('get_customer_due', { query: text });
             if (directSearch?.authRequired) {
                 return {
                     spoken: 'জি ভাইয়া, কাস্টমারের তথ্য ও বকেয়া হিসাব দেখার জন্য মা মোটরস গুগল একাউন্টে সাইন ইন করে নিন।',
                     data: { authRequired: true }
+                };
+            }
+            if (directSearch?.isDisambiguation) {
+                return {
+                    spoken: directSearch.spoken,
+                    data: directSearch.data
                 };
             }
             if (directSearch && directSearch.found) {
