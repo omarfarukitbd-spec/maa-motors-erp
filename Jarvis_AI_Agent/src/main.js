@@ -13,10 +13,12 @@ import { CustomerSkill } from './skills/skill_customer.js';
 import { AnalyticsSkill } from './skills/skill_analytics.js';
 import { DubaiSkill } from './skills/skill_dubai.js';
 import { MemorySkill } from './skills/skill_memory.js';
+import { BusinessIntelligenceSkill } from './skills/skill_business_intelligence.js';
 
 // 1. Register Core Skills
 skillRegistry.register(new CustomerSkill());
 skillRegistry.register(new AnalyticsSkill());
+skillRegistry.register(new BusinessIntelligenceSkill());
 skillRegistry.register(new DubaiSkill());
 skillRegistry.register(new MemorySkill());
 
@@ -778,6 +780,298 @@ function renderDataCardHtml(data) {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        `;
+    }
+
+    // 12. Period Sales Turnover Card
+    if (data.type === 'sales_turnover') {
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                        বিক্রয় টার্নওভার বিশ্লেষণ (${Number(data.days || 30).toLocaleString('bn-BD')} দিন)
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#f87171;">মোট বিক্রি: ৳ ${Number(data.totalSalesSum || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                <div class="data-card-grid" style="margin-bottom:8px;">
+                    <div class="data-stat-box"><div class="data-stat-label">মোট বিক্রয় চালান</div><div class="data-stat-value debit">৳ ${Number(data.totalSalesSum || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">মোট চালান সংখ্যা</div><div class="data-stat-value" style="color:#38bdf8;">${Number(data.invoiceCount || 0).toLocaleString('bn-BD')} টি</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">ক্রেতা সংখ্যা</div><div class="data-stat-value" style="color:#e2e8f0;">${Number(data.buyingCustomersCount || 0).toLocaleString('bn-BD')} জন</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">দৈনিক গড় বিক্রি</div><div class="data-stat-value" style="color:#fbbf24;">৳ ${Number(data.dailyAverageSales || 0).toLocaleString('bn-BD')}</div></div>
+                </div>
+                <div style="font-size:10.5px;color:#94a3b8;text-align:right;">সময়কাল: ${escapeHTML(data.startDate)} থেকে ${escapeHTML(data.endDate)}</div>
+            </div>
+        `;
+    }
+
+    // 13. Today's Sales Invoices Card
+    if (data.type === 'today_sales') {
+        const rows = (data.invoices || []).map(inv => `
+            <tr>
+                <td style="font-weight:700;">
+                    <div style="color:#f8fafc;">${escapeHTML(inv.customerName)}</div>
+                    ${inv.notes ? `<div style="font-size:10px;color:#94a3b8;">${escapeHTML(inv.notes)}</div>` : ''}
+                </td>
+                <td style="color:#38bdf8;font-size:11px;">${escapeHTML(inv.voucherNo || '-')}</td>
+                <td class="debit" style="font-weight:800;text-align:right;">৳ ${Number(inv.amount).toLocaleString('bn-BD')}</td>
+                <td style="text-align:right;font-size:11px;color:#f87171;">৳ ${Number(inv.currentDue || 0).toLocaleString('bn-BD')}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        আজকের বিক্রয় চালান (${escapeHTML(data.date)})
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#f87171;">মোট: ৳ ${Number(data.todayTotalBills || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                ${rows ? `
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার ও বিবরণ</th>
+                            <th>চালান নং</th>
+                            <th style="text-align:right;">চালানের মূল্য</th>
+                            <th style="text-align:right;">বর্তমান ব্যালেন্স</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                ` : '<div style="font-size:11.5px;color:#94a3b8;text-align:center;padding:8px;">আজকে কোনো বিক্রয় চালান কাটা হয়নি</div>'}
+            </div>
+        `;
+    }
+
+    // 14. Top Buying Customers Card
+    if (data.type === 'top_buyers') {
+        const rows = (data.topBuyers || []).map((b, i) => `
+            <tr>
+                <td style="font-weight:700;">
+                    <div style="color:#f8fafc;"><span style="color:#38bdf8;">${(i + 1).toLocaleString('bn-BD')}.</span> ${escapeHTML(b.customerName)}</div>
+                    <div style="font-size:10px;color:#94a3b8;">${escapeHTML(b.address || b.zone || 'সাধারণ')}</div>
+                </td>
+                <td class="debit" style="font-weight:800;text-align:right;">৳ ${Number(b.totalPurchases).toLocaleString('bn-BD')}</td>
+                <td style="color:#cbd5e1;text-align:center;font-size:11px;">${Number(b.invoiceCount).toLocaleString('bn-BD')} টি</td>
+                <td style="text-align:right;font-size:11px;color:#f87171;">৳ ${Number(b.currentDue || 0).toLocaleString('bn-BD')}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                        শীর্ষ ক্রেতা কাস্টমার (বিগত ${Number(data.days || 30).toLocaleString('bn-BD')} দিন)
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(56,189,248,0.15);border-color:rgba(56,189,248,0.3);color:#38bdf8;">সেরা ${(data.topBuyers?.length || 0).toLocaleString('bn-BD')} জন</span>
+                </div>
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার ও এলাকা</th>
+                            <th style="text-align:right;">মোট ক্রয়</th>
+                            <th style="text-align:center;">চালান</th>
+                            <th style="text-align:right;">অবশিষ্ট বকেয়া</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // 15. Collection Recovery Efficiency Card
+    if (data.type === 'recovery_efficiency') {
+        const isGood = Number(data.recoveryRate || 0) >= 80;
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                        কালেকশন রিকভারি দক্ষতা ও শতকরা হার
+                    </span>
+                    <span class="data-card-badge" style="background:${isGood ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};color:${isGood ? '#34d399' : '#f87171'};">
+                        রিকভারি রেট: ${Number(data.recoveryRate || 0).toLocaleString('bn-BD')}%
+                    </span>
+                </div>
+                <div class="data-card-grid">
+                    <div class="data-stat-box"><div class="data-stat-label">মোট বিক্রয় (বিল)</div><div class="data-stat-value debit">৳ ${Number(data.totalBilled || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">মোট আদায় (জমা)</div><div class="data-stat-value credit">৳ ${Number(data.totalCollected || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">রিকভারি শতকরা হার</div><div class="data-stat-value" style="color:${isGood ? '#34d399' : '#f87171'};font-weight:800;">${Number(data.recoveryRate || 0).toLocaleString('bn-BD')}%</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">বকেয়া বৃদ্ধির গ্যাপ</div><div class="data-stat-value debit">৳ ${Number(data.uncollectedGap || 0).toLocaleString('bn-BD')}</div></div>
+                </div>
+                <div style="font-size:10.5px;color:#94a3b8;margin-top:6px;text-align:right;">হিসাব কাল: বিগত ${Number(data.days || 30).toLocaleString('bn-BD')} দিন (${escapeHTML(data.startDate)} থেকে ${escapeHTML(data.endDate)})</div>
+            </div>
+        `;
+    }
+
+    // 16. Advance Paying Customers Card
+    if (data.type === 'advance_customers') {
+        const rows = (data.topAdvance || []).map((c, i) => `
+            <tr>
+                <td style="font-weight:700;">
+                    <div style="color:#f8fafc;"><span style="color:#34d399;">${(i + 1).toLocaleString('bn-BD')}.</span> ${escapeHTML(c.name)}</div>
+                    <div style="font-size:10px;color:#94a3b8;">${escapeHTML(c.address || c.zone || 'সাধারণ')}</div>
+                </td>
+                <td style="color:#94a3b8;font-size:11px;">${escapeHTML(c.phone || '-')}</td>
+                <td class="credit" style="font-weight:800;text-align:right;">৳ ${Number(c.advanceAmount).toLocaleString('bn-BD')}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        অগ্রিম জমাকারী কাস্টমার তালিকা (নেগেটিভ ব্যালেন্স)
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#34d399;">মোট অগ্রিম: ৳ ${Number(data.totalAdvanceSum || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                ${rows ? `
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার ও এলাকা</th>
+                            <th>মোবাইল</th>
+                            <th style="text-align:right;">অগ্রিম জমা স্থিতি</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                ` : '<div style="font-size:11.5px;color:#94a3b8;text-align:center;padding:8px;">কোনো অগ্রিম জমা নেই</div>'}
+            </div>
+        `;
+    }
+
+    // 17. Specific Bank Statement Card
+    if (data.type === 'specific_bank_statement') {
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m4-11v11m4-11v11m4-11v11m4-11v11"/></svg>
+                        ${escapeHTML(data.bankName)} স্টেটমেন্ট (বিগত ${Number(data.days || 30).toLocaleString('bn-BD')} দিন)
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(56,189,248,0.15);border-color:rgba(56,189,248,0.3);color:#38bdf8;">ব্যালেন্স: ৳ ${Number(data.currentRunningBalance || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                <div class="data-card-grid">
+                    <div class="data-stat-box"><div class="data-stat-label">মোট জমা (ইনফ্লো)</div><div class="data-stat-value credit">৳ ${Number(data.totalInflowsPeriod || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">মোট খরচ ও উত্তোলন</div><div class="data-stat-value debit">৳ ${Number(data.totalOutflowsPeriod || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">নিট ফান্ড প্রবাহ</div><div class="data-stat-value" style="color:#38bdf8;">৳ ${Number(data.netFlowPeriod || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">চলমান লাইভ ব্যালেন্স</div><div class="data-stat-value credit">৳ ${Number(data.currentRunningBalance || 0).toLocaleString('bn-BD')}</div></div>
+                </div>
+                <div style="font-size:10px;color:#94a3b8;margin-top:6px;display:flex;justify-content:space-between;">
+                    <span>অ্যাকাউন্ট: ${escapeHTML(data.accountNo || 'সঞ্চয়ী')} (${escapeHTML(data.branch || 'প্রধান শাখা')})</span>
+                    <span>${escapeHTML(data.startDate)} থেকে ${escapeHTML(data.endDate)}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // 18. Top Inflow Bank Card
+    if (data.type === 'top_inflow_bank') {
+        const rows = (data.rankings || []).map((b, i) => `
+            <tr>
+                <td style="font-weight:700;">
+                    <div style="color:#38bdf8;"><span style="color:#cbd5e1;">${(i + 1).toLocaleString('bn-BD')}.</span> ${escapeHTML(b.bankName)}</div>
+                </td>
+                <td class="credit" style="font-weight:800;text-align:right;">৳ ${Number(b.totalDeposits).toLocaleString('bn-BD')}</td>
+                <td style="color:#cbd5e1;text-align:center;font-size:11px;">${Number(b.txnCount).toLocaleString('bn-BD')} টি</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+                        ব্যাংক জমা তুলনামূলক র‍্যাংকিং (বিগত ${Number(data.days || 30).toLocaleString('bn-BD')} দিন)
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#34d399;">শীর্ষ: ${escapeHTML(data.topBank?.bankName || '')}</span>
+                </div>
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>ব্যাংক</th>
+                            <th style="text-align:right;">মোট জমা</th>
+                            <th style="text-align:center;">লেনদেন</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // 19. Monthly Net Operating Cashflow Card
+    if (data.type === 'monthly_net_cashflow') {
+        const isSurplus = data.isSurplus;
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        অপারেটিং নিট ক্যাশফ্লো (বিগত ${Number(data.days || 30).toLocaleString('bn-BD')} দিন)
+                    </span>
+                    <span class="data-card-badge" style="background:${isSurplus ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};color:${isSurplus ? '#34d399' : '#f87171'};">
+                        ${isSurplus ? 'উদ্বৃত্ত' : 'ঘাটতি'}: ৳ ${Number(data.netCashflow || 0).toLocaleString('bn-BD')}
+                    </span>
+                </div>
+                <div class="data-card-grid">
+                    <div class="data-stat-box"><div class="data-stat-label">মোট কালেকশন (আদায়)</div><div class="data-stat-value credit">৳ ${Number(data.totalInflows || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">মোট অফিস খরচ</div><div class="data-stat-value debit">৳ ${Number(data.totalExpenses || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">নিট অপারেটিং ক্যাশ</div><div class="data-stat-value ${isSurplus ? 'credit' : 'debit'}">৳ ${Number(data.netCashflow || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">সর্বোচ্চ একক খরচ</div><div class="data-stat-value debit" style="font-size:11px;">৳ ${Number(data.largestExpense?.amount || 0).toLocaleString('bn-BD')} (${escapeHTML(data.largestExpense?.category || 'খরচ')})</div></div>
+                </div>
+                <div style="font-size:10px;color:#94a3b8;margin-top:6px;display:flex;justify-content:space-between;">
+                    <span>ক্যাশ: ৳ ${Number(data.cashCollections || 0).toLocaleString('bn-BD')} | ব্যাংক: ৳ ${Number(data.bankCollections || 0).toLocaleString('bn-BD')}</span>
+                    <span>${escapeHTML(data.startDate)} থেকে ${escapeHTML(data.endDate)}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // 20. Historical Date Full Summary Card
+    if (data.type === 'historical_date_summary') {
+        const rows = (data.customerPayments || []).slice(0, 5).map(p => `
+            <tr>
+                <td style="font-weight:700;color:#f8fafc;">${escapeHTML(p.customerName)}</td>
+                <td style="color:#38bdf8;font-size:11px;">${escapeHTML(p.channel)}</td>
+                <td class="credit" style="font-weight:800;text-align:right;">৳ ${Number(p.amount).toLocaleString('bn-BD')}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        দৈনিক ব্যবসার পূর্ণাঙ্গ হিসাব (${escapeHTML(data.date)})
+                    </span>
+                    <span class="data-card-badge">নিট ক্যাশফ্লো: ৳ ${Number(data.netCashflow || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                <div class="data-card-grid" style="margin-bottom:8px;">
+                    <div class="data-stat-box"><div class="data-stat-label">মোট বিক্রি (${Number(data.billCount || 0).toLocaleString('bn-BD')}টি)</div><div class="data-stat-value debit">৳ ${Number(data.totalBills || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">মোট কালেকশন (${Number(data.paymentCount || 0).toLocaleString('bn-BD')}টি)</div><div class="data-stat-value credit">৳ ${Number(data.totalCollections || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">মোট খরচ (${Number(data.expenseCount || 0).toLocaleString('bn-BD')}টি)</div><div class="data-stat-value debit">৳ ${Number(data.totalExpenses || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">নিট উদ্বৃত্ত/ঘাটতি</div><div class="data-stat-value credit">৳ ${Number(data.netCashflow || 0).toLocaleString('bn-BD')}</div></div>
+                </div>
+                ${rows ? `
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার</th>
+                            <th>মাধ্যম</th>
+                            <th style="text-align:right;">জমা</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                ` : ''}
             </div>
         `;
     }

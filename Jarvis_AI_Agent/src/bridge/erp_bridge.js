@@ -12,6 +12,13 @@ import { getZoneWiseAnalytics, getDormantCustomers, getTotalMarketSummary } from
 import { getCategoryExpenseBreakdown } from './erp_expense_reader.js';
 import { getLedgerMathAuditSummary } from './erp_audit_reader.js';
 import { getDubaiDeepCustodianHoldings } from './erp_dubai_deep_reader.js';
+import { getPeriodSalesTurnover, getTodaySalesInvoices, getTopBuyingCustomers } from './erp_sales_reader.js';
+import { getCollectionRecoveryEfficiency, getAdvancePayingCustomers } from './erp_recovery_reader.js';
+import { getSpecificBankStatementSummary, getTopInflowBank } from './erp_bank_deep_reader.js';
+import { getMonthlyNetCashflow } from './erp_cashflow_reader.js';
+import { parseRelativeBengaliDate, getHistoricalDateSummary } from './erp_history_reader.js';
+
+export { parseRelativeBengaliDate };
 
 /**
  * Mathematical Floating-Point Safe Rounder (Accounting Standard)
@@ -1196,5 +1203,55 @@ export const ERPBridge = {
      */
     async getDubaiDeepCustodianHoldings() {
         return await getDubaiDeepCustodianHoldings();
+    },
+
+    /**
+     * Sales Turnover & Invoices
+     */
+    async getPeriodSalesTurnover(days = 30) {
+        return await getPeriodSalesTurnover(days);
+    },
+    async getTodaySalesInvoices(targetDate = null) {
+        return await getTodaySalesInvoices(targetDate);
+    },
+    async getTopBuyingCustomers(limitCount = 5, days = 30) {
+        return await getTopBuyingCustomers(limitCount, days);
+    },
+
+    /**
+     * Recovery Rate & Advance Debtors
+     */
+    async getCollectionRecoveryEfficiency(days = 30) {
+        return await getCollectionRecoveryEfficiency(days);
+    },
+    async getAdvancePayingCustomers(limitCount = 15) {
+        return await getAdvancePayingCustomers(limitCount);
+    },
+
+    /**
+     * Specific Bank Statement & Inflows
+     */
+    async getSpecificBankStatementSummary(bankNameQuery, days = 30) {
+        return await getSpecificBankStatementSummary(bankNameQuery, days);
+    },
+    async getTopInflowBank(days = 30) {
+        return await getTopInflowBank(days);
+    },
+
+    /**
+     * Net Operating Cashflow
+     */
+    async getMonthlyNetCashflow(days = 30) {
+        return await getMonthlyNetCashflow(days);
+    },
+
+    /**
+     * Historical Date Lookups & Natural Bengali Parser
+     */
+    async getHistoricalDateSummary(targetDate) {
+        return await getHistoricalDateSummary(targetDate);
+    },
+    parseRelativeBengaliDate(text) {
+        return parseRelativeBengaliDate(text);
     }
 };

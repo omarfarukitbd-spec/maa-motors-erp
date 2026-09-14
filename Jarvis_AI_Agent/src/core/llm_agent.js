@@ -1,4 +1,4 @@
-import { ERPBridge } from '../bridge/erp_bridge.js';
+import { ERPBridge, parseRelativeBengaliDate, getTodayLocalDateString } from '../bridge/erp_bridge.js';
 import { memoryVault } from './memory_vault.js';
 import { disambiguationManager } from './disambiguation_manager.js';
 
@@ -468,6 +468,127 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                         }
                     }
                 }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_period_sales_turnover',
+                    description: 'এই মাসে, গত মাসে বা নির্দিষ্ট দিনে মোট কত টাকার মাল বিক্রি হয়েছে, কতগুলো চালান হয়েছে এবং দৈনিক গড় বিক্রি জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            days: { type: 'number', description: 'কত দিনের বিক্রি (ডিফল্ট ৩০ দিন)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_today_sales_invoices',
+                    description: 'আজকে কার কার কাছে কত টাকার মাল বিক্রি হলো এবং কোন কোন চালান ইস্যু করা হয়েছে তা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            date: { type: 'string', description: 'তারিখ YYYY-MM-DD (ঐচ্ছিক)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_top_buying_customers',
+                    description: 'চলতি মাসে বা নির্দিষ্ট সময়ে সবচেয়ে বেশি টাকার মাল কিনেছেন এমন সেরা ক্রেতা কাস্টমারদের তালিকা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            limit: { type: 'number', description: 'কতজন ক্রেতা (ডিফল্ট ৫)' },
+                            days: { type: 'number', description: 'কত দিনের হিসাব (ডিফল্ট ৩০)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_collection_recovery_efficiency',
+                    description: 'বিক্রির তুলনায় কত শতাংশ টাকা কালেকশন হলো (রিকভারি রেট ও শতকরা হার) তা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            days: { type: 'number', description: 'কত দিনের অনুপাত (ডিফল্ট ৩০ দিন)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_advance_paying_customers',
+                    description: 'যেসব কাস্টমারের কাছে কোম্পানির অতিরিক্ত টাকা অগ্রিম জমা আছে (নেগেটিভ বকেয়া) তাদের তালিকা ও মোট অগ্রিম পুঁজি জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            limit: { type: 'number', description: 'কতজন দেখাবে (ডিফল্ট ১৫)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_specific_bank_statement_summary',
+                    description: 'নির্দিষ্ট কোনো ব্যাংকে (যেমন: ইসলামী ব্যাংক, ওয়ান ব্যাংক, ডাচ-বাংলা) কত টাকা জমা আসলো, কত টাকা খরচ হলো এবং বর্তমান ব্যালেন্স কত তা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            bankName: { type: 'string', description: 'ব্যাংকের নাম' },
+                            days: { type: 'number', description: 'কত দিনের স্টেটমেন্ট (ডিফল্ট ৩০)' }
+                        },
+                        required: ['bankName']
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_top_inflow_bank',
+                    description: 'সবচেয়ে বেশি টাকা কোন ব্যাংকে জমা হচ্ছে এবং সকল ব্যাংকের জমার তুলনামূলক র‍্যাংকিং জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            days: { type: 'number', description: 'কত দিনের হিসাব (ডিফল্ট ৩০)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_monthly_net_cashflow',
+                    description: 'এই মাসে মোট কালেকশন থেকে মোট অফিস খরচ বাদ দিলে নিট কত টাকা ক্যাশ উদ্বৃত্ত বা ঘাটতি আছে তা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            days: { type: 'number', description: 'কত দিনের নিট ক্যাশফ্লো (ডিফল্ট ৩০)' }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_historical_date_summary',
+                    description: 'অতীতের নির্দিষ্ট কোনো দিনে (যেমন: গত পরশু দিন, গত রবিবার, ১০ তারিখে) কত টাকার বিক্রি, কালেকশন ও খরচ হয়েছিল তার পূর্ণাঙ্গ হিসাব জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            targetDate: { type: 'string', description: 'তারিখ YYYY-MM-DD ফরম্যাটে' }
+                        },
+                        required: ['targetDate']
+                    }
+                }
             }
         ];
     }
@@ -781,6 +902,78 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                     return { success: false, authRequired: true, message: 'দুবাই কাস্টোডিয়ান হিসাব দেখতে লগইন করতে হবে।' };
                 }
                 return res || { success: false, message: 'দুবাই কাস্টোডিয়ান তথ্য পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_period_sales_turnover') {
+                const res = await ERPBridge.getPeriodSalesTurnover(args?.days || 30);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'বিক্রির হিসাব দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'বিক্রির হিসাব লোড করা যায়নি।' };
+            }
+
+            if (name === 'get_today_sales_invoices') {
+                const res = await ERPBridge.getTodaySalesInvoices(args?.date || null);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'আজকের চালানের হিসাব দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'আজকের চালানের তথ্য পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_top_buying_customers') {
+                const res = await ERPBridge.getTopBuyingCustomers(args?.limit || 5, args?.days || 30);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'সেরা ক্রেতাদের তালিকা দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'সেরা ক্রেতাদের তথ্য পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_collection_recovery_efficiency') {
+                const res = await ERPBridge.getCollectionRecoveryEfficiency(args?.days || 30);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'রিকভারি রেট দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'রিকভারি রেটের হিসাব পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_advance_paying_customers') {
+                const res = await ERPBridge.getAdvancePayingCustomers(args?.limit || 15);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'অগ্রিম জমার হিসাব দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'অগ্রিম জমাকারী কাস্টমারদের তথ্য পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_specific_bank_statement_summary') {
+                const res = await ERPBridge.getSpecificBankStatementSummary(args?.bankName, args?.days || 30);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'ব্যাংক স্টেটমেন্ট দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'ব্যাংক স্টেটমেন্ট পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_top_inflow_bank') {
+                const res = await ERPBridge.getTopInflowBank(args?.days || 30);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'ব্যাংক তথ্য দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'ব্যাংক জমার তথ্য পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_monthly_net_cashflow') {
+                const res = await ERPBridge.getMonthlyNetCashflow(args?.days || 30);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'নিট ক্যাশফ্লো দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'নিট ক্যাশফ্লো পাওয়া যায়নি।' };
+            }
+
+            if (name === 'get_historical_date_summary') {
+                const res = await ERPBridge.getHistoricalDateSummary(args?.targetDate);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'অতীতের হিসাব দেখতে লগইন করতে হবে।' };
+                }
+                return res || { success: false, message: 'উক্ত তারিখের হিসাব পাওয়া যায়নি।' };
             }
 
             if (name === 'remember_executive_note') {
@@ -1188,6 +1381,37 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             };
         }
 
+        // 1.5 Historical Relative Bengali Date Summary (e.g., "গত পরশু কত কালেকশন হয়েছিল?", "গত রবিবার কত বিক্রি হয়েছিল?", "১০ তারিখের খরচের হিসাব বলো")
+        const relativeDate = parseRelativeBengaliDate(lower);
+        const todayDateStr = getTodayLocalDateString();
+        const hasHistoryKeywords = /(?:বিক্রি|সেল|কালেকশন|জমা|টাকা|খরচ|চালান|হিসাব|রিপোর্ট)/i.test(lower);
+        if (relativeDate && relativeDate !== todayDateStr && hasHistoryKeywords) {
+            const res = await this.executeToolCall('get_historical_date_summary', { targetDate: relativeDate });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, অতীতের হিসাব দেখতে মা মোটরসের অনুমোদিত গুগল অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const parts = [];
+                if (res.totalBills > 0) {
+                    parts.push(`মোট বিক্রি হয়েছিল ${res.totalBills.toLocaleString('bn-BD')} টাকা (${res.billCount.toLocaleString('bn-BD')}টি চালানে)`);
+                }
+                if (res.totalCollections > 0) {
+                    parts.push(`মোট কালেকশন এসেছিল ${res.totalCollections.toLocaleString('bn-BD')} টাকা (শোরুম ক্যাশ: ${res.showroomCashCollections.toLocaleString('bn-BD')}, ব্যাংক: ${res.bankCollections.toLocaleString('bn-BD')})`);
+                }
+                if (res.totalExpenses > 0) {
+                    parts.push(`মোট খরচ হয়েছিল ${res.totalExpenses.toLocaleString('bn-BD')} টাকা`);
+                }
+                const summaryDetail = parts.length > 0 ? parts.join(', ') + '।' : 'কোনো বড় লেনদেনের রেকর্ড পাওয়া যায়নি।';
+                return {
+                    spoken: `জি ভাইয়া! ${res.date} তারিখে ${summaryDetail} সেদিনের নিট ক্যাশফ্লো ছিল ${res.netCashflow.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            }
+        }
+
         // 2. Today's Bank Collections (কাদের কাদের টাকা ব্যাংকে জমা হলো)
         if (/কাদের.*ব্যাংক|ব্যাংকে.*কাদের|কারা.*ব্যাংক|ব্যাংকে.*কারা|আজকে.*ব্যাংক|ব্যাংকে.*জমা/i.test(lower) && !/সপ্তাহ|মাস|বছর/i.test(lower)) {
             const res = await this.executeToolCall('get_today_bank_collections', {});
@@ -1205,7 +1429,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                     };
                 }
                 const sampleList = res.customerDeposits.slice(0, 3).map(c => `${c.customerName} (${c.bankName}-এ ${c.amount.toLocaleString('bn-BD')} টাকা)`).join(', ');
-                const extra = res.customerDepositsCount > 3 ? ` এবং আরও ${res.customerDepositsCount - 3} জন` : '';
+                const extra = res.customerDepositsCount > 3 ? ` এবং আরও ${(res.customerDepositsCount - 3).toLocaleString('bn-BD')} জন` : '';
                 return {
                     spoken: `জি ভাইয়া! আজকে আমাদের বিভিন্ন ব্যাংকে সর্বমোট ${res.totalBankDeposit.toLocaleString('bn-BD')} টাকা জমা হয়েছে। যারা জমা দিয়েছেন: ${sampleList}${extra}।`,
                     data: res
@@ -1236,17 +1460,17 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 let custSnippet = '';
                 if (res.customerPayments && res.customerPayments.length > 0) {
                     const topList = res.customerPayments.slice(0, 3).map(c => `${c.customerName}-এর থেকে ${c.amount.toLocaleString('bn-BD')} টাকা`).join(', ');
-                    const extraCount = res.customerPaymentsCount > 3 ? ` এবং আরও ${res.customerPaymentsCount - 3} জন` : '';
+                    const extraCount = res.customerPaymentsCount > 3 ? ` এবং আরও ${(res.customerPaymentsCount - 3).toLocaleString('bn-BD')} জন` : '';
                     custSnippet = ` জমা দেওয়া কাস্টমারদের মধ্যে রয়েছেন: ${topList}${extraCount}।`;
                 }
 
                 let expenseSnippet = '';
                 if (res.todayCashExpenses > 0) {
-                    expenseSnippet = ` এছাড়া আজকে ক্যাশ ড্রয়ার থেকে খরচ হয়েছে ${res.todayCashExpenses.toLocaleString('bn-BD')} টাকা (${res.expenseCount}টি ভাউচারে), ফলে আজকের নিট ক্যাশ স্থিতি হলো ${res.todayNetShowroomCash.toLocaleString('bn-BD')} টাকা।`;
+                    expenseSnippet = ` এছাড়া আজকে ক্যাশ ড্রয়ার থেকে খরচ হয়েছে ${res.todayCashExpenses.toLocaleString('bn-BD')} টাকা (${res.expenseCount.toLocaleString('bn-BD')}টি ভাউচারে), ফলে আজকের নিট ক্যাশ স্থিতি হলো ${res.todayNetShowroomCash.toLocaleString('bn-BD')} টাকা।`;
                 }
 
                 return {
-                    spoken: `জি ভাইয়া! আজকে শোরুম ক্যাশে সর্বমোট ${res.totalCashCollected.toLocaleString('bn-BD')} টাকা নগদ জমা হয়েছে (${res.customerPaymentsCount} জন কাস্টমার থেকে)।${custSnippet}${expenseSnippet}`,
+                    spoken: `জি ভাইয়া! আজকে শোরুম ক্যাশে সর্বমোট ${res.totalCashCollected.toLocaleString('bn-BD')} টাকা নগদ জমা হয়েছে (${res.customerPaymentsCount.toLocaleString('bn-BD')} জন কাস্টমার থেকে)।${custSnippet}${expenseSnippet}`,
                     data: res
                 };
             }
@@ -1271,6 +1495,182 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 const bankLines = res.bankList.map(b => `${b.bankName}-এ ${b.totalAmount.toLocaleString('bn-BD')} টাকা`).join(', ');
                 return {
                     spoken: `জি ভাইয়া! গত এক সপ্তাহে আমাদের ব্যাংকগুলোতে সর্বমোট ${res.grandTotalBankDeposits.toLocaleString('bn-BD')} টাকা জমা হয়েছে। এর মধ্যে: ${bankLines}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4.1 Today's Detailed Sales Invoices Breakdown (আজকে কার কার কাছে কত টাকার মাল বিক্রি হলো / আজকের চালান তালিকা)
+        if (/আজকে.*(?:কারা.*মাল|কার.*কাছে.*মাল|কাদের.*কাছে.*মাল|চালান.*হলো|চালানের.*তালিকা|কয়টা.*চালান|চালান.*ইস্যু)|চালান.*কারা.*নিলো|কাদের.*মাল.*দেওয়া.*হলো/i.test(lower)) {
+            const res = await this.executeToolCall('get_today_sales_invoices', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, আজকের বিক্রয় চালান দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                if (res.invoiceCount === 0) {
+                    return {
+                        spoken: `জি ভাইয়া! আজকে (${res.date}) এখনো পর্যন্ত কোনো কাস্টমারের বিক্রয় চালান কাটা হয়নি।`,
+                        data: res
+                    };
+                }
+                const topList = res.invoices.slice(0, 3).map(inv => `${inv.customerName} (${inv.amount.toLocaleString('bn-BD')} টাকা)`).join(', ');
+                const extra = res.invoiceCount > 3 ? ` এবং আরও ${(res.invoiceCount - 3).toLocaleString('bn-BD')}টি চালান` : '';
+                return {
+                    spoken: `জি ভাইয়া! আজকে মা মোটরসে মোট ${res.todayTotalBills.toLocaleString('bn-BD')} টাকার মাল বিক্রি হয়েছে (সর্বমোট ${res.invoiceCount.toLocaleString('bn-BD')}টি চালানে)। এর মধ্যে চালান হয়েছে: ${topList}${extra}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4.2 Multi-Day / Monthly Sales Turnover (এই মাসে মোট কত টাকার বিক্রি / চলতি সপ্তাহের সেল)
+        const isSalesTurnoverQuery = 
+            /(?:এই\s*মাসে|এই\s*মাসের|চলতি\s*সপ্তাহে|চলতি\s*সপ্তাহের|গত\s*মাসে|বিগত\s*\d+\s*দিনে|\d+\s*দিনের).*(?:বিক্রি|সেল|টার্নওভার)/i.test(lower) ||
+            /(?:বিক্রি|সেল|টার্নওভার).*(?:এই\s*মাসে|চলতি\s*সপ্তাহে|গত\s*মাসে|বিগত\s*\d+\s*দিনে|\d+\s*দিনের)/i.test(lower);
+
+        if (isSalesTurnoverQuery) {
+            let days = 30;
+            const bengaliToAscii = str => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+            const normalized = bengaliToAscii(lower);
+            const daysMatch = normalized.match(/(\d+)\s*(?:দিন|days)/i);
+            if (daysMatch) {
+                days = parseInt(daysMatch[1], 10);
+            } else if (/সপ্তাহ|৭\s*দিন/i.test(normalized)) {
+                days = 7;
+            } else if (/দুই\s*মাস|২\s*মাস|৬০\s*দিন/i.test(normalized)) {
+                days = 60;
+            } else if (/তিন\s*মাস|৩\s*মাস|৯০\s*দিন/i.test(normalized)) {
+                days = 90;
+            }
+
+            const res = await this.executeToolCall('get_period_sales_turnover', { days });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, বিক্রির টার্নওভার রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! বিগত ${res.days.toLocaleString('bn-BD')} দিনে মা মোটরসে সর্বমোট ${res.totalSalesSum.toLocaleString('bn-BD')} টাকার মাল বিক্রি হয়েছে (${res.invoiceCount.toLocaleString('bn-BD')}টি চালানে, ${res.buyingCustomersCount.toLocaleString('bn-BD')} জন ক্রেতার কাছে)। দৈনিক গড় বিক্রি ছিল প্রায় ${res.dailyAverageSales.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4.3 Top Buying Customers (সবচেয়ে বেশি টাকার মাল কে নিয়েছে / সেরা ক্রেতা কারা)
+        if (/সেরা.*(?:ক্রেতা|কাস্টমার|খরিদ্দার)|টপ.*(?:ক্রেতা|কাস্টমার|বায়ার)|সবচেয়ে\s*বেশি.*(?:মাল|টাকার\s*মাল|কিনেছে|ক্রয়)/i.test(lower)) {
+            const res = await this.executeToolCall('get_top_buying_customers', { limit: 5, days: 30 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, সেরা ক্রেতাদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const topList = (res.topBuyers || []).slice(0, 5).map((b, i) => `${(i + 1).toLocaleString('bn-BD')}. ${b.customerName} (${b.totalPurchases.toLocaleString('bn-BD')} টাকা)`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে মা মোটরসে সবচেয়ে বেশি টাকার মাল ক্রয় করেছেন এমন শীর্ষ ৫ জন ক্রেতা হলেন: ${topList}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4.4 Collection Recovery Efficiency (বিক্রির তুলনায় কত পার্সেন্ট কালেকশন উঠেছে / রিকভারি রেট)
+        if (/রিকভারি\s*রেট|বিক্রির.*তুলনায়.*(?:টাকা|কালেকশন|আদায়|উঠেছে)|কালেকশন.*রিকভারি|শতকরা.*আদায়/i.test(lower)) {
+            const res = await this.executeToolCall('get_collection_recovery_efficiency', { days: 30 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, কালেকশন রিকভারি রেট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে মোট ${res.totalBilled.toLocaleString('bn-BD')} টাকার বিক্রির বিপরীতে নগদ ও ব্যাংক মিলিয়ে আদায় হয়েছে ${res.totalCollected.toLocaleString('bn-BD')} টাকা। আমাদের বর্তমান কালেকশন রিকভারি রেট হলো ${res.recoveryRate.toLocaleString('bn-BD')}%। বকেয়া বৃদ্ধির গ্যাপ রয়েছে ${res.uncollectedGap.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4.5 Advance Paying Customers (কাদের অগ্রিম জমা আছে / নেগেটিভ বকেয়া)
+        if (/অগ্রিম.*(?:জমা|টাকা|কাস্টমার|ক্রেতা)|কারা.*অগ্রিম|কাদের.*অগ্রিম|অতিরিক্ত.*টাকা.*জমা|নেগেটিভ.*বকেয়া/i.test(lower)) {
+            const res = await this.executeToolCall('get_advance_paying_customers', { limit: 15 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, অগ্রিম জমাকারী কাস্টমারদের তালিকা দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                if (res.advanceCount === 0) {
+                    return {
+                        spoken: 'জি ভাইয়া! বর্তমানে কোনো কাস্টমারের অগ্রিম জমা বা অতিরিক্ত ব্যালেন্স নেই।',
+                        data: res
+                    };
+                }
+                const topAdv = res.topAdvance.slice(0, 3).map(c => `${c.name} (${c.advanceAmount.toLocaleString('bn-BD')} টাকা)`).join(', ');
+                const extraAdv = res.advanceCount > 3 ? ` এবং আরও ${(res.advanceCount - 3).toLocaleString('bn-BD')} জন` : '';
+                return {
+                    spoken: `জি ভাইয়া! মা মোটরসের মোট ${res.advanceCount.toLocaleString('bn-BD')} জন কাস্টমারের কাছে কোম্পানির সর্বমোট ${res.totalAdvanceSum.toLocaleString('bn-BD')} টাকা অগ্রিম জমা রয়েছে। শীর্ষ অগ্রিম জমাকারীদের মধ্যে রয়েছেন: ${topAdv}${extraAdv}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4.6 Specific Single Bank 360° Statement (ইসলামী ব্যাংক, ওয়ান ব্যাংক, ডাচ-বাংলা স্টেটমেন্ট)
+        const specificBankMatch = lower.match(/(?:ইসলামী\s*ব্যাংক|one\s*bank|ওয়ান\s*ব্যাংক|ওয়ান\s*ব্যাংক|ডাচ\s*বাংলা|dbbl|ibbl|ইউসিবি|ucb|ব্র্যাক\s*ব্যাংক|সিটি\s*ব্যাংক)/i);
+        const isBankStatementQuery = specificBankMatch && /(?:স্টেটমেন্ট|হিসাব|অবস্থা|কত\s*জমা|কত\s*আসলো|কত\s*খরচ|ব্যালেন্স|লেনদেন|রিপোর্ট)/i.test(lower);
+        if (isBankStatementQuery) {
+            const bNameQuery = specificBankMatch[0];
+            const res = await this.executeToolCall('get_specific_bank_statement_summary', { bankName: bNameQuery, days: 30 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, ব্যাংক স্টেটমেন্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success && res.found) {
+                return {
+                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে ${res.bankName}-এ কাস্টমার জমা ও ট্রান্সফার মিলিয়ে মোট ঢুকেছে ${res.totalInflowsPeriod.toLocaleString('bn-BD')} টাকা এবং খরচ ও উত্তোলন বাবদ বের হয়েছে ${res.totalOutflowsPeriod.toLocaleString('bn-BD')} টাকা। এই ব্যাংকে বর্তমান চলমান ব্যালেন্স রয়েছে ${res.currentRunningBalance.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4.7 Top Inflow Bank (সবচেয়ে বেশি টাকা কোন ব্যাংকে জমা হচ্ছে)
+        if (/সবচেয়ে\s*বেশি.*(?:টাকা.*কোন\s*ব্যাংকে|কোন\s*ব্যাংকে.*জমা|ব্যাংকে.*কালেকশন)|শীর্ষ\s*ব্যাংক|টপ\s*ব্যাংক/i.test(lower)) {
+            const res = await this.executeToolCall('get_top_inflow_bank', { days: 30 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, ব্যাংকের শীর্ষ জমার তথ্য দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success && res.topBank) {
+                const rankLines = res.rankings.slice(0, 3).map((b, i) => `${(i + 1).toLocaleString('bn-BD')}. ${b.bankName} (${b.totalDeposits.toLocaleString('bn-BD')} টাকা)`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে সবচেয়ে বেশি টাকা জমা পড়েছে ${res.topBank.bankName}-এ (${res.topBank.totalDeposits.toLocaleString('bn-BD')} টাকা, ${res.topBank.txnCount.toLocaleString('bn-BD')}টি লেনদেনে)। শীর্ষ ব্যাংকগুলো হলো: ${rankLines}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4.8 Monthly Net Operating Cashflow (কালেকশন থেকে খরচ বাদ দিলে নিট কত টাকা ক্যাশ উদ্বৃত্ত থাকে)
+        if (/খরচ\s*বাদে.*(?:নিট|ক্যাশ|উদ্বৃত্ত|কত\s*থাকে)|নিট\s*ক্যাশফ্লো|অপারেটিং\s*ক্যাশফ্লো|কালেকশন.*খরচ.*বাদ/i.test(lower)) {
+            const res = await this.executeToolCall('get_monthly_net_cashflow', { days: 30 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, নিট ক্যাশফ্লো রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const status = res.isSurplus ? 'উদ্বৃত্ত (সারপ্লাস)' : 'ঘাটতি (ডেফিসিট)';
+                return {
+                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে মা মোটরসে মোট কালেকশন এসেছে ${res.totalInflows.toLocaleString('bn-BD')} টাকা এবং মোট অফিস খরচ হয়েছে ${res.totalExpenses.toLocaleString('bn-BD')} টাকা। ফলে বর্তমানে নিট ক্যাশফ্লো হলো ${res.netCashflow.toLocaleString('bn-BD')} টাকা ${status}।`,
                     data: res
                 };
             }
