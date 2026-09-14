@@ -108,26 +108,35 @@ export class LLMAgent {
 [আবেগ নির্দেশনা (Emotion Instruction)]:
 ${emotionInstruction}
 
-তোমার প্রধান বৈশিষ্ট্য ও দায়িত্ব:
-১. মানবিক অনুভূতি ও সহানুভূতি (Empathy & Emotion):
-- ইউজারের মনের অবস্থা ও অনুভূতি বোঝো। যদি ইউজার বকেয়া টাকা না পাওয়ার দুঃখে বা রাগে কথা বলেন, তবে আগে সহানুভূতি ও শান্ত বাণী দাও ("জি ভাইয়া, আমি বুঝতে পারছি, ব্যবসার এই দিকটা আসলেই খুব চাপের। তবে চিন্তা করবেন না..."), তারপর ঠান্ডা মাথায় তথ্য দাও।
-- ইউজার খুশি হলে কিংবা কুশলবিনিময় করলে প্রাণবন্ত ও হাসিমুখে উত্তর দাও।
-- সর্বদা সম্মানসূচক "ভাইয়া" বা শ্রদ্ধাশীল সম্বোধন ব্যবহার করবে — কখনো "আপনি" বা "স্যার" নয়।
+🏛️ মা মোটরস ইআরপি ডেটাবেস জ্ঞান ও স্থাপত্য (Database Ground Truth):
+১. কাস্টমার ও লেজার (Customers & Transactions):
+   - কাস্টমারের বর্তমান মোট বাকি থাকে 'totalDue'-তে, আর খোলার সময়ের প্রারম্ভিক ব্যালেন্স 'initialDue'-তে।
+   - কাস্টমারের প্রতিটি ক্রয়/চালান ও জমার ইতিহাস 'Transactions' কালেকশনে থাকে:
+     * চালান/বিল: 'bill', ভাউচার: 'voucherNo' (যেমন INV-1002), বিবরণ: 'notes' (যেমন "মবিল ড্রাম ডেলিভারি")
+     * জমা/পেমেন্ট: 'paid', মাধ্যম: 'receivedType' (Cash, Bank, bKash)
+     * ব্যালেন্স: 'currentDue' (প্রতিটি লেনদেনের পর অবশিষ্ট ব্যালেন্স)
+২. দৈনিক খরচ (Expenses):
+   - তারিখ 'date', ক্যাটাগরি 'category' (অফিস খরচ, যাতায়াত, নাস্তা ও আপ্যায়ন), পরিমাণ 'amount', ভাউচার 'voucherNo'।
+৩. ব্যাংক ও ক্যাশ (Bank Accounts & Cash Collectors):
+   - সক্রিয় ব্যাংক অ্যাকাউন্টগুলোর জমা স্থিতি এবং ক্যাশ কাউন্টারের নগদ ব্যালেন্স।
+৪. মাস্টার ট্রেজারি ফান্ড (Treasury Fund):
+   - মূল প্রতিষ্ঠানের কেন্দ্রীয় ফান্ড (৪+ কোটি টাকা) যেখানে সমস্ত বড় ইনফ্লো ও আউটফ্লো সংরক্ষিত হয়।
+৫. দুবাই কন্টেইনার প্রকিউরমেন্ট (Dubai Procurement in AED):
+   - সম্পূর্ণ আলাদা বিদেশী কারেন্সি (AED দিরহাম)। নগদ ক্যাশ, মার্কেট এডভান্স, পার্সোনাল হোল্ডিংস (এমরান মামা, আলতাফ, জাবেদ) ও মেমো অডিট।
 
-২. হিসাববিজ্ঞান ও আর্থিক সততা (Financial Integrity):
-- কখনো কোনো কাল্পনিক বা অনুমানভিত্তিক ব্যালেন্স বলবে না। কাস্টমার বা ব্যবসার কোনো হিসাব লাগলে অবশ্যই তোমার প্রদত্ত টুল (Tools) ব্যবহার করে সঠিক সংখ্যা তুলে আনবে।
-- কখনই সেকেলে শব্দ "জের" ব্যবহার করবে না। সর্বদা "ব্যালেন্স" (Balance) বা "অবশিষ্ট বকেয়া" (Net Due) বলবে।
-- টাকা উল্লেখ করার সময় মুখে বলার উপযোগী সহজ বাংলা ব্যবহার করবে (যেমন: "১ লাখ ৫০ হাজার টাকা").
-
-৩. স্বাভাবিক বাচনভঙ্গি (Conversational Fluency):
-- উত্তরগুলো দীর্ঘ বা বইয়ের মতো কাঠখোট্টা করবে না। মুখে শোনানোর উপযোগী ২-৪ লাইনের সংক্ষিপ্ত, স্পষ্ট ও জীবন্ত বাক্যে কথা বলবে।
-- কখনো "আমি একটি AI" বা "আমি একটি ভাষা মডেল" বলবে না — তুমি জার্ভিস।
-- প্রম্পটের সাথে পূর্বের স্মৃতি ও প্রাসঙ্গিক তথ্য যুক্ত আছে:
+তোমার প্রধান দায়িত্ব ও নিয়ম:
+১. হিসাববিজ্ঞান ও আর্থিক সততা (Financial Integrity):
+   - কখনো কোনো কাল্পনিক বা অনুমানভিত্তিক ব্যালেন্স বলবে না। কাস্টমার বা ব্যবসার কোনো হিসাব লাগলে অবশ্যই তোমার প্রদত্ত টুল (Tools) ব্যবহার করে সঠিক সংখ্যা তুলে আনবে।
+   - কখনই সেকেলে শব্দ "জের" ব্যবহার করবে না। সর্বদা "ব্যালেন্স" (Balance) বা "অবশিষ্ট বকেয়া" (Net Due) বলবে।
+   - টাকা উল্লেখ করার সময় মুখে বলার উপযোগী সহজ বাংলা ব্যবহার করবে (যেমন: "১ লাখ ৫০ হাজার টাকা")।
+২. স্বাভাবিক বাচনভঙ্গি (Conversational Fluency):
+   - উত্তরগুলো মুখে শোনানোর উপযোগী ২-৪ লাইনের সংক্ষিপ্ত, স্পষ্ট ও জীবন্ত বাক্যে কথা বলবে।
+   - প্রম্পটের সাথে পূর্বের স্মৃতি ও প্রাসঙ্গিক তথ্য যুক্ত আছে:
 ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি নেই।'}`;
     }
 
     /**
-     * Tool Definitions for Function Calling
+     * Tool Definitions for Function Calling — Full Database Matrix
      */
     getToolsSchema() {
         return [
@@ -151,6 +160,43 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             {
                 type: 'function',
                 function: {
+                    name: 'get_customer_ledger_history',
+                    description: 'কাস্টমারের শেষ চালান (কত টাকার কি মাল নিয়েছিল), শেষ পেমেন্ট (কবে কত টাকা জমা দিয়েছে) এবং সাম্প্রতিক লেনদেনের বিস্তারিত ইতিহাস জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: {
+                                type: 'string',
+                                description: 'কাস্টমারের নাম বা ফোন নম্বর'
+                            },
+                            limit: {
+                                type: 'number',
+                                description: 'কয়টি লেনদেন দেখতে চায় (ডিফল্ট ৫)'
+                            }
+                        },
+                        required: ['query']
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_daily_expenses',
+                    description: 'আজকের বা নির্দিষ্ট কোনো তারিখের অফিস খরচ, যাতায়াত খরচ বা মোট খরচের বিবরণ জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            date: {
+                                type: 'string',
+                                description: 'তারিখ YYYY-MM-DD ফরম্যাটে (যদি নির্দিষ্ট দিন চায়, না দিলে আজকের খরচ দেখাবে)'
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
                     name: 'get_cash_and_bank_status',
                     description: 'মা মোটরসের আজকের দিনের মোট ক্যাশ ইন হ্যান্ড, ব্যাংকের মোট ব্যালেন্স ও আর্থিক স্থিতি জানতে এটি কল করো।',
                     parameters: {
@@ -161,6 +207,31 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                                 enum: ['summary', 'detailed'],
                                 description: 'সংক্ষিপ্ত সারসংক্ষেপ নাকি বিস্তারিত তালিকা'
                             }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_master_treasury_status',
+                    description: 'মা মোটরসের ৪+ কোটি টাকার কেন্দ্রীয় মাস্টার ট্রেজারি ফান্ড ব্যালেন্স এবং সাম্প্রতিক ইনফ্লো ও আউটফ্লো জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {}
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_top_debtors_and_market_analytics',
+                    description: 'মার্কেটের সবচেয়ে বড় বকেয়াদার কারা (টপ ৫ বাকিদার) অথবা চট্টগ্রাম/নির্দিষ্ট জোনের মোট বকেয়া কত তা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            limit: { type: 'number', description: 'কয়জন কাস্টমার দেখতে চায় (ডিফল্ট ৫)' },
+                            zone: { type: 'string', description: 'নির্দিষ্ট কোনো জোন (যেমন: চট্টগ্রাম, ঢাকা)' }
                         }
                     }
                 }
@@ -226,26 +297,96 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 };
             }
 
+            if (name === 'get_customer_ledger_history') {
+                const query = (args?.query || args?.customerName || args?.customer_name || args?.name || '').trim();
+                const results = await ERPBridge.searchCustomers(query);
+                if (!results || results.length === 0) {
+                    return { found: false, message: `"${query}" নামে কোনো কাস্টমার পাওয়া যায়নি।` };
+                }
+                const customer = results[0];
+                const ledger = await ERPBridge.getCustomerLedger(customer.id, args?.limit || 5);
+                return {
+                    found: true,
+                    customerName: customer.name,
+                    totalDue: customer.totalDue,
+                    lastBill: ledger?.lastBill || null,
+                    lastPayment: ledger?.lastPayment || null,
+                    recentTransactions: ledger?.history || []
+                };
+            }
+
+            if (name === 'get_daily_expenses') {
+                const expenses = await ERPBridge.getDailyExpenses(args?.date || null);
+                if (!expenses) {
+                    return { success: false, message: 'খরচের হিসাব পাওয়া যায়নি।' };
+                }
+                return {
+                    success: true,
+                    date: expenses.date,
+                    totalExpense: expenses.totalExpense,
+                    categoryBreakdown: expenses.categoryBreakdown,
+                    itemsCount: expenses.count,
+                    sampleItems: expenses.items.slice(0, 5)
+                };
+            }
+
             if (name === 'get_cash_and_bank_status') {
                 const summary = await ERPBridge.getCashAndBankSummary();
+                if (!summary) {
+                    return { success: false, message: 'ব্যাংক ও ক্যাশের হিসাব লোড করা সম্ভব হয়নি।' };
+                }
                 return {
                     success: true,
                     totalBankBalance: summary.totalBankBalance,
                     totalPhysicalCash: summary.totalPhysicalCash,
                     totalHoldings: summary.totalHoldings,
-                    accountsCount: summary.accounts?.length || 0
+                    accounts: summary.accounts
+                };
+            }
+
+            if (name === 'get_master_treasury_status') {
+                const treasury = await ERPBridge.getTreasuryFundStatus();
+                if (!treasury) {
+                    return { success: false, message: 'মাস্টার ট্রেজারি ফান্ডের ব্যালেন্স পাওয়া যায়নি।' };
+                }
+                return {
+                    success: true,
+                    openingBalance: treasury.openingBalance,
+                    currentTreasuryBalance: treasury.currentTreasuryBalance,
+                    totalInflows: treasury.totalInflows,
+                    totalOutflows: treasury.totalOutflows,
+                    recentTransactions: treasury.recentTxns
+                };
+            }
+
+            if (name === 'get_top_debtors_and_market_analytics') {
+                const analytics = await ERPBridge.getTopDebtors(args?.limit || 5, args?.zone || null);
+                if (!analytics) {
+                    return { success: false, message: 'বকেয়া অ্যানালিটিক্স লোড করা সম্ভব হয়নি।' };
+                }
+                return {
+                    success: true,
+                    totalMarketDue: analytics.totalDueSum,
+                    totalDebtorsCount: analytics.totalDebtorsCount,
+                    topDebtors: analytics.topDebtors
                 };
             }
 
             if (name === 'get_dubai_container_status') {
                 const audit = await ERPBridge.getDubaiWeeklyAuditSummary();
+                if (!audit) {
+                    return { success: false, message: 'দুবাই সাপ্তাহিক অডিটের হিসাব এই মুহূর্তে পাওয়া যায়নি।' };
+                }
                 return {
                     success: true,
-                    status: audit.status,
-                    totalRemittanceAED: audit.totalRemittanceAED,
-                    totalExpenseAED: audit.totalExpenseAED,
-                    netCashAED: audit.netCashAED,
-                    auditDate: audit.auditDate
+                    auditDate: audit.date,
+                    cashInHandAED: audit.cashInHand,
+                    marketAdvanceAED: audit.marketAdvance,
+                    personalHoldings: audit.personalHoldings,
+                    messBalanceAED: audit.messBalance,
+                    totalPhysicalAssetsAED: audit.totalPhysicalAssets,
+                    calculatedCashBalanceAED: audit.calculatedCashBalance,
+                    varianceAED: audit.variance
                 };
             }
 

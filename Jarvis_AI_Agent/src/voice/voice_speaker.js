@@ -123,19 +123,27 @@ export class VoiceSpeaker {
     }
 
     // ─────────────────────────────────────────
-    // Native bn-BD Voice Discovery
+    // Native bn-BD Voice Discovery (Microsoft Edge Natural Neural Voices)
     // ─────────────────────────────────────────
     initNativeBnVoice() {
         if (!this.synth) return;
         const discover = () => {
             const voices = this.synth.getVoices();
-            // Prefer Bangladeshi Bengali, then Indian Bengali, then any Bengali
+            // Prioritize Microsoft Edge Natural Neural voices (Bashkar, Pradeep, Nabanita)
             this.selectedNativeBnVoice =
                 voices.find(v => v.lang === 'bn-BD' && (v.name.includes('Natural') || v.name.includes('Online'))) ||
+                voices.find(v => v.lang === 'bn-IN' && (v.name.includes('Natural') || v.name.includes('Online'))) ||
+                voices.find(v => (v.name.includes('Natural') || v.name.includes('Online')) && (v.name.includes('Bengali') || v.name.includes('Bangla'))) ||
+                voices.find(v => v.name.includes('Bashkar') || v.name.includes('Pradeep') || v.name.includes('Nabanita') || v.name.includes('Nabaneeta')) ||
+                voices.find(v => v.name.includes('Google') && (v.lang.startsWith('bn') || v.name.includes('Bangla') || v.name.includes('Bengali'))) ||
                 voices.find(v => v.lang === 'bn-BD') ||
                 voices.find(v => v.lang.startsWith('bn')) ||
                 voices.find(v => v.name.toLowerCase().includes('bangla') || v.name.toLowerCase().includes('bengali')) ||
                 null;
+
+            if (this.selectedNativeBnVoice) {
+                console.log(`[VoiceSpeaker] 🎙️ Discovered Native Voice: "${this.selectedNativeBnVoice.name}" (${this.selectedNativeBnVoice.lang})`);
+            }
         };
         discover();
         if (this.synth.onvoiceschanged !== undefined) {
@@ -172,20 +180,42 @@ export class VoiceSpeaker {
         const openAIKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_openai_key') || '').trim() : '';
         const elevenLabsKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_elevenlabs_key') || '').trim() : '';
         const gcpKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_gcp_tts_key') || '').trim() : '';
+        const azureKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_azure_key') || '').trim() : '';
+        const azureRegion = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_azure_region') || 'eastus').trim() : 'eastus';
 
         try {
-            // ── Priority 1: OpenAI TTS (if key available and active) ──
-            if (openAIKey && this.activeEngine === 'openai') {
+            // ── Priority 1: Azure Speech Neural REST API (if user entered Azure key) ──
+            if (azureKey) {
                 try {
-                    await this.speakOpenAI(cleanText, openAIKey, emotion);
+                    console.log('[VoiceSpeaker] 🎙️ Speaking with Microsoft Azure Speech Neural API...');
+                    await this.speakAzureNeural(cleanText, azureKey, azureRegion, emotion);
                     return;
                 } catch (err) {
-                    console.warn('[VoiceSpeaker] OpenAI TTS failed, falling back:', err.message);
+                    console.warn('[VoiceSpeaker] Azure Neural API failed, falling back:', err.message);
                 }
             }
 
-            // ── Priority 2: ElevenLabs TTS (Human-like, free tier) ──
-            // Always use ElevenLabs if key exists, as it is the best human voice for Bengali
+            // ── Priority 2: Microsoft Edge Natural Neural Voices via Browser SpeechSynthesis ──
+            // If the browser has Microsoft Natural (Online) voices or Google Bengali, use it for zero-latency, human-like voice
+            const isNaturalVoice = this.selectedNativeBnVoice && (
+                this.selectedNativeBnVoice.name.includes('Natural') ||
+                this.selectedNativeBnVoice.name.includes('Online') ||
+                this.selectedNativeBnVoice.name.includes('Bashkar') ||
+                this.selectedNativeBnVoice.name.includes('Pradeep') ||
+                this.selectedNativeBnVoice.name.includes('Google')
+            );
+
+            if (isNaturalVoice) {
+                try {
+                    console.log(`[VoiceSpeaker] 🎙️ Speaking with Microsoft Natural Voice: ${this.selectedNativeBnVoice.name}`);
+                    await this.speakBrowser(cleanText, emotion);
+                    return;
+                } catch (err) {
+                    console.warn('[VoiceSpeaker] Microsoft Natural voice playback failed, falling back:', err.message);
+                }
+            }
+
+            // ── Priority 3: ElevenLabs TTS (if key available and healthy) ──
             if (elevenLabsKey) {
                 try {
                     await this.speakElevenLabs(cleanText, elevenLabsKey, emotion);
@@ -195,7 +225,17 @@ export class VoiceSpeaker {
                 }
             }
 
-            // ── Priority 3: Google Cloud TTS (bn-BD-Neural2) ──
+            // ── Priority 4: OpenAI TTS (if key available and active) ──
+            if (openAIKey && this.activeEngine === 'openai') {
+                try {
+                    await this.speakOpenAI(cleanText, openAIKey, emotion);
+                    return;
+                } catch (err) {
+                    console.warn('[VoiceSpeaker] OpenAI TTS failed, falling back:', err.message);
+                }
+            }
+
+            // ── Priority 5: Google Cloud TTS (bn-BD-Neural2) ──
             if (gcpKey) {
                 try {
                     await this.speakGoogleCloudTTS(cleanText, gcpKey, emotion);
@@ -205,15 +245,15 @@ export class VoiceSpeaker {
                 }
             }
 
-            // ── Priority 4: Zero-Key High-Quality Online Bengali Voice (100% reliable) ──
+            // ── Priority 6: Zero-Key High-Quality Online Bengali Stream (Fallback) ──
             try {
                 await this.speakFreeBengaliTTS(cleanText);
                 return;
             } catch (err) {
-                console.warn('[VoiceSpeaker] Free Bengali stream TTS failed, falling back to browser:', err.message);
+                console.warn('[VoiceSpeaker] Free Bengali stream TTS failed, falling back to basic browser speech:', err.message);
             }
 
-            // ── Priority 5: Browser SpeechSynthesis (native device voices) ──
+            // ── Priority 7: Standard Browser SpeechSynthesis ──
             await this.speakBrowser(cleanText, emotion);
 
         } catch (fatalErr) {
@@ -222,6 +262,31 @@ export class VoiceSpeaker {
             this.isSpeaking = false;
             this.onEndCallback();
         }
+    }
+
+    // ─────────────────────────────────────────
+    // Engine: Microsoft Azure Speech Neural API
+    // ─────────────────────────────────────────
+    async speakAzureNeural(text, apiKey, region = 'eastus', emotion = 'neutral') {
+        const voiceName = this.selectedAzureVoice || 'bn-BD-BashkarNeural';
+        const ssml = `<speak version='1.0' xml:lang='bn-BD'><voice xml:lang='bn-BD' name='${voiceName}'>${text}</voice></speak>`;
+
+        const response = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+            method: 'POST',
+            headers: {
+                'Ocp-Apim-Subscription-Key': apiKey,
+                'Content-Type': 'application/ssml+xml',
+                'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3'
+            },
+            body: ssml
+        });
+
+        if (!response.ok) {
+            throw new Error(`Azure Speech API HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        return await this._playBlob(blob);
     }
 
     // ─────────────────────────────────────────

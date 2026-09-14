@@ -190,17 +190,237 @@ export const ERPBridge = {
                 activeCustomerCount++;
             });
 
-            return {
+            const snapshot = {
                 totalLiquidFund,
                 accounts,
+                totalBankBalance: safeRound(accounts.filter(a => !a.isCash).reduce((sum, a) => sum + a.balance, 0)),
+                totalPhysicalCash: safeRound(accounts.filter(a => a.isCash).reduce((sum, a) => sum + a.balance, 0)),
+                totalHoldings: totalLiquidFund,
                 totalMarketDue,
                 activeCustomerCount
             };
+
+            return snapshot;
         } catch (err) {
             console.error('ERPBridge getFinancialSnapshot error:', err);
             if (err.code === 'permission-denied') {
                 return { error: 'AUTH_REQUIRED' };
             }
+            return null;
+        }
+    },
+
+    /**
+     * Alias for getFinancialSnapshot to ensure seamless tool calling
+     */
+    async getCashAndBankSummary() {
+        return await this.getFinancialSnapshot();
+    },
+
+    /**
+     * Get Customer Ledger History: Last Invoice/Bill, Last Payment, and Recent Transactions
+     */
+    async getCustomerLedger(customerId, limitCount = 5) {
+        if (!customerId) return null;
+        try {
+            const txnsCol = collection(db, 'transactions');
+            const q = query(
+                txnsCol, 
+                where('customerId', '==', customerId),
+                orderBy('date', 'desc'),
+                limit(30)
+            );
+            const snap = await getDocs(q);
+
+            let lastBill = null;
+            let lastPayment = null;
+            const history = [];
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                const item = {
+                    id: doc.id,
+                    date: d.date || '',
+                    voucherNo: d.voucherNo || '',
+                    bill: safeRound(d.bill || 0),
+                    paid: safeRound(d.paid || 0),
+                    prevDue: safeRound(d.prevDue || 0),
+                    currentDue: safeRound(d.currentDue || 0),
+                    receivedType: d.receivedType || 'Cash',
+                    notes: d.notes || ''
+                };
+
+                if (!lastBill && item.bill > 0) {
+                    lastBill = item;
+                }
+                if (!lastPayment && item.paid > 0) {
+                    lastPayment = item;
+                }
+                if (history.length < limitCount) {
+                    history.push(item);
+                }
+            });
+
+            return {
+                lastBill,
+                lastPayment,
+                history
+            };
+        } catch (err) {
+            console.error('ERPBridge getCustomerLedger error:', err);
+            return null;
+        }
+    },
+
+    /**
+     * Get Daily Expenses by Date (defaults to today)
+     */
+    async getDailyExpenses(targetDate = null) {
+        const date = targetDate || new Date().toISOString().split('T')[0];
+        try {
+            const expCol = collection(db, 'expenses');
+            const q = query(expCol, where('date', '==', date));
+            const snap = await getDocs(q);
+
+            let totalExpense = 0;
+            const categoryBreakdown = {};
+            const items = [];
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                const amount = safeRound(data.amount || 0);
+                totalExpense = safeRound(totalExpense + amount);
+
+                const cat = data.category || 'অন্যান্য খরচ';
+                categoryBreakdown[cat] = safeRound((categoryBreakdown[cat] || 0) + amount);
+
+                items.push({
+                    id: doc.id,
+                    category: cat,
+                    amount,
+                    description: data.description || '',
+                    voucherNo: data.voucherNo || '',
+                    paymentMethod: data.paymentMethod || 'Cash'
+                });
+            });
+
+            return {
+                date,
+                totalExpense,
+                categoryBreakdown,
+                count: items.length,
+                items
+            };
+        } catch (err) {
+            console.error('ERPBridge getDailyExpenses error:', err);
+            return null;
+        }
+    },
+
+    /**
+     * Get Master Treasury Fund Status (opening balance + TreasuryTransactions)
+     */
+    async getTreasuryFundStatus() {
+        try {
+            // Read settings/treasury
+            let openingBalance = 0;
+            try {
+                const settingsSnap = await getDocs(collection(db, 'settings'));
+                settingsSnap.forEach(d => {
+                    if (d.id === 'treasury') {
+                        openingBalance = safeRound(d.data().openingBalance || 0);
+                    }
+                });
+            } catch (settingsErr) {
+                console.warn('Treasury settings read error:', settingsErr);
+            }
+
+            // Read TreasuryTransactions
+            const txnsCol = collection(db, 'TreasuryTransactions');
+            const q = query(txnsCol, orderBy('date', 'desc'), limit(50));
+            const snap = await getDocs(q);
+
+            let totalInflows = 0;
+            let totalOutflows = 0;
+            const recentTxns = [];
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                const amt = safeRound(data.amount || 0);
+                if (data.type === 'inflow') {
+                    totalInflows = safeRound(totalInflows + amt);
+                } else if (data.type === 'outflow') {
+                    totalOutflows = safeRound(totalOutflows + amt);
+                }
+                if (recentTxns.length < 5) {
+                    recentTxns.push({
+                        id: doc.id,
+                        date: data.date,
+                        title: data.title || '',
+                        type: data.type,
+                        amount: amt,
+                        note: data.note || ''
+                    });
+                }
+            });
+
+            const currentTreasuryBalance = safeRound(openingBalance + totalInflows - totalOutflows);
+
+            return {
+                openingBalance,
+                currentTreasuryBalance,
+                totalInflows,
+                totalOutflows,
+                recentTxns
+            };
+        } catch (err) {
+            console.error('ERPBridge getTreasuryFundStatus error:', err);
+            return null;
+        }
+    },
+
+    /**
+     * Get Top Debtors / Highest Market Dues
+     */
+    async getTopDebtors(limitCount = 5, targetZone = null) {
+        try {
+            const snap = await getDocs(collection(db, 'customers'));
+            const list = [];
+            let totalDueSum = 0;
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                const due = safeRound(data.totalDue || 0);
+                const zone = data.zone || '';
+
+                if (targetZone && !zone.toLowerCase().includes(targetZone.toLowerCase())) {
+                    return;
+                }
+
+                if (due > 0) {
+                    totalDueSum = safeRound(totalDueSum + due);
+                    list.push({
+                        id: doc.id,
+                        accountNo: data.accountNo || '',
+                        name: data.name || 'নামহীন',
+                        phone: data.phone || '',
+                        zone,
+                        address: data.address || '',
+                        totalDue: due
+                    });
+                }
+            });
+
+            list.sort((a, b) => b.totalDue - a.totalDue);
+            const top = list.slice(0, limitCount);
+
+            return {
+                totalDebtorsCount: list.length,
+                totalDueSum,
+                topDebtors: top
+            };
+        } catch (err) {
+            console.error('ERPBridge getTopDebtors error:', err);
             return null;
         }
     },
@@ -234,5 +454,12 @@ export const ERPBridge = {
             console.error('ERPBridge getLatestDubaiAudit error:', err);
             return null;
         }
+    },
+
+    /**
+     * Alias for Dubai Audit to match function calling
+     */
+    async getDubaiWeeklyAuditSummary() {
+        return await this.getLatestDubaiAudit();
     }
 };
