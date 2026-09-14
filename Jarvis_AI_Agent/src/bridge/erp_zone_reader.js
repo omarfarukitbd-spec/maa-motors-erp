@@ -123,7 +123,7 @@ export async function getDormantCustomers(daysThreshold = 30) {
             type: 'dormant_customers',
             thresholdDays: daysThreshold,
             dormantCount: dormantCustomers.length,
-            topDormant: dormantCustomers.slice(0, 10),
+            topDormant: dormantCustomers.slice(0, 25),
             totalDormantDue: dormantCustomers.reduce((acc, c) => safeRound(acc + c.totalDue), 0)
         };
     } catch (err) {

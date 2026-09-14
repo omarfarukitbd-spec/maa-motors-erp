@@ -1419,19 +1419,48 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             }
         }
 
-        // 12. Dormant / Inactive Debtors (অলস কাস্টমার বা অনেকদিন টাকা দেয় না)
-        if (/অলস.*কাস্টমার|নিষ্ক্রিয়|টাকা.*দেয়.*না|পেমেন্ট.*নেই|ঝুঁকিপূর্ণ.*বাকি|কতদিন.*টাকা.*দেয়.*না/i.test(lower)) {
-            const res = await this.executeToolCall('get_dormant_customers', { days: 30 });
+        // 12. Dormant / Unpaid Debtors (কারা বকেয়া টাকা দেয়নি / অলস কাস্টমার)
+        const isDormantQuery = 
+            /(?:কারা|কে\s*কে|কোন\s*কোন|কোন|তালিকা|লিস্ট).*(?:টাকা|বকেয়া|বাকী|পেমেন্ট).*(?:দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই|দেয়নাই|দেয়নাই|দেয়\s*না|দেয়\s*না|পরিশোধ\s*করেনি|পরিশোধ\s*করে\s*নাই|জমা\s*দেয়নি|জমা\s*দেয়নি|জমা\s*দেয়\s*নাই|জমা\s*দেয়\s*নাই)/i.test(lower) ||
+            /(?:টাকা|বকেয়া|বাকী|পেমেন্ট).*(?:দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই|দেয়নাই|দেয়নাই|দেয়\s*না|দেয়\s*না|পরিশোধ\s*করেনি).*(?:কারা|কে\s*কে|কোন|তালিকা|লিস্ট)/i.test(lower) ||
+            /অলস.*কাস্টমার|নিষ্ক্রিয়|পেমেন্ট.*নেই|ঝুঁকিপূর্ণ.*বাকি|টাকা.*দেয়নি|বকেয়া.*দেয়নি|বকেয়া.*দেয়\s*নাই|টাকা.*দেয়\s*নাই|টাকা.*দেয়\s*নাই/i.test(lower);
+
+        if (isDormantQuery) {
+            let days = 30;
+            const bengaliToAscii = str => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+            const normalized = bengaliToAscii(lower);
+
+            const daysNumMatch = normalized.match(/(\d+)\s*(?:দিন|days)/i);
+            if (daysNumMatch) {
+                days = parseInt(daysNumMatch[1], 10);
+            } else if (/এক\s*সপ্তাহ|১\s*সপ্তাহ|সাপ্তাহিক/i.test(normalized)) {
+                days = 7;
+            } else if (/দুই\s*মাস|২\s*মাস|দু\s*মাস/i.test(normalized)) {
+                days = 60;
+            } else if (/তিন\s*মাস|৩\s*মাস/i.test(normalized)) {
+                days = 90;
+            } else if (/এক\s*মাস|১\s*মাস|একমাস|মাসে/i.test(normalized)) {
+                days = 30;
+            }
+
+            const res = await this.executeToolCall('get_dormant_customers', { days });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, অলস কাস্টমারদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি ভাইয়া, বকেয়া পরিশোধ না করা কাস্টমারদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
-                const topDormant = res.topDormant.slice(0, 3).map(d => `${d.name} (${d.totalDue.toLocaleString('bn-BD')} টাকা, শেষ পেমেন্ট: ${d.lastPaymentDate})`).join(', ');
+                if (res.dormantCount === 0) {
+                    return {
+                        spoken: `জি ভাইয়া! বিগত ${days.toLocaleString('bn-BD')} দিনে এমন কোনো কাস্টমার নেই যিনি বকেয়া টাকা জমা দেননি।`,
+                        data: res
+                    };
+                }
+                const topDormant = (res.topDormant || []).slice(0, 3).map(d => `${d.name} (${d.totalDue.toLocaleString('bn-BD')} টাকা)`).join(', ');
+                const extraCount = res.dormantCount > 3 ? ` এবং আরও ${res.dormantCount - 3} জন` : '';
                 return {
-                    spoken: `জি ভাইয়া! বিগত ৩০ দিন বা তার বেশি সময় ধরে ১ টাকাও জমা দেননি এমন অলস কাস্টমার রয়েছেন ${res.dormantCount} জন। তাদের মোট বকেয়া হলো ${res.totalDormantDue.toLocaleString('bn-BD')} টাকা। শীর্ষ বাকিদারদের মধ্যে: ${topDormant}।`,
+                    spoken: `জি ভাইয়া! বিগত ${days.toLocaleString('bn-BD')} দিনে মা মোটরসে কোনো বকেয়া টাকা জমা দেননি এমন কাস্টমার রয়েছেন সর্বমোট ${res.dormantCount.toLocaleString('bn-BD')} জন। তাদের কাছে মোট আটকে থাকা বকেয়া হলো ${res.totalDormantDue.toLocaleString('bn-BD')} টাকা। শীর্ষ বাকিদারদের মধ্যে রয়েছেন: ${topDormant}${extraCount}।`,
                     data: res
                 };
             }
@@ -1509,7 +1538,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
 
         // 17. Customer Due, Ledger & Accounting Search Check (with Disambiguation)
         if (text.includes('বকেয়া') || text.includes('বাকী') || text.includes('হিসাব') || text.includes('ব্যালেন্স') || text.includes('টাকা') || text.includes('লেজার') || text.includes('চালান')) {
-            const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও|টাকা|লেজার|চালান)/g, '').trim();
+            const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও|টাকা|লেজার|চালান|কারা|কে|কে\s*কে|কোন|কোন\s*কোন|তালিকা|লিস্ট|সবাই|দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই)/g, '').trim();
+            if (/^(?:কারা|কে|কে\s*কে|কোন|কোন\s*কোন|তালিকা|লিস্ট|সবাই|দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই)$/i.test(cleanQuery) || cleanQuery.length < 2) {
+                return {
+                    spoken: 'জি ভাইয়া, নির্দিষ্ট কোনো কাস্টমারের বকেয়া জানতে কাস্টমারের নাম বলুন, অথবা কারা টাকা দেয়নি তা জানতে "কারা বকেয়া টাকা দেয়নি" বলুন।',
+                    data: null
+                };
+            }
             const res = await this.executeToolCall('get_customer_due', { query: cleanQuery || text });
             
             if (res.authRequired) {

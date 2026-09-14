@@ -640,13 +640,16 @@ function renderDataCardHtml(data) {
         `;
     }
 
-    // 8. Dormant Customers Card
+    // 8. Dormant Customers Card (বকেয়া টাকা দেয়নি এমন কাস্টমার তালিকা)
     if (data.type === 'dormant_customers') {
         const rows = (data.topDormant || []).map(d => `
             <tr>
-                <td style="font-weight:700;">${escapeHTML(d.name)}</td>
-                <td class="debit" style="font-weight:800;">৳ ${Number(d.totalDue).toLocaleString('bn-BD')}</td>
-                <td style="color:#94a3b8;font-size:10.5px;text-align:right;">${escapeHTML(d.lastPaymentDate)}</td>
+                <td style="font-weight:700;">
+                    <div style="color:#f8fafc;">${escapeHTML(d.name)}</div>
+                    <div style="font-size:10.5px;color:#94a3b8;">${escapeHTML(d.address || d.zone || 'সাধারণ')}</div>
+                </td>
+                <td class="debit" style="font-weight:800;text-align:right;">৳ ${Number(d.totalDue).toLocaleString('bn-BD')}</td>
+                <td style="color:#94a3b8;font-size:10.5px;text-align:right;">${escapeHTML(d.lastPaymentDate || 'কখনও দেননি')}</td>
             </tr>
         `).join('');
 
@@ -655,20 +658,26 @@ function renderDataCardHtml(data) {
                 <div class="data-card-header">
                     <span class="data-card-title">
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        অলস ও নিষ্ক্রিয় বাকিদার তালিকা (${Number(data.thresholdDays).toLocaleString('bn-BD')}+ দিন)
+                        বকেয়া টাকা দেয়নি এমন কাস্টমার তালিকা (বিগত ${Number(data.thresholdDays).toLocaleString('bn-BD')} দিন)
                     </span>
-                    <span class="data-card-badge" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#f87171;">${Number(data.dormantCount).toLocaleString('bn-BD')} জন</span>
+                    <span class="data-card-badge" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#f87171;">মোট: ${Number(data.dormantCount).toLocaleString('bn-BD')} জন</span>
                 </div>
+                <div class="data-card-grid" style="margin-bottom:8px;">
+                    <div class="data-stat-box"><div class="data-stat-label">মোট বাকিদার</div><div class="data-stat-value debit">${Number(data.dormantCount || 0).toLocaleString('bn-BD')} জন</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">মোট অনাদায়ী বকেয়া</div><div class="data-stat-value debit">৳ ${Number(data.totalDormantDue || 0).toLocaleString('bn-BD')}</div></div>
+                </div>
+                ${rows ? `
                 <table class="data-card-table">
                     <thead>
                         <tr>
-                            <th>কাস্টমার</th>
-                            <th>বকেয়া</th>
+                            <th>কাস্টমার ও এলাকা</th>
+                            <th style="text-align:right;">অবশিষ্ট বকেয়া</th>
                             <th style="text-align:right;">শেষ পেমেন্ট</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
+                ` : '<div style="font-size:11.5px;color:#94a3b8;text-align:center;padding:8px;">এই সময়ে বকেয়া অপরিশোধিত কোনো কাস্টমার নেই</div>'}
             </div>
         `;
     }
