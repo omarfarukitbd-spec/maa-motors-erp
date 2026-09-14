@@ -80,61 +80,142 @@ export function numberToSpokenBangla(number) {
     return isNegative ? `মাইনাস ${res}` : res;
 }
 
+// Memory cache for fast customer searching
+let cachedCustomers = null;
+let lastCustomerFetchTime = 0;
+const CACHE_TTL_MS = 60 * 1000; // 1 minute
+
+/**
+ * Extract meaningful search tokens with Bengali grammar stemming & speech recognition typo tolerance
+ */
+export function extractBengaliSearchTokens(searchTerm) {
+    const rawTerm = String(searchTerm || '').trim().toLowerCase();
+    if (!rawTerm) return [];
+
+    const stopwords = [
+        'কাস্টমার', 'সাহেব', 'সাহেবের', 'ভাই', 'ভাইয়ের', 'বকেয়া', 'বকে', 'বাকী',
+        'হিসাব', 'ব্যালেন্স', 'কত', 'বলো', 'জানাও', 'টাকা', 'দেখা', 'দেখাও',
+        'খাতা', 'রিপোর্ট', 'এর', 'দোকান', 'দোকানের'
+    ];
+
+    const words = rawTerm
+        .replace(/[?.,!।:;'"()\/\\]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length >= 2);
+
+    const keywords = new Set();
+
+    for (const w of words) {
+        if (stopwords.includes(w)) continue;
+        keywords.add(w);
+
+        // Bengali grammatical suffixes: ের (e-kar + ra), এর, দের, র, কে
+        let root = w;
+        if (root.endsWith('ের')) {
+            root = root.slice(0, -2);
+        } else if (root.endsWith('এর')) {
+            root = root.slice(0, -2);
+        } else if (root.endsWith('দের')) {
+            root = root.slice(0, -3);
+        } else if (root.endsWith('র') && root.length >= 4) {
+            root = root.slice(0, -1);
+        } else if (root.endsWith('কে') && root.length >= 4) {
+            root = root.slice(0, -2);
+        }
+
+        if (root.length >= 2 && !stopwords.includes(root)) {
+            keywords.add(root);
+        }
+
+        // Voice-to-text / speech recognition typo tolerance (e.g. ডান্ডার -> ভান্ডার / ভাণ্ডার)
+        if (w.includes('ডান্ডার') || root.includes('ডান্ডার')) {
+            keywords.add('ভান্ডার');
+            keywords.add('ভাণ্ডার');
+        }
+        if (w.includes('ভান্ডার') || root.includes('ভান্ডার')) {
+            keywords.add('ভাণ্ডার');
+        }
+        if (w.includes('ভাণ্ডার') || root.includes('ভাণ্ডার')) {
+            keywords.add('ভান্ডার');
+        }
+        if (w.includes('জাভেদ') || root.includes('জাভেদ')) {
+            keywords.add('জাবেদ');
+        }
+        if (w.includes('জাবেদ') || root.includes('জাবেদ')) {
+            keywords.add('জাভেদ');
+        }
+    }
+
+    return Array.from(keywords);
+}
+
 /**
  * 🛡️ ERP Safe Read-Only Bridge
  * Directly reads Firestore collections without mutating or risking production records.
  */
 export const ERPBridge = {
     /**
-     * Search Customers by Name, Phone, Address, or Zone with Multi-Token Matching
+     * Search Customers by Name, Phone, Address, or Zone with Multi-Token Weighted Matching
      */
     async searchCustomers(searchTerm) {
-        const rawTerm = String(searchTerm || '').trim().toLowerCase();
-        if (!rawTerm) return [];
-
-        // Extract meaningful tokens, stripping common honorifics/stopwords
-        const tokens = rawTerm
-            .replace(/(কাস্টমার|সাহেব|সাহেবের|ভাই|ভাইয়ের|এর|বকেয়া|বকে|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|টাকা|দেখা|দেখাও|খাতা|রিপোর্ট)/gi, ' ')
-            .split(/\s+/)
-            .filter(t => t.length >= 2);
-
-        const searchKeywords = tokens.length > 0 ? tokens : [rawTerm];
+        const searchKeywords = extractBengaliSearchTokens(searchTerm);
+        if (searchKeywords.length === 0) {
+            const fallback = String(searchTerm || '').trim().toLowerCase();
+            if (fallback.length >= 2) searchKeywords.push(fallback);
+            else return [];
+        }
 
         try {
-            const snap = await getDocs(collection(db, 'customers'));
-            const list = [];
+            let snapDocs = [];
+            const now = Date.now();
+            if (cachedCustomers && (now - lastCustomerFetchTime < CACHE_TTL_MS)) {
+                snapDocs = cachedCustomers;
+            } else {
+                const snap = await getDocs(collection(db, 'customers'));
+                snapDocs = [];
+                snap.forEach(doc => {
+                    snapDocs.push({ id: doc.id, ...doc.data() });
+                });
+                cachedCustomers = snapDocs;
+                lastCustomerFetchTime = now;
+            }
 
-            snap.forEach(doc => {
-                const data = doc.data();
+            const scoredList = [];
+
+            for (const data of snapDocs) {
                 const name = (data.name || '').toLowerCase();
                 const phone = (data.phone || '');
                 const address = (data.address || '').toLowerCase();
                 const zone = (data.zone || '').toLowerCase();
-                const accountNo = (data.accountNo || '');
+                const accountNo = (data.accountNo || '').toLowerCase();
 
-                // Check if any search token matches name, phone, address, or zone
-                const isMatch = searchKeywords.some(tok => 
-                    name.includes(tok) || 
-                    phone.includes(tok) || 
-                    address.includes(tok) || 
-                    zone.includes(tok) || 
-                    accountNo.includes(tok)
-                );
+                let score = 0;
+                for (const tok of searchKeywords) {
+                    if (name.includes(tok)) score += 10;
+                    if (phone.includes(tok)) score += 15;
+                    if (accountNo.includes(tok)) score += 15;
+                    if (address.includes(tok)) score += 6;
+                    if (zone.includes(tok)) score += 4;
+                }
 
-                if (isMatch) {
-                    list.push({
-                        id: doc.id,
+                if (score > 0) {
+                    scoredList.push({
+                        score,
+                        id: data.id,
                         name: data.name || 'নামহীন',
                         phone: data.phone || 'মোবাইল নেই',
                         address: data.address || '',
                         zone: data.zone || '',
+                        accountNo: data.accountNo || '',
                         totalDue: safeRound(data.totalDue || 0), // Canonical Net Due
                         initialDue: safeRound(data.initialDue || 0) // Opening Balance
                     });
                 }
-            });
+            }
 
-            return list;
+            // Sort by highest relevance match score first
+            scoredList.sort((a, b) => b.score - a.score);
+            return scoredList;
         } catch (err) {
             console.error('ERPBridge searchCustomers error:', err);
             if (err.code === 'permission-denied') {
@@ -297,6 +378,9 @@ export const ERPBridge = {
             };
         } catch (err) {
             console.error('ERPBridge getCustomer360Profile error:', err);
+            if (err.code === 'permission-denied') {
+                return { error: 'AUTH_REQUIRED' };
+            }
             return null;
         }
     },
@@ -352,6 +436,9 @@ export const ERPBridge = {
             };
         } catch (err) {
             console.error('ERPBridge getCustomerLedger error:', err);
+            if (err.code === 'permission-denied') {
+                return { error: 'AUTH_REQUIRED' };
+            }
             return null;
         }
     },

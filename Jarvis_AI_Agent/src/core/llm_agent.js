@@ -257,7 +257,12 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                     description: 'মা মোটরসের ৪+ কোটি টাকার কেন্দ্রীয় মাস্টার ট্রেজারি ফান্ড ব্যালেন্স এবং সাম্প্রতিক ইনফ্লো ও আউটফ্লো জানতে এটি কল করো।',
                     parameters: {
                         type: 'object',
-                        properties: {}
+                        properties: {
+                            filter: {
+                                type: 'string',
+                                description: 'ঐচ্ছিক ফিল্টার বা প্রশ্ন (যেমন: summary, balance)'
+                            }
+                        }
                     }
                 }
             },
@@ -385,11 +390,17 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             if (name === 'get_customer_ledger_history') {
                 const query = (args?.query || args?.customerName || args?.customer_name || args?.name || '').trim();
                 const results = await ERPBridge.searchCustomers(query);
+                if (results?.error === 'AUTH_REQUIRED') {
+                    return { found: false, authRequired: true, message: 'কাস্টমার লেজার দেখতে মা মোটরসের অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
                 if (!results || results.length === 0) {
                     return { found: false, message: `"${query}" নামে কোনো কাস্টমার পাওয়া যায়নি।` };
                 }
                 const customer = results[0];
                 const ledger = await ERPBridge.getCustomerLedger(customer.id, args?.limit || 5);
+                if (ledger?.error === 'AUTH_REQUIRED') {
+                    return { found: false, authRequired: true, message: 'কাস্টমার লেজার দেখতে মা মোটরসের অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
                 return {
                     found: true,
                     customerName: customer.name,
@@ -402,6 +413,9 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
 
             if (name === 'get_daily_expenses') {
                 const expenses = await ERPBridge.getDailyExpenses(args?.date || null);
+                if (expenses?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'খরচের হিসাব দেখতে সাইন ইন করতে হবে।' };
+                }
                 if (!expenses) {
                     return { success: false, message: 'খরচের হিসাব পাওয়া যায়নি।' };
                 }
@@ -417,6 +431,9 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
 
             if (name === 'get_cash_and_bank_status') {
                 const summary = await ERPBridge.getCashAndBankSummary();
+                if (summary?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'ক্যাশ ও ব্যাংকের লাইভ হিসাব দেখতে মা মোটরসের অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
                 if (!summary) {
                     return { success: false, message: 'ব্যাংক ও ক্যাশের হিসাব লোড করা সম্ভব হয়নি।' };
                 }
@@ -856,27 +873,64 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             };
         }
 
-        // 2. Customer Due Search Check
-        if (text.includes('বকেয়া') || text.includes('বাকী') || text.includes('হিসাব') || text.includes('ব্যালেন্স')) {
-            const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও)/g, '').trim();
-            if (cleanQuery) {
-                const res = await this.executeToolCall('get_customer_due', { query: cleanQuery });
-                if (res.found) {
-                    return {
-                        spoken: `জি ভাইয়া, আমি চেক করেছি। ${res.name}-এর বর্তমান অবশিষ্ট বকেয়া হলো ${res.totalDue.toLocaleString('bn-BD')} টাকা। আপনি চাইলে ওনার নম্বরে যোগাযোগ করতে পারেন।`,
-                        data: res
-                    };
-                }
+        // 2. Customer Due, Ledger & Accounting Search Check
+        if (text.includes('বকেয়া') || text.includes('বাকী') || text.includes('হিসাব') || text.includes('ব্যালেন্স') || text.includes('টাকা') || text.includes('লেজার') || text.includes('চালান')) {
+            const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও|টাকা|লেজার|চালান)/g, '').trim();
+            const res = await this.executeToolCall('get_customer_due', { query: cleanQuery || text });
+            
+            if (res.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, মা মোটরসের কাস্টমার বকেয়া ও লাইভ হিসাব দেখতে প্রথমে উপরের "গুগল লগইন" বাটনে চাপ দিয়ে আপনার অনুমোদিত একাউন্টে সাইন ইন করে নিন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res.found) {
+                const addressStr = res.address ? ` (${res.address})` : '';
+                return {
+                    spoken: `জি ভাইয়া, আমি চেক করেছি। ${res.name}${addressStr}-এর বর্তমান অবশিষ্ট বকেয়া হলো ${res.totalDue.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            } else {
+                return {
+                    spoken: `জি ভাইয়া, "${cleanQuery || text}" নামে কোনো কাস্টমার বা দোকান মা মোটরসের ডেটাবেজে খুঁজে পাওয়া যায়নি। কাস্টমারের নাম, দোকান বা এলাকা একটু স্পষ্ট করে বললে আমি সাথে সাথে সঠিক হিসাবটি বের করে দেবো।`,
+                    data: null
+                };
             }
         }
 
         // 3. Cash & Bank Status
         if (text.includes('ক্যাশ') || text.includes('ব্যাংক') || text.includes('টাকা জমা') || text.includes('কালেকশন')) {
             const res = await this.executeToolCall('get_cash_and_bank_status', { detail: 'summary' });
-            return {
-                spoken: `জি ভাইয়া! বর্তমানে আমাদের ক্যাশ ইন হ্যান্ড রয়েছে ${res.totalPhysicalCash.toLocaleString('bn-BD')} টাকা এবং ব্যাংকে মোট ব্যালেন্স রয়েছে ${res.totalBankBalance.toLocaleString('bn-BD')} টাকা।`,
-                data: res
-            };
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, ক্যাশ ও ব্যাংকের লাইভ হিসাব দেখতে মা মোটরসের অনুমোদিত একাউন্টে সাইন ইন করে নিন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! বর্তমানে আমাদের ক্যাশ ইন হ্যান্ড রয়েছে ${res.totalPhysicalCash.toLocaleString('bn-BD')} টাকা এবং ব্যাংকে মোট ব্যালেন্স রয়েছে ${res.totalBankBalance.toLocaleString('bn-BD')} টাকা। মোট ফান্ড হলো ${res.totalHoldings.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            }
+        }
+
+        // 3b. Direct Name / Shop Search fallback (e.g., user just spoke a customer/shop name)
+        if (text.length >= 3 && !text.includes('?') && !text.includes('কি') && !text.includes('কেন')) {
+            const directSearch = await this.executeToolCall('get_customer_due', { query: text });
+            if (directSearch?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, কাস্টমারের তথ্য ও বকেয়া হিসাব দেখার জন্য মা মোটরস গুগল একাউন্টে সাইন ইন করে নিন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (directSearch && directSearch.found) {
+                const addressStr = directSearch.address ? ` (${directSearch.address})` : '';
+                return {
+                    spoken: `জি ভাইয়া, ${directSearch.name}${addressStr}-এর বর্তমান অবশিষ্ট বকেয়া হলো ${directSearch.totalDue.toLocaleString('bn-BD')} টাকা।`,
+                    data: directSearch
+                };
+            }
         }
 
         // 4. If key was provided but an error occurred

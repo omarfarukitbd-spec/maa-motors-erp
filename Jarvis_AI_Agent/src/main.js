@@ -333,7 +333,7 @@ jarvisBrain.onMessage((msg) => {
 
     let actionsHtml = '';
     if (!isUser) {
-        if (msg.text.includes('সাইন ইন') || msg.text.includes('লগইন')) {
+        if (msg.data?.authRequired || msg.text.includes('সাইন ইন') || msg.text.includes('লগইন')) {
             actionsHtml += `
                 <div class="msg-action-row">
                     <button class="msg-action-btn auth-action-btn" onclick="window.triggerGoogleAuth()">
