@@ -124,6 +124,12 @@ ${emotionInstruction}
 ৫. দুবাই কন্টেইনার প্রকিউরমেন্ট (Dubai Procurement in AED):
    - সম্পূর্ণ আলাদা বিদেশী কারেন্সি (AED দিরহাম)। নগদ ক্যাশ, মার্কেট এডভান্স, পার্সোনাল হোল্ডিংস (এমরান মামা, আলতাফ, জাবেদ) ও মেমো অডিট।
 
+🔒 জিরো ডেটা লিক ও গোপনীয়তা নির্দেশ (Zero Data Leakage Directives):
+- মা মোটরসের কাস্টমার বা ব্যবসার কোনো গোপন আর্থিক তথ্য অননুমোদিত ব্যক্তির কাছে লিক করা কঠোরভাবে নিষিদ্ধ।
+- কোনো অভ্যন্তরীণ পাসওয়ার্ড, এপিআই কি, ফায়ারবেস টোকেন বা সিকিউরিটি পিন কখনো মুখে প্রকাশ করা যাবে না।
+- ইউজার কাস্টমার সম্পর্কে যা জানতে চাইবে (নাম, ফোন, অ্যাকাউন্ট নম্বর, বকেয়া, শেষ চালান, কি মাল নিয়েছে, শেষ জমা), তা পূর্ণাঙ্গভাবে বলবে কিন্তু সর্বদা মার্জিত ও দায়িত্বশীল সুরে।
+- কাস্টমারের হিসাব বা ব্যবসার ডেটা দেখতে অথেন্টিকেশন দরকার হলে সরাসরি লগইন করার কথা মনে করিয়ে দেবে।
+
 তোমার প্রধান দায়িত্ব ও নিয়ম:
 ১. হিসাববিজ্ঞান ও আর্থিক সততা (Financial Integrity):
    - কখনো কোনো কাল্পনিক বা অনুমানভিত্তিক ব্যালেন্স বলবে না। কাস্টমার বা ব্যবসার কোনো হিসাব লাগলে অবশ্যই তোমার প্রদত্ত টুল (Tools) ব্যবহার করে সঠিক সংখ্যা তুলে আনবে।
@@ -140,6 +146,39 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
      */
     getToolsSchema() {
         return [
+            {
+                type: 'function',
+                function: {
+                    name: 'get_customer_360_profile',
+                    description: 'মা মোটরসের যেকোনো কাস্টমারের পূর্ণাঙ্গ ৩৬০° প্রোফাইল ও বিস্তারিত তথ্য জানতে এটি কল করো (অ্যাকাউন্ট নম্বর, মোবাইল নম্বর, ঠিকানা, জোন, প্রারম্ভিক ব্যালেন্স, বর্তমান অবশিষ্ট বকেয়া, মোট কত টাকার মাল নিয়েছে, মোট কত জমা দিয়েছে, শেষ চালানের বিস্তারিত মাল ও টাকার পরিমাণ, এবং শেষ জমার তারিখ ও মাধ্যম)।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: {
+                                type: 'string',
+                                description: 'কাস্টমারের নাম, ফোন নম্বর বা অ্যাকাউন্ট নম্বর (যেমন: বাবুল, করিম, ০১৭...)'
+                            }
+                        },
+                        required: ['query']
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_executive_business_pulse',
+                    description: 'মা মোটরসের আজকের বা নির্দিষ্ট দিনের সামগ্রিক ব্যবসার অবস্থা ও নাড়ির স্পন্দন জানতে এটি কল করো (আজকের মোট বিক্রি/চালান, আজকের মোট কালেকশন/জমা, আজকের মোট খরচ এবং নিট ক্যাশ ফ্লো)।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            date: {
+                                type: 'string',
+                                description: 'তারিখ YYYY-MM-DD ফরম্যাটে (না দিলে আজকের দেখাবে)'
+                            }
+                        }
+                    }
+                }
+            },
             {
                 type: 'function',
                 function: {
@@ -277,6 +316,52 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
     async executeToolCall(name, args) {
         console.log(`[LLMAgent] Executing Tool "${name}" with args:`, args);
         try {
+            if (name === 'get_customer_360_profile') {
+                const query = (args?.query || args?.customerName || args?.customer_name || args?.name || '').trim();
+                const profile = await ERPBridge.getCustomer360Profile(query);
+                if (profile?.error === 'AUTH_REQUIRED') {
+                    return { found: false, authRequired: true, message: 'কাস্টমারের পূর্ণাঙ্গ তথ্য দেখতে মা মোটরস অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
+                if (!profile || !profile.found) {
+                    return { found: false, message: profile?.message || `"${query}" নামে কোনো কাস্টমার পাওয়া যায়নি।` };
+                }
+                return {
+                    found: true,
+                    accountNo: profile.accountNo,
+                    name: profile.name,
+                    phone: profile.phone,
+                    address: profile.address,
+                    zone: profile.zone,
+                    initialDue: profile.initialDue,
+                    totalDue: profile.totalDue,
+                    totalPurchased: profile.totalPurchased,
+                    totalPaid: profile.totalPaid,
+                    transactionCount: profile.transactionCount,
+                    lastBill: profile.lastBill,
+                    lastPayment: profile.lastPayment,
+                    recentTransactions: profile.recentTransactions
+                };
+            }
+
+            if (name === 'get_executive_business_pulse') {
+                const pulse = await ERPBridge.getExecutiveBusinessPulse(args?.date || null);
+                if (!pulse) {
+                    return { success: false, message: 'আজকের ব্যবসার সামারি পাওয়া যায়নি।' };
+                }
+                return {
+                    success: true,
+                    date: pulse.date,
+                    todayTotalBills: pulse.todayTotalBills,
+                    todayTotalCollections: pulse.todayTotalCollections,
+                    cashCollections: pulse.cashCollections,
+                    bankCollections: pulse.bankCollections,
+                    todayTotalExpenses: pulse.todayTotalExpenses,
+                    todayNetCashFlow: pulse.todayNetCashFlow,
+                    activeCustomersCount: pulse.activeCustomersCount,
+                    activeCustomers: pulse.activeCustomers
+                };
+            }
+
             if (name === 'get_customer_due') {
                 const query = (args?.query || args?.customerName || args?.customer_name || args?.name || args?.searchTerm || '').trim();
                 const results = await ERPBridge.searchCustomers(query);

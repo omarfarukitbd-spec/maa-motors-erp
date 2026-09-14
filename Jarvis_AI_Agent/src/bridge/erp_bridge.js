@@ -218,6 +218,90 @@ export const ERPBridge = {
     },
 
     /**
+     * Customer 360° Profile & Deep Ledger Analytics
+     * Fetches complete customer profile, aggregate totals, last bill details, and last payment history
+     */
+    async getCustomer360Profile(searchTerm) {
+        if (!searchTerm) return null;
+        try {
+            const matches = await this.searchCustomers(searchTerm);
+            if (matches && matches.error === 'AUTH_REQUIRED') {
+                return { error: 'AUTH_REQUIRED' };
+            }
+            if (!matches || matches.length === 0) {
+                return { found: false, message: `"${searchTerm}" নামে কোনো কাস্টমার পাওয়া যায়নি।` };
+            }
+
+            const customer = matches[0];
+            const txnsCol = collection(db, 'transactions');
+            const q = query(
+                txnsCol,
+                where('customerId', '==', customer.id),
+                orderBy('date', 'desc'),
+                limit(50)
+            );
+            const snap = await getDocs(q);
+
+            let totalPurchased = 0;
+            let totalPaid = 0;
+            let lastBill = null;
+            let lastPayment = null;
+            const history = [];
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                const bill = safeRound(d.bill || 0);
+                const paid = safeRound(d.paid || 0);
+                totalPurchased = safeRound(totalPurchased + bill);
+                totalPaid = safeRound(totalPaid + paid);
+
+                const item = {
+                    id: doc.id,
+                    date: d.date || '',
+                    voucherNo: d.voucherNo || '',
+                    bill,
+                    paid,
+                    prevDue: safeRound(d.prevDue || 0),
+                    currentDue: safeRound(d.currentDue || 0),
+                    receivedType: d.receivedType || 'Cash',
+                    notes: d.notes || ''
+                };
+
+                if (!lastBill && bill > 0) {
+                    lastBill = item;
+                }
+                if (!lastPayment && paid > 0) {
+                    lastPayment = item;
+                }
+                if (history.length < 5) {
+                    history.push(item);
+                }
+            });
+
+            return {
+                found: true,
+                id: customer.id,
+                accountNo: customer.accountNo || 'অ্যাকাউন্ট নম্বর নেই',
+                name: customer.name || 'নামহীন',
+                phone: customer.phone || 'মোবাইল নেই',
+                address: customer.address || 'ঠিকানা দেওয়া নেই',
+                zone: customer.zone || 'জোন নির্ধারিত নেই',
+                initialDue: customer.initialDue || 0,
+                totalDue: customer.totalDue || 0,
+                totalPurchased,
+                totalPaid,
+                transactionCount: snap.size,
+                lastBill,
+                lastPayment,
+                recentTransactions: history
+            };
+        } catch (err) {
+            console.error('ERPBridge getCustomer360Profile error:', err);
+            return null;
+        }
+    },
+
+    /**
      * Get Customer Ledger History: Last Invoice/Bill, Last Payment, and Recent Transactions
      */
     async getCustomerLedger(customerId, limitCount = 5) {
@@ -268,6 +352,64 @@ export const ERPBridge = {
             };
         } catch (err) {
             console.error('ERPBridge getCustomerLedger error:', err);
+            return null;
+        }
+    },
+
+    /**
+     * Executive Daily Business Pulse (Sales, Collections, Expenses, Net Cash Flow)
+     */
+    async getExecutiveBusinessPulse(targetDate = null) {
+        const date = targetDate || new Date().toISOString().split('T')[0];
+        try {
+            // 1. Fetch Today's Transactions
+            const txnsCol = collection(db, 'transactions');
+            const txnsQuery = query(txnsCol, where('date', '==', date));
+            const txnsSnap = await getDocs(txnsQuery);
+
+            let todayTotalBills = 0;
+            let todayTotalCollections = 0;
+            let cashCollections = 0;
+            let bankCollections = 0;
+            const activeCustomerNames = new Set();
+
+            txnsSnap.forEach(doc => {
+                const d = doc.data();
+                const bill = safeRound(d.bill || 0);
+                const paid = safeRound(d.paid || 0);
+                todayTotalBills = safeRound(todayTotalBills + bill);
+                todayTotalCollections = safeRound(todayTotalCollections + paid);
+
+                if ((d.receivedType || '').toLowerCase().includes('cash')) {
+                    cashCollections = safeRound(cashCollections + paid);
+                } else if (paid > 0) {
+                    bankCollections = safeRound(bankCollections + paid);
+                }
+
+                if (d.customerName) activeCustomerNames.add(d.customerName);
+            });
+
+            // 2. Fetch Today's Expenses
+            const expensesData = await this.getDailyExpenses(date);
+            const todayTotalExpenses = expensesData?.totalExpense || 0;
+
+            // Universal Invariant 3: Net Cash Flow = Total Collection - Total Expenses
+            const todayNetCashFlow = safeRound(todayTotalCollections - todayTotalExpenses);
+
+            return {
+                date,
+                todayTotalBills,
+                todayTotalCollections,
+                cashCollections,
+                bankCollections,
+                todayTotalExpenses,
+                todayNetCashFlow,
+                activeCustomersCount: activeCustomerNames.size,
+                activeCustomers: Array.from(activeCustomerNames).slice(0, 5),
+                expenseBreakdown: expensesData?.categoryBreakdown || {}
+            };
+        } catch (err) {
+            console.error('ERPBridge getExecutiveBusinessPulse error:', err);
             return null;
         }
     },
