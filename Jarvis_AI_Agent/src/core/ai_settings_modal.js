@@ -198,8 +198,8 @@ export class AISettingsModal {
             };
         }
 
-        // ✅ Updated model list (2026)
-        const modelsToTry = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+        // ✅ Updated model list (2026 active models)
+        const modelsToTry = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
         let lastError = '';
 
         for (const model of modelsToTry) {

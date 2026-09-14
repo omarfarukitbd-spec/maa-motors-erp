@@ -20,8 +20,8 @@ export class LLMAgent {
         }
 
         this.openaiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_model')) || 'gpt-4o-mini';
-        // ✅ Fixed: correct model names (gemini-flash-latest was deprecated)
-        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-2.0-flash';
+        // ✅ Updated: gemini-3.6-flash (current active standard model)
+        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-3.6-flash';
         this.currentEmotion = 'neutral'; // Detected from user input
     }
 
@@ -412,7 +412,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             throw new Error('জেমিনি এআই কী পাওয়া যায়নি');
         }
 
-        const modelsToTry = [this.geminiModel, 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+        const modelsToTry = [this.geminiModel, 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
         const candidateModels = [...new Set(modelsToTry.filter(Boolean))];
 
         // Detect emotion and pass to system prompt
