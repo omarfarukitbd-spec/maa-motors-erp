@@ -412,7 +412,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             throw new Error('জেমিনি এআই কী পাওয়া যায়নি');
         }
 
-        const modelsToTry = [this.geminiModel, 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
+        const modelsToTry = [this.geminiModel, 'gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-lite-latest', 'gemini-3.6-flash'];
         const candidateModels = [...new Set(modelsToTry.filter(Boolean))];
 
         // Detect emotion and pass to system prompt
@@ -507,12 +507,12 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 lastErrData = await res.json().catch(() => ({}));
                 console.warn(`[LLMAgent] Gemini model ${model} returned error:`, lastErrData);
 
-                // If not found or deprecated, try next model in candidateModels
-                if (res.status === 404 || res.status === 503) {
+                // If not found, busy, or rate-limited (429), continue to next candidate model!
+                if (res.status === 404 || res.status === 503 || res.status === 429) {
                     continue;
                 }
 
-                // If tools payload was rejected (e.g. 400), break and try conversational fallback below
+                // If tools payload was rejected (e.g. 400), try fallback below
                 response = res;
                 activeModel = model;
                 break;
@@ -521,36 +521,34 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             }
         }
 
-        const activeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${cleanKey}`;
-
         if (!response || !response.ok) {
-            // Fallback attempt: Try pure conversational without tools
-            let simpleResp;
-            try {
-                simpleResp = await fetch(activeUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        system_instruction: systemInstruction,
-                        contents: cleanTurns
-                    })
-                });
-            } catch (simpleFetchErr) {
-                console.error('[LLMAgent] Simple conversational fallback error:', simpleFetchErr);
-                throw new Error(`নেটওয়ার্ক ত্রুটি: ${simpleFetchErr.message}`);
+            // Fallback attempt: Try pure conversational without tools on multiple models
+            for (const fallbackModel of ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-lite-latest']) {
+                try {
+                    const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${cleanKey}`;
+                    const simpleResp = await fetch(fallbackUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            system_instruction: systemInstruction,
+                            contents: cleanTurns
+                        })
+                    });
+                    if (simpleResp.ok) {
+                        const simpleResult = await simpleResp.json();
+                        const parts = simpleResult.candidates?.[0]?.content?.parts || [];
+                        const textPart = parts.find(p => p.text);
+                        if (textPart?.text) {
+                            return { spoken: textPart.text, data: null };
+                        }
+                    }
+                } catch (simpleFetchErr) {
+                    console.error(`[LLMAgent] Fallback error with ${fallbackModel}:`, simpleFetchErr);
+                }
             }
 
-            if (!simpleResp.ok) {
-                const fatalErr = await simpleResp.json().catch(() => ({}));
-                const errMsg = fatalErr.error?.message || lastErrData?.error?.message || 'গুগল সার্ভার থেকে কোনো উত্তর পাওয়া যায়নি।';
-                throw new Error(errMsg);
-            }
-
-            const simpleResult = await simpleResp.json();
-            const parts = simpleResult.candidates?.[0]?.content?.parts || [];
-            const textPart = parts.find(p => p.text);
-            const spoken = textPart?.text || 'জি ভাইয়া, আমি আপনার কথা শুনেছি।';
-            return { spoken, data: null };
+            const errMsg = lastErrData?.error?.message || 'গুগল সার্ভার এই মুহূর্তে কিছুটা ব্যস্ত রয়েছে।';
+            throw new Error(errMsg);
         }
 
         const result = await response.json();
@@ -608,6 +606,15 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
     async chatLocalEmpathetic(text, hasKey = false, errorMsg = '') {
         const lower = text.toLowerCase();
 
+        // 0. Natural Greetings & Wake Word conversational responses
+        if (/হ্যালো|হাই|hello|hi|নমস্কার|সালাম|জার্ভিস|শুনছো|আছো/.test(lower)) {
+            const timeGreeting = this.getTimeGreeting();
+            return {
+                spoken: `${timeGreeting} ভাইয়া! আসসালামু আলাইকুম। আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় কাস্টমার বকেয়া, ক্যাশ স্থিতি ও ব্যাংকের হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি। বলুন ভাইয়া, কীভাবে সাহায্য করবো?`,
+                data: null
+            };
+        }
+
         // 1. Emotion / Sentiment Detection
         if (lower.includes('মেজাজ খারাপ') || lower.includes('বিরক্ত') || lower.includes('মন খারাপ') || lower.includes('কষ্ট') || lower.includes('চাপ')) {
             return {
@@ -648,15 +655,21 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
 
         // 4. If key was provided but an error occurred
         if (hasKey && errorMsg) {
+            let friendlyMsg = 'গুগল এআই সার্ভার এই মুহূর্তে কিছুটা ব্যস্ত রয়েছে।';
+            if (errorMsg.includes('quota') || errorMsg.includes('limit') || errorMsg.includes('429')) {
+                friendlyMsg = 'গুগলের ফ্রি এআই কোটা সাময়িকভাবে বিরতিতে আছে।';
+            } else if (errorMsg.includes('API key') || errorMsg.includes('INVALID_ARGUMENT')) {
+                friendlyMsg = 'এআই কী-টি সঠিক নয় বলে মনে হচ্ছে।';
+            }
             return {
-                spoken: `জি ভাইয়া, আপনার এআই কী (API Key)-তে সংযোগ করতে একটি সমস্যা হয়েছে: "${errorMsg}"। দয়া করে "AI সেটিংস" থেকে কী-টি সঠিক আছে কিনা তা একটু যাচাই করে নিন।`,
+                spoken: `জি ভাইয়া, ${friendlyMsg} তবে মা মোটরসের কাস্টমার বকেয়া, মেমো বা ক্যাশ রিপোর্ট দেখতে আমি সম্পূর্ণ প্রস্তুত আছি। বলুন কার হিসাব দেখবেন?`,
                 data: null
             };
         }
 
         // 5. Fallback with Guidance
         return {
-            spoken: 'জি ভাইয়া, আমি আপনার কথা শুনেছি। চ্যাটজিপিটি বা জেমিনি এআই-এর পূর্ণাঙ্গ বুদ্ধিমত্তা সক্রিয় রাখতে উপরের AI সেটিংস থেকে আপনার এআই কী যুক্ত করে নিতে পারেন। এছাড়া আপনি যেকোনো কাস্টমারের বকেয়া বা ব্যাংক হিসাব সরাসরি জানতে পারেন।',
+            spoken: 'জি ভাইয়া, আমি আপনার কথা শুনেছি। আপনি মা মোটরসের যেকোনো কাস্টমারের বকেয়া, ক্যাশ বা ব্যাংকের হিসাব সরাসরি জানতে পারেন। বলুন কীভাবে সাহায্য করবো?',
             data: null
         };
     }
