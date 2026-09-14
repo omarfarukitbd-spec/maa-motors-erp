@@ -1076,6 +1076,123 @@ function renderDataCardHtml(data) {
         `;
     }
 
+    // 21. Reverse Amount / Reference Search Card
+    if (data.type === 'amount_lookup_result') {
+        const cat = data.matchCategory;
+        const isAdvance = cat === 'advance';
+        const isDue = cat === 'due';
+        const isTxn = cat === 'transaction';
+        
+        let badgeText = isAdvance ? 'অগ্রিম জমা অ্যাকাউন্ট' : (isDue ? 'বকেয়া অ্যাকাউন্ট' : 'লেনদেন ভাউচার');
+        let badgeColor = isAdvance ? 'rgba(16,185,129,0.15)' : (isDue ? 'rgba(239,68,68,0.15)' : 'rgba(56,189,248,0.15)');
+        let badgeTextColor = isAdvance ? '#34d399' : (isDue ? '#f87171' : '#38bdf8');
+        
+        let contentHtml = '';
+        if (isAdvance || isDue) {
+            const rows = (data.allMatches || []).map(m => `
+                <tr>
+                    <td style="font-weight:700;">
+                        <div style="color:#f8fafc;">${escapeHTML(m.name)}</div>
+                        <div style="font-size:10px;color:#94a3b8;">${escapeHTML(m.address || m.zone || 'সাধারণ')} | মো: ${escapeHTML(m.phone || '-')}</div>
+                    </td>
+                    <td style="color:#cbd5e1;font-size:11px;">${escapeHTML(m.accountNo || '-')}</td>
+                    <td class="${isAdvance ? 'credit' : 'debit'}" style="font-weight:800;text-align:right;">
+                        ৳ ${Number(isAdvance ? m.advanceAmount : m.totalDue).toLocaleString('bn-BD')}
+                    </td>
+                </tr>
+            `).join('');
+
+            contentHtml = `
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার ও যোগাযোগ</th>
+                            <th>হিসাব নং</th>
+                            <th style="text-align:right;">${isAdvance ? 'অগ্রিম স্থিতি' : 'অবশিষ্ট বকেয়া'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        } else if (isTxn) {
+            const rows = (data.allMatches || []).map(m => `
+                <tr>
+                    <td style="font-weight:700;color:#f8fafc;">${escapeHTML(m.customerName)}</td>
+                    <td style="font-size:11px;color:#38bdf8;">${escapeHTML(m.voucherNo || '-')}</td>
+                    <td style="font-size:11px;color:#94a3b8;">${escapeHTML(m.date)}</td>
+                    <td class="${m.isPayment ? 'credit' : 'debit'}" style="font-weight:800;text-align:right;">
+                        ৳ ${Number(m.amount).toLocaleString('bn-BD')} (${m.isPayment ? 'জমা' : 'চালান'})
+                    </td>
+                </tr>
+            `).join('');
+
+            contentHtml = `
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার</th>
+                            <th>ভাউচার/চালান</th>
+                            <th>তারিখ</th>
+                            <th style="text-align:right;">টাকা ও ধরণ</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        রিভার্স অ্যামাউন্ট অনুসন্ধান (৳ ${Number(data.searchedAmount || 0).toLocaleString('bn-BD')})
+                    </span>
+                    <span class="data-card-badge" style="background:${badgeColor};border-color:${badgeColor};color:${badgeTextColor};">${badgeText}</span>
+                </div>
+                ${contentHtml}
+            </div>
+        `;
+    }
+
+    // 22. Business Demographics & Matrix Card
+    if (data.type === 'business_demographics') {
+        const bankRows = (data.activeBanks || []).map(b => `
+            <div style="font-size:11px;color:#cbd5e1;padding:3px 0;display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.05);">
+                <span style="font-weight:600;color:#38bdf8;">${escapeHTML(b.name)}</span>
+                <span style="color:#94a3b8;">হিসাব: ${escapeHTML(b.accountNo || '-')}</span>
+            </div>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        মা মোটরস সামগ্রিক ব্যবসায়িক পরিসংখ্যান
+                    </span>
+                    <span class="data-card-badge">মোট কাস্টমার: ${Number(data.totalCustomers || 0).toLocaleString('bn-BD')} জন</span>
+                </div>
+                <div class="data-card-grid" style="margin-bottom:8px;">
+                    <div class="data-stat-box"><div class="data-stat-label">বকেয়া দেনাদার</div><div class="data-stat-value debit">${Number(data.debtorCount || 0).toLocaleString('bn-BD')} জন</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">অগ্রিম জমাকারী</div><div class="data-stat-value credit">${Number(data.advanceCount || 0).toLocaleString('bn-BD')} জন</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">বকেয়ামুক্ত কাস্টমার</div><div class="data-stat-value" style="color:#38bdf8;">${Number(data.zeroDueCount || 0).toLocaleString('bn-BD')} জন</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">সক্রিয় ব্যাংক হিসাব</div><div class="data-stat-value" style="color:#e2e8f0;">${Number(data.activeBanksCount || 0).toLocaleString('bn-BD')} টি</div></div>
+                </div>
+                <div class="data-card-grid" style="margin-bottom:8px;">
+                    <div class="data-stat-box"><div class="data-stat-label">মোট মার্কেট বকেয়া</div><div class="data-stat-value debit">৳ ${Number(data.totalMarketDue || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">মোট অগ্রিম পুঁজি</div><div class="data-stat-value credit">৳ ${Number(data.totalAdvanceSum || 0).toLocaleString('bn-BD')}</div></div>
+                </div>
+                ${bankRows ? `
+                <div style="margin-top:6px;background:rgba(0,0,0,0.25);border-radius:6px;padding:6px 8px;">
+                    <div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:4px;text-transform:uppercase;">সক্রিয় ব্যাংক অ্যাকাউন্টসমূহ</div>
+                    ${bankRows}
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
     return '';
 }
 

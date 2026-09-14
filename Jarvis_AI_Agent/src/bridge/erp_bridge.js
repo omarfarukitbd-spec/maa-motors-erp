@@ -17,8 +17,9 @@ import { getCollectionRecoveryEfficiency, getAdvancePayingCustomers } from './er
 import { getSpecificBankStatementSummary, getTopInflowBank } from './erp_bank_deep_reader.js';
 import { getMonthlyNetCashflow } from './erp_cashflow_reader.js';
 import { parseRelativeBengaliDate, getHistoricalDateSummary } from './erp_history_reader.js';
+import { searchCustomerOrTxnByAmount, getGeneralBusinessDemographics, parseBanglaOrEnglishNumber } from './erp_lookup_reader.js';
 
-export { parseRelativeBengaliDate };
+export { parseRelativeBengaliDate, searchCustomerOrTxnByAmount, getGeneralBusinessDemographics, parseBanglaOrEnglishNumber };
 
 /**
  * Mathematical Floating-Point Safe Rounder (Accounting Standard)
@@ -118,7 +119,9 @@ export function extractBengaliSearchTokens(searchTerm) {
     const stopwords = [
         'কাস্টমার', 'সাহেব', 'সাহেবের', 'ভাই', 'ভাইয়ের', 'বকেয়া', 'বকে', 'বাকী',
         'হিসাব', 'ব্যালেন্স', 'কত', 'বলো', 'জানাও', 'টাকা', 'দেখা', 'দেখাও',
-        'খাতা', 'রিপোর্ট', 'এর', 'দোকান', 'দোকানের'
+        'খাতা', 'রিপোর্ট', 'এর', 'দোকান', 'দোকানের', 'অগ্রিম', 'জমা', 'রয়েছে',
+        'আছে', 'এটা', 'কোন', 'কোনটা', 'একাউন্ট', 'অ্যাকাউন্ট', 'কার', 'কাদের',
+        'কে', 'কেকে', 'নম্বর', 'নাম্বার', 'দাও', 'দেও', 'বল'
     ];
 
     const words = rawTerm
@@ -1253,5 +1256,15 @@ export const ERPBridge = {
     },
     parseRelativeBengaliDate(text) {
         return parseRelativeBengaliDate(text);
+    },
+
+    /**
+     * Reverse Search by Amount & Business Demographics
+     */
+    async searchCustomerOrTxnByAmount(amountInput, hintType = 'any') {
+        return await searchCustomerOrTxnByAmount(amountInput, hintType);
+    },
+    async getGeneralBusinessDemographics() {
+        return await getGeneralBusinessDemographics();
     }
 };

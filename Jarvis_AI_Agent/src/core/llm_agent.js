@@ -1,4 +1,4 @@
-import { ERPBridge, parseRelativeBengaliDate, getTodayLocalDateString } from '../bridge/erp_bridge.js';
+import { ERPBridge, parseRelativeBengaliDate, getTodayLocalDateString, parseBanglaOrEnglishNumber } from '../bridge/erp_bridge.js';
 import { memoryVault } from './memory_vault.js';
 import { disambiguationManager } from './disambiguation_manager.js';
 
@@ -124,6 +124,12 @@ ${emotionInstruction}
    - মূল প্রতিষ্ঠানের কেন্দ্রীয় ফান্ড (৪+ কোটি টাকা) যেখানে সমস্ত বড় ইনফ্লো ও আউটফ্লো সংরক্ষিত হয়।
 ৫. দুবাই কন্টেইনার প্রকিউরমেন্ট (Dubai Procurement in AED):
    - সম্পূর্ণ আলাদা বিদেশী কারেন্সি (AED দিরহাম)। নগদ ক্যাশ, মার্কেট এডভান্স, পার্সোনাল হোল্ডিংস (এমরান মামা, আলতাফ, জাবেদ) ও মেমো অডিট।
+৬. রিভার্স অ্যামাউন্ট ও রেফারেন্স অনুসন্ধান (Reverse Amount & Reference Lookup):
+   - ইউজার যদি কোনো টাকার অঙ্ক দিয়ে জানতে চায় "এটা কোন একাউন্ট?" বা "৫,৫০০ টাকা কার?", অথবা পূর্বের বার্তার প্রেক্ষিতে রেফারেন্স করে "এটা কার / এটা কোন একাউন্ট", তবে 'search_by_amount_or_reference' টুল ব্যবহার করে অ্যাকাউন্ট বা ট্রানজেকশন বের করবে।
+৭. সাধারণ ব্যবসায়িক পরিসংখ্যান (General Demographics):
+   - মোট কাস্টমার সংখ্যা, কতজন দেনাদার, কতজনের অগ্রিম জমা, বকেয়ামুক্ত বা জিরো ব্যালেন্স কাস্টমার অথবা কয়টি সক্রিয় ব্যাংক অ্যাকাউন্ট আছে জানতে 'get_business_demographics' টুল ব্যবহার করবে।
+৮. কাস্টমারের নির্দিষ্ট তথ্য (Customer Attributes):
+   - কাস্টমারের ফোন নম্বর, ঠিকানা, একাউন্ট নম্বর, শেষ চালান বা শেষ পেমেন্ট জানতে 'get_customer_attribute' বা 'get_customer_360_profile' ব্যবহার করবে।
 
 🔒 জিরো ডেটা লিক ও গোপনীয়তা নির্দেশ (Zero Data Leakage Directives):
 - মা মোটরসের কাস্টমার বা ব্যবসার কোনো গোপন আর্থিক তথ্য অননুমোদিত ব্যক্তির কাছে লিক করা কঠোরভাবে নিষিদ্ধ।
@@ -589,6 +595,49 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                         required: ['targetDate']
                     }
                 }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'search_by_amount_or_reference',
+                    description: 'নির্দিষ্ট কোনো টাকার অঙ্ক দিয়ে (যেমন: ৫,৫০০ টাকা অগ্রিম কোন একাউন্ট, কার বকেয়া ৫,৫০০ টাকা, অথবা ১০,০০০ টাকার ভাউচার কার) সংশ্লিষ্ট কাস্টমার বা লেনদেন খুঁজতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            amount: { type: 'string', description: 'টাকার পরিমাণ (যেমন: 5500 বা "৫,৫০০")' },
+                            hintType: { type: 'string', enum: ['advance', 'due', 'transaction', 'any'], description: 'অগ্রিম নাকি বকেয়া নাকি লেনদেন' }
+                        },
+                        required: ['amount']
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_customer_attribute',
+                    description: 'নির্দিষ্ট কোনো কাস্টমারের ফোন নম্বর, ঠিকানা, অ্যাকাউন্ট নম্বর, শেষ চালান, শেষ পেমেন্ট বা আজীবন মোট কত টাকার মাল নিয়েছে তা সরাসরি জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            customerName: { type: 'string', description: 'কাস্টমারের নাম বা অ্যাকাউন্ট নম্বর' },
+                            attribute: { type: 'string', enum: ['phone', 'address', 'accountNo', 'lastBill', 'lastPayment', 'totals', 'all'], description: 'কোন তথ্য জানতে চায়' }
+                        },
+                        required: ['customerName']
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_business_demographics',
+                    description: 'মা মোটরসের মোট কাস্টমার সংখ্যা, কতজন দেনাদার (বাকিদার), কতজনের অগ্রিম জমা, কতজনের কোনো বকেয়া নেই এবং সক্রিয় ব্যাংক অ্যাকাউন্ট কয়টি তা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            detail: { type: 'string', description: 'ঐচ্ছিক ফিল্টার' }
+                        }
+                    }
+                }
             }
         ];
     }
@@ -981,6 +1030,42 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 return { success: true, message: 'তথ্যটি জার্ভিস মেমোরিতে সফলভাবে সংরক্ষিত হয়েছে।' };
             }
 
+            if (name === 'search_by_amount_or_reference') {
+                const res = await ERPBridge.searchCustomerOrTxnByAmount(args?.amount, args?.hintType || 'any');
+                return res;
+            }
+
+            if (name === 'get_customer_attribute') {
+                const customerName = (args?.customerName || args?.query || '').trim();
+                const profile = await ERPBridge.getCustomer360Profile(customerName);
+                if (profile?.error === 'AUTH_REQUIRED') {
+                    return { found: false, authRequired: true, message: 'কাস্টমার তথ্য দেখতে লগইন প্রয়োজন।' };
+                }
+                if (!profile || !profile.found) {
+                    return { found: false, message: `"${customerName}" নামে কোনো কাস্টমার পাওয়া যায়নি।` };
+                }
+                return {
+                    found: true,
+                    type: 'customer_attribute_result',
+                    attribute: args?.attribute || 'all',
+                    name: profile.name,
+                    phone: profile.phone,
+                    address: profile.address,
+                    zone: profile.zone,
+                    accountNo: profile.accountNo,
+                    totalDue: profile.totalDue,
+                    totalPurchased: profile.totalPurchased,
+                    totalPaid: profile.totalPaid,
+                    lastBill: profile.lastBill,
+                    lastPayment: profile.lastPayment
+                };
+            }
+
+            if (name === 'get_business_demographics') {
+                const res = await ERPBridge.getGeneralBusinessDemographics();
+                return res;
+            }
+
             return { error: 'Unknown tool' };
         } catch (err) {
             console.error(`[LLMAgent] Tool execution error (${name}):`, err);
@@ -1063,7 +1148,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         }
 
         // 2. Fallback to Local Semantic & Tool Engine
-        return await this.chatLocalEmpathetic(userMessage, Boolean(geminiKey || openAIKey), geminiErrorMsg || openAiErrorMsg);
+        return await this.chatLocalEmpathetic(userMessage, Boolean(geminiKey || openAIKey), geminiErrorMsg || openAiErrorMsg, history);
     }
 
     /**
@@ -1354,7 +1439,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
     /**
      * Empathetic Local Fallback (When API key has errors or is not yet configured)
      */
-    async chatLocalEmpathetic(text, hasKey = false, errorMsg = '') {
+    async chatLocalEmpathetic(text, hasKey = false, errorMsg = '', history = []) {
         const lower = text.toLowerCase();
 
         // 0. Natural Greetings & Wake Word conversational responses
@@ -1362,6 +1447,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const timeGreeting = this.getTimeGreeting();
             return {
                 spoken: `${timeGreeting} ভাইয়া! আসসালামু আলাইকুম। আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় কাস্টমার বকেয়া, ক্যাশ স্থিতি ও ব্যাংকের হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি। বলুন ভাইয়া, কীভাবে সাহায্য করবো?`,
+                data: null
+            };
+        }
+
+        // 0.5 Capabilities & Help Guidance (কি কি করতে পারো / কি জানতে পারি)
+        if (/তুমি কি কি করতে পারো|তোমার কি কি ক্ষমতা|কি কি জানতে পারি|সাহায্য|হেল্প|help|কিভাবে সাহায্য করতে পারো|কি কি জানতে পারবো/i.test(lower)) {
+            return {
+                spoken: 'জি ভাইয়া! আমি মেসার্স মা মোটরসের প্রধান এআই নির্বাহী সহকারী। আপনি আমার কাছে জানতে পারেন:\n১. যেকোনো কাস্টমারের বর্তমান অবশিষ্ট বকেয়া, মোবাইল নম্বর, ঠিকানা ও শেষ চালান বা পেমেন্ট।\n২. নির্দিষ্ট টাকার অঙ্ক দিয়ে (যেমন: ৫,৫০০ টাকা অগ্রিম কোন একাউন্ট) রিভার্স অনুসন্ধান।\n৩. আজকের মোট বিক্রি, শোরুম ক্যাশ ও ব্যাংকে কালেকশন এবং অফিসের খরচের হিসাব।\n৪. প্রতিটি ব্যাংকের বর্তমান লাইভ ব্যালেন্স এবং শোরুমের ক্যাশ ইন হ্যান্ড স্থিতি।\n৫. মোট কতজন কাস্টমার, দেনাদার সংখ্যা, সেরা বাকিদার বা অলস কাস্টমারদের তালিকা।\n৬. অতীত যেকোনো দিনের সম্পূর্ণ হিসাব এবং দুবাই কন্টেইনার অডিট রিপোর্ট।\nবলুন ভাইয়া, এখন কোন হিসাবটি দেখতে চান?',
                 data: null
             };
         }
@@ -1379,6 +1472,139 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 spoken: 'আলহামদুলিল্লাহ ভাইয়া, আমি একদম প্রস্তুত আছি! আপনার মা মোটরসের যাবতীয় হিসাব ও লেজার সার্বক্ষণিক আমার নজরে রয়েছে। বলুন ভাইয়া, কীভাবে সাহায্য করবো?',
                 data: null
             };
+        }
+
+        // 1.2 General Business Demographics (মোট কাস্টমার সংখ্যা / দেনাদার সংখ্যা / ব্যাংক একাউন্ট কয়টি / জিরো বকেয়া)
+        if (/(?:মোট\s*কাস্টমার|কাস্টমার\s*সংখ্যা|কত\s*জন\s*কাস্টমার|মোট\s*দেনাদার|দেনাদার\s*সংখ্যা|কত\s*জন\s*বাকিদার|বাকিদার\s*সংখ্যা|কত\s*জনের\s*বকেয়া|জিরো\s*বকেয়া|বকেয়া\s*নেই|কোনো\s*বাকি\s*নেই|বাকি\s*মুক্ত|কয়টি\s*ব্যাংক|কয়টা\s*ব্যাংক|ব্যাংক\s*অ্যাকাউন্ট\s*কয়টি)/i.test(lower)) {
+            const res = await this.executeToolCall('get_business_demographics', {});
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! মা মোটরসের ডেটাবেজে সর্বমোট ${res.totalCustomers.toLocaleString('bn-BD')} জন কাস্টমার নিবন্ধিত আছেন। এর মধ্যে বকেয়া দেনাদার রয়েছেন ${res.debtorCount.toLocaleString('bn-BD')} জন, অগ্রিম জমা রয়েছে ${res.advanceCount.toLocaleString('bn-BD')} জনের এবং কোনো বকেয়া নেই ${res.zeroDueCount.toLocaleString('bn-BD')} জনের। এছাড়া আমাদের সক্রিয় ব্যাংক অ্যাকাউন্ট রয়েছে ${res.activeBanksCount.toLocaleString('bn-BD')}টি।`,
+                    data: res
+                };
+            }
+        }
+
+        // 1.3 Reverse Amount & Contextual Account Lookup ("অগ্রিম জমা রয়েছে ৫,৫০০ টাকা এটা কোন একাউন্ট", "৫,৫০০ টাকা কার?", "এটা কোন একাউন্ট?")
+        const isReverseLookupQuery = /(?:টাকা.*(?:কার|কোন|কোনটা|একাউন্ট|অ্যাকাউন্ট|কাস্টমার)|(?:কার|কোন|কোনটা|একাউন্ট|অ্যাকাউন্ট|কাস্টমার).*(?:টাকা|বকেয়া|অগ্রিম|জমা)|এটা\s*কোন\s*একাউন্ট|এটা\s*কার|কোন\s*একাউন্ট|কার\s*একাউন্ট|কার\s*টাকা|কে\s*দিল|কে\s*দিলো)/i.test(lower);
+        
+        let reverseTargetAmount = 0;
+        let reverseHintType = 'any';
+        if (/অগ্রিম|এডভান্স|জমা\s*রয়েছে|জমা\s*আছে/i.test(lower)) reverseHintType = 'advance';
+        else if (/বকেয়া|বাকী|দেনা/i.test(lower)) reverseHintType = 'due';
+
+        // Extract amount from current query
+        const directNumMatch = text.match(/(?:[০-৯0-9,]+(?:\.[০-৯0-9]+)?)/);
+        if (directNumMatch) {
+            reverseTargetAmount = parseBanglaOrEnglishNumber(directNumMatch[0]);
+        }
+
+        // If no amount in query, check if this is an anaphoric follow-up ("এটা কোন একাউন্ট?", "এটা কার?")
+        if (reverseTargetAmount <= 0 && isReverseLookupQuery && Array.isArray(history) && history.length > 0) {
+            const lastAssistantMsg = [...history].reverse().find(m => m.sender === 'assistant' || m.role === 'assistant');
+            if (lastAssistantMsg && lastAssistantMsg.text) {
+                if (/অগ্রিম/i.test(lower) || /অগ্রিম/i.test(lastAssistantMsg.text)) {
+                    const advMatch = lastAssistantMsg.text.match(/অগ্রিম\s*(?:জমা\s*(?:রয়েছে|আছে|হলো)?)?\s*([০-৯0-9,]+)\s*টাকা/i);
+                    if (advMatch && advMatch[1]) {
+                        reverseTargetAmount = parseBanglaOrEnglishNumber(advMatch[1]);
+                        reverseHintType = 'advance';
+                    }
+                }
+                if (reverseTargetAmount <= 0) {
+                    const numMatch = lastAssistantMsg.text.match(/([০-৯0-9,]+)\s*টাকা/);
+                    if (numMatch && numMatch[1]) {
+                        reverseTargetAmount = parseBanglaOrEnglishNumber(numMatch[1]);
+                    }
+                }
+            }
+        }
+
+        if (isReverseLookupQuery && reverseTargetAmount > 0) {
+            const res = await this.executeToolCall('search_by_amount_or_reference', { amount: reverseTargetAmount, hintType: reverseHintType });
+            if (res && res.found) {
+                const match = res.primaryMatch;
+                const contactInfo = match.phone ? ` (মোবাইল: ${match.phone})` : (match.address ? ` (${match.address})` : '');
+                
+                if (res.matchCategory === 'advance') {
+                    const extra = res.totalMatchesCount > 1 ? ` এবং আরও ${(res.totalMatchesCount - 1).toLocaleString('bn-BD')} জনের এমন অগ্রিম রয়েছে` : '';
+                    return {
+                        spoken: `জি ভাইয়া! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা অগ্রিম জমা রয়েছে "${match.name}"${contactInfo}-এর একাউন্টে। উনার বর্তমান অগ্রিম স্থিতি হলো ${Number(match.advanceAmount).toLocaleString('bn-BD')} টাকা${extra}।`,
+                        data: res
+                    };
+                } else if (res.matchCategory === 'due') {
+                    const extra = res.totalMatchesCount > 1 ? ` এবং আরও ${(res.totalMatchesCount - 1).toLocaleString('bn-BD')} জনের এমন বকেয়া রয়েছে` : '';
+                    return {
+                        spoken: `জি ভাইয়া! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা অবশিষ্ট বকেয়া রয়েছে "${match.name}"${contactInfo}-এর একাউন্টে${extra}।`,
+                        data: res
+                    };
+                } else if (res.matchCategory === 'transaction') {
+                    if (match.isPayment) {
+                        return {
+                            spoken: `জি ভাইয়া! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা জমা দিয়েছিলেন "${match.customerName}" (${match.date} তারিখে, ভাউচার: ${match.voucherNo || 'নেই'})।`,
+                            data: res
+                        };
+                    } else {
+                        return {
+                            spoken: `জি ভাইয়া! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকার চালান নেওয়া হয়েছিল "${match.customerName}"-এর নামে (${match.date} তারিখে, চালান: ${match.voucherNo || 'নেই'})।`,
+                            data: res
+                        };
+                    }
+                }
+            } else if (res && !res.found) {
+                return {
+                    spoken: `জি ভাইয়া, মা মোটরসের ডেটাবেজে ${reverseTargetAmount.toLocaleString('bn-BD')} টাকার কোনো অগ্রিম জমা বা অবশিষ্ট বকেয়া রেকর্ড পাওয়া যায়নি।`,
+                    data: null
+                };
+            }
+        }
+
+        // 1.4 Customer Specific Attribute Inquiries (Phone, Address, AccountNo, Last Bill, Last Payment, Lifetime Business)
+        const isAttributeQuery = /(?:ফোন|মোবাইল|নাম্বার|নম্বর|ঠিকানা|দোকান|এরিয়া|এলাকা|অ্যাকাউন্ট\s*নম্বর|একাউন্ট\s*নাম্বার|শেষ\s*পেমেন্ট|শেষ\s*চালান|শেষ\s*বিল|মোট\s*মাল|মোট\s*বিক্রি|কত\s*টাকার\s*মাল|মোট\s*জমা)/i.test(lower);
+        if (isAttributeQuery) {
+            const cleanCustName = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|ফোন|মোবাইল|নাম্বার|নম্বর|ঠিকানা|দোকান|এরিয়া|এলাকা|অ্যাকাউন্ট|একাউন্ট|শেষ|পেমেন্ট|চালান|বিল|মোট|মাল|বিক্রি|কত|টাকার|জমা|দাও|দেও|বলো|জানাও|দেখাও|কোথায়|কি|কী)/g, '').trim();
+            if (cleanCustName.length >= 2 && !/^(?:ফোন|মোবাইল|নাম্বার|নম্বর|ঠিকানা|দোকান|অ্যাকাউন্ট|শেষ|পেমেন্ট|চালান|বিল)$/i.test(cleanCustName)) {
+                const profile = await ERPBridge.getCustomer360Profile(cleanCustName);
+                if (profile && profile.found) {
+                    if (/ফোন|মোবাইল|নাম্বার|নম্বর/i.test(lower)) {
+                        return {
+                            spoken: `জি ভাইয়া! ${profile.name}-এর মোবাইল নম্বর হলো ${profile.phone || 'দেওয়া নেই'}।`,
+                            data: profile
+                        };
+                    }
+                    if (/ঠিকানা|দোকান|এরিয়া|এলাকা/i.test(lower)) {
+                        return {
+                            spoken: `জি ভাইয়া! ${profile.name}-এর ঠিকানা হলো: ${profile.address || 'ঠিকানা দেওয়া নেই'} (${profile.zone || 'সাধারণ জোন'})।`,
+                            data: profile
+                        };
+                    }
+                    if (/অ্যাকাউন্ট|একাউন্ট/i.test(lower)) {
+                        return {
+                            spoken: `জি ভাইয়া! ${profile.name}-এর অ্যাকাউন্ট নম্বর হলো ${profile.accountNo || 'নির্ধারিত নেই'}।`,
+                            data: profile
+                        };
+                    }
+                    if (/শেষ\s*পেমেন্ট|শেষ\s*জমা/i.test(lower)) {
+                        const lp = profile.lastPayment ? `${profile.lastPayment.date} তারিখে ${Number(profile.lastPayment.amount).toLocaleString('bn-BD')} টাকা (${profile.lastPayment.receivedType || 'ক্যাশ'})` : 'কোনো জমার রেকর্ড নেই';
+                        return {
+                            spoken: `জি ভাইয়া! ${profile.name} শেষবার ${lp} পরিশোধ করেছেন।`,
+                            data: profile
+                        };
+                    }
+                    if (/শেষ\s*চালান|শেষ\s*বিল/i.test(lower)) {
+                        const lb = profile.lastBill ? `${profile.lastBill.date} তারিখে ${Number(profile.lastBill.amount).toLocaleString('bn-BD')} টাকার চালান (${profile.lastBill.voucherNo || ''})` : 'কোনো চালানের রেকর্ড নেই';
+                        return {
+                            spoken: `জি ভাইয়া! ${profile.name}-এর শেষ চালান ছিল ${lb}।`,
+                            data: profile
+                        };
+                    }
+                    if (/মোট\s*মাল|মোট\s*বিক্রি|কত\s*টাকার\s*মাল|মোট\s*জমা/i.test(lower)) {
+                        return {
+                            spoken: `জি ভাইয়া! ${profile.name} মা মোটরস থেকে আজীবন মোট ${Number(profile.totalPurchased || 0).toLocaleString('bn-BD')} টাকার মাল নিয়েছেন এবং মোট ${Number(profile.totalPaid || 0).toLocaleString('bn-BD')} টাকা জমা দিয়েছেন। বর্তমান অবশিষ্ট বকেয়া হলো ${Number(profile.totalDue || 0).toLocaleString('bn-BD')} টাকা।`,
+                            data: profile
+                        };
+                    }
+                }
+            }
         }
 
         // 1.5 Historical Relative Bengali Date Summary (e.g., "গত পরশু কত কালেকশন হয়েছিল?", "গত রবিবার কত বিক্রি হয়েছিল?", "১০ তারিখের খরচের হিসাব বলো")
@@ -1938,10 +2164,10 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
 
         // 17. Customer Due, Ledger & Accounting Search Check (with Disambiguation)
         if (text.includes('বকেয়া') || text.includes('বাকী') || text.includes('হিসাব') || text.includes('ব্যালেন্স') || text.includes('টাকা') || text.includes('লেজার') || text.includes('চালান')) {
-            const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও|টাকা|লেজার|চালান|কারা|কে|কে\s*কে|কোন|কোন\s*কোন|তালিকা|লিস্ট|সবাই|দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই)/g, '').trim();
-            if (/^(?:কারা|কে|কে\s*কে|কোন|কোন\s*কোন|তালিকা|লিস্ট|সবাই|দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই)$/i.test(cleanQuery) || cleanQuery.length < 2) {
+            const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও|টাকা|লেজার|চালান|কারা|কে|কে\s*কে|কোন|কোন\s*কোন|তালিকা|লিস্ট|সবাই|দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই|অগ্রিম|জমা|রয়েছে|আছে|এটা|একাউন্ট|অ্যাকাউন্ট|নম্বর|নাম্বার|কোথায়|কার|কাদের)/g, '').trim();
+            if (!cleanQuery || cleanQuery.length < 2 || /^(?:কারা|কে|কে\s*কে|কোন|কোন\s*কোন|তালিকা|লিস্ট|সবাই|দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই|এটা|কার|কাদের)$/i.test(cleanQuery) || /^[০-৯0-9,.\s]+$/.test(cleanQuery)) {
                 return {
-                    spoken: 'জি ভাইয়া, নির্দিষ্ট কোনো কাস্টমারের বকেয়া জানতে কাস্টমারের নাম বলুন, অথবা কারা টাকা দেয়নি তা জানতে "কারা বকেয়া টাকা দেয়নি" বলুন।',
+                    spoken: 'জি ভাইয়া, নির্দিষ্ট কোনো কাস্টমারের বকেয়া জানতে কাস্টমারের নাম বলুন, অথবা নির্দিষ্ট কোনো অংকের হিসাব জানতে চান কি?',
                     data: null
                 };
             }
