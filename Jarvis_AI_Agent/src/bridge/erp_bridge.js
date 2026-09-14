@@ -308,9 +308,18 @@ export const ERPBridge = {
     },
 
     /**
-     * Alias for getFinancialSnapshot to ensure seamless tool calling
+     * Alias for live bank and cash running balances
      */
     async getCashAndBankSummary() {
+        const live = await this.getAllBankRunningBalances();
+        if (live && live.success) {
+            return {
+                totalBankBalance: live.totalBankBalance,
+                totalPhysicalCash: live.showroomCashInHand,
+                totalHoldings: live.grandTotalLiquidFunds,
+                accounts: (live.banks || []).map(b => ({ name: b.bankName, balance: b.currentBalance, isCash: false }))
+            };
+        }
         return await this.getFinancialSnapshot();
     },
 
@@ -811,6 +820,143 @@ export const ERPBridge = {
             };
         } catch (err) {
             console.error('ERPBridge getTodayBankCollections error:', err);
+            if (err.code === 'permission-denied') {
+                return { error: 'AUTH_REQUIRED' };
+            }
+            return null;
+        }
+    },
+
+    /**
+     * Get Today's or Date-wise Customer Showroom Cash Deposits & Cash Expenses
+     * Answers: "আজকে শোরুম ক্যাশে কত জমা হলো?" / "আজকের ক্যাশ কালেকশন কত?"
+     */
+    async getTodayShowroomCashCollections(targetDate = null) {
+        const date = targetDate || getTodayLocalDateString();
+        try {
+            // 1. Fetch active bank names and cash collectors to correctly identify showroom cash
+            const [banksSnap, collectorsSnap] = await Promise.all([
+                getDocs(collection(db, 'bank_accounts')),
+                getDocs(collection(db, 'cash_collectors'))
+            ]);
+
+            const activeBankNames = new Set();
+            banksSnap.forEach(b => {
+                const data = b.data();
+                if (data.status !== 'inactive' && data.name) {
+                    activeBankNames.add(String(data.name).trim());
+                }
+            });
+
+            const otherCollectors = new Set();
+            collectorsSnap.forEach(c => {
+                const data = c.data();
+                const name = String(data.name || '').trim();
+                if (data.status !== 'inactive' && name && name !== 'শোরুম ক্যাশ') {
+                    otherCollectors.add(name);
+                }
+            });
+
+            // 2. Query today's transactions from customer ledger
+            const txnsCol = collection(db, 'transactions');
+            const q = query(txnsCol, where('date', '==', date));
+            const snap = await getDocs(q);
+
+            const customerPayments = [];
+            let totalCashCollected = 0;
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                const paid = safeRound(d.paid || 0);
+                if (paid <= 0) return;
+
+                const rType = String(d.receivedType || '').trim();
+                const rFrom = String(d.receivedFrom || '').trim();
+
+                // Exclude Less / Discounts
+                if (rType === 'Less' || /less|ছাড়|discount|মওকুফ/i.test(rType) || /less|ছাড়/i.test(rFrom)) {
+                    return;
+                }
+
+                // Exclude opening vouchers
+                const v = String(d.voucherNo || '').trim().toUpperCase();
+                if (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের') {
+                    return;
+                }
+
+                // If explicitly tagged to an active bank or another collector, skip
+                if (activeBankNames.has(rFrom) || otherCollectors.has(rFrom)) {
+                    return;
+                }
+
+                // Must be Showroom Cash
+                const isExplicitCash = (rFrom === 'শোরুম ক্যাশ' || rFrom === 'Cash' || rFrom === 'ক্যাশ');
+                const isCashType = (rType === 'Cash' || !rType);
+                const isNotBank = !/bank|ibbl|onebank|dbbl|brac|city|ucb|ebl|islami/i.test(rFrom) && !/bank/i.test(rType);
+
+                if (isExplicitCash || (isCashType && isNotBank)) {
+                    totalCashCollected = safeRound(totalCashCollected + paid);
+                    customerPayments.push({
+                        id: doc.id,
+                        customerName: d.customerName || 'অজানা কাস্টমার',
+                        customerId: d.customerId || '',
+                        amount: paid,
+                        voucherNo: d.voucherNo || '',
+                        currentDue: safeRound(d.currentDue || 0),
+                        notes: d.notes || ''
+                    });
+                }
+            });
+
+            // 3. Query today's expenses from showroom cash
+            let todayCashExpenses = 0;
+            const cashExpenses = [];
+            try {
+                const expCol = collection(db, 'expenses');
+                const expQ = query(expCol, where('date', '==', date));
+                const expSnap = await getDocs(expQ);
+
+                expSnap.forEach(doc => {
+                    const d = doc.data();
+                    const amt = safeRound(d.amount || 0);
+                    if (amt <= 0) return;
+
+                    const pAcc = String(d.paymentAccount || '').trim();
+                    const pMethod = String(d.paymentMethod || '').trim();
+
+                    const isCashExpense = pAcc === 'শোরুম ক্যাশ' || pMethod === 'Cash' || (!pAcc && pMethod === 'Cash');
+
+                    if (isCashExpense) {
+                        todayCashExpenses = safeRound(todayCashExpenses + amt);
+                        cashExpenses.push({
+                            id: doc.id,
+                            category: d.category || 'সাধারণ খরচ',
+                            description: d.description || d.title || 'অফিস খরচ',
+                            amount: amt,
+                            voucherNo: d.voucherNo || ''
+                        });
+                    }
+                });
+            } catch (expErr) {
+                console.warn('ERPBridge getTodayShowroomCashCollections expenses query warning:', expErr);
+            }
+
+            const todayNetShowroomCash = safeRound(totalCashCollected - todayCashExpenses);
+
+            return {
+                success: true,
+                type: 'today_showroom_cash_collections',
+                date,
+                totalCashCollected,
+                customerPaymentsCount: customerPayments.length,
+                customerPayments,
+                todayCashExpenses,
+                expenseCount: cashExpenses.length,
+                cashExpenses,
+                todayNetShowroomCash
+            };
+        } catch (err) {
+            console.error('ERPBridge getTodayShowroomCashCollections error:', err);
             if (err.code === 'permission-denied') {
                 return { error: 'AUTH_REQUIRED' };
             }

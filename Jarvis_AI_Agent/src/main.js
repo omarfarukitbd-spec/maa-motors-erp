@@ -420,6 +420,49 @@ function renderDataCardHtml(data) {
         `;
     }
 
+    // 1.5 Today's Showroom Cash Collections Card
+    if (data.type === 'today_showroom_cash_collections') {
+        const rows = (data.customerPayments || []).map(c => `
+            <tr>
+                <td style="font-weight:700;color:#f8fafc;">${escapeHTML(c.customerName)}</td>
+                <td class="credit" style="font-weight:800;">৳ ${Number(c.amount).toLocaleString('bn-BD')}</td>
+                <td style="color:#94a3b8;font-size:10.5px;">${escapeHTML(c.voucherNo || '-')}</td>
+                <td class="debit" style="text-align:right;font-weight:600;">৳ ${Number(c.currentDue || 0).toLocaleString('bn-BD')}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        আজকের শোরুম ক্যাশ কালেকশন
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#34d399;">নগদ জমা: ৳ ${Number(data.totalCashCollected || 0).toLocaleString('bn-BD')}</span>
+                </div>
+                <div class="data-card-grid" style="margin-bottom:8px;">
+                    <div class="data-stat-box"><div class="data-stat-label">মোট নগদ জমা</div><div class="data-stat-value credit">৳ ${Number(data.totalCashCollected || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">ক্যাশ খরচ</div><div class="data-stat-value debit">৳ ${Number(data.todayCashExpenses || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">নিট ক্যাশ স্থিতি</div><div class="data-stat-value" style="color:#38bdf8;font-weight:800;">৳ ${Number(data.todayNetShowroomCash || 0).toLocaleString('bn-BD')}</div></div>
+                    <div class="data-stat-box"><div class="data-stat-label">জমা প্রদানকারী</div><div class="data-stat-value" style="color:#e2e8f0;font-weight:800;">${Number(data.customerPaymentsCount || 0).toLocaleString('bn-BD')} জন</div></div>
+                </div>
+                ${rows ? `
+                <table class="data-card-table">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার</th>
+                            <th>নগদ জমা</th>
+                            <th>ভাউচার</th>
+                            <th style="text-align:right;">অবশিষ্ট বকেয়া</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                ` : '<div style="font-size:11.5px;color:#94a3b8;text-align:center;padding:8px;">আজকে শোরুম ক্যাশে কোনো নগদ জমা নেই</div>'}
+            </div>
+        `;
+    }
+
     // 2. Weekly Bank Summary Card
     if (data.type === 'weekly_bank_summary') {
         const rows = (data.bankList || []).map(b => `

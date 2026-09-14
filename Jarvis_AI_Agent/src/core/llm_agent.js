@@ -254,6 +254,22 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             {
                 type: 'function',
                 function: {
+                    name: 'get_today_showroom_cash_collections',
+                    description: 'আজকে বা নির্দিষ্ট তারিখে শোরুম ক্যাশে কাস্টমারদের থেকে নগদ কত টাকা জমা হয়েছে, কোন কোন কাস্টমার ক্যাশ জমা দিয়েছে এবং ক্যাশ থেকে কত খরচ হয়ে নিট ক্যাশ কত দাঁড়িয়েছে তা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            targetDate: {
+                                type: 'string',
+                                description: 'তারিখ YYYY-MM-DD ফরম্যাটে (ঐচ্ছিক, না দিলে আজকের দিনের শোরুম ক্যাশ দেখাবে)'
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
                     name: 'get_today_bank_collections',
                     description: 'আজকে বা নির্দিষ্ট কোনো দিনে কাদের কাদের টাকা কোন ব্যাংকে জমা হয়েছে, কোন কাস্টমার কত টাকা দিয়েছে এবং ব্যাংকে মোট কত টাকা জমা হলো তা জানতে এটি কল করো।',
                     parameters: {
@@ -594,6 +610,17 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                     totalHoldings: summary.totalHoldings,
                     accounts: summary.accounts
                 };
+            }
+
+            if (name === 'get_today_showroom_cash_collections') {
+                const res = await ERPBridge.getTodayShowroomCashCollections(args?.targetDate || args?.date || null);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'আজকের শোরুম ক্যাশের হিসাব দেখতে মা মোটরসের অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
+                if (!res) {
+                    return { success: false, message: 'আজকের শোরুম ক্যাশ কালেকশনের তথ্য পাওয়া যায়নি।' };
+                }
+                return res;
             }
 
             if (name === 'get_today_bank_collections') {
@@ -1181,6 +1208,45 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 const extra = res.customerDepositsCount > 3 ? ` এবং আরও ${res.customerDepositsCount - 3} জন` : '';
                 return {
                     spoken: `জি ভাইয়া! আজকে আমাদের বিভিন্ন ব্যাংকে সর্বমোট ${res.totalBankDeposit.toLocaleString('bn-BD')} টাকা জমা হয়েছে। যারা জমা দিয়েছেন: ${sampleList}${extra}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 2.5 Today's Showroom Cash Collections (আজকে শোরুম ক্যাশে কত জমা হলো / আজকের ক্যাশ কালেকশন)
+        if (
+            /আজকে.*(শোরুম.*ক্যাশ|ক্যাশ.*জমা|ক্যাশে.*কত|ক্যাশ.*কালেকশন|ক্যাশে.*টাকা)|(শোরুম.*ক্যাশ.*কত.*জমা)|আজকের.*(ক্যাশ.*জমা|ক্যাশ.*কালেকশন|শোরুম.*ক্যাশ)/i.test(lower) ||
+            ((lower.includes('ক্যাশ') || lower.includes('শোরুম')) && (lower.includes('আজকে') || lower.includes('আজকের')) && (lower.includes('জমা') || lower.includes('কালেকশন') || lower.includes('কত') || lower.includes('টাকা')))
+        ) {
+            const res = await this.executeToolCall('get_today_showroom_cash_collections', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, আজকের শোরুম ক্যাশের লাইভ জমা দেখতে মা মোটরস গুগল একাউন্টে সাইন ইন করে নিন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                if (res.totalCashCollected === 0 && res.todayCashExpenses === 0) {
+                    return {
+                        spoken: `জি ভাইয়া! আজকে (${res.date}) এখন পর্যন্ত শোরুম ক্যাশে কোনো কাস্টমার থেকে নগদ টাকা জমা হয়নি।`,
+                        data: res
+                    };
+                }
+
+                let custSnippet = '';
+                if (res.customerPayments && res.customerPayments.length > 0) {
+                    const topList = res.customerPayments.slice(0, 3).map(c => `${c.customerName}-এর থেকে ${c.amount.toLocaleString('bn-BD')} টাকা`).join(', ');
+                    const extraCount = res.customerPaymentsCount > 3 ? ` এবং আরও ${res.customerPaymentsCount - 3} জন` : '';
+                    custSnippet = ` জমা দেওয়া কাস্টমারদের মধ্যে রয়েছেন: ${topList}${extraCount}।`;
+                }
+
+                let expenseSnippet = '';
+                if (res.todayCashExpenses > 0) {
+                    expenseSnippet = ` এছাড়া আজকে ক্যাশ ড্রয়ার থেকে খরচ হয়েছে ${res.todayCashExpenses.toLocaleString('bn-BD')} টাকা (${res.expenseCount}টি ভাউচারে), ফলে আজকের নিট ক্যাশ স্থিতি হলো ${res.todayNetShowroomCash.toLocaleString('bn-BD')} টাকা।`;
+                }
+
+                return {
+                    spoken: `জি ভাইয়া! আজকে শোরুম ক্যাশে সর্বমোট ${res.totalCashCollected.toLocaleString('bn-BD')} টাকা নগদ জমা হয়েছে (${res.customerPaymentsCount} জন কাস্টমার থেকে)।${custSnippet}${expenseSnippet}`,
                     data: res
                 };
             }
