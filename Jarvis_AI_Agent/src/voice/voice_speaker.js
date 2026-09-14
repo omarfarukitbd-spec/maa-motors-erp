@@ -164,7 +164,7 @@ export class VoiceSpeaker {
         const gcpKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_gcp_tts_key') || '').trim() : '';
 
         try {
-            // ── Priority 1: OpenAI TTS (most natural, emotional) ──
+            // ── Priority 1: OpenAI TTS (if key available and active) ──
             if (openAIKey && this.activeEngine === 'openai') {
                 try {
                     await this.speakOpenAI(cleanText, openAIKey, emotion);
@@ -174,18 +174,19 @@ export class VoiceSpeaker {
                 }
             }
 
-            // ── Priority 2: ElevenLabs TTS (human-like, free tier) ──
-            if (elevenLabsKey && (this.activeEngine === 'elevenlabs' || this.activeEngine === 'openai')) {
+            // ── Priority 2: ElevenLabs TTS (Human-like, free tier) ──
+            // Always use ElevenLabs if key exists, as it is the best human voice for Bengali
+            if (elevenLabsKey) {
                 try {
                     await this.speakElevenLabs(cleanText, elevenLabsKey, emotion);
                     return;
                 } catch (err) {
-                    console.warn('[VoiceSpeaker] ElevenLabs TTS failed, falling back:', err.message);
+                    console.warn('[VoiceSpeaker] ElevenLabs TTS failed, falling back to next engine:', err.message);
                 }
             }
 
-            // ── Priority 3: Google Cloud TTS (bn-BD-Neural2, best Bangladeshi voice) ──
-            if (gcpKey && (this.activeEngine === 'gcp' || this.activeEngine === 'openai' || this.activeEngine === 'elevenlabs')) {
+            // ── Priority 3: Google Cloud TTS (bn-BD-Neural2) ──
+            if (gcpKey) {
                 try {
                     await this.speakGoogleCloudTTS(cleanText, gcpKey, emotion);
                     return;
@@ -241,40 +242,58 @@ export class VoiceSpeaker {
     // Engine 2: ElevenLabs TTS (Human-like)
     // ─────────────────────────────────────────
     async speakElevenLabs(text, apiKey, emotion) {
-        // Default to a good multilingual voice if no specific voice ID saved
-        const voiceId = this.selectedElevenLabsVoice || 'pNInz6obpgDQGcFmaJgB'; // "Adam" — deep male
+        // Default to George (JBFqnCBsd6RMkjVDRZzb) or Adam (pNInz6obpgDQGcFmaJgB) if no specific voice ID saved
+        const voiceId = this.selectedElevenLabsVoice || 'JBFqnCBsd6RMkjVDRZzb';
 
         // Emotion → stability/similarity mapping
         const settingsMap = {
-            urgent:  { stability: 0.3, similarity_boost: 0.8, style: 0.6 },
-            happy:   { stability: 0.4, similarity_boost: 0.75, style: 0.7 },
-            sad:     { stability: 0.8, similarity_boost: 0.85, style: 0.2 },
-            serious: { stability: 0.7, similarity_boost: 0.8, style: 0.3 },
-            neutral: { stability: 0.5, similarity_boost: 0.8, style: 0.4 }
+            urgent:  { stability: 0.35, similarity_boost: 0.8, style: 0.5 },
+            happy:   { stability: 0.45, similarity_boost: 0.75, style: 0.6 },
+            sad:     { stability: 0.75, similarity_boost: 0.85, style: 0.2 },
+            serious: { stability: 0.65, similarity_boost: 0.8, style: 0.3 },
+            neutral: { stability: 0.5, similarity_boost: 0.75, style: 0.3 }
         };
         const voiceSettings = settingsMap[emotion] || settingsMap.neutral;
 
-        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'xi-api-key': apiKey
-            },
-            body: JSON.stringify({
-                text,
-                model_id: 'eleven_multilingual_v2',  // Supports Bengali
-                voice_settings: voiceSettings,
-                language_code: 'bn'
-            })
-        });
+        console.log(`[VoiceSpeaker] 🎙️ ElevenLabs TTS calling with voice: ${voiceId}`);
 
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.detail?.message || `ElevenLabs TTS Error: ${response.status}`);
+        // Try eleven_multilingual_v2, fallback to eleven_flash_v2_5
+        const modelsToTry = ['eleven_multilingual_v2', 'eleven_flash_v2_5'];
+        let lastErr = null;
+
+        for (const model_id of modelsToTry) {
+            try {
+                const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'xi-api-key': apiKey
+                    },
+                    body: JSON.stringify({
+                        text,
+                        model_id,
+                        voice_settings: voiceSettings
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    const msg = errData.detail?.message || `HTTP ${response.status}`;
+                    console.warn(`[VoiceSpeaker] ElevenLabs ${model_id} error:`, msg);
+                    lastErr = new Error(msg);
+                    continue;
+                }
+
+                const blob = await response.blob();
+                console.log(`[VoiceSpeaker] ✅ ElevenLabs speech generated (${blob.size} bytes), playing audio...`);
+                return await this._playBlob(blob);
+
+            } catch (err) {
+                lastErr = err;
+            }
         }
 
-        const blob = await response.blob();
-        return await this._playBlob(blob);
+        throw lastErr || new Error('ElevenLabs TTS failed');
     }
 
     // ─────────────────────────────────────────
@@ -421,11 +440,15 @@ export class VoiceSpeaker {
             };
 
             this.audio.src = audioUrl;
+            this.audio.volume = 1.0;
+            this.audio.muted = false;
+
             const playPromise = this.audio.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
                     clearTimeout(watchdog);
                     URL.revokeObjectURL(audioUrl);
+                    console.error('[VoiceSpeaker] Audio play error:', err);
                     reject(err);
                 });
             }

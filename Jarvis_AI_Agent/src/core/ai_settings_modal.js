@@ -315,16 +315,16 @@ export class AISettingsModal {
         // Update active instances
         llmAgent.setProvider(provider);
         if (provider === 'gemini') {
-            if (!openAIKey && elevenLabsKey) {
+            if (elevenLabsKey) {
                 voiceSpeaker.setEngine('elevenlabs');
-            } else if (!openAIKey && gcpKey) {
+            } else if (gcpKey) {
                 voiceSpeaker.setEngine('gcp');
-            } else if (!openAIKey) {
-                voiceSpeaker.setAzureVoice(selectedAzureVoice);
-                voiceSpeaker.setEngine('browser');
-            } else {
+            } else if (openAIKey) {
                 voiceSpeaker.setOpenAIVoice(selectedVoice);
                 voiceSpeaker.setEngine('openai');
+            } else {
+                voiceSpeaker.setAzureVoice(selectedAzureVoice);
+                voiceSpeaker.setEngine('browser');
             }
         } else {
             voiceSpeaker.setOpenAIVoice(selectedVoice);
