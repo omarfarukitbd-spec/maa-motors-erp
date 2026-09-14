@@ -1397,3 +1397,106 @@ body {
   color: #f87171;
 }
 
+/* ==========================================================================
+   📊 Executive Financial Data Cards (Jarvis Business Cards)
+   ========================================================================== */
+.financial-data-card {
+  margin-top: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.data-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.data-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.data-card-badge {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.data-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.data-stat-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.data-stat-label {
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin-bottom: 2px;
+}
+
+.data-stat-value {
+  font-size: 13px;
+  font-weight: 800;
+  font-family: monospace;
+  color: #f1f5f9;
+}
+
+.data-stat-value.credit {
+  color: #34d399;
+}
+
+.data-stat-value.debit {
+  color: #f87171;
+}
+
+.data-card-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  margin-top: 6px;
+}
+
+.data-card-table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: #94a3b8;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.data-card-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+}
+
+.data-card-table tr:last-child td {
+  border-bottom: none;
+}
+
+

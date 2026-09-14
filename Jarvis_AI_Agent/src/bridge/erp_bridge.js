@@ -690,5 +690,300 @@ export const ERPBridge = {
      */
     async getDubaiWeeklyAuditSummary() {
         return await this.getLatestDubaiAudit();
+    },
+
+    /**
+     * Get Today's or Date-wise Customer Bank Deposits & Bank Inflows
+     * Answers: "আজকে কাদের কাদের টাকা ব্যাংকে জমা হলো?"
+     */
+    async getTodayBankCollections(targetDate = null) {
+        const date = targetDate || new Date().toISOString().split('T')[0];
+        try {
+            // 1. Fetch active bank names
+            const banksSnap = await getDocs(collection(db, 'bank_accounts'));
+            const activeBankNames = new Set();
+            banksSnap.forEach(b => {
+                const data = b.data();
+                if (data.status !== 'inactive' && data.name) {
+                    activeBankNames.add(data.name);
+                }
+            });
+
+            // 2. Fetch today's transactions from customer ledger
+            const txnsCol = collection(db, 'transactions');
+            const q = query(txnsCol, where('date', '==', date));
+            const snap = await getDocs(q);
+
+            const customerDeposits = [];
+            const bankBreakdown = {};
+            let totalBankDeposit = 0;
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                const paid = safeRound(d.paid || 0);
+                if (paid <= 0) return;
+
+                const rType = String(d.receivedType || '').trim();
+                const rFrom = String(d.receivedFrom || '').trim();
+
+                // Exclude Less / Discount
+                if (rType === 'Less' || /less|ছাড়|discount|মওকুফ/i.test(rType) || /less|ছাড়/i.test(rFrom)) {
+                    return;
+                }
+
+                // Check if it's a bank payment
+                const isBank = rType === 'Bank' || 
+                               activeBankNames.has(rFrom) || 
+                               ((/bank|ibbl|onebank|dbbl|brac|city|ucb|ebl|islami/i.test(rFrom) || /bank/i.test(rType)) &&
+                               !/showroom|শোরুম|ক্যাশ|cash/i.test(rFrom));
+
+                if (isBank) {
+                    const bankName = rFrom || 'ব্যাংক অ্যাকাউন্ট';
+                    totalBankDeposit = safeRound(totalBankDeposit + paid);
+
+                    if (!bankBreakdown[bankName]) {
+                        bankBreakdown[bankName] = { total: 0, count: 0 };
+                    }
+                    bankBreakdown[bankName].total = safeRound(bankBreakdown[bankName].total + paid);
+                    bankBreakdown[bankName].count += 1;
+
+                    customerDeposits.push({
+                        id: doc.id,
+                        customerName: d.customerName || 'অজানা কাস্টমার',
+                        customerId: d.customerId || '',
+                        bankName,
+                        amount: paid,
+                        voucherNo: d.voucherNo || '',
+                        currentDue: safeRound(d.currentDue || 0),
+                        notes: d.notes || ''
+                    });
+                }
+            });
+
+            // 3. Fetch direct bank deposits from bank_transactions
+            let directDeposits = [];
+            try {
+                const bankTxnsCol = collection(db, 'bank_transactions');
+                const bq = query(bankTxnsCol, where('date', '==', date));
+                const bSnap = await getDocs(bq);
+                bSnap.forEach(doc => {
+                    const d = doc.data();
+                    const amt = safeRound(d.amount || 0);
+                    const type = String(d.type || '').toUpperCase();
+                    if (amt > 0 && (type === 'DEPOSIT' || type === 'TRANSFER')) {
+                        const bName = d.bankName || d.targetBankName || 'ব্যাংক ডিপোজিট';
+                        directDeposits.push({
+                            id: doc.id,
+                            bankName: bName,
+                            amount: amt,
+                            type,
+                            notes: d.notes || ''
+                        });
+                    }
+                });
+            } catch (btErr) {
+                console.warn('bank_transactions query warning:', btErr);
+            }
+
+            return {
+                date,
+                totalBankDeposit,
+                customerDepositsCount: customerDeposits.length,
+                customerDeposits,
+                bankBreakdown,
+                directDeposits
+            };
+        } catch (err) {
+            console.error('ERPBridge getTodayBankCollections error:', err);
+            if (err.code === 'permission-denied') {
+                return { error: 'AUTH_REQUIRED' };
+            }
+            return null;
+        }
+    },
+
+    /**
+     * Get Weekly or Custom Period Bank Deposit Summary by Bank Account
+     * Answers: "গত এক সপ্তাহ কোন ব্যাংকে কত টাকা জমা হলো?"
+     */
+    async getWeeklyBankSummary(days = 7, customEndDate = null) {
+        const d = new Date();
+        const endDate = customEndDate || d.toISOString().split('T')[0];
+        const startDateObj = new Date(d.getTime() - days * 24 * 60 * 60 * 1000);
+        const startDate = startDateObj.toISOString().split('T')[0];
+
+        try {
+            // 1. Fetch active bank accounts
+            const banksSnap = await getDocs(collection(db, 'bank_accounts'));
+            const bankMeta = {};
+            banksSnap.forEach(b => {
+                const data = b.data();
+                if (data.status !== 'inactive' && data.name) {
+                    bankMeta[data.name] = {
+                        name: data.name,
+                        currentBalance: safeRound(data.currentBalance ?? data.balance ?? 0)
+                    };
+                }
+            });
+
+            // 2. Fetch transactions in range
+            const txnsCol = collection(db, 'transactions');
+            const q = query(
+                txnsCol,
+                where('date', '>=', startDate),
+                where('date', '<=', endDate)
+            );
+            const snap = await getDocs(q);
+
+            const bankGroups = {};
+            let grandTotalBankDeposits = 0;
+            const customerContributions = {};
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                const paid = safeRound(data.paid || 0);
+                if (paid <= 0) return;
+
+                const rType = String(data.receivedType || '').trim();
+                const rFrom = String(data.receivedFrom || '').trim();
+
+                if (rType === 'Less' || /less|ছাড়|discount|মওকুফ/i.test(rType) || /less|ছাড়/i.test(rFrom)) {
+                    return;
+                }
+
+                const isBank = rType === 'Bank' || 
+                               Boolean(bankMeta[rFrom]) || 
+                               ((/bank|ibbl|onebank|dbbl|brac|city|ucb|ebl|islami/i.test(rFrom) || /bank/i.test(rType)) &&
+                               !/showroom|শোরুম|ক্যাশ|cash/i.test(rFrom));
+
+                if (isBank) {
+                    const bName = rFrom || 'অন্যান্য ব্যাংক';
+                    grandTotalBankDeposits = safeRound(grandTotalBankDeposits + paid);
+
+                    if (!bankGroups[bName]) {
+                        bankGroups[bName] = {
+                            bankName: bName,
+                            totalAmount: 0,
+                            transactionCount: 0,
+                            customers: new Set()
+                        };
+                    }
+                    bankGroups[bName].totalAmount = safeRound(bankGroups[bName].totalAmount + paid);
+                    bankGroups[bName].transactionCount += 1;
+                    if (data.customerName) {
+                        bankGroups[bName].customers.add(data.customerName);
+                        customerContributions[data.customerName] = safeRound((customerContributions[data.customerName] || 0) + paid);
+                    }
+                }
+            });
+
+            // 3. Incorporate bank_transactions for deposits/transfers in range
+            try {
+                const bCol = collection(db, 'bank_transactions');
+                const bQuery = query(bCol, where('date', '>=', startDate), where('date', '<=', endDate));
+                const bSnap = await getDocs(bQuery);
+                bSnap.forEach(doc => {
+                    const bData = doc.data();
+                    const amt = safeRound(bData.amount || 0);
+                    const type = String(bData.type || '').toUpperCase();
+                    if (amt > 0 && type === 'DEPOSIT') {
+                        const bName = bData.bankName || 'ব্যাংক ডিপোজিট';
+                        if (!bankGroups[bName]) {
+                            bankGroups[bName] = {
+                                bankName: bName,
+                                totalAmount: 0,
+                                transactionCount: 0,
+                                customers: new Set()
+                            };
+                        }
+                        bankGroups[bName].totalAmount = safeRound(bankGroups[bName].totalAmount + amt);
+                        bankGroups[bName].transactionCount += 1;
+                        grandTotalBankDeposits = safeRound(grandTotalBankDeposits + amt);
+                    }
+                });
+            } catch (bErr) {
+                console.warn('bank_transactions weekly query warning:', bErr);
+            }
+
+            // Convert to clean list
+            const bankList = Object.values(bankGroups).map(g => ({
+                bankName: g.bankName,
+                totalAmount: g.totalAmount,
+                transactionCount: g.transactionCount,
+                uniqueCustomersCount: g.customers.size,
+                sampleCustomers: Array.from(g.customers).slice(0, 4)
+            })).sort((a, b) => b.totalAmount - a.totalAmount);
+
+            // Top depositing customers in this period
+            const topCustomers = Object.entries(customerContributions)
+                .map(([name, amount]) => ({ name, amount }))
+                .sort((a, b) => b.amount - a.amount)
+                .slice(0, 5);
+
+            return {
+                startDate,
+                endDate,
+                days,
+                grandTotalBankDeposits,
+                banksCount: bankList.length,
+                bankList,
+                topCustomers
+            };
+        } catch (err) {
+            console.error('ERPBridge getWeeklyBankSummary error:', err);
+            if (err.code === 'permission-denied') {
+                return { error: 'AUTH_REQUIRED' };
+            }
+            return null;
+        }
+    },
+
+    /**
+     * Search an Invoice or Payment Voucher by Number (e.g. INV-1002, 5402)
+     */
+    async searchVoucherOrInvoice(voucherNo) {
+        if (!voucherNo) return null;
+        const cleanVoucher = String(voucherNo).trim();
+        try {
+            const txnsCol = collection(db, 'transactions');
+            const q = query(txnsCol, where('voucherNo', '==', cleanVoucher), limit(5));
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                return { found: false, message: `ভাউচার বা চালান নং "${cleanVoucher}" পাওয়া যায়নি।` };
+            }
+
+            const records = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                records.push({
+                    id: doc.id,
+                    voucherNo: d.voucherNo,
+                    customerName: d.customerName || 'নামহীন',
+                    customerId: d.customerId || '',
+                    date: d.date || '',
+                    bill: safeRound(d.bill || 0),
+                    paid: safeRound(d.paid || 0),
+                    receivedType: d.receivedType || '',
+                    receivedFrom: d.receivedFrom || '',
+                    prevDue: safeRound(d.prevDue || 0),
+                    currentDue: safeRound(d.currentDue || 0),
+                    notes: d.notes || ''
+                });
+            });
+
+            return {
+                found: true,
+                voucherNo: cleanVoucher,
+                count: records.length,
+                records
+            };
+        } catch (err) {
+            console.error('ERPBridge searchVoucherOrInvoice error:', err);
+            if (err.code === 'permission-denied') {
+                return { error: 'AUTH_REQUIRED' };
+            }
+            return null;
+        }
     }
 };

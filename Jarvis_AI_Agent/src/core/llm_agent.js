@@ -253,6 +253,55 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             {
                 type: 'function',
                 function: {
+                    name: 'get_today_bank_collections',
+                    description: 'আজকে বা নির্দিষ্ট কোনো দিনে কাদের কাদের টাকা কোন ব্যাংকে জমা হয়েছে, কোন কাস্টমার কত টাকা দিয়েছে এবং ব্যাংকে মোট কত টাকা জমা হলো তা জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            date: {
+                                type: 'string',
+                                description: 'তারিখ YYYY-MM-DD ফরম্যাটে (ঐচ্ছিক, না দিলে আজকের দেখাবে)'
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'get_weekly_bank_summary',
+                    description: 'গত এক সপ্তাহ (৭ দিন) বা নির্দিষ্ট সময়ে কোন ব্যাংকে মোট কত টাকা জমা হয়েছে, কোন ব্যাংকে কয়টি লেনদেন হয়েছে এবং মোট ব্যাংকে জমার ব্যাংক-ওয়ারি সারসংক্ষেপ জানতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            days: {
+                                type: 'number',
+                                description: 'কত দিনের হিসাব (ডিফল্ট ৭ দিন)'
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
+                    name: 'search_voucher_or_invoice',
+                    description: 'চালান বা ভাউচার নম্বর (যেমন: INV-1002 বা ভাউচার নং) দিয়ে সরাসরি বিস্তারিত লেনদেন বা চালানের তথ্য বের করতে এটি কল করো।',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            voucherNo: {
+                                type: 'string',
+                                description: 'ভাউচার বা চালান নম্বর'
+                            }
+                        },
+                        required: ['voucherNo']
+                    }
+                }
+            },
+            {
+                type: 'function',
+                function: {
                     name: 'get_master_treasury_status',
                     description: 'মা মোটরসের ৪+ কোটি টাকার কেন্দ্রীয় মাস্টার ট্রেজারি ফান্ড ব্যালেন্স এবং সাম্প্রতিক ইনফ্লো ও আউটফ্লো জানতে এটি কল করো।',
                     parameters: {
@@ -443,6 +492,64 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                     totalPhysicalCash: summary.totalPhysicalCash,
                     totalHoldings: summary.totalHoldings,
                     accounts: summary.accounts
+                };
+            }
+
+            if (name === 'get_today_bank_collections') {
+                const res = await ERPBridge.getTodayBankCollections(args?.date || null);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'আজকের ব্যাংক কালেকশনের হিসাব দেখতে মা মোটরসের অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
+                if (!res) {
+                    return { success: false, message: 'ব্যাংক কালেকশনের তথ্য পাওয়া যায়নি।' };
+                }
+                return {
+                    success: true,
+                    type: 'today_bank_collections',
+                    date: res.date,
+                    totalBankDeposit: res.totalBankDeposit,
+                    customerDepositsCount: res.customerDepositsCount,
+                    customerDeposits: res.customerDeposits,
+                    bankBreakdown: res.bankBreakdown,
+                    directDeposits: res.directDeposits
+                };
+            }
+
+            if (name === 'get_weekly_bank_summary') {
+                const res = await ERPBridge.getWeeklyBankSummary(args?.days || 7);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { success: false, authRequired: true, message: 'সাপ্তাহিক ব্যাংক ডিপোজিট সামারি দেখতে মা মোটরস অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
+                if (!res) {
+                    return { success: false, message: 'সাপ্তাহিক ব্যাংক সামারি পাওয়া যায়নি।' };
+                }
+                return {
+                    success: true,
+                    type: 'weekly_bank_summary',
+                    startDate: res.startDate,
+                    endDate: res.endDate,
+                    days: res.days,
+                    grandTotalBankDeposits: res.grandTotalBankDeposits,
+                    banksCount: res.banksCount,
+                    bankList: res.bankList,
+                    topCustomers: res.topCustomers
+                };
+            }
+
+            if (name === 'search_voucher_or_invoice') {
+                const res = await ERPBridge.searchVoucherOrInvoice(args?.voucherNo);
+                if (res?.error === 'AUTH_REQUIRED') {
+                    return { found: false, authRequired: true, message: 'চালান বা ভাউচার দেখতে মা মোটরস অ্যাকাউন্টে লগইন করতে হবে।' };
+                }
+                if (!res || !res.found) {
+                    return { found: false, message: res?.message || `ভাউচার "${args?.voucherNo}" পাওয়া যায়নি।` };
+                }
+                return {
+                    found: true,
+                    type: 'voucher_details',
+                    voucherNo: res.voucherNo,
+                    count: res.count,
+                    records: res.records
                 };
             }
 
@@ -873,7 +980,163 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             };
         }
 
-        // 2. Customer Due, Ledger & Accounting Search Check
+        // 2. Today's Bank Collections (কাদের কাদের টাকা ব্যাংকে জমা হলো)
+        if (/কাদের.*ব্যাংক|ব্যাংকে.*কাদের|কারা.*ব্যাংক|ব্যাংকে.*কারা|আজকে.*ব্যাংক|ব্যাংকে.*জমা/i.test(lower) && !/সপ্তাহ|মাস|বছর/i.test(lower)) {
+            const res = await this.executeToolCall('get_today_bank_collections', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, আজকের ব্যাংকে জমার হিসাব দেখতে প্রথমে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                if (res.customerDepositsCount === 0 && (!res.directDeposits || res.directDeposits.length === 0)) {
+                    return {
+                        spoken: 'জি ভাইয়া, আজকে এখনো পর্যন্ত কোনো কাস্টমার ব্যাংকে টাকা জমা দেয়নি।',
+                        data: res
+                    };
+                }
+                const sampleList = res.customerDeposits.slice(0, 3).map(c => `${c.customerName} (${c.bankName}-এ ${c.amount.toLocaleString('bn-BD')} টাকা)`).join(', ');
+                const extra = res.customerDepositsCount > 3 ? ` এবং আরও ${res.customerDepositsCount - 3} জন` : '';
+                return {
+                    spoken: `জি ভাইয়া! আজকে আমাদের বিভিন্ন ব্যাংকে সর্বমোট ${res.totalBankDeposit.toLocaleString('bn-BD')} টাকা জমা হয়েছে। যারা জমা দিয়েছেন: ${sampleList}${extra}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 3. Weekly / Multi-day Bank Summary (গত এক সপ্তাহে কোন ব্যাংকে কত জমা)
+        if (/সপ্তাহ|৭ দিন|সাপ্তাহিক/i.test(lower) && /ব্যাংক|জমা|কালেকশন/i.test(lower)) {
+            const res = await this.executeToolCall('get_weekly_bank_summary', { days: 7 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, গত সপ্তাহের ব্যাংক ডিপোজিট দেখতে প্রথমে গুগল অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                if (res.bankList.length === 0) {
+                    return {
+                        spoken: 'জি ভাইয়া, গত এক সপ্তাহে ব্যাংকে কোনো জমার রেকর্ড পাওয়া যায়নি।',
+                        data: res
+                    };
+                }
+                const bankLines = res.bankList.map(b => `${b.bankName}-এ ${b.totalAmount.toLocaleString('bn-BD')} টাকা`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! গত এক সপ্তাহে আমাদের ব্যাংকগুলোতে সর্বমোট ${res.grandTotalBankDeposits.toLocaleString('bn-BD')} টাকা জমা হয়েছে। এর মধ্যে: ${bankLines}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 4. Executive Daily Business Pulse (আজকের বিক্রি, কালেকশন ও নিট ক্যাশ ফ্লো)
+        if (/আজকের.*বিক্রি|আজকের.*সেল|আজকে.*কত.*বিক্রি|আজকের.*চালান|আজকে.*কত.*চালান|ব্যবসায়িক.*নাড়ি|বিজনেস.*পালস/i.test(lower)) {
+            const res = await this.executeToolCall('get_executive_business_pulse', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, আজকের ব্যবসার নাড়ির স্পন্দন দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! আজকে মা মোটরসে মোট বিক্রি হয়েছে ${res.todayTotalBills.toLocaleString('bn-BD')} টাকা। মোট কালেকশন এসেছে ${res.todayTotalCollections.toLocaleString('bn-BD')} টাকা (ক্যাশ: ${res.cashCollections.toLocaleString('bn-BD')}, ব্যাংক: ${res.bankCollections.toLocaleString('bn-BD')})। মোট খরচ হয়েছে ${res.todayTotalExpenses.toLocaleString('bn-BD')} টাকা। আজকের নিট ক্যাশ ফ্লো হলো ${res.todayNetCashFlow.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            }
+        }
+
+        // 5. Top Debtors & Market Outstanding (টপ বাকিদার ও মার্কেট বকেয়া)
+        if (/টপ.*বাকি|বড়.*বাকি|মার্কেটে.*বাকি|বেশি.*বাকি|বাকিদার.*কারা|টপ.*দেনাদার/i.test(lower)) {
+            const res = await this.executeToolCall('get_top_debtors_and_market_analytics', { limit: 5 });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, টপ বাকিদারদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                const names = res.topDebtors.map(d => `${d.name} (${d.totalDue.toLocaleString('bn-BD')} টাকা)`).join(', ');
+                return {
+                    spoken: `জি ভাইয়া! বর্তমানে মার্কেটের মোট অবশিষ্ট বকেয়া হলো ${res.totalMarketDue.toLocaleString('bn-BD')} টাকা। শীর্ষ ৫ জন বাকিদার হলেন: ${names}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 6. Daily Expenses (আজকের খরচের হিসাব)
+        if (/আজকে.*কত.*খরচ|আজকের.*খরচ|খরচের.*হিসাব|মোট.*খরচ/i.test(lower) && !/দুবাই/i.test(lower)) {
+            const res = await this.executeToolCall('get_daily_expenses', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, আজকের খরচের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! আজকে আমাদের মোট অফিস খরচ হয়েছে ${res.totalExpense.toLocaleString('bn-BD')} টাকা (${res.itemsCount}টি ভাউচারে)।`,
+                    data: res
+                };
+            }
+        }
+
+        // 7. Dubai Container Audit (দুবাই কন্টেইনার ও এইডি ক্যাশ)
+        if (/দুবাই|aed|দিরহাম|কন্টেইনার/i.test(lower)) {
+            const res = await this.executeToolCall('get_dubai_container_status', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, দুবাই অডিটের হিসাব দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! দুবাই কন্টেইনার অডিটের সর্বশেষ রিপোর্ট অনুযায়ী নগদ ক্যাশ রয়েছে ${res.cashInHandAED.toLocaleString('en-US')} এইডি (AED), মার্কেট এডভান্স রয়েছে ${res.marketAdvanceAED.toLocaleString('en-US')} এইডি এবং মোট ফিজিক্যাল এসেট হলো ${res.totalPhysicalAssetsAED.toLocaleString('en-US')} এইডি।`,
+                    data: res
+                };
+            }
+        }
+
+        // 8. Master Treasury Status (কেন্দ্রীয় ট্রেজারি ফান্ড)
+        if (/ট্রেজারি|৪ কোটি|মাস্টার ফান্ড|সেন্ট্রাল ফান্ড/i.test(lower)) {
+            const res = await this.executeToolCall('get_master_treasury_status', {});
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, মাস্টার ট্রেজারি ফান্ডের ব্যালেন্স দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.success) {
+                return {
+                    spoken: `জি ভাইয়া! মা মোটরসের মাস্টার ট্রেজারি ফান্ডের বর্তমান ব্যালেন্স হলো ${res.currentTreasuryBalance.toLocaleString('bn-BD')} টাকা।`,
+                    data: res
+                };
+            }
+        }
+
+        // 9. Voucher / Invoice Search
+        const voucherMatch = text.match(/(?:ভাউচার|চালান|ইনভয়েস|inv|voucher)[\s#:-]*([0-9a-zA-Z-]+)/i);
+        if (voucherMatch && voucherMatch[1]) {
+            const vNo = voucherMatch[1].trim();
+            const res = await this.executeToolCall('search_voucher_or_invoice', { voucherNo: vNo });
+            if (res?.authRequired) {
+                return {
+                    spoken: 'জি ভাইয়া, ভাউচার দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    data: { authRequired: true }
+                };
+            }
+            if (res && res.found && res.records && res.records.length > 0) {
+                const rec = res.records[0];
+                const action = rec.bill > 0 ? `বিল/চালান: ${rec.bill.toLocaleString('bn-BD')} টাকা` : `জমা: ${rec.paid.toLocaleString('bn-BD')} টাকা (${rec.receivedType || 'ক্যাশ'})`;
+                return {
+                    spoken: `জি ভাইয়া! ভাউচার নং ${rec.voucherNo} হলো কাস্টমার ${rec.customerName}-এর। তারিখ: ${rec.date}, ${action}।`,
+                    data: res
+                };
+            }
+        }
+
+        // 10. Customer Due, Ledger & Accounting Search Check
         if (text.includes('বকেয়া') || text.includes('বাকী') || text.includes('হিসাব') || text.includes('ব্যালেন্স') || text.includes('টাকা') || text.includes('লেজার') || text.includes('চালান')) {
             const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও|টাকা|লেজার|চালান)/g, '').trim();
             const res = await this.executeToolCall('get_customer_due', { query: cleanQuery || text });
@@ -898,7 +1161,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             }
         }
 
-        // 3. Cash & Bank Status
+        // 11. Cash & Bank Status
         if (text.includes('ক্যাশ') || text.includes('ব্যাংক') || text.includes('টাকা জমা') || text.includes('কালেকশন')) {
             const res = await this.executeToolCall('get_cash_and_bank_status', { detail: 'summary' });
             if (res?.authRequired) {
@@ -915,7 +1178,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             }
         }
 
-        // 3b. Direct Name / Shop Search fallback (e.g., user just spoke a customer/shop name)
+        // 12. Direct Name / Shop Search fallback (e.g., user just spoke a customer/shop name)
         if (text.length >= 3 && !text.includes('?') && !text.includes('কি') && !text.includes('কেন')) {
             const directSearch = await this.executeToolCall('get_customer_due', { query: text });
             if (directSearch?.authRequired) {
