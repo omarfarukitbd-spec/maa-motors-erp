@@ -131,8 +131,11 @@ export class AISettingsModal {
     loadSettings() {
         const openAIKey = localStorage.getItem('jarvis_openai_key') || '';
         const geminiKey = localStorage.getItem('jarvis_gemini_key') || '';
+        const elevenLabsKey = localStorage.getItem('jarvis_elevenlabs_key') || '';
+        const gcpKey = localStorage.getItem('jarvis_gcp_tts_key') || '';
         const selectedVoice = localStorage.getItem('jarvis_openai_voice') || 'onyx';
         const selectedAzureVoice = localStorage.getItem('jarvis_azure_voice') || 'bn-BD-PradeepNeural';
+        const elevenLabsVoiceId = localStorage.getItem('jarvis_elevenlabs_voice_id') || '';
 
         let provider = localStorage.getItem('jarvis_ai_provider') || 'openai';
         if (!openAIKey && geminiKey) {
@@ -145,6 +148,16 @@ export class AISettingsModal {
         if (this.geminiKeyInput) this.geminiKeyInput.value = geminiKey;
         if (this.openaiVoiceSelect) this.openaiVoiceSelect.value = selectedVoice;
         if (this.geminiVoiceSelect) this.geminiVoiceSelect.value = selectedAzureVoice;
+
+        // ElevenLabs key fields
+        const elevenKeyInput = document.getElementById('input-elevenlabs-key');
+        if (elevenKeyInput) elevenKeyInput.value = elevenLabsKey;
+        const elevenVoiceInput = document.getElementById('input-elevenlabs-voice-id');
+        if (elevenVoiceInput) elevenVoiceInput.value = elevenLabsVoiceId;
+
+        // GCP key field
+        const gcpKeyInput = document.getElementById('input-gcp-tts-key');
+        if (gcpKeyInput) gcpKeyInput.value = gcpKey;
     }
 
     async testCurrentVoice() {
@@ -181,11 +194,12 @@ export class AISettingsModal {
         if (!cleanKey || cleanKey.length < 15) {
             return {
                 valid: false,
-                message: 'দয়া করে একটি সঠিক জেমিনি এপিআই কী প্রদান করুন।'
+                message: 'দয়া করে একটি সঠিক জেমিনি এপিআই কী প্রদান করুন।'
             };
         }
 
-        const modelsToTry = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+        // ✅ Updated model list (2026)
+        const modelsToTry = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
         let lastError = '';
 
         for (const model of modelsToTry) {
@@ -272,6 +286,26 @@ export class AISettingsModal {
             }
         }
 
+        // Save ElevenLabs keys
+        const elevenKeyInput = document.getElementById('input-elevenlabs-key');
+        const elevenVoiceInput = document.getElementById('input-elevenlabs-voice-id');
+        const gcpKeyInput = document.getElementById('input-gcp-tts-key');
+
+        const elevenLabsKey = (elevenKeyInput?.value || '').trim();
+        const elevenLabsVoiceId = (elevenVoiceInput?.value || '').trim();
+        const gcpKey = (gcpKeyInput?.value || '').trim();
+
+        if (elevenLabsKey) {
+            localStorage.setItem('jarvis_elevenlabs_key', elevenLabsKey);
+            voiceSpeaker.setElevenLabsVoice(elevenLabsVoiceId);
+            // If no OpenAI key, use ElevenLabs as TTS
+            if (!openAIKey) voiceSpeaker.setEngine('elevenlabs');
+        }
+        if (gcpKey) {
+            localStorage.setItem('jarvis_gcp_tts_key', gcpKey);
+            if (!openAIKey && !elevenLabsKey) voiceSpeaker.setEngine('gcp');
+        }
+
         localStorage.setItem('jarvis_ai_provider', provider);
         localStorage.setItem('jarvis_openai_key', openAIKey);
         localStorage.setItem('jarvis_gemini_key', geminiKey);
@@ -281,8 +315,17 @@ export class AISettingsModal {
         // Update active instances
         llmAgent.setProvider(provider);
         if (provider === 'gemini') {
-            voiceSpeaker.setAzureVoice(selectedAzureVoice);
-            voiceSpeaker.setEngine('azure-neural');
+            if (!openAIKey && elevenLabsKey) {
+                voiceSpeaker.setEngine('elevenlabs');
+            } else if (!openAIKey && gcpKey) {
+                voiceSpeaker.setEngine('gcp');
+            } else if (!openAIKey) {
+                voiceSpeaker.setAzureVoice(selectedAzureVoice);
+                voiceSpeaker.setEngine('browser');
+            } else {
+                voiceSpeaker.setOpenAIVoice(selectedVoice);
+                voiceSpeaker.setEngine('openai');
+            }
         } else {
             voiceSpeaker.setOpenAIVoice(selectedVoice);
             voiceSpeaker.setEngine('openai');

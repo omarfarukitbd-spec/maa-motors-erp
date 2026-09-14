@@ -368,7 +368,35 @@
           </div>
         </div>
 
-        <!-- Live Voice Test & Save Actions -->
+        <!-- ElevenLabs TTS Section (Free Voice Engine — No Card Needed) -->
+        <div class="form-group" style="margin-top: 16px; padding: 14px; background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.25); border-radius: 10px;">
+          <div class="label-row" style="margin-bottom: 8px;">
+            <label style="color: #6ee7b7; font-weight: 600;">🎙️ ElevenLabs Voice API Key <span style="font-size:10.5px; color: #34d399;">(বিনামূল্যে — সেরা Natural Voice)</span></label>
+            <a href="https://elevenlabs.io" target="_blank" rel="noopener" class="help-link">Free Key নিন &rarr;</a>
+          </div>
+          <div class="key-input-wrapper">
+            <input type="password" id="input-elevenlabs-key" placeholder="AQ.Ab8R... বা sk_..." autocomplete="off" />
+          </div>
+          <div class="label-row" style="margin-top: 10px; margin-bottom: 6px;">
+            <label style="color: #a7f3d0; font-size: 12px;">ElevenLabs Voice ID <span style="color: #6ee7b7;">(optional — খালি রাখলে default voice)</span></label>
+          </div>
+          <input type="text" id="input-elevenlabs-voice-id" placeholder="pNInz6obpgDQGcFmaJgB" autocomplete="off" style="width:100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: #e2e8f0; padding: 8px 12px; font-size: 13px;" />
+          <p class="form-hint" style="color: #6ee7b7;">ElevenLabs-এ signup করুন (email দিয়ে, কোনো card লাগে না) → Profile → API Keys → Copy</p>
+        </div>
+
+        <!-- Google Cloud TTS Section (Optional) -->
+        <div class="form-group" style="margin-top: 12px; padding: 14px; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px;">
+          <div class="label-row" style="margin-bottom: 8px;">
+            <label style="color: #93c5fd; font-weight: 600;">🌐 Google Cloud TTS Key <span style="font-size:10.5px; color: #60a5fa;">(bn-BD-Neural2 — সেরা বাংলাদেশী কণ্ঠ)</span></label>
+            <a href="https://console.cloud.google.com/apis/library/texttospeech.googleapis.com" target="_blank" rel="noopener" class="help-link">Enable &rarr;</a>
+          </div>
+          <div class="key-input-wrapper">
+            <input type="password" id="input-gcp-tts-key" placeholder="AIzaSy... (GCP API Key)" autocomplete="off" />
+          </div>
+          <p class="form-hint" style="color: #93c5fd;">GCP Console → APIs → Cloud Text-to-Speech → Enable → Credentials → Create API Key (প্রথম ১০ লক্ষ char/মাস বিনামূল্যে)</p>
+        </div>
+
+
         <div class="settings-actions-grid">
           <button type="button" id="btn-preview-voice" class="voice-preview-btn">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

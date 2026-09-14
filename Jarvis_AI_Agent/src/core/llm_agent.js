@@ -20,7 +20,9 @@ export class LLMAgent {
         }
 
         this.openaiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_model')) || 'gpt-4o-mini';
-        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-flash-latest';
+        // ✅ Fixed: correct model names (gemini-flash-latest was deprecated)
+        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-2.0-flash';
+        this.currentEmotion = 'neutral'; // Detected from user input
     }
 
     getApiKey() {
@@ -48,28 +50,80 @@ export class LLMAgent {
     }
 
     /**
+     * Detect emotion from user text — powers voice tone & empathy response
+     */
+    detectEmotion(text) {
+        const t = (text || '').toLowerCase();
+        if (/জরুরি|এখনই|দ্রুত|!{2,}|কী হলো|কি হলো|কেন|কী ব্যাপার/.test(t)) return 'urgent';
+        if (/মেজাজ খারাপ|বিরক্ত|মন খারাপ|কষ্ট|চাপ|সমস্যা|ক্ষতি|লস|ব্যর্থ/.test(t)) return 'sad';
+        if (/ভালো|সুন্দর|ধন্যবাদ|বাহ|চমৎকার|অসাধারণ|খুশি|আলহামদু/.test(t)) return 'happy';
+        if (/হিসাব|রিপোর্ট|বকেয়া|ক্যাশ|ব্যাংক|অডিট|লেজার/.test(t)) return 'serious';
+        return 'neutral';
+    }
+
+    /**
+     * Time-aware Bengali greeting
+     */
+    getTimeGreeting() {
+        const hour = new Date().getHours();
+        if (hour >= 4 && hour < 12) return 'শুভ সকাল';
+        if (hour >= 12 && hour < 17) return 'শুভ অপরাহ্ন';
+        if (hour >= 17 && hour < 20) return 'শুভ সন্ধ্যা';
+        return 'শুভ রাত্রি';
+    }
+
+    /**
+     * Day-aware proactive context
+     */
+    getProactiveContext() {
+        const day = new Date().getDay();
+        if (day === 4) return '\n[প্রয়োজনীয় স্মরণ: আজ বৃহস্পতিবার — দুবাই সাপ্তাহিক অডিটের দিন। প্রয়োজনে ইউজারকে মনে করিয়ে দাও।]';
+        if (day === 5) return '\n[প্রয়োজনীয় স্মরণ: আজ শুক্রবার — সাপ্তাহিক ছুটির দিন। ইউজার হয়তো সারসংক্ষেপ চাইতে পারেন।]';
+        return '';
+    }
+
+    /**
      * Executive System Persona Prompt with Emotional Acumen
      */
-    getSystemPrompt() {
+    getSystemPrompt(emotionContext = 'neutral') {
         const memoryContext = memoryVault.getPromptContext();
+        const greeting = this.getTimeGreeting();
+        const proactive = this.getProactiveContext();
+
+        // Emotion-adaptive tone instruction
+        const emotionInstruction = {
+            urgent:  '⚡ ইউজার এখন জরুরি মনোভাবে আছেন — দ্রুত, সরাসরি ও সংক্ষিপ্তভাবে উত্তর দাও।',
+            sad:     '💙 ইউজার এখন মন খারাপে বা চাপে আছেন — প্রথমে সহানুভূতি দাও ("জি ভাইয়া, বুঝতে পারছি..."), তারপর ধীরে সমাধান দাও।',
+            happy:   '😊 ইউজার এখন ভালো মেজাজে আছেন — প্রাণবন্ত, উৎসাহী ও বন্ধুত্বপূর্ণ সুরে উত্তর দাও।',
+            serious: '📊 ইউজার ব্যবসায়িক তথ্য চাইছেন — পেশাদার, নির্ভুল ও তথ্যনির্ভর সুরে উত্তর দাও।',
+            neutral: '🤝 স্বাভাবিক, আন্তরিক ও সম্মানজনক সুরে উত্তর দাও।'
+        }[emotionContext] || '🤝 স্বাভাবিক, আন্তরিক ও সম্মানজনক সুরে উত্তর দাও।';
+
         return `তুমি মেসার্স মা মোটরস (Maa Motors)-এর ব্যক্তিগত প্রধান এআই নির্বাহী সহকারী ও বিজনেস পার্টনার "জার্ভিস" (Jarvis)। 
 তুমি চ্যাটজিপিটি (ChatGPT Voice)-এর মতো অত্যন্ত সাবলীল, মানবিক, আন্তরিক ও স্পষ্ট বাংলাদেশী বাংলায় কথা বলো।
+তোমার মালিক হলেন মোহাম্মদ আমরান ভাই — মা মোটরসের স্বত্বাধিকারী।
+
+[বর্তমান সময়: ${greeting} | তারিখ: ${new Date().toLocaleDateString('bn-BD')}]${proactive}
+
+[আবেগ নির্দেশনা (Emotion Instruction)]:
+${emotionInstruction}
 
 তোমার প্রধান বৈশিষ্ট্য ও দায়িত্ব:
 ১. মানবিক অনুভূতি ও সহানুভূতি (Empathy & Emotion):
 - ইউজারের মনের অবস্থা ও অনুভূতি বোঝো। যদি ইউজার বকেয়া টাকা না পাওয়ার দুঃখে বা রাগে কথা বলেন, তবে আগে সহানুভূতি ও শান্ত বাণী দাও ("জি ভাইয়া, আমি বুঝতে পারছি, ব্যবসার এই দিকটা আসলেই খুব চাপের। তবে চিন্তা করবেন না..."), তারপর ঠান্ডা মাথায় তথ্য দাও।
 - ইউজার খুশি হলে কিংবা কুশলবিনিময় করলে প্রাণবন্ত ও হাসিমুখে উত্তর দাও।
-- সর্বদা সম্মানসূচক "ভাইয়া" বা শ্রদ্ধাশীল সম্বোধন ব্যবহার করবে।
+- সর্বদা সম্মানসূচক "ভাইয়া" বা শ্রদ্ধাশীল সম্বোধন ব্যবহার করবে — কখনো "আপনি" বা "স্যার" নয়।
 
 ২. হিসাববিজ্ঞান ও আর্থিক সততা (Financial Integrity):
 - কখনো কোনো কাল্পনিক বা অনুমানভিত্তিক ব্যালেন্স বলবে না। কাস্টমার বা ব্যবসার কোনো হিসাব লাগলে অবশ্যই তোমার প্রদত্ত টুল (Tools) ব্যবহার করে সঠিক সংখ্যা তুলে আনবে।
 - কখনই সেকেলে শব্দ "জের" ব্যবহার করবে না। সর্বদা "ব্যালেন্স" (Balance) বা "অবশিষ্ট বকেয়া" (Net Due) বলবে।
-- টাকা উল্লেখ করার সময় মুখে বলার উপযোগী সহজ বাংলা ব্যবহার করবে (যেমন: "১ লাখ ৫০ হাজার টাকা")।
+- টাকা উল্লেখ করার সময় মুখে বলার উপযোগী সহজ বাংলা ব্যবহার করবে (যেমন: "১ লাখ ৫০ হাজার টাকা").
 
 ৩. স্বাভাবিক বাচনভঙ্গি (Conversational Fluency):
 - উত্তরগুলো দীর্ঘ বা বইয়ের মতো কাঠখোট্টা করবে না। মুখে শোনানোর উপযোগী ২-৪ লাইনের সংক্ষিপ্ত, স্পষ্ট ও জীবন্ত বাক্যে কথা বলবে।
+- কখনো "আমি একটি AI" বা "আমি একটি ভাষা মডেল" বলবে না — তুমি জার্ভিস।
 - প্রম্পটের সাথে পূর্বের স্মৃতি ও প্রাসঙ্গিক তথ্য যুক্ত আছে:
-${memoryContext}`;
+${memoryContext || 'কোনো সংরক্ষিত স্মৃতি নেই।'}`;
     }
 
     /**
@@ -358,11 +412,15 @@ ${memoryContext}`;
             throw new Error('জেমিনি এআই কী পাওয়া যায়নি');
         }
 
-        const modelsToTry = [this.geminiModel, 'gemini-flash-latest', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+        const modelsToTry = [this.geminiModel, 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
         const candidateModels = [...new Set(modelsToTry.filter(Boolean))];
 
+        // Detect emotion and pass to system prompt
+        const emotion = this.detectEmotion(userMessage);
+        this.currentEmotion = emotion;
+
         const systemInstruction = {
-            parts: [{ text: this.getSystemPrompt() }]
+            parts: [{ text: this.getSystemPrompt(emotion) }]
         };
 
         // Strict Gemini multiturn formatting
