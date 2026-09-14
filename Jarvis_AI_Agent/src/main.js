@@ -427,7 +427,7 @@ window.triggerVoiceTest = async () => {
     // Immediate acoustic chime so the user instantly knows audio is functioning
     try {
         if (wakeWordListener && typeof wakeWordListener.playWakeChime === 'function') {
-            wakeWordListener.playWakeChime();
+            await wakeWordListener.playWakeChime();
         }
     } catch (e) {
         console.warn('Chime trigger error:', e);

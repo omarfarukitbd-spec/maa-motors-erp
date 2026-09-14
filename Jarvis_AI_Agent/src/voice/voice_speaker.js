@@ -455,9 +455,16 @@ export class VoiceSpeaker {
         return new Promise((resolve) => {
             const audio = new Audio();
             this.currentAudio = audio;
+            audio.referrerPolicy = 'no-referrer';
+            audio.setAttribute('referrerpolicy', 'no-referrer');
             audio.preload = 'auto';
             audio.volume = 1.0;
             audio.muted = false;
+
+            if (typeof document !== 'undefined' && document.body) {
+                audio.style.display = 'none';
+                document.body.appendChild(audio);
+            }
 
             let finished = false;
             const finish = () => {
@@ -467,6 +474,9 @@ export class VoiceSpeaker {
                     audio.onerror = null;
                     if (this.currentAudio === audio) {
                         this.currentAudio = null;
+                    }
+                    if (audio.parentNode) {
+                        audio.parentNode.removeChild(audio);
                     }
                     resolve();
                 }

@@ -228,7 +228,7 @@ export class AISettingsModal {
         // Play chime sound first for instant audible confirmation!
         try {
             if (window.wakeWordListener && typeof window.wakeWordListener.playWakeChime === 'function') {
-                window.wakeWordListener.playWakeChime();
+                await window.wakeWordListener.playWakeChime();
             }
         } catch (e) {
             console.warn('[AISettingsModal] Chime error:', e);

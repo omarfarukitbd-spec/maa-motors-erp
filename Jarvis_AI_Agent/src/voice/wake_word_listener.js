@@ -153,7 +153,7 @@ export class WakeWordListener {
      * Play a high-tech synthesized futuristic double-chime (Web Audio API)
      * No audio file download needed, 0ms latency!
      */
-    playWakeChime() {
+    async playWakeChime() {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!AudioCtx) return;
@@ -163,7 +163,7 @@ export class WakeWordListener {
             }
 
             if (this.audioCtx.state === 'suspended') {
-                this.audioCtx.resume();
+                await this.audioCtx.resume();
             }
 
             const now = this.audioCtx.currentTime;
@@ -173,9 +173,9 @@ export class WakeWordListener {
             const gain1 = this.audioCtx.createGain();
             osc1.type = 'sine';
             osc1.frequency.setValueAtTime(587.33, now);
-            gain1.gain.setValueAtTime(0, now);
-            gain1.gain.linearRampToValueAtTime(0.18, now + 0.03);
-            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+            gain1.gain.setValueAtTime(0.001, now);
+            gain1.gain.linearRampToValueAtTime(0.25, now + 0.03);
+            gain1.gain.linearRampToValueAtTime(0.001, now + 0.22);
             osc1.connect(gain1);
             gain1.connect(this.audioCtx.destination);
             osc1.start(now);
@@ -186,9 +186,9 @@ export class WakeWordListener {
             const gain2 = this.audioCtx.createGain();
             osc2.type = 'sine';
             osc2.frequency.setValueAtTime(880, now + 0.1);
-            gain2.gain.setValueAtTime(0, now + 0.1);
-            gain2.gain.linearRampToValueAtTime(0.24, now + 0.14);
-            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+            gain2.gain.setValueAtTime(0.001, now + 0.1);
+            gain2.gain.linearRampToValueAtTime(0.3, now + 0.14);
+            gain2.gain.linearRampToValueAtTime(0.001, now + 0.45);
             osc2.connect(gain2);
             gain2.connect(this.audioCtx.destination);
             osc2.start(now + 0.1);
