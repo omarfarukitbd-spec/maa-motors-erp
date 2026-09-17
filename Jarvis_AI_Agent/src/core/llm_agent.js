@@ -11,14 +11,11 @@ export class LLMAgent {
         const hasOpenAI = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_openai_key') || '').trim());
         const hasGemini = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_gemini_key') || localStorage.getItem('jarvis_gemini_keys') || '').trim());
         const hasGroq = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || '').trim());
-        const hasOmniRouters = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_omnirouters_key') || localStorage.getItem('jarvis_omnirouters_keys') || '').trim());
         const hasOpenRouter = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_openrouter_key') || localStorage.getItem('jarvis_openrouter_keys') || '').trim());
         const savedProvider = typeof window !== 'undefined' ? localStorage.getItem('jarvis_ai_provider') : null;
 
         if (savedProvider) {
             this.provider = savedProvider;
-        } else if (hasOmniRouters) {
-            this.provider = 'omnirouters';
         } else if (hasGemini) {
             this.provider = 'gemini';
         } else if (hasGroq) {
@@ -35,7 +32,6 @@ export class LLMAgent {
         this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-2.0-flash';
         this.groqModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_groq_model')) || 'llama-3.3-70b-versatile';
         this.openrouterModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openrouter_model')) || 'meta-llama/llama-3.3-70b-instruct:free';
-        this.omniroutersModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_omnirouters_model')) || 'gpt-4o-mini';
 
         this.currentEmotion = 'neutral';
         this.keyCooldowns = new Map(); // key -> cooldownTimestamp
@@ -52,8 +48,6 @@ export class LLMAgent {
             raw = localStorage.getItem('jarvis_gemini_keys') || localStorage.getItem('jarvis_gemini_key') || '';
         } else if (provider === 'groq') {
             raw = localStorage.getItem('jarvis_groq_keys') || localStorage.getItem('jarvis_groq_key') || '';
-        } else if (provider === 'omnirouters') {
-            raw = localStorage.getItem('jarvis_omnirouters_keys') || localStorage.getItem('jarvis_omnirouters_key') || '';
         } else if (provider === 'openrouter') {
             raw = localStorage.getItem('jarvis_openrouter_keys') || localStorage.getItem('jarvis_openrouter_key') || '';
         } else if (provider === 'cerebras') {
@@ -113,7 +107,7 @@ export class LLMAgent {
     }
 
     hasApiKey() {
-        const providers = ['omnirouters', 'gemini', 'groq', 'openrouter', 'cerebras', 'openai'];
+        const providers = ['gemini', 'groq', 'openrouter', 'cerebras', 'openai'];
         return providers.some(p => this.getKeys(p).length > 0);
     }
 
@@ -124,7 +118,6 @@ export class LLMAgent {
             const trimmed = key.trim();
             if (provider === 'gemini') localStorage.setItem('jarvis_gemini_key', trimmed);
             else if (provider === 'groq') localStorage.setItem('jarvis_groq_key', trimmed);
-            else if (provider === 'omnirouters') localStorage.setItem('jarvis_omnirouters_key', trimmed);
             else if (provider === 'openrouter') localStorage.setItem('jarvis_openrouter_key', trimmed);
             else if (provider === 'openai') localStorage.setItem('jarvis_openai_key', trimmed);
         }
@@ -1190,7 +1183,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         const primaryProvider = (typeof window !== 'undefined' && localStorage.getItem('jarvis_ai_provider')) || this.provider || 'gemini';
 
         // Provider priority chain: Primary first, followed by others
-        const allProviders = [primaryProvider, 'omnirouters', 'gemini', 'groq', 'openrouter', 'cerebras', 'openai'];
+        const allProviders = [primaryProvider, 'gemini', 'groq', 'openrouter', 'cerebras', 'openai'];
         const providerOrder = [...new Set(allProviders)];
 
         let lastErrorMessage = '';
@@ -1211,40 +1204,6 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
 
                     if (provider === 'gemini') {
                         result = await this.chatGemini(history, userMessage, key);
-                    } else if (provider === 'omnirouters' || key.startsWith('sk-jk')) {
-                        const omniCandidateModels = [this.omniroutersModel, 'gpt-4o-mini', 'gpt-4o', 'deepseek-chat', 'claude-3-5-sonnet'].filter(Boolean);
-                        const uniqueOmniModels = [...new Set(omniCandidateModels)];
-                        let omniSuccess = false;
-                        let lastOmniErr = null;
-
-                        for (const m of uniqueOmniModels) {
-                            try {
-                                result = await this.chatOpenAICompatible({
-                                    provider: 'OmniRouters',
-                                    endpoint: 'https://omnirouters.com/v1/chat/completions',
-                                    model: m,
-                                    key
-                                }, history, userMessage);
-                                if (result && result.spoken) {
-                                    this.omniroutersModel = m;
-                                    if (typeof window !== 'undefined') {
-                                        localStorage.setItem('jarvis_omnirouters_model', m);
-                                    }
-                                    omniSuccess = true;
-                                    break;
-                                }
-                            } catch (mErr) {
-                                lastOmniErr = mErr;
-                                console.warn(`[LLMAgent] OmniRouters model "${m}" failed:`, mErr.message);
-                                if (mErr.status === 401 || (mErr.message && (mErr.message.includes('quota') || mErr.message.includes('API key')))) {
-                                    throw mErr;
-                                }
-                            }
-                        }
-
-                        if (!omniSuccess && !result && lastOmniErr) {
-                            throw lastOmniErr;
-                        }
                     } else if (provider === 'groq') {
                         result = await this.chatOpenAICompatible({
                             provider: 'Groq Cloud',

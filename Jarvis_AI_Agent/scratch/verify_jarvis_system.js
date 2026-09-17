@@ -201,13 +201,23 @@ import fs from 'fs';
 const indexHtml = fs.readFileSync('e:/maa-motors-erp/Jarvis_AI_Agent/index.html', 'utf8');
 assert(!indexHtml.includes('ভাইয়া'), 'index.html contains no archaic or unwanted "ভাইয়া" greetings');
 assert(indexHtml.includes('শুভ অপরাহ্ন স্যার'), 'index.html contains professional "শুভ অপরাহ্ন স্যার" greeting');
-assert(indexHtml.includes('omnirouters.com'), 'index.html includes omnirouters.com support and links');
 
-// TEST 15: OmniRouters Key Detection
-const sampleOmniKey = 'sk-jkNmAbCdEfGh1234567890aPnA';
-assert(sampleOmniKey.startsWith('sk-jk'), 'Sample OmniRouters key has sk-jk prefix');
-const isOmniDetected = sampleOmniKey.startsWith('sk-jk');
-assert(isOmniDetected, 'OmniRouters key auto-detection triggers successfully');
+// TEST 15: Widescreen Executive AI Studio Structure
+assert(indexHtml.includes('ai-studio-card'), 'index.html contains .ai-studio-card widescreen container');
+assert(indexHtml.includes('ai-studio-grid'), 'index.html contains .ai-studio-grid 3-column layout');
+assert(indexHtml.includes('studio-brain-col'), 'index.html contains Column 1 (AI Brain & Multi-Key Gateway)');
+assert(indexHtml.includes('studio-voice-col'), 'index.html contains Column 2 (Neural Voice Engines)');
+assert(indexHtml.includes('studio-diagnostics-col'), 'index.html contains Column 3 (Live Diagnostics & Sandbox)');
+assert(indexHtml.includes('btn-test-active-key'), 'index.html contains live ping/speed test button');
+assert(indexHtml.includes('studio-key-test-output'), 'index.html contains live ping output box');
+assert(indexHtml.includes('studio-active-provider-badge'), 'index.html contains active provider diagnostic badge');
+assert(indexHtml.includes('studio-total-keys-count'), 'index.html contains total keys pool badge');
+assert(indexHtml.includes('studio-active-voice-badge'), 'index.html contains active voice engine badge');
+
+// TEST 16: AISettingsModal Controller Methods
+import { AISettingsModal } from '../src/core/ai_settings_modal.js';
+assert(typeof AISettingsModal.prototype.updateDiagnosticBadges === 'function', 'AISettingsModal has updateDiagnosticBadges method');
+assert(typeof AISettingsModal.prototype.testActiveKeyPing === 'function', 'AISettingsModal has testActiveKeyPing method');
 
 console.log(`\n🎉 ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY! 100% CODE INTEGRITY PROVEN.`);
 

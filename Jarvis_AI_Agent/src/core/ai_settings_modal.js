@@ -12,6 +12,7 @@ import { JARVIS_CONFIG } from '../config.js';
  */
 export class AISettingsModal {
     constructor() {
+        if (typeof document === 'undefined') return;
         this.modalEl = document.getElementById('ai-settings-modal');
         this.openBtn = document.getElementById('open-ai-settings-btn');
         this.closeBtn = document.getElementById('close-ai-settings-modal');
@@ -44,6 +45,15 @@ export class AISettingsModal {
         this.toggleOpenRouterKeyVis = document.getElementById('toggle-openrouter-key-vis');
         this.toggleOpenAIKeyVis = document.getElementById('toggle-openai-key-vis');
 
+        // Diagnostic & Studio Controls
+        this.saveTopBtn = document.getElementById('btn-save-ai-settings-top');
+        this.closeFooterBtn = document.getElementById('close-ai-settings-footer-btn');
+        this.testPingBtn = document.getElementById('btn-test-active-key');
+        this.pingOutputEl = document.getElementById('studio-key-test-output');
+        this.activeProviderBadge = document.getElementById('studio-active-provider-badge');
+        this.totalKeysCountBadge = document.getElementById('studio-total-keys-count');
+        this.activeVoiceBadge = document.getElementById('studio-active-voice-badge');
+
         // Actions
         this.previewBtn = document.getElementById('btn-preview-voice');
         this.saveBtn = document.getElementById('btn-save-ai-settings');
@@ -60,6 +70,7 @@ export class AISettingsModal {
         // Open & Close
         if (this.openBtn) this.openBtn.addEventListener('click', () => this.open());
         if (this.closeBtn) this.closeBtn.addEventListener('click', () => this.close());
+        if (this.closeFooterBtn) this.closeFooterBtn.addEventListener('click', () => this.close());
         this.modalEl.addEventListener('click', (e) => {
             if (e.target === this.modalEl) this.close();
         });
@@ -87,25 +98,7 @@ export class AISettingsModal {
         // Auto-preserve pasted keys immediately
         this._setupAutoPreserve(this.geminiKeyInput, 'jarvis_gemini_key', 'jarvis_gemini_keys');
         this._setupAutoPreserve(this.groqKeyInput, 'jarvis_groq_key', 'jarvis_groq_keys');
-        if (this.openrouterKeyInput) {
-            const saveOmniOrOpen = () => {
-                const val = (this.openrouterKeyInput.value || '').trim();
-                if (val) {
-                    if (val.startsWith('sk-jk')) {
-                        localStorage.setItem('jarvis_omnirouters_key', val);
-                        localStorage.setItem('jarvis_omnirouters_keys', val);
-                        localStorage.setItem('jarvis_ai_provider', 'omnirouters');
-                        if (typeof llmAgent !== 'undefined' && llmAgent) {
-                            llmAgent.setProvider('omnirouters');
-                        }
-                    }
-                    localStorage.setItem('jarvis_openrouter_key', val);
-                    localStorage.setItem('jarvis_openrouter_keys', val);
-                }
-            };
-            this.openrouterKeyInput.addEventListener('change', saveOmniOrOpen);
-            this.openrouterKeyInput.addEventListener('input', saveOmniOrOpen);
-        }
+        this._setupAutoPreserve(this.openrouterKeyInput, 'jarvis_openrouter_key', 'jarvis_openrouter_keys');
         this._setupAutoPreserve(this.openaiKeyInput, 'jarvis_openai_key');
 
         // ElevenLabs inputs
@@ -117,6 +110,7 @@ export class AISettingsModal {
                 if (val) {
                     localStorage.setItem('jarvis_elevenlabs_key', val);
                     voiceSpeaker.setEngine('elevenlabs');
+                    this.updateDiagnosticBadges();
                 }
             };
             elevenKeyInput.addEventListener('change', saveEleven);
@@ -139,10 +133,26 @@ export class AISettingsModal {
             this.previewBtn.addEventListener('click', () => this.testCurrentVoice());
         }
 
-        // Save Settings Button
+        // Save Settings Buttons (Main and Top)
         if (this.saveBtn) {
             this.saveBtn.addEventListener('click', () => this.saveSettings());
         }
+        if (this.saveTopBtn) {
+            this.saveTopBtn.addEventListener('click', () => this.saveSettings());
+        }
+
+        // Real-Time Ping Tester Button
+        if (this.testPingBtn) {
+            this.testPingBtn.addEventListener('click', () => this.testActiveKeyPing());
+        }
+
+        // Live diagnostic listeners
+        if (this.geminiVoiceSelect) this.geminiVoiceSelect.addEventListener('change', () => this.updateDiagnosticBadges());
+        if (this.openaiVoiceSelect) this.openaiVoiceSelect.addEventListener('change', () => this.updateDiagnosticBadges());
+        if (this.geminiKeyInput) this.geminiKeyInput.addEventListener('input', () => this.updateDiagnosticBadges());
+        if (this.groqKeyInput) this.groqKeyInput.addEventListener('input', () => this.updateDiagnosticBadges());
+        if (this.openrouterKeyInput) this.openrouterKeyInput.addEventListener('input', () => this.updateDiagnosticBadges());
+        if (this.openaiKeyInput) this.openaiKeyInput.addEventListener('input', () => this.updateDiagnosticBadges());
 
         // Populate Existing Values
         this.loadSettings();
@@ -199,13 +209,13 @@ export class AISettingsModal {
                 item.sec?.classList.add('hidden');
             }
         });
+        this.updateDiagnosticBadges();
     }
 
     loadSettings() {
         const geminiKey = localStorage.getItem('jarvis_gemini_key') || localStorage.getItem('jarvis_gemini_keys') || '';
         const groqKey = localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || '';
-        const omniKey = localStorage.getItem('jarvis_omnirouters_key') || localStorage.getItem('jarvis_omnirouters_keys') || '';
-        const openrouterKey = omniKey || localStorage.getItem('jarvis_openrouter_key') || localStorage.getItem('jarvis_openrouter_keys') || '';
+        const openrouterKey = localStorage.getItem('jarvis_openrouter_key') || localStorage.getItem('jarvis_openrouter_keys') || '';
         const openAIKey = localStorage.getItem('jarvis_openai_key') || '';
         const elevenLabsKey = localStorage.getItem('jarvis_elevenlabs_key') || '';
         const gcpKey = localStorage.getItem('jarvis_gcp_tts_key') || '';
@@ -215,9 +225,6 @@ export class AISettingsModal {
         const autoFailover = localStorage.getItem('jarvis_auto_failover') !== 'false';
 
         let provider = localStorage.getItem('jarvis_ai_provider') || 'gemini';
-        if (provider === 'omnirouters') {
-            provider = 'openrouter';
-        }
         if (!geminiKey && groqKey) {
             provider = 'groq';
         } else if (!geminiKey && !groqKey && openrouterKey) {
@@ -244,6 +251,8 @@ export class AISettingsModal {
 
         const gcpKeyInput = document.getElementById('input-gcp-tts-key');
         if (gcpKeyInput) gcpKeyInput.value = gcpKey;
+
+        this.updateDiagnosticBadges();
     }
 
     async testCurrentVoice() {
@@ -369,20 +378,8 @@ export class AISettingsModal {
     async validateOpenRouterKey(key) {
         const cleanKey = (key || '').split(/[\n,;]+/)[0].trim();
         if (!cleanKey || cleanKey.length < 15) {
-            return { valid: false, message: 'দয়া করে একটি সঠিক OmniRouters বা OpenRouter এপিআই কী প্রদান করুন।' };
+            return { valid: false, message: 'দয়া করে একটি সঠিক OpenRouter এপিআই কী প্রদান করুন।' };
         }
-
-        // OmniRouters (omnirouters.com) API Keys start with 'sk-jk'
-        if (cleanKey.startsWith('sk-jk')) {
-            localStorage.setItem('jarvis_omnirouters_key', cleanKey);
-            localStorage.setItem('jarvis_omnirouters_keys', cleanKey);
-            localStorage.setItem('jarvis_ai_provider', 'omnirouters');
-            if (typeof llmAgent !== 'undefined' && llmAgent) {
-                llmAgent.setProvider('omnirouters');
-            }
-            return { valid: true };
-        }
-
         try {
             const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
                 headers: { 'Authorization': `Bearer ${cleanKey}` }
@@ -412,7 +409,7 @@ export class AISettingsModal {
     }
 
     async saveSettings() {
-        let provider = this.currentProvider || 'gemini';
+        const provider = this.currentProvider || 'gemini';
         const geminiKey = (this.geminiKeyInput?.value || '').trim();
         const groqKey = (this.groqKeyInput?.value || '').trim();
         const openrouterKey = (this.openrouterKeyInput?.value || '').trim();
@@ -438,13 +435,6 @@ export class AISettingsModal {
         if (groqKey) {
             localStorage.setItem('jarvis_groq_key', groqKey);
             localStorage.setItem('jarvis_groq_keys', groqKey);
-        }
-        if (openrouterKey.startsWith('sk-jk')) {
-            localStorage.setItem('jarvis_omnirouters_key', openrouterKey);
-            localStorage.setItem('jarvis_omnirouters_keys', openrouterKey);
-            if (provider === 'openrouter') {
-                provider = 'omnirouters';
-            }
         }
         if (openrouterKey) {
             localStorage.setItem('jarvis_openrouter_key', openrouterKey);
@@ -515,12 +505,12 @@ export class AISettingsModal {
                 }
                 return;
             }
-        } else if ((provider === 'openrouter' || provider === 'omnirouters') && openrouterKey) {
+        } else if (provider === 'openrouter' && openrouterKey) {
             const valResult = await this.validateOpenRouterKey(openrouterKey);
             if (!valResult.valid) {
                 if (this.feedbackEl) {
                     this.feedbackEl.className = 'settings-feedback-msg error';
-                    this.feedbackEl.innerText = `❌ কী সঠিক নয়: ${valResult.message}`;
+                    this.feedbackEl.innerText = `❌ OpenRouter কী সঠিক নয়: ${valResult.message}`;
                 }
                 return;
             }
@@ -538,7 +528,6 @@ export class AISettingsModal {
         const providerNames = {
             gemini: 'গুগল জেমিনি (Google Gemini)',
             groq: 'গ্রক ক্লাউড (Groq LPU Llama-3.3)',
-            omnirouters: 'অমনিরাউটার্স (OmniRouters আনলিমিটেড এআই)',
             openrouter: 'ওপেনরাউটার (OpenRouter Free)',
             openai: 'ওপেনএআই চ্যাটজিপিটি (OpenAI ChatGPT)'
         };
@@ -548,11 +537,133 @@ export class AISettingsModal {
             this.feedbackEl.innerText = `✅ ${providerNames[provider] || provider} ও স্মার্ট ভয়েস সফলভাবে সক্রিয় হয়েছে!`;
             this.feedbackEl.classList.remove('hidden');
 
+            this.updateDiagnosticBadges();
+
             setTimeout(() => {
                 this.close();
             }, 1200);
         }
     }
+
+    updateDiagnosticBadges() {
+        const providerTitles = {
+            gemini: 'Google Gemini',
+            groq: 'Groq Cloud (LPU)',
+            openrouter: 'OpenRouter Free',
+            openai: 'OpenAI ChatGPT'
+        };
+
+        if (this.activeProviderBadge) {
+            this.activeProviderBadge.textContent = providerTitles[this.currentProvider] || this.currentProvider;
+        }
+
+        // Calculate total keys across all inputs
+        const geminiKeys = (this.geminiKeyInput?.value || '').split(/[\n,;]+/).filter(k => k.trim().length > 10);
+        const groqKeys = (this.groqKeyInput?.value || '').split(/[\n,;]+/).filter(k => k.trim().length > 10);
+        const openrouterKeys = (this.openrouterKeyInput?.value || '').split(/[\n,;]+/).filter(k => k.trim().length > 10);
+        const openaiKey = (this.openaiKeyInput?.value || '').trim();
+        const totalCount = geminiKeys.length + groqKeys.length + openrouterKeys.length + (openaiKey.length > 10 ? 1 : 0);
+
+        if (this.totalKeysCountBadge) {
+            this.totalKeysCountBadge.textContent = totalCount > 0 ? `${totalCount} টি সক্রিয় কী` : 'কোনো কী নেই';
+            this.totalKeysCountBadge.className = totalCount > 0 ? 'diag-val-badge green' : 'diag-val-badge';
+        }
+
+        if (this.activeVoiceBadge) {
+            const elevenKey = (document.getElementById('input-elevenlabs-key')?.value || '').trim();
+            if (elevenKey) {
+                this.activeVoiceBadge.textContent = 'ElevenLabs Neural';
+                this.activeVoiceBadge.className = 'diag-val-badge green';
+            } else if (this.currentProvider === 'openai') {
+                const voice = this.openaiVoiceSelect?.value || 'onyx';
+                this.activeVoiceBadge.textContent = `ChatGPT (${voice})`;
+                this.activeVoiceBadge.className = 'diag-val-badge';
+            } else {
+                const voice = this.geminiVoiceSelect?.value === 'bn-BD-NabanitaNeural' ? 'নবনিতা' : 'প্রদীপ';
+                this.activeVoiceBadge.textContent = `Microsoft Natural (${voice})`;
+                this.activeVoiceBadge.className = 'diag-val-badge green';
+            }
+        }
+    }
+
+    async testActiveKeyPing() {
+        if (!this.pingOutputEl) return;
+        this.pingOutputEl.innerHTML = '<span style="color: #38bdf8;">🔄 সক্রিয় প্রোভাইডার ও কী পিং করা হচ্ছে...</span>';
+
+        const provider = this.currentProvider || 'gemini';
+        let key = '';
+        if (provider === 'gemini') {
+            key = (this.geminiKeyInput?.value || localStorage.getItem('jarvis_gemini_key') || '').split(/[\n,;]+/)[0].trim();
+        } else if (provider === 'groq') {
+            key = (this.groqKeyInput?.value || localStorage.getItem('jarvis_groq_key') || '').split(/[\n,;]+/)[0].trim();
+        } else if (provider === 'openrouter') {
+            key = (this.openrouterKeyInput?.value || localStorage.getItem('jarvis_openrouter_key') || '').split(/[\n,;]+/)[0].trim();
+        } else if (provider === 'openai') {
+            key = (this.openaiKeyInput?.value || localStorage.getItem('jarvis_openai_key') || '').trim();
+        }
+
+        if (!key) {
+            this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ কোনো কী পাওয়া যায়নি! অনুগ্রহ করে ${provider.toUpperCase()} ইনপুটে সঠিক API Key দিন।</span>`;
+            return;
+        }
+
+        const startTime = performance.now();
+        try {
+            if (provider === 'gemini') {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] })
+                });
+                const elapsed = Math.round(performance.now() - startTime);
+                if (res.ok) {
+                    this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ কানেকশন সফল! লেটেন্সি: <strong>${elapsed}ms</strong><br>মডেল: <em>gemini-2.0-flash</em> রেডি ও লাইভ।</span>`;
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    const msg = data.error?.message || `HTTP ${res.status}`;
+                    this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ গুগল সার্ভার এরর (${res.status}): ${msg}</span>`;
+                }
+            } else if (provider === 'groq') {
+                const res = await fetch('https://api.groq.com/openai/v1/models', {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+                const elapsed = Math.round(performance.now() - startTime);
+                if (res.ok) {
+                    this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ Groq LPU কানেকশন সফল! লেটেন্সি: <strong>${elapsed}ms</strong><br>মডেল: <em>Llama-3.3-70b-versatile</em> প্রস্তুত।</span>`;
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ Groq এরর: ${data.error?.message || res.statusText}</span>`;
+                }
+            } else if (provider === 'openrouter') {
+                const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+                const elapsed = Math.round(performance.now() - startTime);
+                if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    const limitInfo = data?.data?.limit !== null && data?.data?.limit !== undefined ? ` (ক্রেডিট: $${data.data.limit})` : '';
+                    this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ OpenRouter কানেক্টেড! লেটেন্সি: <strong>${elapsed}ms</strong>${limitInfo}<br>ফ্রি মডেল ক্লাস্টার সম্পূর্ণ সক্রিয়।</span>`;
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ OpenRouter এরর: ${data.error?.message || res.statusText}</span>`;
+                }
+            } else if (provider === 'openai') {
+                const res = await fetch('https://api.openai.com/v1/models', {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+                const elapsed = Math.round(performance.now() - startTime);
+                if (res.ok) {
+                    this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ OpenAI কানেক্টেড! লেটেন্সি: <strong>${elapsed}ms</strong><br>ChatGPT মডেল ও অফিসিয়াল ভয়েস প্রস্তুত।</span>`;
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ OpenAI এরর: ${data.error?.message || res.statusText}</span>`;
+                }
+            }
+        } catch (err) {
+            console.error('[AISettingsModal] Ping error:', err);
+            this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ নেটওয়ার্ক এরর: ${err.message}</span>`;
+        }
+    }
 }
 
-export const aiSettingsModal = new AISettingsModal();
+export const aiSettingsModal = typeof document !== 'undefined' ? new AISettingsModal() : null;
