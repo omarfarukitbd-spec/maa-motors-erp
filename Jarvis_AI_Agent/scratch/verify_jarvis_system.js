@@ -219,6 +219,59 @@ import { AISettingsModal } from '../src/core/ai_settings_modal.js';
 assert(typeof AISettingsModal.prototype.updateDiagnosticBadges === 'function', 'AISettingsModal has updateDiagnosticBadges method');
 assert(typeof AISettingsModal.prototype.testActiveKeyPing === 'function', 'AISettingsModal has testActiveKeyPing method');
 
+// TEST 17: Enterprise Skills Registry & Instantiation
+import { ExecutiveReportSkill } from '../src/skills/skill_executive_report.js';
+import { DisputeAuditSkill } from '../src/skills/skill_dispute_audit.js';
+import { BankingTreasurySkill } from '../src/skills/skill_banking_treasury.js';
+import { ShowroomCashSkill } from '../src/skills/skill_showroom_cash.js';
+import { SalesInvoiceSkill } from '../src/skills/skill_sales_invoice.js';
+import { ExpenseAuditSkill } from '../src/skills/skill_expense_audit.js';
+import { DebtRecoverySkill } from '../src/skills/skill_debt_recovery.js';
+
+const execSkill = new ExecutiveReportSkill();
+const disputeSkill = new DisputeAuditSkill();
+const bankSkill = new BankingTreasurySkill();
+const cashSkill = new ShowroomCashSkill();
+const salesSkill = new SalesInvoiceSkill();
+const expenseSkill = new ExpenseAuditSkill();
+const debtSkill = new DebtRecoverySkill();
+
+assert(execSkill.triggers.includes('রিপোর্ট'), 'ExecutiveReportSkill triggers on "রিপোর্ট"');
+assert(disputeSkill.triggers.includes('ভুল হিসাব'), 'DisputeAuditSkill triggers on "ভুল হিসাব"');
+assert(bankSkill.triggers.includes('ব্যাংক ব্যালেন্স'), 'BankingTreasurySkill triggers on "ব্যাংক ব্যালেন্স"');
+assert(cashSkill.triggers.includes('শোরুম ক্যাশ'), 'ShowroomCashSkill triggers on "শোরুম ক্যাশ"');
+assert(salesSkill.triggers.includes('আজকের বিক্রি'), 'SalesInvoiceSkill triggers on "আজকের বিক্রি"');
+assert(expenseSkill.triggers.includes('খরচ'), 'ExpenseAuditSkill triggers on "খরচ"');
+assert(debtSkill.triggers.includes('টপ দেনাদার'), 'DebtRecoverySkill triggers on "টপ দেনাদার"');
+
+// TEST 18: Tool schema has get_executive_business_pulse with proper description
+const toolSchemas = agent.getToolsSchema();
+const pulseTool = toolSchemas.find(t => t.function.name === 'get_executive_business_pulse');
+assert(pulseTool !== undefined, 'get_executive_business_pulse is present in tool schema');
+assert(pulseTool.function.description.includes('রিপোর্ট দাও'), 'Pulse tool explicitly mentions "রিপোর্ট দাও" in description');
+
+// TEST 19: Tool schema has get_ledger_math_audit_summary for dispute handling
+const auditTool = toolSchemas.find(t => t.function.name === 'get_ledger_math_audit_summary');
+assert(auditTool !== undefined, 'get_ledger_math_audit_summary is present in tool schema');
+assert(auditTool.function.description.includes('ভুল হিসাব'), 'Audit tool explicitly mentions "ভুল হিসাব" in description');
+
+// TEST 20: Dynamic tool summary generator produces natural Bengali speech
+const dynamicSummary1 = agent.generateDynamicToolSpokenSummary('get_executive_business_pulse', {
+    todayTotalBills: 150000,
+    todayTotalCollections: 120000,
+    todayTotalExpenses: 15000,
+    todayNetCashFlow: 105000
+});
+assert(dynamicSummary1.includes('1,50,000') && dynamicSummary1.includes('1,20,000'), `Dynamic pulse summary formatted with commas: ${dynamicSummary1}`);
+assert(!dynamicSummary1.includes('হিসাবটি যাচাই করেছি'), 'Dynamic summary replaces hardcoded robotic sentence');
+
+const dynamicSummary2 = agent.generateDynamicToolSpokenSummary('get_ledger_math_audit_summary', {
+    auditedTxnCount: 100,
+    statusMessage: 'মা মোটরসের সাম্প্রতিক ১০০টি লেনদেন যাচাই করা হয়েছে। কোনো গাণিতিক ভুল নেই।'
+});
+assert(dynamicSummary2.includes('১০০টি লেনদেন যাচাই করা হয়েছে'), `Dynamic audit summary reflects statusMessage: ${dynamicSummary2}`);
+
 console.log(`\n🎉 ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY! 100% CODE INTEGRITY PROVEN.`);
+
 
 

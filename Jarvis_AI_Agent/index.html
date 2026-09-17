@@ -6,6 +6,7 @@
   <meta name="referrer" content="no-referrer" />
   <title>JARVIS AI AGENT — মেসার্স মা মোটরস পার্সোনাল এক্সিকিউটিভ এআই</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><circle cx='12' cy='12' r='9'/></svg>" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body>
@@ -227,6 +228,34 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Quick Action Pills for Immediate 1-Click Operations -->
+      <div class="quick-action-bar">
+        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('আজকের পূর্ণাঙ্গ রিপোর্ট')">
+          <i class="fa-solid fa-chart-pie text-sky-400"></i>
+          <span>আজকের রিপোর্ট</span>
+        </button>
+        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('শোরুম ক্যাশ কত?')">
+          <i class="fa-solid fa-cash-register text-emerald-400"></i>
+          <span>শোরুম ক্যাশ</span>
+        </button>
+        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('ব্যাংক ব্যালেন্স কত?')">
+          <i class="fa-solid fa-building-columns text-amber-400"></i>
+          <span>ব্যাংক ব্যালেন্স</span>
+        </button>
+        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('আজকের মোট বিক্রি কত?')">
+          <i class="fa-solid fa-receipt text-indigo-400"></i>
+          <span>আজকের বিক্রি</span>
+        </button>
+        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('টপ দেনাদার কারা?')">
+          <i class="fa-solid fa-users text-rose-400"></i>
+          <span>টপ দেনাদার</span>
+        </button>
+        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('লেজার অডিট করো')">
+          <i class="fa-solid fa-shield-halved text-teal-400"></i>
+          <span>লেজার অডিট</span>
+        </button>
       </div>
 
       <!-- Manual Bottom Input Bar -->

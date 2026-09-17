@@ -8,16 +8,30 @@ import { VoiceVisualizer } from './voice/voice_visualizer.js';
 import { wakeWordListener } from './voice/wake_word_listener.js';
 import { aiSettingsModal } from './core/ai_settings_modal.js';
 
-// Import Core Skills
+// Import Core Enterprise Skills
 import { CustomerSkill } from './skills/skill_customer.js';
 import { AnalyticsSkill } from './skills/skill_analytics.js';
 import { DubaiSkill } from './skills/skill_dubai.js';
 import { MemorySkill } from './skills/skill_memory.js';
 import { BusinessIntelligenceSkill } from './skills/skill_business_intelligence.js';
+import { ExecutiveReportSkill } from './skills/skill_executive_report.js';
+import { DisputeAuditSkill } from './skills/skill_dispute_audit.js';
+import { BankingTreasurySkill } from './skills/skill_banking_treasury.js';
+import { ShowroomCashSkill } from './skills/skill_showroom_cash.js';
+import { SalesInvoiceSkill } from './skills/skill_sales_invoice.js';
+import { ExpenseAuditSkill } from './skills/skill_expense_audit.js';
+import { DebtRecoverySkill } from './skills/skill_debt_recovery.js';
 
-// 1. Register Core Skills
+// 1. Register Core Enterprise Skills
+skillRegistry.register(new ExecutiveReportSkill());
+skillRegistry.register(new DisputeAuditSkill());
 skillRegistry.register(new CustomerSkill());
 skillRegistry.register(new AnalyticsSkill());
+skillRegistry.register(new BankingTreasurySkill());
+skillRegistry.register(new ShowroomCashSkill());
+skillRegistry.register(new SalesInvoiceSkill());
+skillRegistry.register(new ExpenseAuditSkill());
+skillRegistry.register(new DebtRecoverySkill());
 skillRegistry.register(new BusinessIntelligenceSkill());
 skillRegistry.register(new DubaiSkill());
 skillRegistry.register(new MemorySkill());
@@ -496,6 +510,116 @@ jarvisBrain.onMessage((msg) => {
  */
 function renderDataCardHtml(data) {
     if (!data || typeof data !== 'object') return '';
+
+    // 0. Executive Business Pulse / Full Daily Report Card
+    if (data.type === 'executive_business_pulse' || (data.todayTotalBills !== undefined && data.todayNetCashFlow !== undefined)) {
+        const activeCustHtml = (data.activeCustomers || []).map(name => `
+            <span style="display:inline-block;padding:3px 8px;margin:2px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);border-radius:12px;font-size:11px;color:#38bdf8;font-weight:600;">
+                <i class="fa-solid fa-user text-xs"></i> ${escapeHTML(name)}
+            </span>
+        `).join('');
+
+        return `
+            <div class="financial-data-card" style="border-left: 3px solid #38bdf8;">
+                <div class="data-card-header">
+                    <span class="data-card-title">
+                        <i class="fa-solid fa-chart-line text-sky-400"></i>
+                        দৈনিক এক্সিকিউটিভ বিজনেস রিপোর্ট
+                    </span>
+                    <span class="data-card-badge" style="background:rgba(56,189,248,0.15);border-color:rgba(56,189,248,0.3);color:#38bdf8;">
+                        ${escapeHTML(data.date || '')}
+                    </span>
+                </div>
+                <div class="data-card-grid" style="margin-bottom:8px;">
+                    <div class="data-stat-box">
+                        <div class="data-stat-label">মোট বিক্রি</div>
+                        <div class="data-stat-value debit" style="color:#f87171;font-weight:800;">৳ ${Number(data.todayTotalBills || 0).toLocaleString('bn-BD')}</div>
+                    </div>
+                    <div class="data-stat-box">
+                        <div class="data-stat-label">মোট আদায়</div>
+                        <div class="data-stat-value credit" style="color:#34d399;font-weight:800;">৳ ${Number(data.todayTotalCollections || 0).toLocaleString('bn-BD')}</div>
+                    </div>
+                    <div class="data-stat-box">
+                        <div class="data-stat-label">মোট খরচ</div>
+                        <div class="data-stat-value debit" style="color:#f87171;font-weight:800;">৳ ${Number(data.todayTotalExpenses || 0).toLocaleString('bn-BD')}</div>
+                    </div>
+                    <div class="data-stat-box">
+                        <div class="data-stat-label">নিট ক্যাশ ফ্লো</div>
+                        <div class="data-stat-value" style="color:${Number(data.todayNetCashFlow || 0) >= 0 ? '#34d399' : '#f87171'};font-weight:800;">৳ ${Number(data.todayNetCashFlow || 0).toLocaleString('bn-BD')}</div>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;font-size:11.5px;">
+                    <div style="background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);">
+                        <span style="color:#94a3b8;">নগদ ক্যাশ আদায়:</span>
+                        <strong class="credit" style="float:right;">৳ ${Number(data.cashCollections || 0).toLocaleString('bn-BD')}</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);">
+                        <span style="color:#94a3b8;">ব্যাংক জমা:</span>
+                        <strong class="credit" style="float:right;">৳ ${Number(data.bankCollections || 0).toLocaleString('bn-BD')}</strong>
+                    </div>
+                </div>
+                ${activeCustHtml ? `
+                    <div style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.1);">
+                        <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">আজকের সক্রিয় ক্রেতা (${data.activeCustomersCount || 0} জন):</div>
+                        <div>${activeCustHtml}</div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    // 0.5 Ledger Math Audit Summary Card
+    if (data.type === 'ledger_audit_summary' || (data.auditedTxnCount !== undefined && data.isFullySound !== undefined)) {
+        const isSound = data.isFullySound;
+        const corruptList = (data.corruptSamples || []).map(s => `
+            <tr>
+                <td style="font-weight:700;color:#f87171;">${escapeHTML(s.customerName)}</td>
+                <td style="color:#94a3b8;font-size:10.5px;">${escapeHTML(s.voucherNo || '-')}</td>
+                <td style="color:#e2e8f0;">৳ ${Number(s.expected).toLocaleString('bn-BD')}</td>
+                <td class="debit" style="font-weight:800;">৳ ${Number(s.actual).toLocaleString('bn-BD')}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="financial-data-card" style="border-left: 3px solid ${isSound ? '#10b981' : '#ef4444'};">
+                <div class="data-card-header">
+                    <span class="data-card-title" style="color:${isSound ? '#34d399' : '#f87171'};">
+                        <i class="fa-solid ${isSound ? 'fa-circle-check text-emerald-400' : 'fa-triangle-exclamation text-red-400'}"></i>
+                        লেজার গাণিতিক অডিট রিপোর্ট
+                    </span>
+                    <span class="data-card-badge" style="background:${isSound ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};color:${isSound ? '#34d399' : '#f87171'};">
+                        ${isSound ? '১০০% নির্ভুল' : 'গরমিল শনাক্ত'}
+                    </span>
+                </div>
+                <div class="data-card-grid" style="margin-bottom:8px;">
+                    <div class="data-stat-box">
+                        <div class="data-stat-label">অডিটকৃত লেনদেন</div>
+                        <div class="data-stat-value" style="color:#38bdf8;font-weight:800;">${Number(data.auditedTxnCount || 0).toLocaleString('bn-BD')} টি</div>
+                    </div>
+                    <div class="data-stat-box">
+                        <div class="data-stat-label">গাণিতিক গরমিল</div>
+                        <div class="data-stat-value" style="color:${isSound ? '#34d399' : '#f87171'};font-weight:800;">${Number(data.corruptTxnCount || 0).toLocaleString('bn-BD')} টি</div>
+                    </div>
+                </div>
+                <div style="font-size:12px;color:#cbd5e1;line-height:1.5;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.06);">
+                    ${escapeHTML(data.statusMessage || '')}
+                </div>
+                ${corruptList ? `
+                <table class="data-card-table" style="margin-top:8px;">
+                    <thead>
+                        <tr>
+                            <th>কাস্টমার</th>
+                            <th>ভাউচার</th>
+                            <th>প্রত্যাশিত</th>
+                            <th>প্রকৃত</th>
+                        </tr>
+                    </thead>
+                    <tbody>${corruptList}</tbody>
+                </table>
+                ` : ''}
+            </div>
+        `;
+    }
 
     // 1. Today's Bank Collections Card
     if (data.type === 'today_bank_collections') {
@@ -1388,6 +1512,14 @@ window.triggerDisambiguationSelect = async (val) => {
     const textInput = document.getElementById('manual-command-input');
     if (textInput) {
         textInput.value = val;
+    }
+    await handleManualSubmit();
+};
+
+window.triggerQuickCommand = async (cmd) => {
+    const textInput = document.getElementById('manual-command-input');
+    if (textInput) {
+        textInput.value = cmd;
     }
     await handleManualSubmit();
 };

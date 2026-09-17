@@ -864,6 +864,51 @@ body {
   background: rgba(6, 182, 212, 0.1);
 }
 
+/* Quick Action Suggestion Pills */
+.quick-action-bar {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 10px 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.quick-action-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-pill-btn {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 20px;
+  padding: 6px 13px;
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.quick-pill-btn:hover {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: var(--cyan-glow);
+  color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+}
+
+.quick-pill-btn:active {
+  transform: translateY(0);
+}
+
 /* Bottom Input Bar */
 .input-bar {
   width: 100%;

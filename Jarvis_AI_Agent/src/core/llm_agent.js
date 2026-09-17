@@ -1,4 +1,4 @@
-import { ERPBridge, parseRelativeBengaliDate, getTodayLocalDateString, parseBanglaOrEnglishNumber } from '../bridge/erp_bridge.js';
+import { ERPBridge, parseRelativeBengaliDate, getTodayLocalDateString, parseBanglaOrEnglishNumber, formatAmountWithComma } from '../bridge/erp_bridge.js';
 import { memoryVault } from './memory_vault.js';
 import { disambiguationManager } from './disambiguation_manager.js';
 
@@ -215,8 +215,10 @@ ${emotionInstruction}
    - কখনো কোনো কাল্পনিক বা অনুমানভিত্তিক ব্যালেন্স বলবে না। কাস্টমার বা ব্যবসার কোনো হিসাব লাগলে অবশ্যই তোমার প্রদত্ত টুল (Tools) ব্যবহার করে সঠিক সংখ্যা তুলে আনবে।
    - কখনই সেকেলে শব্দ "জের" ব্যবহার করবে না। সর্বদা "ব্যালেন্স" (Balance) বা "অবশিষ্ট বকেয়া" (Net Due) বলবে।
    - টাকা উল্লেখ করার সময় মুখে বলার উপযোগী সহজ বাংলা ব্যবহার করবে (যেমন: "১ লাখ ৫০ হাজার টাকা")।
-২. স্বাভাবিক বাচনভঙ্গি (Conversational Fluency):
+২. স্বাভাবিক বাচনভঙ্গি ও বিতর্ক নিরসন (Conversational Fluency & Dispute Handling):
    - উত্তরগুলো মুখে শোনানোর উপযোগী ২-৪ লাইনের সংক্ষিপ্ত, স্পষ্ট ও জীবন্ত বাক্যে কথা বলবে।
+   - ইউজার যদি বলে "তুমি ভুল হিসাব দিয়েছ", "হিসাব ঠিক নাই", "ভুল উত্তর" বা কোনো অভিযোগ করে: অন্ধের মতো একরোখা হয়ে "হিসাবটি যাচাই করেছি" বলবে না! বিনীতভাবে বলবে: "স্যার, যদি কোনো বিভ্রান্তি ঘটে থাকে আমি আন্তরিকভাবে দুঃখিত। আপনি কোন কাস্টমার বা ভাউচারের হিসাব দেখতে চাচ্ছেন জানালে আমি এখনি লেজার মিলিয়ে দিচ্ছি।" এবং সিস্টেমের হিসাব প্রমাণে 'get_ledger_math_audit_summary' টুল কল করবে।
+   - ইউজার যদি বলে "রিপোর্ট দাও", "আজকের রিপোর্ট", "ব্যবসার কি অবস্থা" বা সারসংক্ষেপ চায়, তবে সাথে সাথে 'get_executive_business_pulse' টুল ব্যবহার করে পূর্ণাঙ্গ ব্যবসায়িক সারসংক্ষেপ কার্ড প্রদান করবে।
    - প্রম্পটের সাথে পূর্বের স্মৃতি ও প্রাসঙ্গিক তথ্য যুক্ত আছে:
 ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি নেই।'}`;
     }
@@ -247,7 +249,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 type: 'function',
                 function: {
                     name: 'get_executive_business_pulse',
-                    description: 'মা মোটরসের আজকের বা নির্দিষ্ট দিনের সামগ্রিক ব্যবসার অবস্থা ও নাড়ির স্পন্দন জানতে এটি কল করো (আজকের মোট বিক্রি/চালান, আজকের মোট কালেকশন/জমা, আজকের মোট খরচ এবং নিট ক্যাশ ফ্লো)।',
+                    description: 'ইউজার যখন "রিপোর্ট দাও", "আজকের রিপোর্ট", "রিপোট", "সামারি", "সারসংক্ষেপ", "আজকের ব্যবসা কেমন", বা "ব্যবসার অবস্থা কি" জানতে চায়, তখন অবিলম্বে এটি কল করবে (আজকের মোট বিক্রি, মোট আদায়, ক্যাশ ও ব্যাংক আদায়, মোট খরচ এবং নিট ক্যাশ ফ্লো)।',
                     parameters: {
                         type: 'object',
                         properties: {
@@ -526,7 +528,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 type: 'function',
                 function: {
                     name: 'get_ledger_math_audit_summary',
-                    description: 'মা মোটরসের লেজার লেনদেনের গাণিতিক নির্ভুলতা ও কোনো ভুল এন্ট্রি আছে কিনা তা অডিট করতে এটি কল করো।',
+                    description: 'ইউজার যখন বলে "তুমি ভুল হিসাব দিয়েছ", "হিসাব ঠিক নাই", "লেজার অডিট করো", "গরমিল আছে", বা হিসাবের সত্যতা পরীক্ষা করতে বলে, তখন এটি কল করো। মা মোটরসের লেজার লেনদেনের গাণিতিক নির্ভুলতা ও ইনভেরিয়েন্ট অডিট করে।',
                     parameters: {
                         type: 'object',
                         properties: {
@@ -755,6 +757,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 }
                 return {
                     success: true,
+                    type: 'executive_business_pulse',
                     date: pulse.date,
                     todayTotalBills: pulse.todayTotalBills,
                     todayTotalCollections: pulse.todayTotalCollections,
@@ -1384,6 +1387,54 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
     }
 
     /**
+     * Generate dynamic and natural spoken summaries based on tool results
+     * Replaces any robotic or generic fallback sentences.
+     */
+    generateDynamicToolSpokenSummary(name, toolResult) {
+        if (!toolResult) return 'জি স্যার, আমি আপনার নির্দেশ অনুযায়ী তথ্য অনুসন্ধান করেছি।';
+        if (toolResult.spokenResponse) return toolResult.spokenResponse;
+        if (toolResult.statusMessage) return toolResult.statusMessage;
+
+        if (name === 'get_executive_business_pulse') {
+            const sales = formatAmountWithComma(toolResult.todayTotalBills || 0);
+            const col = formatAmountWithComma(toolResult.todayTotalCollections || 0);
+            const exp = formatAmountWithComma(toolResult.todayTotalExpenses || 0);
+            const net = formatAmountWithComma(toolResult.todayNetCashFlow || 0);
+            return `জি স্যার! আজকের মোট বিক্রি ৳ ${sales}, মোট আদায় ৳ ${col}, মোট খরচ ৳ ${exp} এবং আজকের নিট ক্যাশ ফ্লো হলো ৳ ${net}।`;
+        }
+
+        if (name === 'get_ledger_math_audit_summary') {
+            return toolResult.statusMessage || `স্যার, সাম্প্রতিক ${toolResult.auditedTxnCount || 0}টি লেনদেনের লেজার অডিট সম্পন্ন হয়েছে। কোনো গাণিতিক গরমিল নেই।`;
+        }
+
+        if (name === 'get_customer_360_profile' || name === 'get_customer_due') {
+            if (toolResult.name) {
+                const due = formatAmountWithComma(toolResult.totalDue || 0);
+                return `জি স্যার! ${toolResult.name}-এর বর্তমান অবশিষ্ট বকেয়া হলো ৳ ${due}।`;
+            }
+        }
+
+        if (name === 'get_today_showroom_cash_collections') {
+            const rec = formatAmountWithComma(toolResult.totalCashReceived || 0);
+            const close = formatAmountWithComma(toolResult.closingCash || 0);
+            return `জি স্যার! আজকে শোরুমে নগদ আদায় হয়েছে ৳ ${rec} এবং সমাপনী ক্যাশ ব্যালেন্স রয়েছে ৳ ${close}।`;
+        }
+
+        if (name === 'get_all_bank_running_balances') {
+            const total = formatAmountWithComma(toolResult.totalBankBalance || 0);
+            return `জি স্যার! সকল ব্যাংক মিলিয়ে মোট ব্যাংকিং ব্যালেন্স হলো ৳ ${total}।`;
+        }
+
+        if (name === 'get_daily_expenses') {
+            const exp = formatAmountWithComma(toolResult.totalExpense || 0);
+            return `জি স্যার! আজকের মোট খরচের পরিমাণ হলো ৳ ${exp}।`;
+        }
+
+        if (toolResult.message) return toolResult.message;
+        return 'জি স্যার, আপনার নির্দেশ অনুযায়ী হিসাবের বিস্তারিত নিচে কার্ড আকারে তুলে ধরা হলো।';
+    }
+
+    /**
      * Google Gemini Flash with Native Tool Calling and Multi-Model Fallback
      */
     async chatGemini(history, userMessage, key) {
@@ -1562,20 +1613,29 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         system_instruction: systemInstruction,
-                        contents: cleanTurns
+                        contents: cleanTurns,
+                        tools: geminiTools
                     })
                 });
             } catch (secErr) {
                 console.error('[LLMAgent] Second round error:', secErr);
             }
 
+            let spoken = '';
             if (secondResp && secondResp.ok) {
                 const secondResult = await secondResp.json();
                 const secParts = secondResult.candidates?.[0]?.content?.parts || [];
                 const textPart = secParts.find(p => p.text);
-                const spoken = textPart?.text || 'জি স্যার, হিসাবটি যাচাই করেছি।';
-                return { spoken, data: toolResult };
+                if (textPart?.text) {
+                    spoken = textPart.text;
+                }
             }
+
+            if (!spoken) {
+                spoken = this.generateDynamicToolSpokenSummary(name, toolResult);
+            }
+
+            return { spoken, data: toolResult };
         }
 
         const parts = candidate?.parts || [];

@@ -8,10 +8,13 @@ import { safeRound } from './erp_bridge.js';
 
 export async function getLedgerMathAuditSummary(sampleSize = 100) {
     try {
-        const [txnsSnap, custSnap] = await Promise.all([
-            getDocs(query(collection(db, 'transactions'), orderBy('createdAt', 'desc'), limit(sampleSize))),
-            getDocs(query(collection(db, 'customers'), limit(30)))
-        ]);
+        let txnsSnap;
+        try {
+            txnsSnap = await getDocs(query(collection(db, 'transactions'), orderBy('date', 'desc'), limit(sampleSize)));
+        } catch (qErr) {
+            console.warn('[ERPAuditReader] Query with orderBy date failed, falling back to simple limit:', qErr);
+            txnsSnap = await getDocs(query(collection(db, 'transactions'), limit(sampleSize)));
+        }
 
         let auditedTxnCount = 0;
         let corruptTxnCount = 0;
