@@ -1276,15 +1276,25 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             { role: 'system', content: this.getSystemPrompt(this.currentEmotion) }
         ];
 
-        // Append recent conversation history (last 6 messages)
+        // Append recent conversation history without duplicating the current user message
         const recentHistory = (history || []).slice(-6);
-        for (const item of recentHistory) {
-            messages.push({
-                role: item.sender === 'user' ? 'user' : 'assistant',
-                content: item.text
-            });
+        let hasAppendedCurrent = false;
+
+        for (let i = 0; i < recentHistory.length; i++) {
+            const item = recentHistory[i];
+            if (i === recentHistory.length - 1 && item.sender === 'user' && item.text === userMessage) {
+                messages.push({ role: 'user', content: userMessage });
+                hasAppendedCurrent = true;
+            } else {
+                messages.push({
+                    role: item.sender === 'user' ? 'user' : 'assistant',
+                    content: item.text
+                });
+            }
         }
-        messages.push({ role: 'user', content: userMessage });
+        if (!hasAppendedCurrent) {
+            messages.push({ role: 'user', content: userMessage });
+        }
 
         const tools = this.getToolsSchema();
         const requestHeaders = {
@@ -1411,16 +1421,17 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         }
 
         // Gemini rule: First turn MUST be 'user'
-        while (cleanTurns.length > 0 && cleanTurns[cleanTurns.length - 1]?.role !== 'user') {
+        while (cleanTurns.length > 0 && cleanTurns[0]?.role !== 'user') {
             cleanTurns.shift();
         }
 
-        // Add current user message
+        // Add current user message (if not already the last turn)
         const currentMsg = String(userMessage || '').trim();
-        if (cleanTurns.length > 0 && cleanTurns[cleanTurns.length - 1].role === 'user') {
-            cleanTurns[cleanTurns.length - 1].parts[0].text += '\n' + currentMsg;
-        } else {
+        const lastTurn = cleanTurns[cleanTurns.length - 1];
+        if (!lastTurn || lastTurn.role !== 'user') {
             cleanTurns.push({ role: 'user', parts: [{ text: currentMsg }] });
+        } else if (lastTurn.parts[0]?.text !== currentMsg) {
+            cleanTurns[cleanTurns.length - 1].parts[0].text = currentMsg;
         }
 
         // Gemini Function Declarations

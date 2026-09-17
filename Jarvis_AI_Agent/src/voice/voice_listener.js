@@ -40,6 +40,12 @@ export class VoiceListener {
         this.silenceTimer = null;
         this.whisperMode = false;
 
+        this.accumulatedFinalText = '';
+        this.currentInterimText = '';
+        this.vadSilenceTimer = null;
+        this.VAD_SILENCE_DELAY_MS = 1300; // 1.3s of natural silence before finalizing
+        this.isFinalizing = false;
+
         this._detectMode();
         this._initWebSpeech();
     }
@@ -82,21 +88,30 @@ export class VoiceListener {
 
         this.recognition = new SpeechRecognition();
         this.recognition.lang = 'bn-BD';
-        this.recognition.continuous = false;      // Single utterance = more stable on all browsers
+        this.recognition.continuous = true;       // Continuous: keeps listening across sentence pauses
         this.recognition.interimResults = true;
         this.recognition.maxAlternatives = 3;
 
         this.recognition.onstart = () => {
             this.isListening = true;
+            this.accumulatedFinalText = '';
+            this.currentInterimText = '';
+            this.isFinalizing = false;
             this.callbacks.onStart();
         };
 
         this.recognition.onend = () => {
             this.isListening = false;
+            clearTimeout(this.vadSilenceTimer);
+            // If ended with unfinalized text, emit once
+            this._finalizeSpeech(true);
             this.callbacks.onEnd();
         };
 
         this.recognition.onerror = (event) => {
+            if (event.error === 'no-speech' || event.error === 'aborted') {
+                return;
+            }
             console.warn('[VoiceListener] Web Speech error:', event.error);
             const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             const hasWhisperKey = Boolean((localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || localStorage.getItem('jarvis_openai_key') || '').trim());
@@ -105,25 +120,68 @@ export class VoiceListener {
                 console.log('[VoiceListener] Switched to Whisper mode on mobile error.');
             }
             this.isListening = false;
+            clearTimeout(this.vadSilenceTimer);
             this.callbacks.onError(event.error);
         };
 
         this.recognition.onresult = (event) => {
             let interimText = '';
-            let finalText = '';
 
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 const transcript = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
-                    finalText += transcript;
+                    this.accumulatedFinalText = (this.accumulatedFinalText + ' ' + transcript).trim();
                 } else {
                     interimText += transcript;
                 }
             }
 
-            if (interimText) this.callbacks.onInterim(interimText);
-            if (finalText) this.callbacks.onFinal(finalText.trim());
+            this.currentInterimText = interimText;
+
+            const fullDisplayText = (this.accumulatedFinalText + ' ' + interimText).trim();
+            if (fullDisplayText) {
+                this.callbacks.onInterim(fullDisplayText);
+            }
+
+            // Adaptive VAD Silence Timer: Every time the user speaks a word or sound, reset the timer!
+            // Only after 1.3 seconds of sustained silence after speaking do we finalize the full sentence.
+            clearTimeout(this.vadSilenceTimer);
+            this.vadSilenceTimer = setTimeout(() => {
+                this._finalizeSpeech();
+            }, this.VAD_SILENCE_DELAY_MS);
         };
+    }
+
+    /**
+     * Finalize the recognized sentence safely without premature interruption
+     */
+    _finalizeSpeech(fromOnEnd = false) {
+        clearTimeout(this.vadSilenceTimer);
+        this.vadSilenceTimer = null;
+
+        const textToEmit = (this.accumulatedFinalText + ' ' + this.currentInterimText).trim();
+        if (!textToEmit || this.isFinalizing) {
+            return;
+        }
+
+        this.isFinalizing = true;
+        this.accumulatedFinalText = '';
+        this.currentInterimText = '';
+
+        console.log(`[VoiceListener] 🎯 Speech finalized (${fromOnEnd ? 'onend' : '1.3s VAD silence'}): "${textToEmit}"`);
+
+        if (!fromOnEnd && this.isListening) {
+            try {
+                this.stop();
+            } catch (err) {
+                console.warn('[VoiceListener] Stop on finalize non-critical:', err);
+            }
+        }
+
+        this.callbacks.onFinal(textToEmit);
+        setTimeout(() => {
+            this.isFinalizing = false;
+        }, 600);
     }
 
     // ─────────────────────────────────────────
@@ -211,6 +269,14 @@ export class VoiceListener {
     // STOP Listening
     // ─────────────────────────────────────────
     stop() {
+        clearTimeout(this.vadSilenceTimer);
+        this.vadSilenceTimer = null;
+
+        if (!this.whisperMode && (this.accumulatedFinalText || this.currentInterimText) && !this.isFinalizing) {
+            this._finalizeSpeech();
+            return;
+        }
+
         if (!this.isListening) return;
 
         if (this.whisperMode) {

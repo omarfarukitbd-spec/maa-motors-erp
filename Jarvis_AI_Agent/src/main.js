@@ -30,16 +30,21 @@ const visualizer = new VoiceVisualizer(canvas);
 // Active Voice Coordination Flags
 let isMicPermissionGranted = false;
 let isAwaitingCommandAfterWake = false;
+let resumeWakeWordTimer = null;
 
-// Safe coordinator for resuming background wake word without audio collision
+// Safe coordinator with 600ms acoustic echo cooldown
 function safeResumeWakeWord() {
-    if (wakeWordListener.isEnabled && !voiceSpeaker.isSpeaking && !listener.isListening && !isAwaitingCommandAfterWake) {
-        wakeWordListener.resume();
-    }
+    clearTimeout(resumeWakeWordTimer);
+    resumeWakeWordTimer = setTimeout(() => {
+        if (wakeWordListener.isEnabled && !voiceSpeaker.isSpeaking && !listener.isListening && !isAwaitingCommandAfterWake) {
+            wakeWordListener.resume();
+        }
+    }, 600);
 }
 
 // Hook Visualizer States
 listener.on('onStart', () => {
+    clearTimeout(resumeWakeWordTimer);
     wakeWordListener.pause();
     visualizer.setState('listening');
 });
@@ -53,7 +58,12 @@ listener.on('onEnd', () => {
 
 const stopSpeechBtn = document.getElementById('stop-speech-btn');
 voiceSpeaker.onStart(() => {
+    clearTimeout(resumeWakeWordTimer);
     wakeWordListener.pause();
+    if (listener.isListening) {
+        listener.stop();
+        updateMicUI(false);
+    }
     visualizer.setState('speaking');
     if (stopSpeechBtn) stopSpeechBtn.classList.remove('hidden');
     const statusEl = document.getElementById('mic-status-text');
@@ -166,10 +176,12 @@ listener.on('onInterim', (interimText) => {
 });
 
 listener.on('onFinal', async (finalText) => {
-    micStatusText.innerText = 'প্রসেস করছি... (Reasoning)';
+    if (!finalText || !finalText.trim()) return;
+    updateMicUI(false);
+    micStatusText.innerText = `"${finalText.trim()}" প্রসেস করছি...`;
     visualizer.setState('thinking');
     try {
-        await jarvisBrain.processCommand(finalText);
+        await jarvisBrain.processCommand(finalText.trim());
     } finally {
         if (!voiceSpeaker.isSpeaking && !listener.isListening) {
             micStatusText.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';

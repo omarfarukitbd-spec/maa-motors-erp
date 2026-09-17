@@ -32,6 +32,10 @@ export class WakeWordListener {
         this.onWake = null; // ({ hasCommand, command, rawTranscript }) => {}
         this.onStatusChange = null; // (isEnabled, isRunning) => {}
 
+        this.wakeDebounceTimer = null;
+        this.pendingWakeData = null;
+        this.hasPlayedChime = false;
+
         // Expanded regex for detecting Jarvis wake word in Bangla & English (Unicode-safe word boundary, including common STT phonetics)
         this.wakeWordRegex = /(?:hey\s+|hi\s+|ok\s+|hello\s+|ওহে\s+|এই\s+|শোনো\s+|হ্যালো\s+)?(jarvis|jarvice|javis|jarves|jarviz|service|সার্ভিস|সারভিস|জার্ভিস|জারভিস|যারভিস|জারবিস|জাবিস|জার্ভেস|জারভেস|জার্ভিশ|জারভিশ|ঝারভিস|জাভাস|জারভাস)(?:\s*(?:ভাই|স্যার))?(?:[\s,:?!]|$)(.*)/i;
 
@@ -115,11 +119,14 @@ export class WakeWordListener {
     }
 
     /**
-     * Parse speech results for wake word triggers
+     * Parse speech results for wake word triggers with adaptive command silence debounce
      */
     _handleRecognitionResult(event) {
-        // Anti-Echo Guard: If Jarvis is speaking or we are paused, ignore input
+        // Anti-Echo Guard: If Jarvis is speaking or we are paused, ignore input completely
         if (this.isTemporarilyPaused || voiceSpeaker.isSpeaking) {
+            clearTimeout(this.wakeDebounceTimer);
+            this.pendingWakeData = null;
+            this.hasPlayedChime = false;
             return;
         }
 
@@ -135,31 +142,68 @@ export class WakeWordListener {
                 if (match) {
                     const commandPayload = (match[2] || '').trim();
 
-                    console.log(`[WakeWord] ⚡ WAKE WORD DETECTED! Transcript: "${transcript}", Command: "${commandPayload}"`);
-
-                    // Synthesize futuristic activation chime immediately
-                    this.playWakeChime();
-
-                    // Temporarily pause wake word listener while processing command
-                    this.pause();
-
-                    if (typeof this.onWake === 'function') {
-                        this.onWake({
-                            hasCommand: commandPayload.length > 1,
-                            command: commandPayload,
-                            rawTranscript: transcript
-                        });
+                    // Play chime on first wake-word detection so user gets immediate audible feedback
+                    if (!this.hasPlayedChime) {
+                        this.playWakeChime();
+                        this.hasPlayedChime = true;
                     }
 
-                    // Abort current utterance to avoid duplicate triggers
-                    try {
-                        this.recognition.abort();
-                    } catch (e) {
-                        console.warn('[WakeWord] Abort error non-critical:', e);
+                    if (!commandPayload) {
+                        // Path 1: User said wake word only: "জার্ভিস"
+                        // Wait 500ms to see if a command is spoken in continuation
+                        if (!this.pendingWakeData || !this.pendingWakeData.command) {
+                            this.pendingWakeData = {
+                                hasCommand: false,
+                                command: '',
+                                rawTranscript: transcript
+                            };
+                            clearTimeout(this.wakeDebounceTimer);
+                            this.wakeDebounceTimer = setTimeout(() => {
+                                this._dispatchWake();
+                            }, 500);
+                        }
+                    } else {
+                        // Path 2: User spoke wake word + command: allow user to finish full sentence!
+                        this.pendingWakeData = {
+                            hasCommand: true,
+                            command: commandPayload,
+                            rawTranscript: transcript
+                        };
+
+                        clearTimeout(this.wakeDebounceTimer);
+                        // If browser marked this result as final, dispatch soon; else wait 1.2s silence
+                        const delay = result.isFinal ? 350 : 1200;
+                        this.wakeDebounceTimer = setTimeout(() => {
+                            this._dispatchWake();
+                        }, delay);
                     }
                     return;
                 }
             }
+        }
+    }
+
+    _dispatchWake() {
+        clearTimeout(this.wakeDebounceTimer);
+        this.wakeDebounceTimer = null;
+        this.hasPlayedChime = false;
+
+        const data = this.pendingWakeData;
+        this.pendingWakeData = null;
+
+        if (!data || this.isTemporarilyPaused || voiceSpeaker.isSpeaking) return;
+
+        console.log(`[WakeWord] ⚡ Dispathing wake event:`, data);
+        this.pause();
+
+        if (typeof this.onWake === 'function') {
+            this.onWake(data);
+        }
+
+        try {
+            this.recognition.abort();
+        } catch (e) {
+            console.warn('[WakeWord] Abort error non-critical:', e);
         }
     }
 
@@ -249,6 +293,9 @@ export class WakeWordListener {
     stop() {
         this.isEnabled = false;
         this.isTemporarilyPaused = false;
+        clearTimeout(this.wakeDebounceTimer);
+        this.pendingWakeData = null;
+        this.hasPlayedChime = false;
         localStorage.setItem('jarvis_wake_word_enabled', 'false');
         clearTimeout(this.restartTimer);
         if (this.recognition) {
@@ -267,6 +314,9 @@ export class WakeWordListener {
      */
     pause() {
         this.isTemporarilyPaused = true;
+        clearTimeout(this.wakeDebounceTimer);
+        this.pendingWakeData = null;
+        this.hasPlayedChime = false;
         clearTimeout(this.restartTimer);
         if (this.recognition && this.isRunning) {
             try {

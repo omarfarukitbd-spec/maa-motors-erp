@@ -199,6 +199,11 @@ export class VoiceSpeaker {
 
         if (!cleanText) return;
 
+        // If already speaking, stop previous audio first
+        if (this.isSpeaking) {
+            this.stop();
+        }
+
         this.isSpeaking = true;
         this.onStartCallback(cleanText);
 
@@ -207,6 +212,8 @@ export class VoiceSpeaker {
         const gcpKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_gcp_tts_key') || '').trim() : '';
         const azureKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_azure_key') || '').trim() : '';
         const azureRegion = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_azure_region') || 'eastus').trim() : 'eastus';
+
+        let browserSpeechAttempted = false;
 
         try {
             // ── Priority 1: Azure Speech Neural REST API (if user entered Azure key) ──
@@ -221,7 +228,6 @@ export class VoiceSpeaker {
             }
 
             // ── Priority 2: Microsoft Edge Natural Neural Voices via Browser SpeechSynthesis ──
-            // If the browser has Microsoft Natural (Online) voices or Google Bengali, use it for zero-latency, human-like voice
             const activeVoice = this.getNativeBnVoice();
             const isNaturalVoice = activeVoice && (
                 activeVoice.name.includes('Natural') ||
@@ -233,6 +239,7 @@ export class VoiceSpeaker {
             );
 
             if (isNaturalVoice) {
+                browserSpeechAttempted = true;
                 try {
                     console.log(`[VoiceSpeaker] 🎙️ Speaking with Microsoft Natural Voice: ${activeVoice.name}`);
                     await this.speakBrowser(cleanText, emotion);
@@ -273,7 +280,8 @@ export class VoiceSpeaker {
             }
 
             // ── Priority 6: Standard Browser SpeechSynthesis (Native bn-BD in Chrome/Edge/Firefox) ──
-            if (this.synth) {
+            if (this.synth && !browserSpeechAttempted) {
+                browserSpeechAttempted = true;
                 try {
                     console.log(`[VoiceSpeaker] 🎙️ Speaking with Browser SpeechSynthesis (${activeVoice ? activeVoice.name : 'bn-BD'})...`);
                     await this.speakBrowser(cleanText, emotion);
@@ -537,7 +545,8 @@ export class VoiceSpeaker {
                     if (keepAlive) clearInterval(keepAlive);
                     clearTimeout(watchdog);
                     console.warn('[VoiceSpeaker] Browser utterance error:', e?.error || e);
-                    reject(new Error(e?.error || 'speech-synthesis-failed'));
+                    // Gracefully resolve to prevent throwing and triggering duplicate retries
+                    resolve();
                 };
 
                 this.synth.speak(utt);

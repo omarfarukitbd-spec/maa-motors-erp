@@ -6,6 +6,8 @@ export class JarvisBrain {
         this.isProcessing = false;
         this.conversationHistory = [];
         this.listeners = [];
+        this.lastCommandText = '';
+        this.lastCommandTime = 0;
     }
 
     /**
@@ -16,6 +18,21 @@ export class JarvisBrain {
     async processCommand(rawInput) {
         const text = (rawInput || '').trim();
         if (!text) return null;
+
+        // Concurrency Guard: Mutex Lock to prevent parallel execution & duplicate speaking
+        if (this.isProcessing) {
+            console.warn(`[JarvisBrain] ⚠️ Mutex busy lock: dropped concurrent trigger: "${text}"`);
+            return null;
+        }
+
+        // Deduplication Guard: Ignore identical commands within 2.5 seconds
+        const now = Date.now();
+        if (this.lastCommandText === text && (now - this.lastCommandTime < 2500)) {
+            console.warn(`[JarvisBrain] ⚠️ Deduplication filter: dropped repeated command within 2.5s: "${text}"`);
+            return null;
+        }
+        this.lastCommandText = text;
+        this.lastCommandTime = now;
 
         this.isProcessing = true;
         this.addHistory('user', text);
