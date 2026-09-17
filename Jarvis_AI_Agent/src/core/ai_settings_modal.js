@@ -420,6 +420,12 @@ export class AISettingsModal {
                 message: 'এটি Groq Cloud-এর কী (gsk_...)! অনুগ্রহ করে উপরে "Groq Cloud (LPU)" ট্যাবে ক্লিক করে সেখানে কী-টি দিন।'
             };
         }
+        if (cleanKey.startsWith('sk-jk')) {
+            return {
+                valid: false,
+                message: 'এটি OmniRouters-এর কী (sk-jk...)! এটি OpenRouter-এর নয়। OpenRouter-এর অফিশিয়াল কী সর্বদা "sk-or-v1-" দিয়ে শুরু হয়। এছাড়া এই কী-টি omnirouters.com সার্ভারেও ইনভ্যালিড দেখাচ্ছে।'
+            };
+        }
         if (cleanKey.startsWith('sk-proj-') || (cleanKey.startsWith('sk-') && !cleanKey.startsWith('sk-or-v1-'))) {
             return {
                 valid: false,
@@ -682,6 +688,10 @@ export class AISettingsModal {
         }
 
         // Smart mismatch detection
+        if (key.startsWith('sk-jk')) {
+            this.pingOutputEl.innerHTML = '<span style="color: #fbbf24;">⚠️ আপনি যে কী-টি দিয়েছেন (sk-jk...) তা <strong>OmniRouters</strong>-এর কী, কিন্তু OpenRouter-এর অফিশিয়াল কী সর্বদা <strong>"sk-or-v1-"</strong> দিয়ে শুরু হয়।<br>তাছাড়া এই টোকেনটি omnirouters.com-এ Invalid/Expired দেখাচ্ছে। দয়া করে <a href="https://openrouter.ai/keys" target="_blank" style="color:#38bdf8;text-decoration:underline;">openrouter.ai/keys</a> থেকে নতুন কী নিন, অথবা সম্পূর্ণ ফ্রিতে সেরা পারফরম্যান্স পেতে <strong>Google AI Studio</strong>-এর Gemini Flash কী (AIzaSy...) ব্যবহার করুন।</span>';
+            return;
+        }
         if (provider === 'openrouter' && key.startsWith('AIzaSy')) {
             this.pingOutputEl.innerHTML = '<span style="color: #fbbf24;">⚠️ আপনি OpenRouter ট্যাবে আছেন, কিন্তু যে কী-টি দিয়েছেন তা Google Gemini-এর (AIzaSy... দিয়ে শুরু)!<br>অনুগ্রহ করে উপরে "Google Gemini Flash" ট্যাবে ক্লিক করে এই কী-টি সেখানে সেভ ও টেস্ট করুন।</span>';
             return;
