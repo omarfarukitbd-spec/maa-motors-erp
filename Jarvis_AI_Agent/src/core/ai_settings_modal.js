@@ -421,10 +421,21 @@ export class AISettingsModal {
             };
         }
         if (cleanKey.startsWith('sk-jk')) {
-            return {
-                valid: false,
-                message: 'এটি OmniRouters-এর কী (sk-jk...)! এটি OpenRouter-এর নয়। OpenRouter-এর অফিশিয়াল কী সর্বদা "sk-or-v1-" দিয়ে শুরু হয়। এছাড়া এই কী-টি omnirouters.com সার্ভারেও ইনভ্যালিড দেখাচ্ছে।'
-            };
+            try {
+                const res = await fetch('https://omnirouters.com/v1/models', {
+                    headers: { 'Authorization': `Bearer ${cleanKey}` }
+                });
+                if (res.ok) return { valid: true };
+                const data = await res.json().catch(() => ({}));
+                let msg = data.error?.message || `HTTP ${res.status}`;
+                if (msg.includes('Invalid token') || res.status === 401) {
+                    msg = 'OmniRouters সার্ভারে টোকেনটি এখনও সক্রিয় হয়নি (Invalid token)। অনুগ্রহ করে ব্রাউজারের ৪ নম্বর ট্যাবে "OmniRouters Email Verification" সম্পূর্ণ করুন অথবা omnirouters.com/keys থেকে নতুন টোকেন তৈরি করুন।';
+                }
+                return { valid: false, message: msg };
+            } catch (err) {
+                console.error('[AISettingsModal] OmniRouters validation error:', err);
+                return { valid: false, message: err.message };
+            }
         }
         if (cleanKey.startsWith('sk-proj-') || (cleanKey.startsWith('sk-') && !cleanKey.startsWith('sk-or-v1-'))) {
             return {
@@ -688,10 +699,6 @@ export class AISettingsModal {
         }
 
         // Smart mismatch detection
-        if (key.startsWith('sk-jk')) {
-            this.pingOutputEl.innerHTML = '<span style="color: #fbbf24;">⚠️ আপনি যে কী-টি দিয়েছেন (sk-jk...) তা <strong>OmniRouters</strong>-এর কী, কিন্তু OpenRouter-এর অফিশিয়াল কী সর্বদা <strong>"sk-or-v1-"</strong> দিয়ে শুরু হয়।<br>তাছাড়া এই টোকেনটি omnirouters.com-এ Invalid/Expired দেখাচ্ছে। দয়া করে <a href="https://openrouter.ai/keys" target="_blank" style="color:#38bdf8;text-decoration:underline;">openrouter.ai/keys</a> থেকে নতুন কী নিন, অথবা সম্পূর্ণ ফ্রিতে সেরা পারফরম্যান্স পেতে <strong>Google AI Studio</strong>-এর Gemini Flash কী (AIzaSy...) ব্যবহার করুন।</span>';
-            return;
-        }
         if (provider === 'openrouter' && key.startsWith('AIzaSy')) {
             this.pingOutputEl.innerHTML = '<span style="color: #fbbf24;">⚠️ আপনি OpenRouter ট্যাবে আছেন, কিন্তু যে কী-টি দিয়েছেন তা Google Gemini-এর (AIzaSy... দিয়ে শুরু)!<br>অনুগ্রহ করে উপরে "Google Gemini Flash" ট্যাবে ক্লিক করে এই কী-টি সেখানে সেভ ও টেস্ট করুন।</span>';
             return;
@@ -737,6 +744,25 @@ export class AISettingsModal {
                     this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ Groq এরর: ${data.error?.message || res.statusText}</span>`;
                 }
             } else if (provider === 'openrouter') {
+                if (key.startsWith('sk-jk')) {
+                    // Direct live ping to OmniRouters endpoint
+                    const res = await fetch('https://omnirouters.com/v1/models', {
+                        headers: { 'Authorization': `Bearer ${key}` }
+                    });
+                    const elapsed = Math.round(performance.now() - startTime);
+                    if (res.ok) {
+                        this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ OmniRouters কানেক্টেড! লেটেন্সি: <strong>${elapsed}ms</strong><br>OmniRouters মডেল ক্লাস্টার সম্পূর্ণ রেডি ও প্রস্তুত!</span>`;
+                    } else {
+                        const data = await res.json().catch(() => ({}));
+                        let msg = data.error?.message || res.statusText;
+                        if (msg.includes('Invalid token') || res.status === 401) {
+                            msg = 'OmniRouters সার্ভার জানিয়েছে: <strong>Invalid token (টোকেন নিষ্ক্রিয়)</strong>。<br>অনুগ্রহ করে আপনার ব্রাউজারের ৪ নম্বর ট্যাবে থাকা <strong>"OmniRouters Email Verification"</strong> (Gmail)-এ গিয়ে ইমেইল ভেরিফাই করুন অথবা omnirouters.com/keys থেকে নতুন টোকেন তৈরি করুন।';
+                        }
+                        this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ OmniRouters এরর: ${msg}</span>`;
+                    }
+                    return;
+                }
+
                 const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
                     headers: {
                         'Authorization': `Bearer ${key}`,

@@ -1212,12 +1212,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                             key
                         }, history, userMessage);
                     } else if (provider === 'openrouter') {
+                        const isOmni = key.startsWith('sk-jk');
                         result = await this.chatOpenAICompatible({
-                            provider: 'OpenRouter',
-                            endpoint: 'https://openrouter.ai/api/v1/chat/completions',
-                            model: this.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free',
+                            provider: isOmni ? 'OmniRouters' : 'OpenRouter',
+                            endpoint: isOmni ? 'https://omnirouters.com/v1/chat/completions' : 'https://openrouter.ai/api/v1/chat/completions',
+                            model: isOmni ? (this.omniroutersModel || 'gpt-3.5-turbo') : (this.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free'),
                             key,
-                            headers: {
+                            headers: isOmni ? {} : {
                                 'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://maa-motors-erp.web.app',
                                 'X-Title': 'Maa Motors Jarvis AI'
                             }
