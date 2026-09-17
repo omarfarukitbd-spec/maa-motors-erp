@@ -129,7 +129,7 @@ export class LLMAgent {
     detectEmotion(text) {
         const t = (text || '').toLowerCase();
         if (/জরুরি|এখনই|দ্রুত|!{2,}|কী হলো|কি হলো|কেন|কী ব্যাপার/.test(t)) return 'urgent';
-        if (/মেজাজ খারাপ|বিরক্ত|মন খারাপ|কষ্ট|চাপ|সমস্যা|ক্ষতি|লস|ব্যর্থ/.test(t)) return 'sad';
+        if (/মেজাজ.*খারাপ|বিরক্ত|মন.*খারাপ|কষ্ট|চাপ|সমস্যা|ক্ষতি|লস|ব্যর্থ/.test(t)) return 'sad';
         if (/ভালো|সুন্দর|ধন্যবাদ|বাহ|চমৎকার|অসাধারণ|খুশি|আলহামদু/.test(t)) return 'happy';
         if (/হিসাব|রিপোর্ট|বকেয়া|ক্যাশ|ব্যাংক|অডিট|লেজার/.test(t)) return 'serious';
         return 'neutral';
