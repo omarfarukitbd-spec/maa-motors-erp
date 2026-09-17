@@ -269,7 +269,7 @@ export class AISettingsModal {
             console.warn('[AISettingsModal] Chime error:', e);
         }
 
-        const testPhrase = 'আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।';
+        const testPhrase = 'আসসালামু আলাইকুম স্যার! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।';
 
         if (this.previewBtn) {
             const originalHtml = this.previewBtn.innerHTML;

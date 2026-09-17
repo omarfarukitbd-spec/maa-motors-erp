@@ -42,7 +42,7 @@ export class MemorySkill extends BaseSkill {
         if (!content) {
             return {
                 success: false,
-                spokenResponse: 'কী মনে রাখতে হবে তা স্পষ্ট নয় ভাইয়া।'
+                spokenResponse: 'কী মনে রাখতে হবে তা স্পষ্ট নয় স্যার।'
             };
         }
 
@@ -50,7 +50,7 @@ export class MemorySkill extends BaseSkill {
 
         return {
             success: true,
-            spokenResponse: `জি ভাইয়া, আমি আপনার এই নির্দেশটি স্থায়ীভাবে মনে রেখেছি: "${content}"। পরবর্তীতে কাজের সময় আমি এটি স্মরণে রাখব।`,
+            spokenResponse: `জি স্যার, আমি আপনার এই নির্দেশটি স্থায়ীভাবে মনে রেখেছি: "${content}"। পরবর্তীতে কাজের সময় আমি এটি স্মরণে রাখব।`,
             displayData: { savedMemory: newMem }
         };
     }

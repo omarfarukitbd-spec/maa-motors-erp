@@ -150,11 +150,35 @@ assert(chromeVoice === null, 'Chrome on Windows correctly detects absence of nat
 
 // TEST 11: Chrome Speech Fallback Execution (Does NOT fail silently, invokes free stream)
 let streamPlayed = false;
+let cleanedAudioText = '';
 chromeSpeaker.speakFreeBengaliTTS = async (txt) => {
     streamPlayed = true;
+    cleanedAudioText = txt;
     assert(txt.length > 0, 'Free stream receives clean Bengali text');
 };
 await chromeSpeaker.speak('শুভ অপরাহ্ন, আম্বরান ভাই! আসসালামু আলাইকুম।');
 assert(streamPlayed === true, 'Chrome seamlessly falls back to Free Bengali Stream TTS when native voice is missing');
 
+// TEST 12: Persona Guardrail (Never utter owner personal name, always address as Sir)
+assert(!cleanedAudioText.includes('আম্বরান'), 'Speaker sanitizer successfully removed "আম্বরান"');
+assert(!cleanedAudioText.includes('আমরান'), 'Speaker sanitizer successfully removed "আমরান"');
+assert(cleanedAudioText.includes('স্যার'), 'Speaker sanitizer successfully inserted "স্যার"');
+
+// TEST 13: Wake Word Phonetic Matching (Bengali & English variations)
+import { WakeWordListener } from '../src/voice/wake_word_listener.js';
+const wwListener = new WakeWordListener();
+const testPhrases = [
+    'জার্ভিস',
+    'জারভিস',
+    'সার্ভিস',
+    'Jarvis',
+    'hey jarvis',
+    'হ্যালো জার্ভিস করিমের বাকি কত'
+];
+for (const phrase of testPhrases) {
+    const isMatched = Boolean(phrase.match(wwListener.wakeWordRegex));
+    assert(isMatched, `Wake word regex matches phonetic variation: "${phrase}"`);
+}
+
 console.log(`\n🎉 ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY! 100% CODE INTEGRITY PROVEN.`);
+

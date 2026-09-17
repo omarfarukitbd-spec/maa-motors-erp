@@ -32,8 +32,8 @@ export class WakeWordListener {
         this.onWake = null; // ({ hasCommand, command, rawTranscript }) => {}
         this.onStatusChange = null; // (isEnabled, isRunning) => {}
 
-        // Regex for detecting Jarvis wake word in Bangla & English
-        this.wakeWordRegex = /(?:hey\s+|hi\s+|ok\s+|hello\s+|ওহে\s+|এই\s+|শোনো\s+|হ্যালো\s+)?(jarvis|jarvice|জার্ভিস|জারভিস|যারভিস)(?:\s+ভাই)?\b(?:\s*[,:]?\s*(.*))?/i;
+        // Expanded regex for detecting Jarvis wake word in Bangla & English (Unicode-safe word boundary, including common STT phonetics like সার্ভিস/জারভিস/jarvis)
+        this.wakeWordRegex = /(?:hey\s+|hi\s+|ok\s+|hello\s+|ওহে\s+|এই\s+|শোনো\s+|হ্যালো\s+)?(jarvis|jarvice|javis|jarves|জার্ভিস|জারভিস|যারভিস|সার্ভিস|সারভিস|জারবিস|জাবিস)(?:\s*(?:ভাই|স্যার))?(?:[\s,:?!]|$)(.*)/i;
 
         this._initRecognition();
     }
@@ -73,7 +73,7 @@ export class WakeWordListener {
                     clearTimeout(this.restartTimer);
                     this.restartTimer = setTimeout(() => {
                         this._safeStart();
-                    }, 600);
+                    }, 400);
                 }
             };
 
@@ -84,7 +84,9 @@ export class WakeWordListener {
                 }
                 console.warn('[WakeWord] Recognition error:', event.error);
                 if (event.error === 'not-allowed') {
-                    this.isEnabled = false;
+                    // Do not permanently disable wake word; keep enabled so gesture listener can activate it
+                    console.warn('[WakeWord] Microphone permission pending. Ready to resume on gesture.');
+                    this.isRunning = false;
                     this._notifyStatus();
                 }
             };
@@ -109,21 +111,19 @@ export class WakeWordListener {
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
             const result = event.results[i];
-            const transcript = result[0].transcript.trim();
 
-            if (!transcript) continue;
+            // Inspect all alternatives provided by speech recognizer
+            for (let a = 0; a < result.length; a++) {
+                const transcript = (result[a]?.transcript || '').trim();
+                if (!transcript) continue;
 
-            const match = transcript.match(this.wakeWordRegex);
-            if (match) {
-                const commandPayload = (match[2] || '').trim();
-                const isFinal = result.isFinal;
+                const match = transcript.match(this.wakeWordRegex);
+                if (match) {
+                    const commandPayload = (match[2] || '').trim();
 
-                // If we detect wake word in interim or final
-                // If there is command payload, we can wait for final or accept if substantial
-                if (commandPayload.length > 2 || isFinal) {
                     console.log(`[WakeWord] ⚡ WAKE WORD DETECTED! Transcript: "${transcript}", Command: "${commandPayload}"`);
-                    
-                    // Synthesize futuristic activation chime
+
+                    // Synthesize futuristic activation chime immediately
                     this.playWakeChime();
 
                     // Temporarily pause wake word listener while processing command
@@ -141,9 +141,9 @@ export class WakeWordListener {
                     try {
                         this.recognition.abort();
                     } catch (e) {
-                        console.error('[WakeWord] Abort error:', e);
+                        console.warn('[WakeWord] Abort error non-critical:', e);
                     }
-                    break;
+                    return;
                 }
             }
         }

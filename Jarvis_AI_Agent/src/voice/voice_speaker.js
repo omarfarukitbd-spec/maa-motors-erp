@@ -191,6 +191,8 @@ export class VoiceSpeaker {
             .replace(/[`_]/g, '')
             .replace(/৳/g, 'টাকা')              // ৳ symbol → বাংলা
             .replace(/AED/g, 'দিরহাম')          // AED → বাংলা
+            .replace(/(?:মোহাম্মদ\s+)?(?:আম্বরান|আমরান)(?:\s*ভাই(?:য়া)?)?/gi, 'স্যার') // Persona Guardrail: Never pronounce owner name
+            .replace(/\bভাইয়া\b/g, 'স্যার')      // Always address as Sir (স্যার)
             .replace(/https?:\/\/[^\s]+/g, '')  // URLs
             .replace(/\s+/g, ' ')
             .trim();

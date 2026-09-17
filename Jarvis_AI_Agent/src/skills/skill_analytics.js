@@ -36,14 +36,14 @@ export class AnalyticsSkill extends BaseSkill {
         if (snap && snap.error === 'AUTH_REQUIRED') {
             return {
                 success: false,
-                spokenResponse: 'ভাইয়া, ব্যাংক ও ক্যাশ স্থিতি দেখতে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।'
+                spokenResponse: 'স্যার, ব্যাংক ও ক্যাশ স্থিতি দেখতে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।'
             };
         }
 
         if (!snap) {
             return {
                 success: false,
-                spokenResponse: 'দুঃখিত ভাইয়া, এই মুহূর্তে ব্যাংক ও ক্যাশ ব্যালেন্সের লাইভ হিসাব লোড করা সম্ভব হয়নি।'
+                spokenResponse: 'দুঃখিত স্যার, এই মুহূর্তে ব্যাংক ও ক্যাশ ব্যালেন্সের লাইভ হিসাব লোড করা সম্ভব হয়নি।'
             };
         }
 

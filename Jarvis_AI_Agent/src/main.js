@@ -187,17 +187,23 @@ wakeWordListener.onWake = async ({ hasCommand, command, rawTranscript }) => {
         }
     } else {
         // Path 2: User called the name only: "জার্ভিস" or "Hey Jarvis"
-        micStatusText.innerText = 'জি ভাইয়া, শুনছি! বলুন...';
+        micStatusText.innerText = 'জি স্যার, শুনছি! বলুন...';
         visualizer.setState('listening');
 
         // Quick natural verbal acknowledgment
         const acks = [
-            'জি ভাইয়া, শুনছি!',
-            'হ্যাঁ ভাইয়া, বলুন?',
+            'জি স্যার, শুনছি!',
+            'জি স্যার, বলুন?',
             'জি স্যার, বলুন আমি শুনছি।'
         ];
         const ack = acks[Math.floor(Math.random() * acks.length)];
-        await voiceSpeaker.speak(ack);
+
+        // Speak acknowledgment and immediately engage microphone
+        try {
+            await voiceSpeaker.speak(ack);
+        } catch (e) {
+            console.warn('[Main] Voice ack error non-critical:', e);
+        }
 
         // Turn on active listener so user can speak their request hands-free
         listener.start();
@@ -1258,7 +1264,7 @@ window.triggerVoiceTest = async () => {
     const statusEl = document.getElementById('mic-status-text');
     if (statusEl) statusEl.innerText = '🔊 জার্ভিসের সাউন্ড টেস্ট চলছে...';
     try {
-        await voiceSpeaker.speak('আসসালামু আলাইকুম ভাইয়া! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।');
+        await voiceSpeaker.speak('আসসালামু আলাইকুম স্যার! আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি।');
     } catch (err) {
         console.error('[VoiceTest] Playback error:', err);
     } finally {

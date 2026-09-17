@@ -51,14 +51,14 @@ export class CustomerSkill extends BaseSkill {
         if (results && results.error === 'AUTH_REQUIRED') {
             return {
                 success: false,
-                spokenResponse: 'ভাইয়া, কাস্টমার লেজার অ্যাক্সেস করতে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।'
+                spokenResponse: 'স্যার, কাস্টমার লেজার অ্যাক্সেস করতে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।'
             };
         }
 
         if (!results || results.length === 0) {
             return {
                 success: false,
-                spokenResponse: `দুঃখিত ভাইয়া, "${query}" নামে কোনো কাস্টমার আমাদের ডেটাবেসে খুঁজে পাওয়া যায়নি।`,
+                spokenResponse: `দুঃখিত স্যার, "${query}" নামে কোনো কাস্টমার আমাদের ডেটাবেসে খুঁজে পাওয়া যায়নি।`,
                 displayData: { query, results: [] }
             };
         }

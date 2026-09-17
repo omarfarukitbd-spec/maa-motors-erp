@@ -73,7 +73,7 @@ export class DisambiguationManager {
                 return `${num} নম্বর: ${c.name}${addr} (${dueTxt})`;
             }).join('। ');
 
-            const spoken = `ভাইয়া, "${originalQuery}" নামে ${countStr}টি কাস্টমার পাওয়া গেছে। ${spokenLines}। আপনি কোন কাস্টমারের হিসাব দেখতে চান? এক, দুই নাকি তিন বলুন।`;
+            const spoken = `স্যার, "${originalQuery}" নামে ${countStr}টি কাস্টমার পাওয়া গেছে। ${spokenLines}। আপনি কোন কাস্টমারের হিসাব দেখতে চান? এক, দুই নাকি তিন বলুন।`;
 
             return {
                 spoken,
@@ -97,7 +97,7 @@ export class DisambiguationManager {
 
         // Generic fallback
         return {
-            spoken: `ভাইয়া, "${originalQuery}" এর জন্য একাধিক তথ্য পাওয়া গেছে। আপনি নির্দিষ্ট কোনটি দেখতে চান বলুন।`,
+            spoken: `স্যার, "${originalQuery}" এর জন্য একাধিক তথ্য পাওয়া গেছে। আপনি নির্দিষ্ট কোনটি দেখতে চান বলুন।`,
             data: {
                 type: 'disambiguation_options',
                 entityType: type,

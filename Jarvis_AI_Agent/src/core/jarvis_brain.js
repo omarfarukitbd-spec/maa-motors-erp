@@ -29,13 +29,13 @@ export class JarvisBrain {
                 return result;
             }
 
-            const fallback = 'জি ভাইয়া, আমি আপনার কথা শুনেছি। আপনার মা মোটরসের কাস্টমার বকেয়া বা ক্যাশ হিসাবের কোনো তথ্য প্রয়োজন হলে বলুন।';
+            const fallback = 'জি স্যার, আমি আপনার কথা শুনেছি। আপনার মা মোটরসের কাস্টমার বকেয়া বা ক্যাশ হিসাবের কোনো তথ্য প্রয়োজন হলে বলুন।';
             await this.handleResponse(fallback);
             return { spoken: fallback };
 
         } catch (err) {
             console.error('[JarvisBrain] Processing error:', err);
-            const errReply = 'দুঃখিত ভাইয়া, এই মুহূর্তে কমান্ডটি প্রসেস করতে একটি সাময়িক সমস্যা হয়েছে। আপনি কি আবার বলবেন?';
+            const errReply = 'দুঃখিত স্যার, এই মুহূর্তে কমান্ডটি প্রসেস করতে একটি সাময়িক সমস্যা হয়েছে। আপনি কি আবার বলবেন?';
             await this.handleResponse(errReply);
             return { spoken: errReply };
         } finally {

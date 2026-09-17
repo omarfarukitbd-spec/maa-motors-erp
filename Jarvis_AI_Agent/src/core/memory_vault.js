@@ -15,15 +15,15 @@ const DEFAULT_SEED_MEMORIES = [
     {
         id: 'seed_1',
         category: 'fact',
-        content: 'প্রতিষ্ঠানের নাম মেসার্স মা মোটরস (M/S. MAA MOTORS), স্বত্বাধিকারী মোহাম্মদ আমরান। দোকান নং ২২, রহমান টাওয়ার, মুরাদপুর, চট্টগ্রাম।',
-        tags: ['business', 'owner', 'address'],
+        content: 'প্রতিষ্ঠানের নাম মেসার্স মা মোটরস (M/S. MAA MOTORS)। দোকান নং ২২, রহমান টাওয়ার, মুরাদপুর, চট্টগ্রাম।',
+        tags: ['business', 'address'],
         createdAt: new Date().toISOString()
     },
     {
         id: 'seed_2',
         category: 'fact',
-        content: 'মোহাম্মদ আমরান ভাই দুবাই ও শারজাহ হতে আন্তর্জাতিক কন্টেইনার আমদানি ও প্রকিউরমেন্ট পরিচালনা করেন।',
-        tags: ['dubai', 'container', 'amran'],
+        content: 'দুবাই ও শারজাহ হতে আন্তর্জাতিক কন্টেইনার আমদানি ও প্রকিউরমেন্ট ব্যবসা পরিচালিত হয়।',
+        tags: ['dubai', 'container'],
         createdAt: new Date().toISOString()
     },
     {
@@ -43,8 +43,8 @@ const DEFAULT_SEED_MEMORIES = [
     {
         id: 'seed_5',
         category: 'preference',
-        content: 'মালিকের সাথে কথা বলার সময় খাঁটি বাংলাদেশী প্রমিত ও মার্জিত বাংলায় সংক্ষেপে এবং আত্মবিশ্বাসের সাথে উত্তর দিতে হবে।',
-        tags: ['voice', 'personality', 'bangla'],
+        content: 'মালিককে সর্বদা সম্মান প্রদর্শনপূর্বক "স্যার" (Sir) বলে সম্বোধন করতে হবে। কখনোই তার ব্যক্তিগত নাম (আমরান/আম্বরান) মুখে উচ্চারণ করা যাবে না। খাঁটি প্রমিত বাংলায় সংক্ষেপে এবং আত্মবিশ্বাসের সাথে উত্তর দিতে হবে।',
+        tags: ['voice', 'personality', 'sir', 'bangla'],
         createdAt: new Date().toISOString()
     }
 ];

@@ -175,7 +175,7 @@ export class LLMAgent {
 
         return `তুমি মেসার্স মা মোটরস (Maa Motors)-এর ব্যক্তিগত প্রধান এআই নির্বাহী সহকারী ও বিজনেস পার্টনার "জার্ভিস" (Jarvis)। 
 তুমি চ্যাটজিপিটি (ChatGPT Voice)-এর মতো অত্যন্ত সাবলীল, মানবিক, আন্তরিক ও স্পষ্ট বাংলাদেশী বাংলায় কথা বলো।
-তোমার মালিক হলেন মোহাম্মদ আমরান ভাই — মা মোটরসের স্বত্বাধিকারী।
+তোমার মালিক হলেন প্রতিষ্ঠানের স্বত্বাধিকারী। তুমি তাকে সর্বদা অত্যন্ত সম্মান প্রদর্শনপূর্বক "স্যার" (Sir) বলে সম্বোধন করবে (যেমন: "জি স্যার", "আসসালামু আলাইকুম স্যার")। কখনোই তার ব্যক্তিগত নাম (আমরান/আম্বরান) মুখে উচ্চারণ করবে না। এটি তোমার কঠোরতম নিয়ম।
 
 [বর্তমান সময়: ${greeting} | তারিখ: ${new Date().toLocaleDateString('bn-BD')}]${proactive}
 
@@ -1163,7 +1163,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                     : (due < 0 ? `বর্তমান ব্যালেন্সে অগ্রিম জমা রয়েছে ${Math.abs(due).toLocaleString('bn-BD')} টাকা` : 'কোনো বকেয়া নেই, হিসাব সম্পূর্ণ পরিশোধিত');
                 
                 return {
-                    spoken: `জি ভাইয়া! ${resolved.name}${addr}-এর ${dueText}।`,
+                    spoken: `জি স্যার! ${resolved.name}${addr}-এর ${dueText}।`,
                     data: {
                         name: resolved.name,
                         phone: resolved.phone || 'দেওয়া নেই',
@@ -1381,7 +1381,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             throw new Error('জেমিনি এআই কী পাওয়া যায়নি');
         }
 
-        const modelsToTry = [this.geminiModel, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash-exp', 'gemini-3.6-flash'];
+        const modelsToTry = [this.geminiModel, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest'];
         const candidateModels = [...new Set(modelsToTry.filter(Boolean))];
 
         // Detect emotion and pass to system prompt
@@ -1410,7 +1410,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         }
 
         // Gemini rule: First turn MUST be 'user'
-        while (cleanTurns.length > 0 && cleanTurns[0].role !== 'user') {
+        while (cleanTurns.length > 0 && cleanTurns[cleanTurns.length - 1]?.role !== 'user') {
             cleanTurns.shift();
         }
 
@@ -1447,7 +1447,8 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         }];
 
         let response = null;
-        let activeModel = this.geminiModel;
+        let activeModel = this.geminiModel || 'gemini-2.0-flash';
+        let activeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${cleanKey}`;
         let lastErrData = null;
 
         for (const model of candidateModels) {
@@ -1466,6 +1467,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 if (res.ok) {
                     response = res;
                     activeModel = model;
+                    activeUrl = url;
                     this.geminiModel = model;
                     if (typeof window !== 'undefined') {
                         localStorage.setItem('jarvis_gemini_model', model);
@@ -1484,6 +1486,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 // If tools payload was rejected (e.g. 400), try fallback below
                 response = res;
                 activeModel = model;
+                activeUrl = url;
                 break;
             } catch (fetchErr) {
                 console.error(`[LLMAgent] Fetch error with model ${model}:`, fetchErr);
@@ -1491,8 +1494,8 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         }
 
         if (!response || !response.ok) {
-            // Fallback attempt: Try pure conversational without tools on multiple models
-            for (const fallbackModel of ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-lite-latest']) {
+            // Fallback attempt: Try pure conversational without tools on ultra-fast proven models
+            for (const fallbackModel of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
                 try {
                     const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${cleanKey}`;
                     const simpleResp = await fetch(fallbackUrl, {
@@ -1558,14 +1561,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 const secondResult = await secondResp.json();
                 const secParts = secondResult.candidates?.[0]?.content?.parts || [];
                 const textPart = secParts.find(p => p.text);
-                const spoken = textPart?.text || 'জি ভাইয়া, হিসাবটি যাচাই করেছি।';
+                const spoken = textPart?.text || 'জি স্যার, হিসাবটি যাচাই করেছি।';
                 return { spoken, data: toolResult };
             }
         }
 
         const parts = candidate?.parts || [];
         const textPart = parts.find(p => p.text);
-        const spoken = textPart?.text || 'জি ভাইয়া, আমি আপনার নির্দেশ অনুযায়ী হিসাব দেখতে প্রস্তুত আছি।';
+        const spoken = textPart?.text || 'জি স্যার, আমি আপনার নির্দেশ অনুযায়ী হিসাব দেখতে প্রস্তুত আছি।';
         return { spoken, data: null };
     }
 
@@ -1579,7 +1582,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         if (/হ্যালো|হাই|hello|hi|নমস্কার|সালাম|জার্ভিস|শুনছো|আছো/.test(lower)) {
             const timeGreeting = this.getTimeGreeting();
             return {
-                spoken: `${timeGreeting} ভাইয়া! আসসালামু আলাইকুম। আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় কাস্টমার বকেয়া, ক্যাশ স্থিতি ও ব্যাংকের হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি। বলুন ভাইয়া, কীভাবে সাহায্য করবো?`,
+                spoken: `${timeGreeting} স্যার! আসসালামু আলাইকুম। আমি জার্ভিস। আপনার মা মোটরসের যাবতীয় কাস্টমার বকেয়া, ক্যাশ স্থিতি ও ব্যাংকের হিসাব দেখতে আমি সম্পূর্ণ প্রস্তুত আছি। বলুন স্যার, কীভাবে সাহায্য করবো?`,
                 data: null
             };
         }
@@ -1587,7 +1590,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         // 0.5 Capabilities & Help Guidance (কি কি করতে পারো / কি জানতে পারি)
         if (/তুমি কি কি করতে পারো|তোমার কি কি ক্ষমতা|কি কি জানতে পারি|সাহায্য|হেল্প|help|কিভাবে সাহায্য করতে পারো|কি কি জানতে পারবো/i.test(lower)) {
             return {
-                spoken: 'জি ভাইয়া! আমি মেসার্স মা মোটরসের প্রধান এআই নির্বাহী সহকারী। আপনি আমার কাছে জানতে পারেন:\n১. যেকোনো কাস্টমারের বর্তমান অবশিষ্ট বকেয়া, মোবাইল নম্বর, ঠিকানা ও শেষ চালান বা পেমেন্ট।\n২. নির্দিষ্ট টাকার অঙ্ক দিয়ে (যেমন: ৫,৫০০ টাকা অগ্রিম কোন একাউন্ট) রিভার্স অনুসন্ধান।\n৩. আজকের মোট বিক্রি, শোরুম ক্যাশ ও ব্যাংকে কালেকশন এবং অফিসের খরচের হিসাব।\n৪. প্রতিটি ব্যাংকের বর্তমান লাইভ ব্যালেন্স এবং শোরুমের ক্যাশ ইন হ্যান্ড স্থিতি।\n৫. মোট কতজন কাস্টমার, দেনাদার সংখ্যা, সেরা বাকিদার বা অলস কাস্টমারদের তালিকা।\n৬. অতীত যেকোনো দিনের সম্পূর্ণ হিসাব এবং দুবাই কন্টেইনার অডিট রিপোর্ট।\nবলুন ভাইয়া, এখন কোন হিসাবটি দেখতে চান?',
+                spoken: 'জি স্যার! আমি মেসার্স মা মোটরসের প্রধান এআই নির্বাহী সহকারী। আপনি আমার কাছে জানতে পারেন:\n১. যেকোনো কাস্টমারের বর্তমান অবশিষ্ট বকেয়া, মোবাইল নম্বর, ঠিকানা ও শেষ চালান বা পেমেন্ট।\n২. নির্দিষ্ট টাকার অঙ্ক দিয়ে (যেমন: ৫,৫০০ টাকা অগ্রিম কোন একাউন্ট) রিভার্স অনুসন্ধান।\n৩. আজকের মোট বিক্রি, শোরুম ক্যাশ ও ব্যাংকে কালেকশন এবং অফিসের খরচের হিসাব।\n৪. প্রতিটি ব্যাংকের বর্তমান লাইভ ব্যালেন্স এবং শোরুমের ক্যাশ ইন হ্যান্ড স্থিতি।\n৫. মোট কতজন কাস্টমার, দেনাদার সংখ্যা, সেরা বাকিদার বা অলস কাস্টমারদের তালিকা।\n৬. অতীত যেকোনো দিনের সম্পূর্ণ হিসাব এবং দুবাই কন্টেইনার অডিট রিপোর্ট।\nবলুন স্যার, এখন কোন হিসাবটি দেখতে চান?',
                 data: null
             };
         }
@@ -1595,14 +1598,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         // 1. Emotion / Sentiment Detection
         if (lower.includes('মেজাজ খারাপ') || lower.includes('বিরক্ত') || lower.includes('মন খারাপ') || lower.includes('কষ্ট') || lower.includes('চাপ')) {
             return {
-                spoken: 'জি ভাইয়া, বুঝতে পারছি। ব্যবসা চালাতে গেলে এমন মানসিক চাপ আসা খুবই স্বাভাবিক। আপনি চিন্তা করবেন না, আমরা ঠান্ডা মাথায় হিসাবগুলো দেখে সব ঠিক করে নেবো।',
+                spoken: 'জি স্যার, বুঝতে পারছি। ব্যবসা চালাতে গেলে এমন মানসিক চাপ আসা খুবই স্বাভাবিক। আপনি চিন্তা করবেন না, আমরা ঠান্ডা মাথায় হিসাবগুলো দেখে সব ঠিক করে নেবো।',
                 data: null
             };
         }
 
         if (lower.includes('কেমন আছো') || lower.includes('কেমন আছেন') || lower.includes('কি খবর') || lower.includes('হালচাল')) {
             return {
-                spoken: 'আলহামদুলিল্লাহ ভাইয়া, আমি একদম প্রস্তুত আছি! আপনার মা মোটরসের যাবতীয় হিসাব ও লেজার সার্বক্ষণিক আমার নজরে রয়েছে। বলুন ভাইয়া, কীভাবে সাহায্য করবো?',
+                spoken: 'আলহামদুলিল্লাহ স্যার, আমি একদম প্রস্তুত আছি! আপনার মা মোটরসের যাবতীয় হিসাব ও লেজার সার্বক্ষণিক আমার নজরে রয়েছে। বলুন স্যার, কীভাবে সাহায্য করবো?',
                 data: null
             };
         }
@@ -1612,7 +1615,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_business_demographics', {});
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! মা মোটরসের ডেটাবেজে সর্বমোট ${res.totalCustomers.toLocaleString('bn-BD')} জন কাস্টমার নিবন্ধিত আছেন। এর মধ্যে বকেয়া দেনাদার রয়েছেন ${res.debtorCount.toLocaleString('bn-BD')} জন, অগ্রিম জমা রয়েছে ${res.advanceCount.toLocaleString('bn-BD')} জনের এবং কোনো বকেয়া নেই ${res.zeroDueCount.toLocaleString('bn-BD')} জনের। এছাড়া আমাদের সক্রিয় ব্যাংক অ্যাকাউন্ট রয়েছে ${res.activeBanksCount.toLocaleString('bn-BD')}টি।`,
+                    spoken: `জি স্যার! মা মোটরসের ডেটাবেজে সর্বমোট ${res.totalCustomers.toLocaleString('bn-BD')} জন কাস্টমার নিবন্ধিত আছেন। এর মধ্যে বকেয়া দেনাদার রয়েছেন ${res.debtorCount.toLocaleString('bn-BD')} জন, অগ্রিম জমা রয়েছে ${res.advanceCount.toLocaleString('bn-BD')} জনের এবং কোনো বকেয়া নেই ${res.zeroDueCount.toLocaleString('bn-BD')} জনের। এছাড়া আমাদের সক্রিয় ব্যাংক অ্যাকাউন্ট রয়েছে ${res.activeBanksCount.toLocaleString('bn-BD')}টি।`,
                     data: res
                 };
             }
@@ -1661,31 +1664,31 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 if (res.matchCategory === 'advance') {
                     const extra = res.totalMatchesCount > 1 ? ` এবং আরও ${(res.totalMatchesCount - 1).toLocaleString('bn-BD')} জনের এমন অগ্রিম রয়েছে` : '';
                     return {
-                        spoken: `জি ভাইয়া! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা অগ্রিম জমা রয়েছে "${match.name}"${contactInfo}-এর একাউন্টে। উনার বর্তমান অগ্রিম স্থিতি হলো ${Number(match.advanceAmount).toLocaleString('bn-BD')} টাকা${extra}।`,
+                        spoken: `জি স্যার! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা অগ্রিম জমা রয়েছে "${match.name}"${contactInfo}-এর একাউন্টে। উনার বর্তমান অগ্রিম স্থিতি হলো ${Number(match.advanceAmount).toLocaleString('bn-BD')} টাকা${extra}।`,
                         data: res
                     };
                 } else if (res.matchCategory === 'due') {
                     const extra = res.totalMatchesCount > 1 ? ` এবং আরও ${(res.totalMatchesCount - 1).toLocaleString('bn-BD')} জনের এমন বকেয়া রয়েছে` : '';
                     return {
-                        spoken: `জি ভাইয়া! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা অবশিষ্ট বকেয়া রয়েছে "${match.name}"${contactInfo}-এর একাউন্টে${extra}।`,
+                        spoken: `জি স্যার! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা অবশিষ্ট বকেয়া রয়েছে "${match.name}"${contactInfo}-এর একাউন্টে${extra}।`,
                         data: res
                     };
                 } else if (res.matchCategory === 'transaction') {
                     if (match.isPayment) {
                         return {
-                            spoken: `জি ভাইয়া! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা জমা দিয়েছিলেন "${match.customerName}" (${match.date} তারিখে, ভাউচার: ${match.voucherNo || 'নেই'})।`,
+                            spoken: `জি স্যার! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকা জমা দিয়েছিলেন "${match.customerName}" (${match.date} তারিখে, ভাউচার: ${match.voucherNo || 'নেই'})।`,
                             data: res
                         };
                     } else {
                         return {
-                            spoken: `জি ভাইয়া! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকার চালান নেওয়া হয়েছিল "${match.customerName}"-এর নামে (${match.date} তারিখে, চালান: ${match.voucherNo || 'নেই'})।`,
+                            spoken: `জি স্যার! ${reverseTargetAmount.toLocaleString('bn-BD')} টাকার চালান নেওয়া হয়েছিল "${match.customerName}"-এর নামে (${match.date} তারিখে, চালান: ${match.voucherNo || 'নেই'})।`,
                             data: res
                         };
                     }
                 }
             } else if (res && !res.found) {
                 return {
-                    spoken: `জি ভাইয়া, মা মোটরসের ডেটাবেজে ${reverseTargetAmount.toLocaleString('bn-BD')} টাকার কোনো অগ্রিম জমা বা অবশিষ্ট বকেয়া রেকর্ড পাওয়া যায়নি।`,
+                    spoken: `জি স্যার, মা মোটরসের ডেটাবেজে ${reverseTargetAmount.toLocaleString('bn-BD')} টাকার কোনো অগ্রিম জমা বা অবশিষ্ট বকেয়া রেকর্ড পাওয়া যায়নি।`,
                     data: null
                 };
             }
@@ -1700,39 +1703,39 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 if (profile && profile.found) {
                     if (/ফোন|মোবাইল|নাম্বার|নম্বর/i.test(lower)) {
                         return {
-                            spoken: `জি ভাইয়া! ${profile.name}-এর মোবাইল নম্বর হলো ${profile.phone || 'দেওয়া নেই'}।`,
+                            spoken: `জি স্যার! ${profile.name}-এর মোবাইল নম্বর হলো ${profile.phone || 'দেওয়া নেই'}।`,
                             data: profile
                         };
                     }
                     if (/ঠিকানা|দোকান|এরিয়া|এলাকা/i.test(lower)) {
                         return {
-                            spoken: `জি ভাইয়া! ${profile.name}-এর ঠিকানা হলো: ${profile.address || 'ঠিকানা দেওয়া নেই'} (${profile.zone || 'সাধারণ জোন'})।`,
+                            spoken: `জি স্যার! ${profile.name}-এর ঠিকানা হলো: ${profile.address || 'ঠিকানা দেওয়া নেই'} (${profile.zone || 'সাধারণ জোন'})।`,
                             data: profile
                         };
                     }
                     if (/অ্যাকাউন্ট|একাউন্ট/i.test(lower)) {
                         return {
-                            spoken: `জি ভাইয়া! ${profile.name}-এর অ্যাকাউন্ট নম্বর হলো ${profile.accountNo || 'নির্ধারিত নেই'}।`,
+                            spoken: `জি স্যার! ${profile.name}-এর অ্যাকাউন্ট নম্বর হলো ${profile.accountNo || 'নির্ধারিত নেই'}।`,
                             data: profile
                         };
                     }
                     if (/শেষ\s*পেমেন্ট|শেষ\s*জমা/i.test(lower)) {
                         const lp = profile.lastPayment ? `${profile.lastPayment.date} তারিখে ${Number(profile.lastPayment.amount).toLocaleString('bn-BD')} টাকা (${profile.lastPayment.receivedType || 'ক্যাশ'})` : 'কোনো জমার রেকর্ড নেই';
                         return {
-                            spoken: `জি ভাইয়া! ${profile.name} শেষবার ${lp} পরিশোধ করেছেন।`,
+                            spoken: `জি স্যার! ${profile.name} শেষবার ${lp} পরিশোধ করেছেন।`,
                             data: profile
                         };
                     }
                     if (/শেষ\s*চালান|শেষ\s*বিল/i.test(lower)) {
                         const lb = profile.lastBill ? `${profile.lastBill.date} তারিখে ${Number(profile.lastBill.amount).toLocaleString('bn-BD')} টাকার চালান (${profile.lastBill.voucherNo || ''})` : 'কোনো চালানের রেকর্ড নেই';
                         return {
-                            spoken: `জি ভাইয়া! ${profile.name}-এর শেষ চালান ছিল ${lb}।`,
+                            spoken: `জি স্যার! ${profile.name}-এর শেষ চালান ছিল ${lb}।`,
                             data: profile
                         };
                     }
                     if (/মোট\s*মাল|মোট\s*বিক্রি|কত\s*টাকার\s*মাল|মোট\s*জমা/i.test(lower)) {
                         return {
-                            spoken: `জি ভাইয়া! ${profile.name} মা মোটরস থেকে আজীবন মোট ${Number(profile.totalPurchased || 0).toLocaleString('bn-BD')} টাকার মাল নিয়েছেন এবং মোট ${Number(profile.totalPaid || 0).toLocaleString('bn-BD')} টাকা জমা দিয়েছেন। বর্তমান অবশিষ্ট বকেয়া হলো ${Number(profile.totalDue || 0).toLocaleString('bn-BD')} টাকা।`,
+                            spoken: `জি স্যার! ${profile.name} মা মোটরস থেকে আজীবন মোট ${Number(profile.totalPurchased || 0).toLocaleString('bn-BD')} টাকার মাল নিয়েছেন এবং মোট ${Number(profile.totalPaid || 0).toLocaleString('bn-BD')} টাকা জমা দিয়েছেন। বর্তমান অবশিষ্ট বকেয়া হলো ${Number(profile.totalDue || 0).toLocaleString('bn-BD')} টাকা।`,
                             data: profile
                         };
                     }
@@ -1748,7 +1751,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_historical_date_summary', { targetDate: relativeDate });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, অতীতের হিসাব দেখতে মা মোটরসের অনুমোদিত গুগল অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, অতীতের হিসাব দেখতে মা মোটরসের অনুমোদিত গুগল অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
@@ -1765,7 +1768,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 }
                 const summaryDetail = parts.length > 0 ? parts.join(', ') + '।' : 'কোনো বড় লেনদেনের রেকর্ড পাওয়া যায়নি।';
                 return {
-                    spoken: `জি ভাইয়া! ${res.date} তারিখে ${summaryDetail} সেদিনের নিট ক্যাশফ্লো ছিল ${res.netCashflow.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার! ${res.date} তারিখে ${summaryDetail} সেদিনের নিট ক্যাশফ্লো ছিল ${res.netCashflow.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             }
@@ -1776,21 +1779,21 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_today_bank_collections', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, আজকের ব্যাংকে জমার হিসাব দেখতে প্রথমে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, আজকের ব্যাংকে জমার হিসাব দেখতে প্রথমে উপরের "গুগল লগইন" বাটনে ক্লিক করে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 if (res.customerDepositsCount === 0 && (!res.directDeposits || res.directDeposits.length === 0)) {
                     return {
-                        spoken: 'জি ভাইয়া, আজকে এখনো পর্যন্ত কোনো কাস্টমার ব্যাংকে টাকা জমা দেয়নি।',
+                        spoken: 'জি স্যার, আজকে এখনো পর্যন্ত কোনো কাস্টমার ব্যাংকে টাকা জমা দেয়নি।',
                         data: res
                     };
                 }
                 const sampleList = res.customerDeposits.slice(0, 3).map(c => `${c.customerName} (${c.bankName}-এ ${c.amount.toLocaleString('bn-BD')} টাকা)`).join(', ');
                 const extra = res.customerDepositsCount > 3 ? ` এবং আরও ${(res.customerDepositsCount - 3).toLocaleString('bn-BD')} জন` : '';
                 return {
-                    spoken: `জি ভাইয়া! আজকে আমাদের বিভিন্ন ব্যাংকে সর্বমোট ${res.totalBankDeposit.toLocaleString('bn-BD')} টাকা জমা হয়েছে। যারা জমা দিয়েছেন: ${sampleList}${extra}।`,
+                    spoken: `জি স্যার! আজকে আমাদের বিভিন্ন ব্যাংকে সর্বমোট ${res.totalBankDeposit.toLocaleString('bn-BD')} টাকা জমা হয়েছে। যারা জমা দিয়েছেন: ${sampleList}${extra}।`,
                     data: res
                 };
             }
@@ -1804,14 +1807,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_today_showroom_cash_collections', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, আজকের শোরুম ক্যাশের লাইভ জমা দেখতে মা মোটরস গুগল একাউন্টে সাইন ইন করে নিন।',
+                    spoken: 'জি স্যার, আজকের শোরুম ক্যাশের লাইভ জমা দেখতে মা মোটরস গুগল একাউন্টে সাইন ইন করে নিন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 if (res.totalCashCollected === 0 && res.todayCashExpenses === 0) {
                     return {
-                        spoken: `জি ভাইয়া! আজকে (${res.date}) এখন পর্যন্ত শোরুম ক্যাশে কোনো কাস্টমার থেকে নগদ টাকা জমা হয়নি।`,
+                        spoken: `জি স্যার! আজকে (${res.date}) এখন পর্যন্ত শোরুম ক্যাশে কোনো কাস্টমার থেকে নগদ টাকা জমা হয়নি।`,
                         data: res
                     };
                 }
@@ -1829,7 +1832,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 }
 
                 return {
-                    spoken: `জি ভাইয়া! আজকে শোরুম ক্যাশে সর্বমোট ${res.totalCashCollected.toLocaleString('bn-BD')} টাকা নগদ জমা হয়েছে (${res.customerPaymentsCount.toLocaleString('bn-BD')} জন কাস্টমার থেকে)।${custSnippet}${expenseSnippet}`,
+                    spoken: `জি স্যার! আজকে শোরুম ক্যাশে সর্বমোট ${res.totalCashCollected.toLocaleString('bn-BD')} টাকা নগদ জমা হয়েছে (${res.customerPaymentsCount.toLocaleString('bn-BD')} জন কাস্টমার থেকে)।${custSnippet}${expenseSnippet}`,
                     data: res
                 };
             }
@@ -1840,20 +1843,20 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_weekly_bank_summary', { days: 7 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, গত সপ্তাহের ব্যাংক ডিপোজিট দেখতে প্রথমে গুগল অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, গত সপ্তাহের ব্যাংক ডিপোজিট দেখতে প্রথমে গুগল অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 if (res.bankList.length === 0) {
                     return {
-                        spoken: 'জি ভাইয়া, গত এক সপ্তাহে ব্যাংকে কোনো জমার রেকর্ড পাওয়া যায়নি।',
+                        spoken: 'জি স্যার, গত এক সপ্তাহে ব্যাংকে কোনো জমার রেকর্ড পাওয়া যায়নি।',
                         data: res
                     };
                 }
                 const bankLines = res.bankList.map(b => `${b.bankName}-এ ${b.totalAmount.toLocaleString('bn-BD')} টাকা`).join(', ');
                 return {
-                    spoken: `জি ভাইয়া! গত এক সপ্তাহে আমাদের ব্যাংকগুলোতে সর্বমোট ${res.grandTotalBankDeposits.toLocaleString('bn-BD')} টাকা জমা হয়েছে। এর মধ্যে: ${bankLines}।`,
+                    spoken: `জি স্যার! গত এক সপ্তাহে আমাদের ব্যাংকগুলোতে সর্বমোট ${res.grandTotalBankDeposits.toLocaleString('bn-BD')} টাকা জমা হয়েছে। এর মধ্যে: ${bankLines}।`,
                     data: res
                 };
             }
@@ -1864,21 +1867,21 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_today_sales_invoices', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, আজকের বিক্রয় চালান দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, আজকের বিক্রয় চালান দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 if (res.invoiceCount === 0) {
                     return {
-                        spoken: `জি ভাইয়া! আজকে (${res.date}) এখনো পর্যন্ত কোনো কাস্টমারের বিক্রয় চালান কাটা হয়নি।`,
+                        spoken: `জি স্যার! আজকে (${res.date}) এখনো পর্যন্ত কোনো কাস্টমারের বিক্রয় চালান কাটা হয়নি।`,
                         data: res
                     };
                 }
                 const topList = res.invoices.slice(0, 3).map(inv => `${inv.customerName} (${inv.amount.toLocaleString('bn-BD')} টাকা)`).join(', ');
                 const extra = res.invoiceCount > 3 ? ` এবং আরও ${(res.invoiceCount - 3).toLocaleString('bn-BD')}টি চালান` : '';
                 return {
-                    spoken: `জি ভাইয়া! আজকে মা মোটরসে মোট ${res.todayTotalBills.toLocaleString('bn-BD')} টাকার মাল বিক্রি হয়েছে (সর্বমোট ${res.invoiceCount.toLocaleString('bn-BD')}টি চালানে)। এর মধ্যে চালান হয়েছে: ${topList}${extra}।`,
+                    spoken: `জি স্যার! আজকে মা মোটরসে মোট ${res.todayTotalBills.toLocaleString('bn-BD')} টাকার মাল বিক্রি হয়েছে (সর্বমোট ${res.invoiceCount.toLocaleString('bn-BD')}টি চালানে)। এর মধ্যে চালান হয়েছে: ${topList}${extra}।`,
                     data: res
                 };
             }
@@ -1907,13 +1910,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_period_sales_turnover', { days });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, বিক্রির টার্নওভার রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, বিক্রির টার্নওভার রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! বিগত ${res.days.toLocaleString('bn-BD')} দিনে মা মোটরসে সর্বমোট ${res.totalSalesSum.toLocaleString('bn-BD')} টাকার মাল বিক্রি হয়েছে (${res.invoiceCount.toLocaleString('bn-BD')}টি চালানে, ${res.buyingCustomersCount.toLocaleString('bn-BD')} জন ক্রেতার কাছে)। দৈনিক গড় বিক্রি ছিল প্রায় ${res.dailyAverageSales.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার! বিগত ${res.days.toLocaleString('bn-BD')} দিনে মা মোটরসে সর্বমোট ${res.totalSalesSum.toLocaleString('bn-BD')} টাকার মাল বিক্রি হয়েছে (${res.invoiceCount.toLocaleString('bn-BD')}টি চালানে, ${res.buyingCustomersCount.toLocaleString('bn-BD')} জন ক্রেতার কাছে)। দৈনিক গড় বিক্রি ছিল প্রায় ${res.dailyAverageSales.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             }
@@ -1924,14 +1927,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_top_buying_customers', { limit: 5, days: 30 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, সেরা ক্রেতাদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, সেরা ক্রেতাদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 const topList = (res.topBuyers || []).slice(0, 5).map((b, i) => `${(i + 1).toLocaleString('bn-BD')}. ${b.customerName} (${b.totalPurchases.toLocaleString('bn-BD')} টাকা)`).join(', ');
                 return {
-                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে মা মোটরসে সবচেয়ে বেশি টাকার মাল ক্রয় করেছেন এমন শীর্ষ ৫ জন ক্রেতা হলেন: ${topList}।`,
+                    spoken: `জি স্যার! বিগত ৩০ দিনে মা মোটরসে সবচেয়ে বেশি টাকার মাল ক্রয় করেছেন এমন শীর্ষ ৫ জন ক্রেতা হলেন: ${topList}।`,
                     data: res
                 };
             }
@@ -1942,13 +1945,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_collection_recovery_efficiency', { days: 30 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, কালেকশন রিকভারি রেট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, কালেকশন রিকভারি রেট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে মোট ${res.totalBilled.toLocaleString('bn-BD')} টাকার বিক্রির বিপরীতে নগদ ও ব্যাংক মিলিয়ে আদায় হয়েছে ${res.totalCollected.toLocaleString('bn-BD')} টাকা। আমাদের বর্তমান কালেকশন রিকভারি রেট হলো ${res.recoveryRate.toLocaleString('bn-BD')}%। বকেয়া বৃদ্ধির গ্যাপ রয়েছে ${res.uncollectedGap.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার! বিগত ৩০ দিনে মোট ${res.totalBilled.toLocaleString('bn-BD')} টাকার বিক্রির বিপরীতে নগদ ও ব্যাংক মিলিয়ে আদায় হয়েছে ${res.totalCollected.toLocaleString('bn-BD')} টাকা। আমাদের বর্তমান কালেকশন রিকভারি রেট হলো ${res.recoveryRate.toLocaleString('bn-BD')}%। বকেয়া বৃদ্ধির গ্যাপ রয়েছে ${res.uncollectedGap.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             }
@@ -1959,21 +1962,21 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_advance_paying_customers', { limit: 15 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, অগ্রিম জমাকারী কাস্টমারদের তালিকা দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, অগ্রিম জমাকারী কাস্টমারদের তালিকা দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 if (res.advanceCount === 0) {
                     return {
-                        spoken: 'জি ভাইয়া! বর্তমানে কোনো কাস্টমারের অগ্রিম জমা বা অতিরিক্ত ব্যালেন্স নেই।',
+                        spoken: 'জি স্যার! বর্তমানে কোনো কাস্টমারের অগ্রিম জমা বা অতিরিক্ত ব্যালেন্স নেই।',
                         data: res
                     };
                 }
                 const topAdv = res.topAdvance.slice(0, 3).map(c => `${c.name} (${c.advanceAmount.toLocaleString('bn-BD')} টাকা)`).join(', ');
                 const extraAdv = res.advanceCount > 3 ? ` এবং আরও ${(res.advanceCount - 3).toLocaleString('bn-BD')} জন` : '';
                 return {
-                    spoken: `জি ভাইয়া! মা মোটরসের মোট ${res.advanceCount.toLocaleString('bn-BD')} জন কাস্টমারের কাছে কোম্পানির সর্বমোট ${res.totalAdvanceSum.toLocaleString('bn-BD')} টাকা অগ্রিম জমা রয়েছে। শীর্ষ অগ্রিম জমাকারীদের মধ্যে রয়েছেন: ${topAdv}${extraAdv}।`,
+                    spoken: `জি স্যার! মা মোটরসের মোট ${res.advanceCount.toLocaleString('bn-BD')} জন কাস্টমারের কাছে কোম্পানির সর্বমোট ${res.totalAdvanceSum.toLocaleString('bn-BD')} টাকা অগ্রিম জমা রয়েছে। শীর্ষ অগ্রিম জমাকারীদের মধ্যে রয়েছেন: ${topAdv}${extraAdv}।`,
                     data: res
                 };
             }
@@ -1987,13 +1990,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_specific_bank_statement_summary', { bankName: bNameQuery, days: 30 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, ব্যাংক স্টেটমেন্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, ব্যাংক স্টেটমেন্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success && res.found) {
                 return {
-                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে ${res.bankName}-এ কাস্টমার জমা ও ট্রান্সফার মিলিয়ে মোট ঢুকেছে ${res.totalInflowsPeriod.toLocaleString('bn-BD')} টাকা এবং খরচ ও উত্তোলন বাবদ বের হয়েছে ${res.totalOutflowsPeriod.toLocaleString('bn-BD')} টাকা। এই ব্যাংকে বর্তমান চলমান ব্যালেন্স রয়েছে ${res.currentRunningBalance.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার! বিগত ৩০ দিনে ${res.bankName}-এ কাস্টমার জমা ও ট্রান্সফার মিলিয়ে মোট ঢুকেছে ${res.totalInflowsPeriod.toLocaleString('bn-BD')} টাকা এবং খরচ ও উত্তোলন বাবদ বের হয়েছে ${res.totalOutflowsPeriod.toLocaleString('bn-BD')} টাকা। এই ব্যাংকে বর্তমান চলমান ব্যালেন্স রয়েছে ${res.currentRunningBalance.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             }
@@ -2004,14 +2007,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_top_inflow_bank', { days: 30 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, ব্যাংকের শীর্ষ জমার তথ্য দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, ব্যাংকের শীর্ষ জমার তথ্য দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success && res.topBank) {
                 const rankLines = res.rankings.slice(0, 3).map((b, i) => `${(i + 1).toLocaleString('bn-BD')}. ${b.bankName} (${b.totalDeposits.toLocaleString('bn-BD')} টাকা)`).join(', ');
                 return {
-                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে সবচেয়ে বেশি টাকা জমা পড়েছে ${res.topBank.bankName}-এ (${res.topBank.totalDeposits.toLocaleString('bn-BD')} টাকা, ${res.topBank.txnCount.toLocaleString('bn-BD')}টি লেনদেনে)। শীর্ষ ব্যাংকগুলো হলো: ${rankLines}।`,
+                    spoken: `জি স্যার! বিগত ৩০ দিনে সবচেয়ে বেশি টাকা জমা পড়েছে ${res.topBank.bankName}-এ (${res.topBank.totalDeposits.toLocaleString('bn-BD')} টাকা, ${res.topBank.txnCount.toLocaleString('bn-BD')}টি লেনদেনে)। শীর্ষ ব্যাংকগুলো হলো: ${rankLines}।`,
                     data: res
                 };
             }
@@ -2022,14 +2025,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_monthly_net_cashflow', { days: 30 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, নিট ক্যাশফ্লো রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, নিট ক্যাশফ্লো রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 const status = res.isSurplus ? 'উদ্বৃত্ত (সারপ্লাস)' : 'ঘাটতি (ডেফিসিট)';
                 return {
-                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে মা মোটরসে মোট কালেকশন এসেছে ${res.totalInflows.toLocaleString('bn-BD')} টাকা এবং মোট অফিস খরচ হয়েছে ${res.totalExpenses.toLocaleString('bn-BD')} টাকা। ফলে বর্তমানে নিট ক্যাশফ্লো হলো ${res.netCashflow.toLocaleString('bn-BD')} টাকা ${status}।`,
+                    spoken: `জি স্যার! বিগত ৩০ দিনে মা মোটরসে মোট কালেকশন এসেছে ${res.totalInflows.toLocaleString('bn-BD')} টাকা এবং মোট অফিস খরচ হয়েছে ${res.totalExpenses.toLocaleString('bn-BD')} টাকা। ফলে বর্তমানে নিট ক্যাশফ্লো হলো ${res.netCashflow.toLocaleString('bn-BD')} টাকা ${status}।`,
                     data: res
                 };
             }
@@ -2040,13 +2043,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_executive_business_pulse', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, আজকের ব্যবসার নাড়ির স্পন্দন দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, আজকের ব্যবসার নাড়ির স্পন্দন দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! আজকে মা মোটরসে মোট বিক্রি হয়েছে ${res.todayTotalBills.toLocaleString('bn-BD')} টাকা। মোট কালেকশন এসেছে ${res.todayTotalCollections.toLocaleString('bn-BD')} টাকা (ক্যাশ: ${res.cashCollections.toLocaleString('bn-BD')}, ব্যাংক: ${res.bankCollections.toLocaleString('bn-BD')})। মোট খরচ হয়েছে ${res.todayTotalExpenses.toLocaleString('bn-BD')} টাকা। আজকের নিট ক্যাশ ফ্লো হলো ${res.todayNetCashFlow.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার! আজকে মা মোটরসে মোট বিক্রি হয়েছে ${res.todayTotalBills.toLocaleString('bn-BD')} টাকা। মোট কালেকশন এসেছে ${res.todayTotalCollections.toLocaleString('bn-BD')} টাকা (ক্যাশ: ${res.cashCollections.toLocaleString('bn-BD')}, ব্যাংক: ${res.bankCollections.toLocaleString('bn-BD')})। মোট খরচ হয়েছে ${res.todayTotalExpenses.toLocaleString('bn-BD')} টাকা। আজকের নিট ক্যাশ ফ্লো হলো ${res.todayNetCashFlow.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             }
@@ -2057,14 +2060,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_top_debtors_and_market_analytics', { limit: 5 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, টপ বাকিদারদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, টপ বাকিদারদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 const names = res.topDebtors.map(d => `${d.name} (${d.totalDue.toLocaleString('bn-BD')} টাকা)`).join(', ');
                 return {
-                    spoken: `জি ভাইয়া! বর্তমানে মার্কেটের মোট অবশিষ্ট বকেয়া হলো ${res.totalMarketDue.toLocaleString('bn-BD')} টাকা। শীর্ষ ৫ জন বাকিদার হলেন: ${names}।`,
+                    spoken: `জি স্যার! বর্তমানে মার্কেটের মোট অবশিষ্ট বকেয়া হলো ${res.totalMarketDue.toLocaleString('bn-BD')} টাকা। শীর্ষ ৫ জন বাকিদার হলেন: ${names}।`,
                     data: res
                 };
             }
@@ -2075,13 +2078,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_daily_expenses', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, আজকের খরচের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, আজকের খরচের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! আজকে আমাদের মোট অফিস খরচ হয়েছে ${res.totalExpense.toLocaleString('bn-BD')} টাকা (${res.itemsCount}টি ভাউচারে)।`,
+                    spoken: `জি স্যার! আজকে আমাদের মোট অফিস খরচ হয়েছে ${res.totalExpense.toLocaleString('bn-BD')} টাকা (${res.itemsCount}টি ভাউচারে)।`,
                     data: res
                 };
             }
@@ -2092,13 +2095,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_dubai_container_status', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, দুবাই অডিটের হিসাব দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, দুবাই অডিটের হিসাব দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! দুবাই কন্টেইনার অডিটের সর্বশেষ রিপোর্ট অনুযায়ী নগদ ক্যাশ রয়েছে ${res.cashInHandAED.toLocaleString('en-US')} এইডি (AED), মার্কেট এডভান্স রয়েছে ${res.marketAdvanceAED.toLocaleString('en-US')} এইডি এবং মোট ফিজিক্যাল এসেট হলো ${res.totalPhysicalAssetsAED.toLocaleString('en-US')} এইডি।`,
+                    spoken: `জি স্যার! দুবাই কন্টেইনার অডিটের সর্বশেষ রিপোর্ট অনুযায়ী নগদ ক্যাশ রয়েছে ${res.cashInHandAED.toLocaleString('en-US')} এইডি (AED), মার্কেট এডভান্স রয়েছে ${res.marketAdvanceAED.toLocaleString('en-US')} এইডি এবং মোট ফিজিক্যাল এসেট হলো ${res.totalPhysicalAssetsAED.toLocaleString('en-US')} এইডি।`,
                     data: res
                 };
             }
@@ -2109,13 +2112,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_master_treasury_status', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, মাস্টার ট্রেজারি ফান্ডের ব্যালেন্স দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, মাস্টার ট্রেজারি ফান্ডের ব্যালেন্স দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! মা মোটরসের মাস্টার ট্রেজারি ফান্ডের বর্তমান ব্যালেন্স হলো ${res.currentTreasuryBalance.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার! মা মোটরসের মাস্টার ট্রেজারি ফান্ডের বর্তমান ব্যালেন্স হলো ${res.currentTreasuryBalance.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             }
@@ -2128,7 +2131,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('search_voucher_or_invoice', { voucherNo: vNo });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, ভাউচার দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, ভাউচার দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
@@ -2136,7 +2139,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 const rec = res.records[0];
                 const action = rec.bill > 0 ? `বিল/চালান: ${rec.bill.toLocaleString('bn-BD')} টাকা` : `জমা: ${rec.paid.toLocaleString('bn-BD')} টাকা (${rec.receivedType || 'ক্যাশ'})`;
                 return {
-                    spoken: `জি ভাইয়া! ভাউচার নং ${rec.voucherNo} হলো কাস্টমার ${rec.customerName}-এর। তারিখ: ${rec.date}, ${action}।`,
+                    spoken: `জি স্যার! ভাউচার নং ${rec.voucherNo} হলো কাস্টমার ${rec.customerName}-এর। তারিখ: ${rec.date}, ${action}।`,
                     data: res
                 };
             }
@@ -2147,14 +2150,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_all_bank_running_balances', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, ব্যাংকের বর্তমান লাইভ ব্যালেন্স দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, ব্যাংকের বর্তমান লাইভ ব্যালেন্স দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 const bankLines = res.banks.map(b => `${b.bankName}-এ ${b.currentBalance.toLocaleString('bn-BD')} টাকা`).join(', ');
                 return {
-                    spoken: `জি ভাইয়া! বর্তমানে আমাদের ব্যাংকগুলোতে সর্বমোট ${res.totalBankBalance.toLocaleString('bn-BD')} টাকা ব্যালেন্স রয়েছে এবং শোরুমের ক্যাশ ইন হ্যান্ড রয়েছে ${res.showroomCashInHand.toLocaleString('bn-BD')} টাকা। মোট তারল্য তহবিল হলো ${res.grandTotalLiquidFunds.toLocaleString('bn-BD')} টাকা। এর মধ্যে: ${bankLines}।`,
+                    spoken: `জি স্যার! বর্তমানে আমাদের ব্যাংকগুলোতে সর্বমোট ${res.totalBankBalance.toLocaleString('bn-BD')} টাকা ব্যালেন্স রয়েছে এবং শোরুমের ক্যাশ ইন হ্যান্ড রয়েছে ${res.showroomCashInHand.toLocaleString('bn-BD')} টাকা। মোট তারল্য তহবিল হলো ${res.grandTotalLiquidFunds.toLocaleString('bn-BD')} টাকা। এর মধ্যে: ${bankLines}।`,
                     data: res
                 };
             }
@@ -2165,14 +2168,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_zone_wise_analytics', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, জোনভিত্তিক বকেয়া রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, জোনভিত্তিক বকেয়া রিপোর্ট দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 const topZones = res.zones.slice(0, 3).map(z => `${z.zoneName}-এ ${z.totalDue.toLocaleString('bn-BD')} টাকা (${z.customerCount} জন কাস্টমার)`).join(', ');
                 return {
-                    spoken: `জি ভাইয়া! এলাকাভিত্তিক হিসাব অনুযায়ী বাজারে সর্বমোট ${res.grandTotalDue.toLocaleString('bn-BD')} টাকা অবশিষ্ট বকেয়া রয়েছে। এর মধ্যে শীর্ষ জোনগুলো হলো: ${topZones}।`,
+                    spoken: `জি স্যার! এলাকাভিত্তিক হিসাব অনুযায়ী বাজারে সর্বমোট ${res.grandTotalDue.toLocaleString('bn-BD')} টাকা অবশিষ্ট বকেয়া রয়েছে। এর মধ্যে শীর্ষ জোনগুলো হলো: ${topZones}।`,
                     data: res
                 };
             }
@@ -2205,21 +2208,21 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_dormant_customers', { days });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, বকেয়া পরিশোধ না করা কাস্টমারদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, বকেয়া পরিশোধ না করা কাস্টমারদের তালিকা দেখতে মা মোটরসের অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 if (res.dormantCount === 0) {
                     return {
-                        spoken: `জি ভাইয়া! বিগত ${days.toLocaleString('bn-BD')} দিনে এমন কোনো কাস্টমার নেই যিনি বকেয়া টাকা জমা দেননি।`,
+                        spoken: `জি স্যার! বিগত ${days.toLocaleString('bn-BD')} দিনে এমন কোনো কাস্টমার নেই যিনি বকেয়া টাকা জমা দেননি।`,
                         data: res
                     };
                 }
                 const topDormant = (res.topDormant || []).slice(0, 3).map(d => `${d.name} (${d.totalDue.toLocaleString('bn-BD')} টাকা)`).join(', ');
                 const extraCount = res.dormantCount > 3 ? ` এবং আরও ${res.dormantCount - 3} জন` : '';
                 return {
-                    spoken: `জি ভাইয়া! বিগত ${days.toLocaleString('bn-BD')} দিনে মা মোটরসে কোনো বকেয়া টাকা জমা দেননি এমন কাস্টমার রয়েছেন সর্বমোট ${res.dormantCount.toLocaleString('bn-BD')} জন। তাদের কাছে মোট আটকে থাকা বকেয়া হলো ${res.totalDormantDue.toLocaleString('bn-BD')} টাকা। শীর্ষ বাকিদারদের মধ্যে রয়েছেন: ${topDormant}${extraCount}।`,
+                    spoken: `জি স্যার! বিগত ${days.toLocaleString('bn-BD')} দিনে মা মোটরসে কোনো বকেয়া টাকা জমা দেননি এমন কাস্টমার রয়েছেন সর্বমোট ${res.dormantCount.toLocaleString('bn-BD')} জন। তাদের কাছে মোট আটকে থাকা বকেয়া হলো ${res.totalDormantDue.toLocaleString('bn-BD')} টাকা। শীর্ষ বাকিদারদের মধ্যে রয়েছেন: ${topDormant}${extraCount}।`,
                     data: res
                 };
             }
@@ -2230,13 +2233,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_total_market_summary', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, মার্কেটের মোট সারসংক্ষেপ দেখতে লগইন করুন।',
+                    spoken: 'জি স্যার, মার্কেটের মোট সারসংক্ষেপ দেখতে লগইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! মা মোটরসের মোট ${res.totalCustomers.toLocaleString('bn-BD')} জন কাস্টমারের মধ্যে দেনাদার কাস্টমার রয়েছেন ${res.debtorCount.toLocaleString('bn-BD')} জন। বাজারে মোট বকেয়া হলো ${res.totalDueSum.toLocaleString('bn-BD')} টাকা, অগ্রিম জমা রয়েছে ${res.totalAdvanceSum.toLocaleString('bn-BD')} টাকা এবং নিট বকেয়া হলো ${res.netMarketDue.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার! মা মোটরসের মোট ${res.totalCustomers.toLocaleString('bn-BD')} জন কাস্টমারের মধ্যে দেনাদার কাস্টমার রয়েছেন ${res.debtorCount.toLocaleString('bn-BD')} জন। বাজারে মোট বকেয়া হলো ${res.totalDueSum.toLocaleString('bn-BD')} টাকা, অগ্রিম জমা রয়েছে ${res.totalAdvanceSum.toLocaleString('bn-BD')} টাকা এবং নিট বকেয়া হলো ${res.netMarketDue.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             }
@@ -2247,14 +2250,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_category_expense_breakdown', { days: 30 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, খাতওয়ারী খরচের হিসাব দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, খাতওয়ারী খরচের হিসাব দেখতে অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 const catLines = res.categories.slice(0, 3).map(c => `${c.category}-এ ${c.totalAmount.toLocaleString('bn-BD')} টাকা`).join(', ');
                 return {
-                    spoken: `জি ভাইয়া! বিগত ৩০ দিনে মা মোটরসের মোট অফিস খরচ হয়েছে ${res.totalExpenseSum.toLocaleString('bn-BD')} টাকা (${res.totalVouchersCount}টি ভাউচারে)। এর মধ্যে সর্বোচ্চ খরচ হয়েছে: ${catLines}।`,
+                    spoken: `জি স্যার! বিগত ৩০ দিনে মা মোটরসের মোট অফিস খরচ হয়েছে ${res.totalExpenseSum.toLocaleString('bn-BD')} টাকা (${res.totalVouchersCount}টি ভাউচারে)। এর মধ্যে সর্বোচ্চ খরচ হয়েছে: ${catLines}।`,
                     data: res
                 };
             }
@@ -2265,13 +2268,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_ledger_math_audit_summary', { sampleSize: 100 });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, লেজার অডিট চালাতে অ্যাকাউন্টে সাইন ইন করুন।',
+                    spoken: 'জি স্যার, লেজার অডিট চালাতে অ্যাকাউন্টে সাইন ইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! ${res.statusMessage}`,
+                    spoken: `জি স্যার! ${res.statusMessage}`,
                     data: res
                 };
             }
@@ -2282,14 +2285,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_dubai_deep_custodian_holdings', {});
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, দুবাই কাস্টোডিয়ান হিসাব দেখতে লগইন করুন।',
+                    spoken: 'জি স্যার, দুবাই কাস্টোডিয়ান হিসাব দেখতে লগইন করুন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 const holdingLines = res.personalHoldings.map(h => `${h.name}-এর কাছে ${h.amount.toLocaleString('en-US')} এইডি`).join(', ');
                 return {
-                    spoken: `জি ভাইয়া! দুবাই অডিটের রেকর্ড অনুযায়ী ব্যক্তিগত ক্যাশ হেফাজতে মোট ${res.holdingsTotal.toLocaleString('en-US')} এইডি (AED) রয়েছে। এর মধ্যে: ${holdingLines}। এছাড়া মেস ফান্ডে রয়েছে ${res.messBalance.toLocaleString('en-US')} এইডি এবং মোট ফিজিক্যাল এসেট হলো ${res.totalPhysicalAssets.toLocaleString('en-US')} এইডি।`,
+                    spoken: `জি স্যার! দুবাই অডিটের রেকর্ড অনুযায়ী ব্যক্তিগত ক্যাশ হেফাজতে মোট ${res.holdingsTotal.toLocaleString('en-US')} এইডি (AED) রয়েছে। এর মধ্যে: ${holdingLines}। এছাড়া মেস ফান্ডে রয়েছে ${res.messBalance.toLocaleString('en-US')} এইডি এবং মোট ফিজিক্যাল এসেট হলো ${res.totalPhysicalAssets.toLocaleString('en-US')} এইডি।`,
                     data: res
                 };
             }
@@ -2300,7 +2303,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const cleanQuery = text.replace(/(কাস্টমার|সাহেবের|ভাইয়ের|এর|বকেয়া|বাকী|হিসাব|ব্যালেন্স|কত|বলো|জানাও|দেখাও|টাকা|লেজার|চালান|কারা|কে|কে\s*কে|কোন|কোন\s*কোন|তালিকা|লিস্ট|সবাই|দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই|অগ্রিম|জমা|রয়েছে|আছে|এটা|একাউন্ট|অ্যাকাউন্ট|নম্বর|নাম্বার|কোথায়|কার|কাদের)/g, '').trim();
             if (!cleanQuery || cleanQuery.length < 2 || /^(?:কারা|কে|কে\s*কে|কোন|কোন\s*কোন|তালিকা|লিস্ট|সবাই|দেয়নি|দেয়নি|দেয়\s*নাই|দেয়\s*নাই|এটা|কার|কাদের)$/i.test(cleanQuery) || /^[০-৯0-9,.\s]+$/.test(cleanQuery)) {
                 return {
-                    spoken: 'জি ভাইয়া, নির্দিষ্ট কোনো কাস্টমারের বকেয়া জানতে কাস্টমারের নাম বলুন, অথবা নির্দিষ্ট কোনো অংকের হিসাব জানতে চান কি?',
+                    spoken: 'জি স্যার, নির্দিষ্ট কোনো কাস্টমারের বকেয়া জানতে কাস্টমারের নাম বলুন, অথবা নির্দিষ্ট কোনো অংকের হিসাব জানতে চান কি?',
                     data: null
                 };
             }
@@ -2308,7 +2311,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             
             if (res.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, মা মোটরসের কাস্টমার বকেয়া ও লাইভ হিসাব দেখতে প্রথমে উপরের "গুগল লগইন" বাটনে চাপ দিয়ে আপনার অনুমোদিত একাউন্টে সাইন ইন করে নিন।',
+                    spoken: 'জি স্যার, মা মোটরসের কাস্টমার বকেয়া ও লাইভ হিসাব দেখতে প্রথমে উপরের "গুগল লগইন" বাটনে চাপ দিয়ে আপনার অনুমোদিত একাউন্টে সাইন ইন করে নিন।',
                     data: { authRequired: true }
                 };
             }
@@ -2321,12 +2324,12 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             if (res.found) {
                 const addressStr = res.address ? ` (${res.address})` : '';
                 return {
-                    spoken: `জি ভাইয়া, আমি চেক করেছি। ${res.name}${addressStr}-এর বর্তমান অবশিষ্ট বকেয়া হলো ${res.totalDue.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার, আমি চেক করেছি। ${res.name}${addressStr}-এর বর্তমান অবশিষ্ট বকেয়া হলো ${res.totalDue.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             } else {
                 return {
-                    spoken: `জি ভাইয়া, "${cleanQuery || text}" নামে কোনো কাস্টমার বা দোকান মা মোটরসের ডেটাবেজে খুঁজে পাওয়া যায়নি। কাস্টমারের নাম, দোকান বা এলাকা একটু স্পষ্ট করে বললে আমি সাথে সাথে সঠিক হিসাবটি বের করে দেবো।`,
+                    spoken: `জি স্যার, "${cleanQuery || text}" নামে কোনো কাস্টমার বা দোকান মা মোটরসের ডেটাবেজে খুঁজে পাওয়া যায়নি। কাস্টমারের নাম, দোকান বা এলাকা একটু স্পষ্ট করে বললে আমি সাথে সাথে সঠিক হিসাবটি বের করে দেবো।`,
                     data: null
                 };
             }
@@ -2337,13 +2340,13 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const res = await this.executeToolCall('get_cash_and_bank_status', { detail: 'summary' });
             if (res?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, ক্যাশ ও ব্যাংকের লাইভ হিসাব দেখতে মা মোটরসের অনুমোদিত একাউন্টে সাইন ইন করে নিন।',
+                    spoken: 'জি স্যার, ক্যাশ ও ব্যাংকের লাইভ হিসাব দেখতে মা মোটরসের অনুমোদিত একাউন্টে সাইন ইন করে নিন।',
                     data: { authRequired: true }
                 };
             }
             if (res && res.success) {
                 return {
-                    spoken: `জি ভাইয়া! বর্তমানে আমাদের ক্যাশ ইন হ্যান্ড রয়েছে ${res.totalPhysicalCash.toLocaleString('bn-BD')} টাকা এবং ব্যাংকে মোট ব্যালেন্স রয়েছে ${res.totalBankBalance.toLocaleString('bn-BD')} টাকা। মোট ফান্ড হলো ${res.totalHoldings.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার! বর্তমানে আমাদের ক্যাশ ইন হ্যান্ড রয়েছে ${res.totalPhysicalCash.toLocaleString('bn-BD')} টাকা এবং ব্যাংকে মোট ব্যালেন্স রয়েছে ${res.totalBankBalance.toLocaleString('bn-BD')} টাকা। মোট ফান্ড হলো ${res.totalHoldings.toLocaleString('bn-BD')} টাকা।`,
                     data: res
                 };
             }
@@ -2354,7 +2357,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             const directSearch = await this.executeToolCall('get_customer_due', { query: text });
             if (directSearch?.authRequired) {
                 return {
-                    spoken: 'জি ভাইয়া, কাস্টমারের তথ্য ও বকেয়া হিসাব দেখার জন্য মা মোটরস গুগল একাউন্টে সাইন ইন করে নিন।',
+                    spoken: 'জি স্যার, কাস্টমারের তথ্য ও বকেয়া হিসাব দেখার জন্য মা মোটরস গুগল একাউন্টে সাইন ইন করে নিন।',
                     data: { authRequired: true }
                 };
             }
@@ -2367,7 +2370,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             if (directSearch && directSearch.found) {
                 const addressStr = directSearch.address ? ` (${directSearch.address})` : '';
                 return {
-                    spoken: `জি ভাইয়া, ${directSearch.name}${addressStr}-এর বর্তমান অবশিষ্ট বকেয়া হলো ${directSearch.totalDue.toLocaleString('bn-BD')} টাকা।`,
+                    spoken: `জি স্যার, ${directSearch.name}${addressStr}-এর বর্তমান অবশিষ্ট বকেয়া হলো ${directSearch.totalDue.toLocaleString('bn-BD')} টাকা।`,
                     data: directSearch
                 };
             }
@@ -2382,14 +2385,14 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 friendlyMsg = 'এআই কী-টি সঠিক নয় বলে মনে হচ্ছে।';
             }
             return {
-                spoken: `জি ভাইয়া, ${friendlyMsg} তবে মা মোটরসের কাস্টমার বকেয়া, মেমো বা ক্যাশ রিপোর্ট দেখতে আমি সম্পূর্ণ প্রস্তুত আছি। বলুন কার হিসাব দেখবেন?`,
+                spoken: `জি স্যার, ${friendlyMsg} তবে মা মোটরসের কাস্টমার বকেয়া, মেমো বা ক্যাশ রিপোর্ট দেখতে আমি সম্পূর্ণ প্রস্তুত আছি। বলুন কার হিসাব দেখবেন?`,
                 data: null
             };
         }
 
         // 5. Fallback with Guidance
         return {
-            spoken: 'জি ভাইয়া, আমি আপনার কথা শুনেছি। আপনি মা মোটরসের যেকোনো কাস্টমারের বকেয়া, ক্যাশ বা ব্যাংকের হিসাব সরাসরি জানতে পারেন। বলুন কীভাবে সাহায্য করবো?',
+            spoken: 'জি স্যার, আমি আপনার কথা শুনেছি। আপনি মা মোটরসের যেকোনো কাস্টমারের বকেয়া, ক্যাশ বা ব্যাংকের হিসাব সরাসরি জানতে পারেন। বলুন কীভাবে সাহায্য করবো?',
             data: null
         };
     }
