@@ -87,7 +87,25 @@ export class AISettingsModal {
         // Auto-preserve pasted keys immediately
         this._setupAutoPreserve(this.geminiKeyInput, 'jarvis_gemini_key', 'jarvis_gemini_keys');
         this._setupAutoPreserve(this.groqKeyInput, 'jarvis_groq_key', 'jarvis_groq_keys');
-        this._setupAutoPreserve(this.openrouterKeyInput, 'jarvis_openrouter_key', 'jarvis_openrouter_keys');
+        if (this.openrouterKeyInput) {
+            const saveOmniOrOpen = () => {
+                const val = (this.openrouterKeyInput.value || '').trim();
+                if (val) {
+                    if (val.startsWith('sk-jk')) {
+                        localStorage.setItem('jarvis_omnirouters_key', val);
+                        localStorage.setItem('jarvis_omnirouters_keys', val);
+                        localStorage.setItem('jarvis_ai_provider', 'omnirouters');
+                        if (typeof llmAgent !== 'undefined' && llmAgent) {
+                            llmAgent.setProvider('omnirouters');
+                        }
+                    }
+                    localStorage.setItem('jarvis_openrouter_key', val);
+                    localStorage.setItem('jarvis_openrouter_keys', val);
+                }
+            };
+            this.openrouterKeyInput.addEventListener('change', saveOmniOrOpen);
+            this.openrouterKeyInput.addEventListener('input', saveOmniOrOpen);
+        }
         this._setupAutoPreserve(this.openaiKeyInput, 'jarvis_openai_key');
 
         // ElevenLabs inputs
@@ -186,7 +204,8 @@ export class AISettingsModal {
     loadSettings() {
         const geminiKey = localStorage.getItem('jarvis_gemini_key') || localStorage.getItem('jarvis_gemini_keys') || '';
         const groqKey = localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || '';
-        const openrouterKey = localStorage.getItem('jarvis_openrouter_key') || localStorage.getItem('jarvis_openrouter_keys') || '';
+        const omniKey = localStorage.getItem('jarvis_omnirouters_key') || localStorage.getItem('jarvis_omnirouters_keys') || '';
+        const openrouterKey = omniKey || localStorage.getItem('jarvis_openrouter_key') || localStorage.getItem('jarvis_openrouter_keys') || '';
         const openAIKey = localStorage.getItem('jarvis_openai_key') || '';
         const elevenLabsKey = localStorage.getItem('jarvis_elevenlabs_key') || '';
         const gcpKey = localStorage.getItem('jarvis_gcp_tts_key') || '';
@@ -196,6 +215,9 @@ export class AISettingsModal {
         const autoFailover = localStorage.getItem('jarvis_auto_failover') !== 'false';
 
         let provider = localStorage.getItem('jarvis_ai_provider') || 'gemini';
+        if (provider === 'omnirouters') {
+            provider = 'openrouter';
+        }
         if (!geminiKey && groqKey) {
             provider = 'groq';
         } else if (!geminiKey && !groqKey && openrouterKey) {
@@ -347,8 +369,20 @@ export class AISettingsModal {
     async validateOpenRouterKey(key) {
         const cleanKey = (key || '').split(/[\n,;]+/)[0].trim();
         if (!cleanKey || cleanKey.length < 15) {
-            return { valid: false, message: 'দয়া করে একটি সঠিক OpenRouter এপিআই কী প্রদান করুন।' };
+            return { valid: false, message: 'দয়া করে একটি সঠিক OmniRouters বা OpenRouter এপিআই কী প্রদান করুন।' };
         }
+
+        // OmniRouters (omnirouters.com) API Keys start with 'sk-jk'
+        if (cleanKey.startsWith('sk-jk')) {
+            localStorage.setItem('jarvis_omnirouters_key', cleanKey);
+            localStorage.setItem('jarvis_omnirouters_keys', cleanKey);
+            localStorage.setItem('jarvis_ai_provider', 'omnirouters');
+            if (typeof llmAgent !== 'undefined' && llmAgent) {
+                llmAgent.setProvider('omnirouters');
+            }
+            return { valid: true };
+        }
+
         try {
             const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
                 headers: { 'Authorization': `Bearer ${cleanKey}` }
@@ -378,7 +412,7 @@ export class AISettingsModal {
     }
 
     async saveSettings() {
-        const provider = this.currentProvider || 'gemini';
+        let provider = this.currentProvider || 'gemini';
         const geminiKey = (this.geminiKeyInput?.value || '').trim();
         const groqKey = (this.groqKeyInput?.value || '').trim();
         const openrouterKey = (this.openrouterKeyInput?.value || '').trim();
@@ -404,6 +438,13 @@ export class AISettingsModal {
         if (groqKey) {
             localStorage.setItem('jarvis_groq_key', groqKey);
             localStorage.setItem('jarvis_groq_keys', groqKey);
+        }
+        if (openrouterKey.startsWith('sk-jk')) {
+            localStorage.setItem('jarvis_omnirouters_key', openrouterKey);
+            localStorage.setItem('jarvis_omnirouters_keys', openrouterKey);
+            if (provider === 'openrouter') {
+                provider = 'omnirouters';
+            }
         }
         if (openrouterKey) {
             localStorage.setItem('jarvis_openrouter_key', openrouterKey);
@@ -474,12 +515,12 @@ export class AISettingsModal {
                 }
                 return;
             }
-        } else if (provider === 'openrouter' && openrouterKey) {
+        } else if ((provider === 'openrouter' || provider === 'omnirouters') && openrouterKey) {
             const valResult = await this.validateOpenRouterKey(openrouterKey);
             if (!valResult.valid) {
                 if (this.feedbackEl) {
                     this.feedbackEl.className = 'settings-feedback-msg error';
-                    this.feedbackEl.innerText = `❌ OpenRouter কী সঠিক নয়: ${valResult.message}`;
+                    this.feedbackEl.innerText = `❌ কী সঠিক নয়: ${valResult.message}`;
                 }
                 return;
             }
@@ -497,6 +538,7 @@ export class AISettingsModal {
         const providerNames = {
             gemini: 'গুগল জেমিনি (Google Gemini)',
             groq: 'গ্রক ক্লাউড (Groq LPU Llama-3.3)',
+            omnirouters: 'অমনিরাউটার্স (OmniRouters আনলিমিটেড এআই)',
             openrouter: 'ওপেনরাউটার (OpenRouter Free)',
             openai: 'ওপেনএআই চ্যাটজিপিটি (OpenAI ChatGPT)'
         };
