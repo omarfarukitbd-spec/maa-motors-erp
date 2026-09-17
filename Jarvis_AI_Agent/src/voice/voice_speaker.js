@@ -272,18 +272,15 @@ export class VoiceSpeaker {
                 }
             }
 
-            // ── Priority 6: Standard Browser SpeechSynthesis (Native OS bn-BD) ──
-            // ONLY attempt if browser actually has a native Bengali voice installed
-            if (activeVoice) {
+            // ── Priority 6: Standard Browser SpeechSynthesis (Native bn-BD in Chrome/Edge/Firefox) ──
+            if (this.synth) {
                 try {
-                    console.log(`[VoiceSpeaker] 🎙️ Speaking with Native Voice: ${activeVoice.name}`);
+                    console.log(`[VoiceSpeaker] 🎙️ Speaking with Browser SpeechSynthesis (${activeVoice ? activeVoice.name : 'bn-BD'})...`);
                     await this.speakBrowser(cleanText, emotion);
                     return;
                 } catch (err) {
                     console.warn('[VoiceSpeaker] Browser SpeechSynthesis failed, falling back to online stream:', err.message);
                 }
-            } else {
-                console.log('[VoiceSpeaker] ℹ️ No native Bengali voice in this browser (Chrome on Windows). Cascading to High-Quality Free Bengali Stream TTS...');
             }
 
             // ── Priority 7: Free Bengali Stream TTS (Zero key, 100% reliable) ──
@@ -489,9 +486,6 @@ export class VoiceSpeaker {
     async speakBrowser(text, emotion) {
         if (!this.synth) throw new Error('SpeechSynthesis not supported');
         const voice = this.getNativeBnVoice();
-        if (!voice) {
-            throw new Error('No native Bengali voice found in browser');
-        }
 
         try {
             this.synth.cancel();
@@ -516,8 +510,12 @@ export class VoiceSpeaker {
             if (!this.isSpeaking) break;
             await new Promise((resolve, reject) => {
                 const utt = new SpeechSynthesisUtterance(chunk);
-                utt.voice = voice;
-                utt.lang = voice.lang || 'bn-BD';
+                if (voice) {
+                    utt.voice = voice;
+                    utt.lang = voice.lang || 'bn-BD';
+                } else {
+                    utt.lang = 'bn-BD';
+                }
                 utt.rate = params.rate;
                 utt.pitch = params.pitch;
                 utt.volume = 1.0;
