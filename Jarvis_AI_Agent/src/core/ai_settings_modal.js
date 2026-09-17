@@ -327,16 +327,13 @@ export class AISettingsModal {
             return { valid: false, message: 'এটি Groq Cloud-এর কী (gsk_...)! অনুগ্রহ করে "Groq Cloud (LPU)" ট্যাবে দিন।' };
         }
         if (cleanKey.startsWith('sk-or-v1-')) {
-            return { valid: false, message: 'এটি OpenRouter-এর কী (sk-or-v1-...)! অনুগ্রহ করে "OpenRouter (Free)" ট্যাবে দিন।' };
+            return { valid: false, message: 'এটি OpenRouter-এর কী (sk-or-v1-...)! অনুগ্রহ করে "OpenRouter" ট্যাবে দিন।' };
         }
-        if (cleanKey.startsWith('sk-proj-') || (cleanKey.startsWith('sk-') && !cleanKey.startsWith('AIzaSy'))) {
-            return { valid: false, message: 'এটি OpenAI ChatGPT-এর কী! অনুগ্রহ করে "OpenAI (ChatGPT)" ট্যাবে দিন।' };
-        }
-        if (!cleanKey.startsWith('AIzaSy')) {
-            return { valid: false, message: 'গুগল জেমিনি কী সর্বদা "AIzaSy..." দিয়ে শুরু হয়। দয়া করে Google AI Studio (aistudio.google.com) থেকে সঠিক কী কপি করুন।' };
+        if (cleanKey.startsWith('sk-proj-') || cleanKey.startsWith('sk-jk')) {
+            return { valid: false, message: 'এটি OpenAI বা OmniRouters-এর কী! অনুগ্রহ করে সংশ্লিষ্ট ট্যাবে দিন।' };
         }
 
-        const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+        const modelsToTry = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
         let lastError = '';
 
         for (const model of modelsToTry) {
@@ -719,14 +716,14 @@ export class AISettingsModal {
         const startTime = performance.now();
         try {
             if (provider === 'gemini') {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${encodeURIComponent(key)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] })
                 });
                 const elapsed = Math.round(performance.now() - startTime);
                 if (res.ok) {
-                    this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ কানেকশন সফল! লেটেন্সি: <strong>${elapsed}ms</strong><br>গুগল সার্ভার লাইভ এবং মডেল gemini-2.0-flash সম্পূর্ণ রেডি!</span>`;
+                    this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ কানেকশন সফল! লেটেন্সি: <strong>${elapsed}ms</strong><br>গুগল সার্ভার লাইভ এবং মডেল gemini-3.6-flash সম্পূর্ণ রেডি!</span>`;
                 } else {
                     const data = await res.json().catch(() => ({}));
                     const msg = data.error?.message || `HTTP ${res.status}`;

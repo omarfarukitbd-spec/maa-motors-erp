@@ -29,7 +29,7 @@ export class LLMAgent {
         }
 
         this.openaiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_model')) || 'gpt-4o-mini';
-        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-2.0-flash';
+        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-3.6-flash';
         this.groqModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_groq_model')) || 'llama-3.3-70b-versatile';
         this.openrouterModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openrouter_model')) || 'meta-llama/llama-3.3-70b-instruct:free';
 
@@ -1382,7 +1382,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             throw new Error('জেমিনি এআই কী পাওয়া যায়নি');
         }
 
-        const modelsToTry = [this.geminiModel, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest'];
+        const modelsToTry = [this.geminiModel, 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
         const candidateModels = [...new Set(modelsToTry.filter(Boolean))];
 
         // Detect emotion and pass to system prompt
