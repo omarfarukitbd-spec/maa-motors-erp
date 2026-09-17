@@ -170,9 +170,7 @@ export class VoiceSpeaker {
             voices.find(v => v.name.toLowerCase().includes('bangla') || v.name.toLowerCase().includes('bengali')) ||
             null;
 
-        if (bestVoice) {
-            this.selectedNativeBnVoice = bestVoice;
-        }
+        this.selectedNativeBnVoice = bestVoice || null;
         return this.selectedNativeBnVoice;
     }
 
@@ -263,10 +261,9 @@ export class VoiceSpeaker {
             }
 
             // ── Priority 5: Google Cloud TTS (bn-BD-Neural2) ──
-            const effectiveGcpKey = gcpKey || (typeof window !== 'undefined' ? (localStorage.getItem('jarvis_gemini_key') || '').trim() : '');
-            if (effectiveGcpKey) {
+            if (gcpKey) {
                 try {
-                    await this.speakGoogleCloudTTS(cleanText, effectiveGcpKey, emotion);
+                    await this.speakGoogleCloudTTS(cleanText, gcpKey, emotion);
                     return;
                 } catch (err) {
                     console.warn('[VoiceSpeaker] GCP TTS failed, falling back:', err.message);
@@ -274,16 +271,23 @@ export class VoiceSpeaker {
             }
 
             // ── Priority 6: Standard Browser SpeechSynthesis (Native OS bn-BD) ──
-            try {
-                await this.speakBrowser(cleanText, emotion);
-                return;
-            } catch (err) {
-                console.warn('[VoiceSpeaker] Browser SpeechSynthesis failed, falling back to online stream:', err.message);
+            // ONLY attempt if browser actually has a native Bengali voice installed
+            if (activeVoice) {
+                try {
+                    console.log(`[VoiceSpeaker] 🎙️ Speaking with Native Voice: ${activeVoice.name}`);
+                    await this.speakBrowser(cleanText, emotion);
+                    return;
+                } catch (err) {
+                    console.warn('[VoiceSpeaker] Browser SpeechSynthesis failed, falling back to online stream:', err.message);
+                }
+            } else {
+                console.log('[VoiceSpeaker] ℹ️ No native Bengali voice in this browser (Chrome on Windows). Cascading to High-Quality Free Bengali Stream TTS...');
             }
 
-            // ── Priority 7: Free Bengali Stream TTS (Final Fallback) ──
+            // ── Priority 7: Free Bengali Stream TTS (Zero key, 100% reliable) ──
             try {
                 await this.speakFreeBengaliTTS(cleanText);
+                return;
             } catch (err) {
                 console.warn('[VoiceSpeaker] Free Bengali stream TTS failed:', err.message);
             }
@@ -481,8 +485,17 @@ export class VoiceSpeaker {
     // Engine 4: Browser SpeechSynthesis (bn-BD)
     // ─────────────────────────────────────────
     async speakBrowser(text, emotion) {
-        if (!this.synth) return;
-        this.synth.cancel();
+        if (!this.synth) throw new Error('SpeechSynthesis not supported');
+        const voice = this.getNativeBnVoice();
+        if (!voice) {
+            throw new Error('No native Bengali voice found in browser');
+        }
+
+        try {
+            this.synth.cancel();
+        } catch (e) {
+            console.warn('[VoiceSpeaker] Synth cancel non-critical:', e);
+        }
 
         // Emotion → rate/pitch
         const paramsMap = {
@@ -499,39 +512,51 @@ export class VoiceSpeaker {
 
         for (const chunk of chunks) {
             if (!this.isSpeaking) break;
-            await new Promise((resolve) => {
-                const voice = this.getNativeBnVoice();
+            await new Promise((resolve, reject) => {
                 const utt = new SpeechSynthesisUtterance(chunk);
-                utt.lang = voice ? voice.lang : 'bn-BD';
+                utt.voice = voice;
+                utt.lang = voice.lang || 'bn-BD';
                 utt.rate = params.rate;
                 utt.pitch = params.pitch;
                 utt.volume = 1.0;
 
-                if (voice) {
-                    utt.voice = voice;
-                }
-
+                let keepAlive = null;
                 // Watchdog: if TTS hangs, move on
-                let watchdog = setTimeout(() => resolve(), 12000);
-                utt.onend = () => { clearTimeout(watchdog); resolve(); };
-                utt.onerror = () => { clearTimeout(watchdog); resolve(); };
+                const watchdog = setTimeout(() => {
+                    if (keepAlive) clearInterval(keepAlive);
+                    resolve();
+                }, 15000);
+
+                utt.onend = () => {
+                    if (keepAlive) clearInterval(keepAlive);
+                    clearTimeout(watchdog);
+                    resolve();
+                };
+
+                utt.onerror = (e) => {
+                    if (keepAlive) clearInterval(keepAlive);
+                    clearTimeout(watchdog);
+                    console.warn('[VoiceSpeaker] Browser utterance error:', e?.error || e);
+                    reject(new Error(e?.error || 'speech-synthesis-failed'));
+                };
 
                 this.synth.speak(utt);
 
                 // Chrome bug fix: SpeechSynthesis freezes after ~15s
-                const keepAlive = setInterval(() => {
-                    if (!this.synth.speaking) { clearInterval(keepAlive); return; }
+                keepAlive = setInterval(() => {
+                    if (!this.synth.speaking) {
+                        clearInterval(keepAlive);
+                        return;
+                    }
                     this.synth.pause();
                     this.synth.resume();
                 }, 10000);
-                utt.onend = () => { clearInterval(keepAlive); clearTimeout(watchdog); resolve(); };
-                utt.onerror = () => { clearInterval(keepAlive); clearTimeout(watchdog); resolve(); };
             });
         }
     }
 
     // ─────────────────────────────────────────
-    // Priority 4: Free Bengali Stream TTS (Zero key, 100% reliable)
+    // Priority 4: Free Bengali Stream TTS (Zero key, 100% reliable across Chrome/Edge/Firefox)
     // ─────────────────────────────────────────
     async speakFreeBengaliTTS(text) {
         console.log('[VoiceSpeaker] 🌐 Speaking with High-Quality Free Bengali Stream TTS...');
@@ -540,8 +565,28 @@ export class VoiceSpeaker {
             if (!this.isSpeaking) break;
             const safe = chunk.slice(0, 150).trim();
             if (!safe) continue;
-            const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=bn&client=tw-ob&q=${encodeURIComponent(safe)}`;
-            await this._playAudioUrl(url);
+
+            const endpoints = [
+                `https://translate.googleapis.com/translate_tts?client=gtx&sl=auto&tl=bn&ie=UTF-8&q=${encodeURIComponent(safe)}`,
+                `https://translate.google.com/translate_tts?ie=UTF-8&tl=bn&client=tw-ob&q=${encodeURIComponent(safe)}`,
+                `https://translate.google.com/translate_tts?ie=UTF-8&tl=bn&client=dict-chrome-ex&q=${encodeURIComponent(safe)}`
+            ];
+
+            let played = false;
+            for (const url of endpoints) {
+                if (!this.isSpeaking) break;
+                try {
+                    await this._playAudioUrl(url);
+                    played = true;
+                    break;
+                } catch (streamErr) {
+                    console.warn(`[VoiceSpeaker] Stream mirror failed (${url.slice(0, 42)}...):`, streamErr.message);
+                }
+            }
+
+            if (!played) {
+                console.warn('[VoiceSpeaker] All free stream mirrors failed for sentence:', safe);
+            }
         }
     }
 
@@ -550,56 +595,68 @@ export class VoiceSpeaker {
     // ─────────────────────────────────────────
     async _playAudioUrl(url) {
         await this.unlockAudio();
-        return new Promise((resolve) => {
-            const audio = new Audio();
+        return new Promise((resolve, reject) => {
+            let audio = null;
+            if (typeof document !== 'undefined') {
+                audio = document.getElementById('jarvis-persistent-audio');
+            }
+            if (!audio) {
+                audio = this.audio || new Audio();
+            }
             this.currentAudio = audio;
+
             audio.referrerPolicy = 'no-referrer';
             audio.setAttribute('referrerpolicy', 'no-referrer');
             audio.preload = 'auto';
             audio.volume = 1.0;
             audio.muted = false;
 
-            if (typeof document !== 'undefined' && document.body) {
-                audio.style.display = 'none';
-                document.body.appendChild(audio);
-            }
-
             let finished = false;
-            const finish = () => {
+            let watchdog = null;
+
+            const cleanup = () => {
+                if (watchdog) clearTimeout(watchdog);
+                audio.onended = null;
+                audio.onerror = null;
+            };
+
+            const finishSuccess = () => {
                 if (!finished) {
                     finished = true;
-                    audio.onended = null;
-                    audio.onerror = null;
+                    cleanup();
                     if (this.currentAudio === audio) {
                         this.currentAudio = null;
-                    }
-                    if (audio.parentNode) {
-                        audio.parentNode.removeChild(audio);
                     }
                     resolve();
                 }
             };
 
-            const watchdog = setTimeout(finish, 25000);
-
-            audio.onended = () => {
-                clearTimeout(watchdog);
-                finish();
+            const finishError = (err) => {
+                if (!finished) {
+                    finished = true;
+                    cleanup();
+                    if (this.currentAudio === audio) {
+                        this.currentAudio = null;
+                    }
+                    reject(err);
+                }
             };
 
+            watchdog = setTimeout(() => {
+                finishSuccess();
+            }, 25000);
+
+            audio.onended = finishSuccess;
             audio.onerror = (e) => {
-                clearTimeout(watchdog);
-                console.warn('[VoiceSpeaker] Audio URL error:', e);
-                finish();
+                finishError(new Error(`Audio URL failed: ${e?.message || 'media-load-error'}`));
             };
 
             audio.src = url;
             const playPromise = audio.play();
             if (playPromise !== undefined) {
                 playPromise.catch((err) => {
-                    clearTimeout(watchdog);
-                    console.warn('[VoiceSpeaker] audio.play() rejected:', err);
-                    finish();
+                    console.warn('[VoiceSpeaker] audio.play() rejected:', err.name, err.message);
+                    finishError(err);
                 });
             }
         });

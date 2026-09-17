@@ -139,4 +139,22 @@ const chatResponse = await failoverAgent.chat([], 'আজকের ব্যব�
 assert(chatResponse.spoken.includes('Groq Cloud'), `Auto-failover successfully shifts to Groq on Gemini 429 error (got: "${chatResponse.spoken}")`);
 assert(failoverAgent.keyCooldowns.has('AIzaSy_gemini_key_failing'), 'Failing Gemini key is marked for cooldown');
 
+// TEST 10: Chrome on Windows Simulation (Zero Bengali Voices in getVoices)
+window.speechSynthesis.getVoices = () => [
+    { name: 'Microsoft David - English (United States)', lang: 'en-US' },
+    { name: 'Microsoft Zira - English (United States)', lang: 'en-US' }
+];
+const chromeSpeaker = new VoiceSpeaker();
+const chromeVoice = chromeSpeaker.getNativeBnVoice();
+assert(chromeVoice === null, 'Chrome on Windows correctly detects absence of native Bengali voices (returns null)');
+
+// TEST 11: Chrome Speech Fallback Execution (Does NOT fail silently, invokes free stream)
+let streamPlayed = false;
+chromeSpeaker.speakFreeBengaliTTS = async (txt) => {
+    streamPlayed = true;
+    assert(txt.length > 0, 'Free stream receives clean Bengali text');
+};
+await chromeSpeaker.speak('শুভ অপরাহ্ন, আম্বরান ভাই! আসসালামু আলাইকুম।');
+assert(streamPlayed === true, 'Chrome seamlessly falls back to Free Bengali Stream TTS when native voice is missing');
+
 console.log(`\n🎉 ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY! 100% CODE INTEGRITY PROVEN.`);
