@@ -11,7 +11,7 @@ import { voiceSpeaker } from './voice_speaker.js';
  *  - English: "Jarvis", "Jarvice", "Hey Jarvis", "Hi Jarvis", "OK Jarvis", "Hello Jarvis"
  *
  * Execution Modes:
- *  1. Name Call Only: "জার্ভিস" -> Plays futuristic chime + says "জি ভাইয়া, শুনছি!" + starts listening
+ *  1. Name Call Only: "জার্ভিস" -> Plays futuristic chime + says "জি স্যার, শুনছি!" + starts listening
  *  2. Wake + Command: "জার্ভিস করিমের বাকি কত?" -> Plays chime + immediately processes command
  *
  * Safety Guards:
@@ -32,10 +32,25 @@ export class WakeWordListener {
         this.onWake = null; // ({ hasCommand, command, rawTranscript }) => {}
         this.onStatusChange = null; // (isEnabled, isRunning) => {}
 
-        // Expanded regex for detecting Jarvis wake word in Bangla & English (Unicode-safe word boundary, including common STT phonetics like সার্ভিস/জারভিস/jarvis)
-        this.wakeWordRegex = /(?:hey\s+|hi\s+|ok\s+|hello\s+|ওহে\s+|এই\s+|শোনো\s+|হ্যালো\s+)?(jarvis|jarvice|javis|jarves|জার্ভিস|জারভিস|যারভিস|সার্ভিস|সারভিস|জারবিস|জাবিস)(?:\s*(?:ভাই|স্যার))?(?:[\s,:?!]|$)(.*)/i;
+        // Expanded regex for detecting Jarvis wake word in Bangla & English (Unicode-safe word boundary, including common STT phonetics)
+        this.wakeWordRegex = /(?:hey\s+|hi\s+|ok\s+|hello\s+|ওহে\s+|এই\s+|শোনো\s+|হ্যালো\s+)?(jarvis|jarvice|javis|jarves|jarviz|service|সার্ভিস|সারভিস|জার্ভিস|জারভিস|যারভিস|জারবিস|জাবিস|জার্ভেস|জারভেস|জার্ভিশ|জারভিশ|ঝারভিস|জাভাস|জারভাস)(?:\s*(?:ভাই|স্যার))?(?:[\s,:?!]|$)(.*)/i;
 
         this._initRecognition();
+        this._initVisibilityListener();
+    }
+
+    _initVisibilityListener() {
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && this.isEnabled && !this.isRunning && !this.isTemporarilyPaused) {
+                    console.log('[WakeWord] Tab active again, verifying wake word listener state...');
+                    clearTimeout(this.restartTimer);
+                    this.restartTimer = setTimeout(() => {
+                        this._safeStart();
+                    }, 400);
+                }
+            });
+        }
     }
 
     /**
@@ -84,7 +99,6 @@ export class WakeWordListener {
                 }
                 console.warn('[WakeWord] Recognition error:', event.error);
                 if (event.error === 'not-allowed') {
-                    // Do not permanently disable wake word; keep enabled so gesture listener can activate it
                     console.warn('[WakeWord] Microphone permission pending. Ready to resume on gesture.');
                     this.isRunning = false;
                     this._notifyStatus();
@@ -213,12 +227,17 @@ export class WakeWordListener {
      * Safely start recognition instance
      */
     _safeStart() {
-        if (!this.recognition || this.isRunning || this.isTemporarilyPaused) return;
+        if (!this.recognition || this.isRunning || this.isTemporarilyPaused || !this.isEnabled) return;
         try {
             this.recognition.start();
         } catch (err) {
-            // Already started or busy
-            if (err.name !== 'InvalidStateError') {
+            if (err.name === 'InvalidStateError') {
+                // Recognition was in transition/busy state. Backoff and retry!
+                clearTimeout(this.restartTimer);
+                this.restartTimer = setTimeout(() => {
+                    this._safeStart();
+                }, 800);
+            } else {
                 console.warn('[WakeWord] Start error:', err);
             }
         }
@@ -234,9 +253,9 @@ export class WakeWordListener {
         clearTimeout(this.restartTimer);
         if (this.recognition) {
             try {
-                this.recognition.stop();
+                this.recognition.abort();
             } catch (err) {
-                console.error('[WakeWord] Stop error:', err);
+                console.warn('[WakeWord] Stop abort error:', err);
             }
         }
         this.isRunning = false;
@@ -251,11 +270,13 @@ export class WakeWordListener {
         clearTimeout(this.restartTimer);
         if (this.recognition && this.isRunning) {
             try {
-                this.recognition.stop();
+                this.recognition.abort();
             } catch (err) {
-                console.error('[WakeWord] Pause error:', err);
+                console.warn('[WakeWord] Pause abort error:', err);
             }
         }
+        this.isRunning = false;
+        this._notifyStatus();
     }
 
     /**
@@ -267,8 +288,9 @@ export class WakeWordListener {
             clearTimeout(this.restartTimer);
             this.restartTimer = setTimeout(() => {
                 this._safeStart();
-            }, 800);
+            }, 600);
         }
+        this._notifyStatus();
     }
 
     /**

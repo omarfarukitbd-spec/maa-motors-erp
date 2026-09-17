@@ -98,10 +98,11 @@ export class VoiceListener {
 
         this.recognition.onerror = (event) => {
             console.warn('[VoiceListener] Web Speech error:', event.error);
-            // On mobile error, switch to Whisper mode
-            if (['not-allowed', 'service-not-allowed', 'network'].includes(event.error)) {
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const hasWhisperKey = Boolean((localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || localStorage.getItem('jarvis_openai_key') || '').trim());
+            if (isMobile && hasWhisperKey && ['not-allowed', 'service-not-allowed', 'network'].includes(event.error)) {
                 this.whisperMode = true;
-                console.log('[VoiceListener] Switched to Whisper mode due to error.');
+                console.log('[VoiceListener] Switched to Whisper mode on mobile error.');
             }
             this.isListening = false;
             this.callbacks.onError(event.error);
@@ -145,8 +146,11 @@ export class VoiceListener {
             return true;
         } catch (err) {
             console.warn('[VoiceListener] Web Speech start error:', err);
-            // Try switching to Whisper
-            this.whisperMode = true;
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const hasWhisperKey = Boolean((localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || localStorage.getItem('jarvis_openai_key') || '').trim());
+            if (isMobile && hasWhisperKey) {
+                this.whisperMode = true;
+            }
             return false;
         }
     }

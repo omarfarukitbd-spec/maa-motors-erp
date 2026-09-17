@@ -170,15 +170,37 @@ const wwListener = new WakeWordListener();
 const testPhrases = [
     'জার্ভিস',
     'জারভিস',
+    'যারভিস',
     'সার্ভিস',
+    'সারভিস',
+    'জারবিস',
+    'জাবিস',
+    'জার্ভেস',
+    'জারভেস',
     'Jarvis',
+    'jarvis',
+    'jarvice',
+    'jarves',
+    'jarviz',
+    'service',
     'hey jarvis',
-    'হ্যালো জার্ভিস করিমের বাকি কত'
+    'hello jarvis',
+    'ওহে জার্ভিস',
+    'হ্যালো জার্ভিস করিমের বাকি কত',
+    'সার্ভিস আজকের বিক্রি কত',
+    'জার্ভিস ভাই আজকের হিসাব দাও',
+    'জার্ভিস স্যার কেমন আছেন'
 ];
 for (const phrase of testPhrases) {
     const isMatched = Boolean(phrase.match(wwListener.wakeWordRegex));
     assert(isMatched, `Wake word regex matches phonetic variation: "${phrase}"`);
 }
+
+// TEST 14: index.html Persona Integrity (Ensure "ভাইয়া" is never present in static templates)
+import fs from 'fs';
+const indexHtml = fs.readFileSync('e:/maa-motors-erp/Jarvis_AI_Agent/index.html', 'utf8');
+assert(!indexHtml.includes('ভাইয়া'), 'index.html contains no archaic or unwanted "ভাইয়া" greetings');
+assert(indexHtml.includes('শুভ অপরাহ্ন স্যার'), 'index.html contains professional "শুভ অপরাহ্ন স্যার" greeting');
 
 console.log(`\n🎉 ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY! 100% CODE INTEGRITY PROVEN.`);
 
