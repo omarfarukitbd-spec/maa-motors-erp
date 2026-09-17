@@ -9,44 +9,117 @@ import { disambiguationManager } from './disambiguation_manager.js';
 export class LLMAgent {
     constructor() {
         const hasOpenAI = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_openai_key') || '').trim());
-        const hasGemini = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_gemini_key') || '').trim());
+        const hasGemini = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_gemini_key') || localStorage.getItem('jarvis_gemini_keys') || '').trim());
+        const hasGroq = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || '').trim());
+        const hasOpenRouter = typeof window !== 'undefined' && Boolean((localStorage.getItem('jarvis_openrouter_key') || localStorage.getItem('jarvis_openrouter_keys') || '').trim());
         const savedProvider = typeof window !== 'undefined' ? localStorage.getItem('jarvis_ai_provider') : null;
 
         if (savedProvider) {
             this.provider = savedProvider;
-        } else if (hasGemini && !hasOpenAI) {
+        } else if (hasGemini) {
             this.provider = 'gemini';
-        } else {
+        } else if (hasGroq) {
+            this.provider = 'groq';
+        } else if (hasOpenRouter) {
+            this.provider = 'openrouter';
+        } else if (hasOpenAI) {
             this.provider = 'openai';
+        } else {
+            this.provider = 'gemini';
         }
 
         this.openaiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openai_model')) || 'gpt-4o-mini';
-        // ✅ Updated: gemini-3.6-flash (current active standard model)
-        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-3.6-flash';
-        this.currentEmotion = 'neutral'; // Detected from user input
+        this.geminiModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_gemini_model')) || 'gemini-2.0-flash';
+        this.groqModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_groq_model')) || 'llama-3.3-70b-versatile';
+        this.openrouterModel = (typeof window !== 'undefined' && localStorage.getItem('jarvis_openrouter_model')) || 'meta-llama/llama-3.3-70b-instruct:free';
+
+        this.currentEmotion = 'neutral';
+        this.keyCooldowns = new Map(); // key -> cooldownTimestamp
+        this.lastActiveProvider = this.provider;
+    }
+
+    /**
+     * Retrieve all keys for a specific provider (supports comma/newline delimited key pool)
+     */
+    getKeys(provider) {
+        if (typeof window === 'undefined') return [];
+        let raw = '';
+        if (provider === 'gemini') {
+            raw = localStorage.getItem('jarvis_gemini_keys') || localStorage.getItem('jarvis_gemini_key') || '';
+        } else if (provider === 'groq') {
+            raw = localStorage.getItem('jarvis_groq_keys') || localStorage.getItem('jarvis_groq_key') || '';
+        } else if (provider === 'openrouter') {
+            raw = localStorage.getItem('jarvis_openrouter_keys') || localStorage.getItem('jarvis_openrouter_key') || '';
+        } else if (provider === 'cerebras') {
+            raw = localStorage.getItem('jarvis_cerebras_keys') || localStorage.getItem('jarvis_cerebras_key') || '';
+        } else if (provider === 'openai') {
+            raw = localStorage.getItem('jarvis_openai_keys') || localStorage.getItem('jarvis_openai_key') || '';
+        }
+        return raw
+            .split(/[\n,;]+/)
+            .map(k => k.trim())
+            .filter(k => k.length > 5);
+    }
+
+    /**
+     * Get available keys for a provider that are not currently rate-limited/cooldown
+     */
+    getAvailableKeys(provider) {
+        const allKeys = this.getKeys(provider);
+        if (allKeys.length === 0) return [];
+        const now = Date.now();
+        const available = allKeys.filter(k => {
+            const cooldown = this.keyCooldowns.get(k) || 0;
+            return now > cooldown;
+        });
+        // If all keys for this provider are in cooldown, reset cooldowns and retry
+        if (available.length === 0 && allKeys.length > 0) {
+            allKeys.forEach(k => this.keyCooldowns.delete(k));
+            return allKeys;
+        }
+        return available;
+    }
+
+    markKeyCooldown(key, durationMs = 60000) {
+        if (!key) return;
+        this.keyCooldowns.set(key, Date.now() + durationMs);
+    }
+
+    isQuotaOrRateLimitError(err) {
+        const status = err?.status || 0;
+        const msg = String(err?.message || '').toLowerCase();
+        return (
+            status === 429 ||
+            status === 402 ||
+            status === 401 ||
+            msg.includes('rate limit') ||
+            msg.includes('quota') ||
+            msg.includes('resource exhausted') ||
+            msg.includes('too many requests') ||
+            msg.includes('credits') ||
+            msg.includes('busy')
+        );
     }
 
     getApiKey() {
-        if (typeof window === 'undefined') return '';
-        const geminiKey = (localStorage.getItem('jarvis_gemini_key') || '').trim();
-        const openAIKey = (localStorage.getItem('jarvis_openai_key') || '').trim();
-
-        if (this.provider === 'gemini' && geminiKey) return geminiKey;
-        if (this.provider === 'openai' && openAIKey) return openAIKey;
-
-        return geminiKey || openAIKey || '';
+        const keys = this.getAvailableKeys(this.provider);
+        return keys.length > 0 ? keys[0] : '';
     }
 
     hasApiKey() {
-        return Boolean(this.getApiKey().trim());
+        const providers = ['gemini', 'groq', 'openrouter', 'cerebras', 'openai'];
+        return providers.some(p => this.getKeys(p).length > 0);
     }
 
     setProvider(provider, key = null) {
         this.provider = provider;
         localStorage.setItem('jarvis_ai_provider', provider);
         if (key !== null) {
-            if (provider === 'openai') localStorage.setItem('jarvis_openai_key', key.trim());
-            else localStorage.setItem('jarvis_gemini_key', key.trim());
+            const trimmed = key.trim();
+            if (provider === 'gemini') localStorage.setItem('jarvis_gemini_key', trimmed);
+            else if (provider === 'groq') localStorage.setItem('jarvis_groq_key', trimmed);
+            else if (provider === 'openrouter') localStorage.setItem('jarvis_openrouter_key', trimmed);
+            else if (provider === 'openai') localStorage.setItem('jarvis_openai_key', trimmed);
         }
     }
 
@@ -1074,10 +1147,9 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
     }
 
     /**
-     * Main Conversational Inference: Generates response using OpenAI or Gemini
-     * @param {Array} history 
-     * @param {string} userMessage 
-     * @returns {Promise<{spoken: string, data?: any}>}
+     * Main Conversational Inference: Multi-Provider Auto-Failover Key Pool
+     * Tries configured providers in order (Gemini -> Groq -> OpenRouter -> Cerebras -> OpenAI)
+     * If a key or provider is rate-limited (HTTP 429) or fails, instantly fails over to the next!
      */
     async chat(history, userMessage) {
         // Step 0: Priority check for active pending disambiguation clarification
@@ -1104,59 +1176,103 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             }
         }
 
-        const geminiKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_gemini_key') || '').trim() : '';
-        const openAIKey = typeof window !== 'undefined' ? (localStorage.getItem('jarvis_openai_key') || '').trim() : '';
+        // Detect emotion from user input
+        this.currentEmotion = this.detectEmotion(userMessage);
 
-        let activeProvider = this.provider;
-        if (!openAIKey && geminiKey) activeProvider = 'gemini';
-        if (!geminiKey && openAIKey) activeProvider = 'openai';
+        const autoFailover = (typeof window !== 'undefined' && localStorage.getItem('jarvis_auto_failover')) !== 'false';
+        const primaryProvider = (typeof window !== 'undefined' && localStorage.getItem('jarvis_ai_provider')) || this.provider || 'gemini';
 
-        let geminiErrorMsg = '';
-        let openAiErrorMsg = '';
+        // Provider priority chain: Primary first, followed by others
+        const allProviders = [primaryProvider, 'gemini', 'groq', 'openrouter', 'cerebras', 'openai'];
+        const providerOrder = [...new Set(allProviders)];
 
-        // 1. Try Primary Provider
-        if (activeProvider === 'gemini' && geminiKey) {
-            try {
-                return await this.chatGemini(history, userMessage, geminiKey);
-            } catch (geminiErr) {
-                console.error('[LLMAgent] Gemini chat error:', geminiErr);
-                geminiErrorMsg = geminiErr.message;
-                if (openAIKey) {
-                    try {
-                        return await this.chatOpenAI(history, userMessage, openAIKey);
-                    } catch (oaiErr) {
-                        console.error('[LLMAgent] OpenAI fallback error:', oaiErr);
-                        openAiErrorMsg = oaiErr.message;
+        let lastErrorMessage = '';
+        let attemptedCount = 0;
+
+        for (const provider of providerOrder) {
+            const keys = this.getAvailableKeys(provider);
+            if (!keys || keys.length === 0) continue;
+
+            console.log(`[LLMAgent] 🚀 Trying provider [${provider}] with ${keys.length} key(s)...`);
+
+            for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                attemptedCount++;
+
+                try {
+                    let result = null;
+
+                    if (provider === 'gemini') {
+                        result = await this.chatGemini(history, userMessage, key);
+                    } else if (provider === 'groq') {
+                        result = await this.chatOpenAICompatible({
+                            provider: 'Groq Cloud',
+                            endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+                            model: this.groqModel || 'llama-3.3-70b-versatile',
+                            key
+                        }, history, userMessage);
+                    } else if (provider === 'openrouter') {
+                        result = await this.chatOpenAICompatible({
+                            provider: 'OpenRouter',
+                            endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+                            model: this.openrouterModel || 'meta-llama/llama-3.3-70b-instruct:free',
+                            key,
+                            headers: {
+                                'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://maa-motors-erp.web.app',
+                                'X-Title': 'Maa Motors Jarvis AI'
+                            }
+                        }, history, userMessage);
+                    } else if (provider === 'cerebras') {
+                        result = await this.chatOpenAICompatible({
+                            provider: 'Cerebras',
+                            endpoint: 'https://api.cerebras.ai/v1/chat/completions',
+                            model: 'llama-3.3-70b',
+                            key
+                        }, history, userMessage);
+                    } else if (provider === 'openai') {
+                        result = await this.chatOpenAICompatible({
+                            provider: 'OpenAI',
+                            endpoint: 'https://api.openai.com/v1/chat/completions',
+                            model: this.openaiModel || 'gpt-4o-mini',
+                            key
+                        }, history, userMessage);
                     }
-                }
-            }
-        } else if (activeProvider === 'openai' && openAIKey) {
-            try {
-                return await this.chatOpenAI(history, userMessage, openAIKey);
-            } catch (oaiErr) {
-                console.error('[LLMAgent] OpenAI chat error:', oaiErr);
-                openAiErrorMsg = oaiErr.message;
-                if (geminiKey) {
-                    try {
-                        return await this.chatGemini(history, userMessage, geminiKey);
-                    } catch (geminiErr) {
-                        console.error('[LLMAgent] Gemini fallback error:', geminiErr);
-                        geminiErrorMsg = geminiErr.message;
+
+                    if (result && result.spoken) {
+                        this.lastActiveProvider = provider;
+                        console.log(`[LLMAgent] ✅ Response successfully generated via [${provider}]`);
+                        return result;
+                    }
+                } catch (err) {
+                    console.warn(`[LLMAgent] ⚠️ Provider "${provider}" (Key #${i + 1}) error:`, err.message);
+                    lastErrorMessage = err.message || '';
+
+                    if (this.isQuotaOrRateLimitError(err)) {
+                        this.markKeyCooldown(key, 60000); // 60s cooldown
+                        console.log(`[LLMAgent] 🔄 Key rate-limited. Auto-switching to next key or provider...`);
+                    }
+
+                    // If auto-failover is disabled by user, don't try other providers
+                    if (!autoFailover) {
+                        break;
                     }
                 }
             }
         }
 
-        // 2. Fallback to Local Semantic & Tool Engine
-        return await this.chatLocalEmpathetic(userMessage, Boolean(geminiKey || openAIKey), geminiErrorMsg || openAiErrorMsg, history);
+        // Fallback to Local Semantic & Tool Engine
+        console.warn('[LLMAgent] ⚠️ All configured providers failed or no keys found. Falling back to Local Semantic Engine.');
+        return await this.chatLocalEmpathetic(userMessage, attemptedCount > 0, lastErrorMessage, history);
     }
 
     /**
-     * OpenAI GPT-4o-mini / GPT-4o with Native Tool Calling & Streaming
+     * Unified OpenAI-Compatible Multi-Provider Inference with Tool Calling & Second-Round Execution
+     * Supports Groq, OpenRouter, Cerebras, OpenAI, and other standard gateways
      */
-    async chatOpenAI(history, userMessage, key) {
+    async chatOpenAICompatible(config, history, userMessage) {
+        const { provider, endpoint, model, key, headers = {} } = config;
         const messages = [
-            { role: 'system', content: this.getSystemPrompt() }
+            { role: 'system', content: this.getSystemPrompt(this.currentEmotion) }
         ];
 
         // Append recent conversation history (last 6 messages)
@@ -1170,16 +1286,18 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
         messages.push({ role: 'user', content: userMessage });
 
         const tools = this.getToolsSchema();
+        const requestHeaders = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`,
+            ...headers
+        };
 
-        // First round: Send to OpenAI
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        // First round: Send prompt and available tools
+        const response = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${key}`
-            },
+            headers: requestHeaders,
             body: JSON.stringify({
-                model: this.openaiModel,
+                model,
                 messages,
                 tools,
                 tool_choice: 'auto',
@@ -1189,23 +1307,33 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
 
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error?.message || `OpenAI API Error: ${response.status}`);
+            const errMsg = errData.error?.message || `${provider} API Error: HTTP ${response.status}`;
+            const err = new Error(errMsg);
+            err.status = response.status;
+            err.provider = provider;
+            err.key = key;
+            throw err;
         }
 
         const result = await response.json();
-        const message = result.choices[0].message;
+        const message = result.choices?.[0]?.message;
+        if (!message) throw new Error(`${provider} returned empty message`);
 
-        // Check if OpenAI wants to call tools
+        // Check if the model triggered Tool/Function calling
         if (message.tool_calls && message.tool_calls.length > 0) {
             messages.push(message);
-
             let toolDisplayData = null;
 
             for (const toolCall of message.tool_calls) {
                 const fnName = toolCall.function.name;
-                const fnArgs = JSON.parse(toolCall.function.arguments || '{}');
-                const toolResult = await this.executeToolCall(fnName, fnArgs);
+                let fnArgs = {};
+                try {
+                    fnArgs = JSON.parse(toolCall.function.arguments || '{}');
+                } catch (parseErr) {
+                    console.warn(`[LLMAgent] Could not parse arguments for ${fnName}:`, parseErr);
+                }
 
+                const toolResult = await this.executeToolCall(fnName, fnArgs);
                 if (toolResult && !toolResult.error) {
                     toolDisplayData = toolResult;
                 }
@@ -1217,26 +1345,31 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
                 });
             }
 
-            // Second round: Get final conversational response incorporating tool data
-            const finalResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            // Second round: Get conversational response incorporating tool execution output
+            const secondResponse = await fetch(endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${key}`
-                },
+                headers: requestHeaders,
                 body: JSON.stringify({
-                    model: this.openaiModel,
+                    model,
                     messages,
                     temperature: 0.7
                 })
             });
 
-            const finalResult = await finalResponse.json();
-            const spokenText = finalResult.choices[0].message.content;
+            if (!secondResponse.ok) {
+                const secErrData = await secondResponse.json().catch(() => ({}));
+                const secErrMsg = secErrData.error?.message || `${provider} tool follow-up error: HTTP ${secondResponse.status}`;
+                const err = new Error(secErrMsg);
+                err.status = secondResponse.status;
+                throw err;
+            }
+
+            const secondResult = await secondResponse.json();
+            const spokenText = secondResult.choices?.[0]?.message?.content || '';
             return { spoken: spokenText, data: toolDisplayData };
         }
 
-        return { spoken: message.content, data: null };
+        return { spoken: message.content || '', data: null };
     }
 
     /**
@@ -1248,7 +1381,7 @@ ${memoryContext || 'কোনো সংরক্ষিত স্মৃতি ন
             throw new Error('জেমিনি এআই কী পাওয়া যায়নি');
         }
 
-        const modelsToTry = [this.geminiModel, 'gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-lite-latest', 'gemini-3.6-flash'];
+        const modelsToTry = [this.geminiModel, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash-exp', 'gemini-3.6-flash'];
         const candidateModels = [...new Set(modelsToTry.filter(Boolean))];
 
         // Detect emotion and pass to system prompt

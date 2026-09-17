@@ -50,9 +50,10 @@ export class VoiceListener {
     _detectMode() {
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         const hasWebSpeech = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+        const hasGroqKey = Boolean((localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || '').trim());
         const hasOpenAIKey = Boolean((localStorage.getItem('jarvis_openai_key') || '').trim());
         const hasGeminiKey = Boolean((localStorage.getItem('jarvis_gemini_key') || '').trim());
-        const hasAnyAIKey = hasOpenAIKey || hasGeminiKey;
+        const hasAnyAIKey = hasGroqKey || hasOpenAIKey || hasGeminiKey;
 
         // Mobile always prefers Whisper (more stable)
         // Desktop Chrome uses Web Speech (instant)
@@ -64,7 +65,7 @@ export class VoiceListener {
             this.whisperMode = false;
         }
 
-        console.log(`[VoiceListener] Mode: ${this.whisperMode ? 'Whisper (MediaRecorder)' : 'Web Speech API'}`);
+        console.log(`[VoiceListener] Mode: ${this.whisperMode ? 'Whisper (Groq/OpenAI MediaRecorder)' : 'Web Speech API'}`);
     }
 
     // ─────────────────────────────────────────
@@ -238,10 +239,13 @@ export class VoiceListener {
             return;
         }
 
+        const groqKeyRaw = (localStorage.getItem('jarvis_groq_key') || localStorage.getItem('jarvis_groq_keys') || '').trim();
+        const groqKey = groqKeyRaw.split(/[\n,;]+/).map(k => k.trim()).filter(Boolean)[0] || '';
         const openAIKey = (localStorage.getItem('jarvis_openai_key') || '').trim();
-        if (!openAIKey) {
+
+        if (!groqKey && !openAIKey) {
             // Fallback: no Whisper key → use browser STT result
-            console.warn('[VoiceListener] No OpenAI key for Whisper — cannot transcribe.');
+            console.warn('[VoiceListener] No Groq or OpenAI key for Whisper transcription.');
             this.callbacks.onFinal('');
             return;
         }
@@ -256,18 +260,27 @@ export class VoiceListener {
                 return;
             }
 
+            const isGroq = Boolean(groqKey);
+            const endpoint = isGroq
+                ? 'https://api.groq.com/openai/v1/audio/transcriptions'
+                : 'https://api.openai.com/v1/audio/transcriptions';
+            const authKey = isGroq ? groqKey : openAIKey;
+            const modelName = isGroq ? 'whisper-large-v3' : 'whisper-1';
+
             const formData = new FormData();
             formData.append('file', audioBlob, `audio.${this._getExtension(mimeType)}`);
-            formData.append('model', 'whisper-1');
+            formData.append('model', modelName);
             formData.append('language', 'bn');  // Force Bengali
             // Business context prompt — drastically improves accuracy for Bangla business terms
             formData.append('prompt',
                 'মা মোটরস, বকেয়া, কাস্টমার, টাকা, AED, দিরহাম, ক্যাশ, ব্যাংক, ব্যালেন্স, মেমো, চালান, পেমেন্ট, করিম, রহিম, জমা, দুবাই, কন্টেইনার'
             );
 
-            const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+            console.log(`[VoiceListener] Transcribing via ${isGroq ? 'Groq Whisper Large v3 (Free Ultra-Fast)' : 'OpenAI Whisper'}...`);
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${openAIKey}` },
+                headers: { 'Authorization': `Bearer ${authKey}` },
                 body: formData
             });
 

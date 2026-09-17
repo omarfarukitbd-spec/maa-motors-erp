@@ -58,18 +58,18 @@
         <span>AI সেটিংস</span>
       </button>
 
-      <!-- Voice Selector (ChatGPT & Azure) -->
+      <!-- Voice Selector (Microsoft Natural BD & ChatGPT) -->
       <select id="voice-selector" class="header-action-btn voice-select" title="ভয়েস কণ্ঠস্বর নির্বাচন করুন">
+        <optgroup label="Microsoft Natural বাংলাদেশী কণ্ঠ (100% Free)">
+          <option value="bn-BD-PradeepNeural" selected>প্রদীপ (পুরুষ - Natural BD)</option>
+          <option value="bn-BD-NabanitaNeural">নবনিতা (নারী - Natural BD)</option>
+        </optgroup>
         <optgroup label="ChatGPT নিউরাল ভয়েস (OpenAI)">
           <option value="onyx">Onyx (গম্ভীর পুরুষ - ChatGPT)</option>
           <option value="echo">Echo (উষ্ণ পুরুষ - ChatGPT)</option>
           <option value="alloy">Alloy (ব্যালেন্সড - ChatGPT)</option>
           <option value="nova">Nova (মিষ্টি নারী - ChatGPT)</option>
           <option value="shimmer">Shimmer (শান্ত নারী - ChatGPT)</option>
-        </optgroup>
-        <optgroup label="Azure বাংলাদেশী কণ্ঠ">
-          <option value="bn-BD-PradeepNeural">প্রদীপ (পুরুষ - Azure)</option>
-          <option value="bn-BD-NabanitaNeural">নবনিতা (নারী - Azure)</option>
         </optgroup>
       </select>
 
@@ -323,29 +323,120 @@
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-cyan-400">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
           </svg>
-          <span>চ্যাটজিপিটি ও জেমিনি এআই সেটিংস</span>
+          <span>স্মার্ট এআই ব্রেইন ও ভয়েস সেটিংস</span>
         </div>
         <button id="close-ai-settings-modal" class="close-drawer-btn" aria-label="Close Settings">&times;</button>
       </div>
 
       <div class="auth-modal-body">
+        <!-- Auto Failover & Multi-Key Switch -->
+        <div class="auto-failover-card" style="margin-bottom: 14px; padding: 12px 14px; background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>স্মার্ট অটো-ফেলওভার (Auto Key Failover)</span>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+              একটি কী-এর ফ্রি লিমিট শেষ হলে স্বয়ংক্রিয়ভাবে পরবর্তী কী বা প্ল্যাটফর্মে সুইচ করবে
+            </div>
+          </div>
+          <label class="switch-toggle" style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer;">
+            <input type="checkbox" id="input-auto-failover-toggle" checked style="opacity: 0; width: 0; height: 0;">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
         <!-- Provider Selector -->
         <div class="form-group">
           <label class="form-label">এআই ব্রেন সিলেক্ট করুন (AI Provider)</label>
           <div class="provider-switch-grid">
-            <button type="button" id="select-provider-openai" class="provider-tab-btn active">
-              <span class="provider-title">OpenAI (ChatGPT)</span>
-              <span class="provider-subtitle">আসল চ্যাটজিপিটি ভয়েস ও মানবিক সহানুভূতি</span>
-            </button>
-            <button type="button" id="select-provider-gemini" class="provider-tab-btn">
+            <button type="button" id="select-provider-gemini" class="provider-tab-btn active">
               <span class="provider-title">Google Gemini Flash</span>
-              <span class="provider-subtitle">গুগলের ফ্রি টিয়ার ও হাই-স্পিড বাংলা প্রসেসিং</span>
+              <span class="provider-subtitle">১৫০০ ফ্রি রিকোয়েস্ট/দিন ও হাই-স্পিড বাংলা</span>
+            </button>
+            <button type="button" id="select-provider-groq" class="provider-tab-btn">
+              <span class="provider-title">Groq Cloud (LPU)</span>
+              <span class="provider-subtitle">সুপারফাস্ট Llama 3.3 ও Whisper STT</span>
+            </button>
+            <button type="button" id="select-provider-openrouter" class="provider-tab-btn">
+              <span class="provider-title">OpenRouter (Free)</span>
+              <span class="provider-subtitle">৭০০+ মডেল ও ২০+ ফ্রি এআই</span>
+            </button>
+            <button type="button" id="select-provider-openai" class="provider-tab-btn">
+              <span class="provider-title">OpenAI (ChatGPT)</span>
+              <span class="provider-subtitle">চ্যাটজিপিটি অফিসিয়াল এআই ও ভয়েস</span>
             </button>
           </div>
         </div>
 
+        <!-- Gemini Key Section -->
+        <div id="gemini-config-section" class="provider-section">
+          <div class="form-group">
+            <div class="label-row">
+              <label for="input-gemini-key">Google Gemini API Key(s)</label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="help-link">ফ্রি কী নিন &rarr;</a>
+            </div>
+            <div class="key-input-wrapper">
+              <input type="password" id="input-gemini-key" placeholder="AIzaSy... (একাধিক কী দিতে কমা ব্যবহার করুন)" autocomplete="off" />
+              <button type="button" id="toggle-gemini-key-vis" class="toggle-vis-btn" title="Show/Hide">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+            <p class="form-hint" style="color: #38bdf8; font-size: 11.5px; line-height: 1.5; margin-top: 6px;">
+              📌 গুগল জেমিনি এপিআই কী সর্বদা <strong>AIzaSy...</strong> দিয়ে শুরু হয়। আপনার গুগল একাউন্ট দিয়ে <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color: #67e8f9; text-decoration: underline; font-weight: 600;">aistudio.google.com</a> থেকে কী কপি করুন। একাধিক কী দিলে একটির লিমিট শেষ হলে স্বয়ংক্রিয়ভাবে অন্য কী সক্রিয় হবে।
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="select-gemini-voice">বাংলাদেশী নিউরাল ভয়েস (Bangladeshi Neural Voice)</label>
+            <select id="select-gemini-voice" class="settings-select">
+              <option value="bn-BD-PradeepNeural">প্রদীপ (গম্ভীর ও আত্মবিশ্বাসী পুরুষ কণ্ঠ — রিকমেন্ডেড)</option>
+              <option value="bn-BD-NabanitaNeural">নবনিতা (মধুর ও স্পষ্ট নারী কণ্ঠ)</option>
+            </select>
+            <p class="form-hint">মাইক্রোসফটের সর্বাধুনিক বাংলাদেশী ন্যাচারাল ভয়েস দিয়ে মানুষের মতো কথা বলবে।</p>
+          </div>
+        </div>
+
+        <!-- Groq Key Section -->
+        <div id="groq-config-section" class="provider-section hidden">
+          <div class="form-group">
+            <div class="label-row">
+              <label for="input-groq-key">Groq Cloud API Key(s)</label>
+              <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="help-link">ফ্রি কী নিন &rarr;</a>
+            </div>
+            <div class="key-input-wrapper">
+              <input type="password" id="input-groq-key" placeholder="gsk_... (একাধিক কী দিতে কমা ব্যবহার করুন)" autocomplete="off" />
+              <button type="button" id="toggle-groq-key-vis" class="toggle-vis-btn" title="Show/Hide">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+            <p class="form-hint" style="color: #f59e0b; font-size: 11.5px; line-height: 1.5; margin-top: 6px;">
+              ⚡ <strong>Groq LPU:</strong> বিশ্বের দ্রুততম এআই ইঞ্জিন (৩০০+ টোকেন/সেকেন্ড)! সম্পূর্ণ বিনামূল্যে Llama-3.3-70B এবং উন্নত Whisper Large v3 ভয়েস ইনপুট প্রদান করে।
+            </p>
+          </div>
+        </div>
+
+        <!-- OpenRouter Key Section -->
+        <div id="openrouter-config-section" class="provider-section hidden">
+          <div class="form-group">
+            <div class="label-row">
+              <label for="input-openrouter-key">OpenRouter API Key(s)</label>
+              <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" class="help-link">ফ্রি কী নিন &rarr;</a>
+            </div>
+            <div class="key-input-wrapper">
+              <input type="password" id="input-openrouter-key" placeholder="sk-or-v1-... (একাধিক কী দিতে কমা ব্যবহার করুন)" autocomplete="off" />
+              <button type="button" id="toggle-openrouter-key-vis" class="toggle-vis-btn" title="Show/Hide">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+            <p class="form-hint" style="color: #a855f7; font-size: 11.5px; line-height: 1.5; margin-top: 6px;">
+              🌐 <strong>OpenRouter:</strong> ইনস্টাগ্রাম রিলসে আলোচিত ৭০০+ মডেলের প্ল্যাটফর্ম! Llama 3.3 70B, DeepSeek R1 ও Qwen 2.5 মডেলগুলো বিনামূল্যে ব্যবহার করা যায়।
+            </p>
+          </div>
+        </div>
+
         <!-- OpenAI Key Section -->
-        <div id="openai-config-section" class="provider-section">
+        <div id="openai-config-section" class="provider-section hidden">
           <div class="form-group">
             <div class="label-row">
               <label for="input-openai-key">OpenAI API Key (ChatGPT Voice & Brain)</label>
@@ -357,7 +448,7 @@
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
               </button>
             </div>
-            <p class="form-hint">আপনার ডিভাইসে কি সুরক্ষিত থাকবে। এর মাধ্যমে চ্যাটজিপিটি-র অফিসিয়াল ভয়েস সরাসরি চলবে।</p>
+            <p class="form-hint">আপনার ডিভাইসে কী সুরক্ষিত থাকবে। এর মাধ্যমে চ্যাটজিপিটি-র অফিসিয়াল ভয়েস সরাসরি চলবে।</p>
           </div>
 
           <div class="form-group">
@@ -372,60 +463,41 @@
           </div>
         </div>
 
-        <!-- Gemini Key Section -->
-        <div id="gemini-config-section" class="provider-section hidden">
-          <div class="form-group">
-            <div class="label-row">
-              <label for="input-gemini-key">Google Gemini API Key</label>
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="help-link">ফ্রি কী নিন &rarr;</a>
-            </div>
-            <div class="key-input-wrapper">
-              <input type="password" id="input-gemini-key" placeholder="AIzaSy..." autocomplete="off" />
-              <button type="button" id="toggle-gemini-key-vis" class="toggle-vis-btn" title="Show/Hide">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-              </button>
-            </div>
-            <p class="form-hint" style="color: #38bdf8; font-size: 11.5px; line-height: 1.5; margin-top: 6px;">
-              📌 নোট: গুগল জেমিনি এপিআই কী সর্বদা <strong>AIzaSy...</strong> দিয়ে শুরু হয়। আপনার গুগল একাউন্ট দিয়ে <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color: #67e8f9; text-decoration: underline; font-weight: 600;">aistudio.google.com/app/apikey</a> লিংকে গিয়ে <strong>"Create API key"</strong> বাটনে চাপ দিন এবং আসল কী-টি কপি করে এখানে পেস্ট করুন।
-            </p>
+        <!-- Bengali Natural Voice Engine (100% Free - Zero Configuration) -->
+        <div class="form-group" style="margin-top: 14px; padding: 12px 14px; background: rgba(6, 182, 212, 0.07); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="color: #67e8f9; font-weight: 700; font-size: 12.5px;">🎙️ Microsoft Natural বাংলাদেশী ভয়েস</span>
+            <span style="font-size: 10.5px; background: rgba(6, 182, 212, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 20px; font-weight: 700;">১০০% ফ্রি ও রেডি</span>
           </div>
-
-          <div class="form-group">
-            <label for="select-gemini-voice">বাংলাদেশী নিউরাল ভয়েস (Bangladeshi Neural Voice)</label>
-            <select id="select-gemini-voice" class="settings-select">
-              <option value="bn-BD-PradeepNeural">প্রদীপ (গম্ভীর ও আত্মবিশ্বাসী পুরুষ কণ্ঠ — রিকমেন্ডেড)</option>
-              <option value="bn-BD-NabanitaNeural">নবনিতা (মধুর ও স্পষ্ট নারী কণ্ঠ)</option>
-            </select>
-            <p class="form-hint">জেমিনি এআই ব্রেইনের সাথে মাইক্রোসফটের সর্বাধুনিক বাংলাদেশী নিউরাল ভয়েস দিয়ে স্বাভাবিক মানুষের মতো কথা বলবে।</p>
-          </div>
+          <p class="form-hint" style="color: #94a3b8; margin-top: 6px; font-size: 11px;">
+            Microsoft Edge ও আধুনিক ব্রাউজারে <strong>Pradeep</strong> ও <strong>Nabanita</strong> কোনো API Key ছাড়াই বিনামূল্যে মানুষের মতো বাংলা উচ্চারণ করে।
+          </p>
         </div>
 
-        <!-- ElevenLabs TTS Section (Free Voice Engine — No Card Needed) -->
-        <div class="form-group" style="margin-top: 16px; padding: 14px; background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.25); border-radius: 10px;">
-          <div class="label-row" style="margin-bottom: 8px;">
-            <label style="color: #6ee7b7; font-weight: 600;">🎙️ ElevenLabs Voice API Key <span style="font-size:10.5px; color: #34d399;">(বিনামূল্যে — সেরা Natural Voice)</span></label>
+        <!-- ElevenLabs TTS Section (Optional) -->
+        <div class="form-group" style="margin-top: 12px; padding: 12px 14px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px;">
+          <div class="label-row" style="margin-bottom: 6px;">
+            <label style="color: #6ee7b7; font-weight: 600; font-size: 12.5px;">🎙️ ElevenLabs Voice API Key <span style="font-size:10.5px; color: #34d399;">(ঐচ্ছিক — ১০,০০০ char/মাস ফ্রি)</span></label>
             <a href="https://elevenlabs.io" target="_blank" rel="noopener" class="help-link">Free Key নিন &rarr;</a>
           </div>
           <div class="key-input-wrapper">
             <input type="password" id="input-elevenlabs-key" placeholder="AQ.Ab8R... বা sk_..." autocomplete="off" />
           </div>
-          <div class="label-row" style="margin-top: 10px; margin-bottom: 6px;">
-            <label style="color: #a7f3d0; font-size: 12px;">ElevenLabs Voice ID <span style="color: #6ee7b7;">(optional — খালি রাখলে default voice)</span></label>
+          <div class="label-row" style="margin-top: 8px; margin-bottom: 4px;">
+            <label style="color: #a7f3d0; font-size: 11.5px;">ElevenLabs Voice ID <span style="color: #6ee7b7;">(optional — খালি রাখলে default voice)</span></label>
           </div>
-          <input type="text" id="input-elevenlabs-voice-id" placeholder="pNInz6obpgDQGcFmaJgB" autocomplete="off" style="width:100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: #e2e8f0; padding: 8px 12px; font-size: 13px;" />
-          <p class="form-hint" style="color: #6ee7b7;">ElevenLabs-এ signup করুন (email দিয়ে, কোনো card লাগে না) → Profile → API Keys → Copy</p>
+          <input type="text" id="input-elevenlabs-voice-id" placeholder="pNInz6obpgDQGcFmaJgB" autocomplete="off" style="width:100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: #e2e8f0; padding: 7px 10px; font-size: 12.5px;" />
         </div>
 
         <!-- Google Cloud TTS Section (Optional) -->
-        <div class="form-group" style="margin-top: 12px; padding: 14px; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px;">
-          <div class="label-row" style="margin-bottom: 8px;">
-            <label style="color: #93c5fd; font-weight: 600;">🌐 Google Cloud TTS Key <span style="font-size:10.5px; color: #60a5fa;">(bn-BD-Neural2 — সেরা বাংলাদেশী কণ্ঠ)</span></label>
+        <div class="form-group" style="margin-top: 10px; padding: 12px 14px; background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px;">
+          <div class="label-row" style="margin-bottom: 6px;">
+            <label style="color: #93c5fd; font-weight: 600; font-size: 12.5px;">🌐 Google Cloud TTS Key <span style="font-size:10.5px; color: #60a5fa;">(bn-BD-Neural2 — ১০ লক্ষ char/মাস ফ্রি)</span></label>
             <a href="https://console.cloud.google.com/apis/library/texttospeech.googleapis.com" target="_blank" rel="noopener" class="help-link">Enable &rarr;</a>
           </div>
           <div class="key-input-wrapper">
             <input type="password" id="input-gcp-tts-key" placeholder="AIzaSy... (GCP API Key)" autocomplete="off" />
           </div>
-          <p class="form-hint" style="color: #93c5fd;">GCP Console → APIs → Cloud Text-to-Speech → Enable → Credentials → Create API Key (প্রথম ১০ লক্ষ char/মাস বিনামূল্যে)</p>
         </div>
 
 

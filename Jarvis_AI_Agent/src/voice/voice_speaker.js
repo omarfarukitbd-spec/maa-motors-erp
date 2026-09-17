@@ -147,10 +147,22 @@ export class VoiceSpeaker {
         const voices = this.synth.getVoices() || [];
         if (voices.length === 0) return this.selectedNativeBnVoice || null;
 
-        const bestVoice =
-            voices.find(v => (v.name.includes('Bashkar') || v.name.includes('Pradeep') || v.name.includes('Nabanita') || v.name.includes('Nabaneeta')) && (v.name.includes('Natural') || v.name.includes('Online'))) ||
+        const preferred = (this.selectedAzureVoice || '').toLowerCase();
+        let matchedVoice = null;
+
+        // User preference match (Pradeep or Nabanita Natural)
+        if (preferred.includes('nabanita')) {
+            matchedVoice = voices.find(v => v.name.includes('Nabanita') && (v.name.includes('Natural') || v.name.includes('Online'))) ||
+                           voices.find(v => v.name.includes('Nabanita'));
+        } else if (preferred.includes('pradeep')) {
+            matchedVoice = voices.find(v => v.name.includes('Pradeep') && (v.name.includes('Natural') || v.name.includes('Online'))) ||
+                           voices.find(v => v.name.includes('Pradeep'));
+        }
+
+        const bestVoice = matchedVoice ||
+            voices.find(v => (v.name.includes('Pradeep') || v.name.includes('Nabanita') || v.name.includes('Bashkar') || v.name.includes('Nabaneeta')) && (v.name.includes('Natural') || v.name.includes('Online'))) ||
             voices.find(v => (v.name.includes('Natural') || v.name.includes('Online')) && (v.lang.startsWith('bn') || v.name.includes('Bengali') || v.name.includes('Bangla'))) ||
-            voices.find(v => v.name.includes('Bashkar') || v.name.includes('Pradeep') || v.name.includes('Nabanita') || v.name.includes('Nabaneeta')) ||
+            voices.find(v => v.name.includes('Pradeep') || v.name.includes('Nabanita') || v.name.includes('Bashkar') || v.name.includes('Nabaneeta')) ||
             voices.find(v => v.lang === 'bn-BD') ||
             voices.find(v => v.lang === 'bn-IN') ||
             voices.find(v => v.name.includes('Google') && (v.lang.startsWith('bn') || v.name.includes('Bengali') || v.name.includes('Bangla'))) ||
@@ -216,6 +228,7 @@ export class VoiceSpeaker {
                 activeVoice.name.includes('Online') ||
                 activeVoice.name.includes('Bashkar') ||
                 activeVoice.name.includes('Pradeep') ||
+                activeVoice.name.includes('Nabanita') ||
                 activeVoice.name.includes('Google')
             );
 
@@ -250,25 +263,30 @@ export class VoiceSpeaker {
             }
 
             // ── Priority 5: Google Cloud TTS (bn-BD-Neural2) ──
-            if (gcpKey) {
+            const effectiveGcpKey = gcpKey || (typeof window !== 'undefined' ? (localStorage.getItem('jarvis_gemini_key') || '').trim() : '');
+            if (effectiveGcpKey) {
                 try {
-                    await this.speakGoogleCloudTTS(cleanText, gcpKey, emotion);
+                    await this.speakGoogleCloudTTS(cleanText, effectiveGcpKey, emotion);
                     return;
                 } catch (err) {
                     console.warn('[VoiceSpeaker] GCP TTS failed, falling back:', err.message);
                 }
             }
 
-            // ── Priority 6: Zero-Key High-Quality Online Bengali Stream (Fallback) ──
+            // ── Priority 6: Standard Browser SpeechSynthesis (Native OS bn-BD) ──
             try {
-                await this.speakFreeBengaliTTS(cleanText);
+                await this.speakBrowser(cleanText, emotion);
                 return;
             } catch (err) {
-                console.warn('[VoiceSpeaker] Free Bengali stream TTS failed, falling back to basic browser speech:', err.message);
+                console.warn('[VoiceSpeaker] Browser SpeechSynthesis failed, falling back to online stream:', err.message);
             }
 
-            // ── Priority 7: Standard Browser SpeechSynthesis ──
-            await this.speakBrowser(cleanText, emotion);
+            // ── Priority 7: Free Bengali Stream TTS (Final Fallback) ──
+            try {
+                await this.speakFreeBengaliTTS(cleanText);
+            } catch (err) {
+                console.warn('[VoiceSpeaker] Free Bengali stream TTS failed:', err.message);
+            }
 
         } catch (fatalErr) {
             console.error('[VoiceSpeaker] Fatal speech error:', fatalErr);
