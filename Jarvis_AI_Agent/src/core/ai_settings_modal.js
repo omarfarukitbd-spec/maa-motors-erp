@@ -323,6 +323,18 @@ export class AISettingsModal {
                 message: 'দয়া করে একটি সঠিক জেমিনি এপিআই কী প্রদান করুন।'
             };
         }
+        if (cleanKey.startsWith('gsk_')) {
+            return { valid: false, message: 'এটি Groq Cloud-এর কী (gsk_...)! অনুগ্রহ করে "Groq Cloud (LPU)" ট্যাবে দিন।' };
+        }
+        if (cleanKey.startsWith('sk-or-v1-')) {
+            return { valid: false, message: 'এটি OpenRouter-এর কী (sk-or-v1-...)! অনুগ্রহ করে "OpenRouter (Free)" ট্যাবে দিন।' };
+        }
+        if (cleanKey.startsWith('sk-proj-') || (cleanKey.startsWith('sk-') && !cleanKey.startsWith('AIzaSy'))) {
+            return { valid: false, message: 'এটি OpenAI ChatGPT-এর কী! অনুগ্রহ করে "OpenAI (ChatGPT)" ট্যাবে দিন।' };
+        }
+        if (!cleanKey.startsWith('AIzaSy')) {
+            return { valid: false, message: 'গুগল জেমিনি কী সর্বদা "AIzaSy..." দিয়ে শুরু হয়। দয়া করে Google AI Studio (aistudio.google.com) থেকে সঠিক কী কপি করুন।' };
+        }
 
         const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
         let lastError = '';
@@ -362,13 +374,27 @@ export class AISettingsModal {
         if (!cleanKey || cleanKey.length < 15) {
             return { valid: false, message: 'দয়া করে একটি সঠিক Groq এপিআই কী প্রদান করুন।' };
         }
+        if (cleanKey.startsWith('AIzaSy')) {
+            return { valid: false, message: 'এটি Google Gemini-এর কী (AIzaSy...)! অনুগ্রহ করে "Google Gemini Flash" ট্যাবে দিন।' };
+        }
+        if (cleanKey.startsWith('sk-or-v1-')) {
+            return { valid: false, message: 'এটি OpenRouter-এর কী (sk-or-v1-...)! অনুগ্রহ করে "OpenRouter (Free)" ট্যাবে দিন।' };
+        }
+        if (!cleanKey.startsWith('gsk_')) {
+            return { valid: false, message: 'Groq Cloud কী সর্বদা "gsk_..." দিয়ে শুরু হয়। দয়া করে console.groq.com/keys থেকে সঠিক কী কপি করুন।' };
+        }
+
         try {
             const res = await fetch('https://api.groq.com/openai/v1/models', {
                 headers: { 'Authorization': `Bearer ${cleanKey}` }
             });
             if (res.ok) return { valid: true };
             const data = await res.json().catch(() => ({}));
-            return { valid: false, message: data.error?.message || `HTTP ${res.status}` };
+            let msg = data.error?.message || `HTTP ${res.status}`;
+            if (msg.includes('Invalid API Key') || msg.includes('401')) {
+                msg = 'Groq সার্ভার এই কী-টি সঠিক হিসেবে চিহ্নিত করেনি। দয়া করে console.groq.com/keys থেকে কী-টি পুনরায় কপি করুন।';
+            }
+            return { valid: false, message: msg };
         } catch (err) {
             console.error('[AISettingsModal] Groq validation error:', err);
             return { valid: false, message: err.message };
@@ -380,13 +406,48 @@ export class AISettingsModal {
         if (!cleanKey || cleanKey.length < 15) {
             return { valid: false, message: 'দয়া করে একটি সঠিক OpenRouter এপিআই কী প্রদান করুন।' };
         }
+
+        // Smart prefix checking
+        if (cleanKey.startsWith('AIzaSy')) {
+            return {
+                valid: false,
+                message: 'এটি Google Gemini-এর কী (AIzaSy...)! অনুগ্রহ করে উপরে "Google Gemini Flash" ট্যাবে ক্লিক করে সেখানে কী-টি দিন।'
+            };
+        }
+        if (cleanKey.startsWith('gsk_')) {
+            return {
+                valid: false,
+                message: 'এটি Groq Cloud-এর কী (gsk_...)! অনুগ্রহ করে উপরে "Groq Cloud (LPU)" ট্যাবে ক্লিক করে সেখানে কী-টি দিন।'
+            };
+        }
+        if (cleanKey.startsWith('sk-proj-') || (cleanKey.startsWith('sk-') && !cleanKey.startsWith('sk-or-v1-'))) {
+            return {
+                valid: false,
+                message: 'এটি OpenAI ChatGPT-এর কী! অনুগ্রহ করে উপরে "OpenAI (ChatGPT)" ট্যাবে ক্লিক করে সেখানে কী-টি দিন।'
+            };
+        }
+        if (!cleanKey.startsWith('sk-or-v1-')) {
+            return {
+                valid: false,
+                message: 'ওপেনরাউটার (OpenRouter) এপিআই কী সর্বদা "sk-or-v1-" দিয়ে শুরু হয়। দয়া করে openrouter.ai/keys থেকে সঠিক কী কপি করুন।'
+            };
+        }
+
         try {
             const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
-                headers: { 'Authorization': `Bearer ${cleanKey}` }
+                headers: {
+                    'Authorization': `Bearer ${cleanKey}`,
+                    'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://maa-motors-erp.web.app',
+                    'X-Title': 'Maa Motors Jarvis AI'
+                }
             });
             if (res.ok) return { valid: true };
             const data = await res.json().catch(() => ({}));
-            return { valid: false, message: data.error?.message || `HTTP ${res.status}` };
+            let msg = data.error?.message || `HTTP ${res.status}`;
+            if (msg.includes('Missing Authentication header') || msg.includes('User not found') || msg.includes('401')) {
+                msg = 'ওপেনরাউটার সার্ভার এই কী-টি সঠিক হিসেবে চিহ্নিত করেনি। অনুগ্রহ করে openrouter.ai/keys থেকে কী-টি পুনরায় কপি করুন।';
+            }
+            return { valid: false, message: msg };
         } catch (err) {
             console.error('[AISettingsModal] OpenRouter validation error:', err);
             return { valid: false, message: err.message };
@@ -395,6 +456,19 @@ export class AISettingsModal {
 
     async validateOpenAIKey(key) {
         const cleanKey = (key || '').trim();
+        if (!cleanKey || cleanKey.length < 15) {
+            return { valid: false, message: 'দয়া করে একটি সঠিক OpenAI এপিআই কী প্রদান করুন।' };
+        }
+        if (cleanKey.startsWith('AIzaSy')) {
+            return { valid: false, message: 'এটি Google Gemini-এর কী (AIzaSy...)! অনুগ্রহ করে "Google Gemini Flash" ট্যাবে দিন।' };
+        }
+        if (cleanKey.startsWith('gsk_')) {
+            return { valid: false, message: 'এটি Groq Cloud-এর কী (gsk_...)! অনুগ্রহ করে "Groq Cloud (LPU)" ট্যাবে দিন।' };
+        }
+        if (cleanKey.startsWith('sk-or-v1-')) {
+            return { valid: false, message: 'এটি OpenRouter-এর কী (sk-or-v1-...)! অনুগ্রহ করে "OpenRouter (Free)" ট্যাবে দিন।' };
+        }
+
         try {
             const res = await fetch('https://api.openai.com/v1/models', {
                 headers: { 'Authorization': `Bearer ${cleanKey}` }
@@ -607,6 +681,24 @@ export class AISettingsModal {
             return;
         }
 
+        // Smart mismatch detection
+        if (provider === 'openrouter' && key.startsWith('AIzaSy')) {
+            this.pingOutputEl.innerHTML = '<span style="color: #fbbf24;">⚠️ আপনি OpenRouter ট্যাবে আছেন, কিন্তু যে কী-টি দিয়েছেন তা Google Gemini-এর (AIzaSy... দিয়ে শুরু)!<br>অনুগ্রহ করে উপরে "Google Gemini Flash" ট্যাবে ক্লিক করে এই কী-টি সেখানে সেভ ও টেস্ট করুন।</span>';
+            return;
+        }
+        if (provider === 'gemini' && key.startsWith('sk-or-v1-')) {
+            this.pingOutputEl.innerHTML = '<span style="color: #fbbf24;">⚠️ আপনি Google Gemini ট্যাবে আছেন, কিন্তু যে কী-টি দিয়েছেন তা OpenRouter-এর (sk-or-v1-...)!<br>অনুগ্রহ করে উপরে "OpenRouter (Free)" ট্যাবে গিয়ে এই কী-টি সেভ ও টেস্ট করুন।</span>';
+            return;
+        }
+        if (provider === 'gemini' && key.startsWith('gsk_')) {
+            this.pingOutputEl.innerHTML = '<span style="color: #fbbf24;">⚠️ এটি Groq Cloud-এর কী (gsk_...)!<br>অনুগ্রহ করে উপরে "Groq Cloud (LPU)" ট্যাবে ক্লিক করে সেখানে সেভ করুন।</span>';
+            return;
+        }
+        if (provider === 'groq' && key.startsWith('AIzaSy')) {
+            this.pingOutputEl.innerHTML = '<span style="color: #fbbf24;">⚠️ আপনি Groq ট্যাবে আছেন, কিন্তু যে কী-টি দিয়েছেন তা Google Gemini-এর (AIzaSy...)!<br>অনুগ্রহ করে উপরে "Google Gemini Flash" ট্যাবে কী-টি দিন।</span>';
+            return;
+        }
+
         const startTime = performance.now();
         try {
             if (provider === 'gemini') {
@@ -617,7 +709,7 @@ export class AISettingsModal {
                 });
                 const elapsed = Math.round(performance.now() - startTime);
                 if (res.ok) {
-                    this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ কানেকশন সফল! লেটেন্সি: <strong>${elapsed}ms</strong><br>মডেল: <em>gemini-2.0-flash</em> রেডি ও লাইভ।</span>`;
+                    this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ কানেকশন সফল! লেটেন্সি: <strong>${elapsed}ms</strong><br>গুগল সার্ভার লাইভ এবং মডেল gemini-2.0-flash সম্পূর্ণ রেডি!</span>`;
                 } else {
                     const data = await res.json().catch(() => ({}));
                     const msg = data.error?.message || `HTTP ${res.status}`;
@@ -636,7 +728,11 @@ export class AISettingsModal {
                 }
             } else if (provider === 'openrouter') {
                 const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
-                    headers: { 'Authorization': `Bearer ${key}` }
+                    headers: {
+                        'Authorization': `Bearer ${key}`,
+                        'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://maa-motors-erp.web.app',
+                        'X-Title': 'Maa Motors Jarvis AI'
+                    }
                 });
                 const elapsed = Math.round(performance.now() - startTime);
                 if (res.ok) {
@@ -645,7 +741,11 @@ export class AISettingsModal {
                     this.pingOutputEl.innerHTML = `<span style="color: #34d399;">⚡ OpenRouter কানেক্টেড! লেটেন্সি: <strong>${elapsed}ms</strong>${limitInfo}<br>ফ্রি মডেল ক্লাস্টার সম্পূর্ণ সক্রিয়।</span>`;
                 } else {
                     const data = await res.json().catch(() => ({}));
-                    this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ OpenRouter এরর: ${data.error?.message || res.statusText}</span>`;
+                    let msg = data.error?.message || res.statusText;
+                    if (msg.includes('Missing Authentication header') || msg.includes('User not found')) {
+                        msg = 'OpenRouter সার্ভার এই কী-টি চিনতে পারেনি। কী-টি sk-or-v1- দিয়ে শুরু কি না নিশ্চিত করুন।';
+                    }
+                    this.pingOutputEl.innerHTML = `<span style="color: #f87171;">❌ OpenRouter এরর: ${msg}</span>`;
                 }
             } else if (provider === 'openai') {
                 const res = await fetch('https://api.openai.com/v1/models', {
