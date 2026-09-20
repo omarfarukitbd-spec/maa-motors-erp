@@ -358,25 +358,20 @@ async function ensureAuthenticated(rl) {
 
 // Banner Display
 function printBanner(user) {
-    console.clear();
     console.log(`
-${C.cyan}${C.bold}══════════════════════════════════════════════════════════════════${C.reset}
-${C.cyan}${C.bold}   🎙️  JARVIS EXECUTIVE TERMINAL AGENT — MAA MOTORS ERP${C.reset}
-${C.dim}   Bangla Neural Speech • 100% Read-Only Safety Guard • Edge-TTS${C.reset}
-${C.cyan}${C.bold}══════════════════════════════════════════════════════════════════${C.reset}
-  ${C.green}● Database Status :${C.reset} 100% Read-Only Protected (Cloud Firestore)
-  ${C.green}● Logged In User  :${C.reset} ${user?.email || 'Admin'}
-  ${C.yellow}● Voice Engine    :${C.reset} Microsoft Edge Neural (${config.voice})
-  ${C.blue}● Active Brain    :${C.reset} Google Gemini Flash / NLU Tool Engine
-${C.cyan}──────────────────────────────────────────────────────────────────${C.reset}
-  ${C.gray}উদাহরণ প্রশ্নসমূহ:${C.reset}
-   - ${C.white}"আজকে শোরুম ক্যাশ কত?"${C.reset}
-   - ${C.white}"করিমের বর্তমান বকেয়া কত?"${C.reset}
-   - ${C.white}"ব্যাংক ব্যালেন্স কত আছে?"${C.reset}
-   - ${C.white}"আজকের পূর্ণাঙ্গ রিপোর্ট দাও"${C.reset}
-   - ${C.white}"দুবাই কনটেইনার অডিট বলো"${C.reset}
-   - ${C.white}"exit" অথবা "quit" লিখে বের হয়ে যান${C.reset}
-${C.cyan}══════════════════════════════════════════════════════════════════${C.reset}
+${C.cyan}${C.bold}==================================================================${C.reset}
+${C.cyan}${C.bold}  🎙️  JARVIS EXECUTIVE TERMINAL AGENT — MAA MOTORS ERP${C.reset}
+${C.dim}  Connected: ${user?.email || 'Admin'} | Database: 100% Read-Only Safety Guard${C.reset}
+${C.cyan}------------------------------------------------------------------${C.reset}
+${C.white}${C.bold}  দ্রুত কমান্ড / Quick Commands:${C.reset}
+   ${C.green}[1] Cash${C.reset}     : আজকে শোরুম ক্যাশ কত?      ${C.dim}(Type: 1 or cash)${C.reset}
+   ${C.green}[2] Bank${C.reset}     : ব্যাংক ব্যালেন্স কত আছে?     ${C.dim}(Type: 2 or bank)${C.reset}
+   ${C.green}[3] Report${C.reset}   : আজকের পূর্ণাঙ্গ রিপোর্ট      ${C.dim}(Type: 3 or report)${C.reset}
+   ${C.green}[4] Dubai${C.reset}    : দুবাই কনটেইনার অডিট       ${C.dim}(Type: 4 or dubai)${C.reset}
+   ${C.green}[5] Debtors${C.reset}  : শীর্ষ বকেয়া তালিকা         ${C.dim}(Type: 5 or top)${C.reset}
+   ${C.green}[6] Name${C.reset}     : করিমের বকেয়া কত?          ${C.dim}(Type: Customer Name)${C.reset}
+   ${C.yellow}Exit${C.reset}         : বন্ধ করতে 'exit' অথবা 'quit' লিখুন
+${C.cyan}${C.bold}==================================================================${C.reset}
 `);
 }
 
@@ -392,18 +387,17 @@ async function resolveIntent(query) {
 
 // Print response table
 function printCard(res) {
-    console.log(`\n${C.green}${C.bold}┌──────────────────────────────────────────────────────────┐${C.reset}`);
-    console.log(`${C.green}${C.bold}│ 📊  ${res.title.padEnd(52)}│${C.reset}`);
-    console.log(`${C.green}${C.bold}├──────────────────────────────────────────────────────────┤${C.reset}`);
+    console.log(`\n${C.cyan}──────────────────────────────────────────────────────────────────${C.reset}`);
+    console.log(`${C.green}${C.bold} 📊 ${res.title}${C.reset}`);
+    console.log(`${C.cyan}──────────────────────────────────────────────────────────────────${C.reset}`);
     if (res.rows && res.rows.length > 0) {
         res.rows.forEach(([k, v]) => {
-            const line = `  ${C.cyan}${k.padEnd(25)}${C.reset} : ${C.yellow}${C.bold}${String(v).padEnd(26)}${C.reset}`;
-            console.log(`│${line}│`);
+            console.log(`  ${C.white}• ${C.cyan}${k}${C.reset} : ${C.yellow}${C.bold}${v}${C.reset}`);
         });
-        console.log(`${C.green}${C.bold}├──────────────────────────────────────────────────────────┤${C.reset}`);
+        console.log(`${C.cyan}──────────────────────────────────────────────────────────────────${C.reset}`);
     }
-    console.log(`${C.white}  🗣️  "${res.spoken}"${C.reset}`);
-    console.log(`${C.green}${C.bold}└──────────────────────────────────────────────────────────┘${C.reset}\n`);
+    console.log(`  ${C.magenta}🗣️  "${res.spoken}"${C.reset}`);
+    console.log(`${C.cyan}──────────────────────────────────────────────────────────────────${C.reset}\n`);
 }
 
 // Interactive CLI Loop

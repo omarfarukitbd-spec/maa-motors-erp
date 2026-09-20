@@ -76,42 +76,42 @@ export class CognitiveEngine {
         }
 
         // 3. Executive Business Pulse / Report
-        if (/আজকের.*(রিপোর্ট|হিসাব|সারসংক্ষেপ|অবস্থা|ক্লোজিং)|(রিপোর্ট.*দাও)|(ব্যবসার.*কি.*অবস্থা)|পূর্ণাঙ্গ.*রিপোর্ট/i.test(lower)) {
+        if (/^(3|report|pulse|closing)$/i.test(lower) || /আজকের.*(রিপোর্ট|হিসাব|সারসংক্ষেপ|অবস্থা|ক্লোজিং)|(রিপোর্ট.*দাও)|(ব্যবসার.*কি.*অবস্থা)|পূর্ণাঙ্গ.*রিপোর্ট|business.*report/i.test(lower)) {
             return await executeErpTool('get_executive_business_pulse', {});
         }
 
         // 4. Showroom Cash in Hand
-        if (/(শোরুম.*ক্যাশ)|(নগদ.*ক্যাশ)|(ক্যাশ.*কত)|(ক্যাশ.*ব্যালেন্স)|(হাতে.*ক্যাশ)|(ক্যাশ.*জমা)|(ক্যাশ.*কালেকশন)/i.test(lower)) {
+        if (/^(1|cash|showroom|nogod)$/i.test(lower) || /(শোরুম.*ক্যাশ)|(নগদ.*ক্যাশ)|(ক্যাশ.*কত)|(ক্যাশ.*ব্যালেন্স)|(হাতে.*ক্যাশ)|(ক্যাশ.*জমা)|(ক্যাশ.*কালেকশন)|showroom.*cash/i.test(lower)) {
             return await executeErpTool('get_showroom_cash', {});
         }
 
         // 5. Bank Accounts Balance
-        if (/(ব্যাংক.*ব্যালেন্স)|(ব্যাংক.*স্থিতি)|(ব্যাংকে.*কত)|(সব.*ব্যাংক)|(পূবালী)|(ইসলামী.*ব্যাংক)|(ডাচ.*বাংলা)|(ব্যাংক.*হিসাব)/i.test(lower)) {
+        if (/^(2|bank|banks)$/i.test(lower) || /(ব্যাংক.*ব্যালেন্স)|(ব্যাংক.*স্থিতি)|(ব্যাংকে.*কত)|(সব.*ব্যাংক)|(পূবালী)|(ইসলামী.*ব্যাংক)|(ডাচ.*বাংলা)|(ব্যাংক.*হিসাব)|bank.*balance/i.test(lower)) {
             return await executeErpTool('get_bank_balances', {});
         }
 
         // 6. Top Debtors & Market Due
-        if (/(শীর্ষ.*বকেয়া)|(টপ.*দেনাদার)|(টপ.*বাকিদার)|(কারা.*বাকিদার)|(বড়.*বকেয়া)|(বেশি.*বাকি)|(মার্কেটের.*বকেয়া)/i.test(lower)) {
+        if (/^(5|top|debtors|due)$/i.test(lower) || /(শীর্ষ.*বকেয়া)|(টপ.*দেনাদার)|(টপ.*বাকিদার)|(কারা.*বাকিদার)|(বড়.*বকেয়া)|(বেশি.*বাকি)|(মার্কেটের.*বকেয়া)|top.*debtors/i.test(lower)) {
             return await executeErpTool('get_top_debtors', { limit: 5 });
         }
 
         // 7. Dubai Container Procurement & AED Audit
-        if (/(দুবাই.*অডিট)|(দুবাই.*কন্টেইনার)|(এইডি.*ব্যালেন্স)|(aed.*ক্যাশ)|(এমরান.*মামা)|(মেস.*ফান্ড)|(শারজাহ)/i.test(lower)) {
+        if (/^(4|dubai|container|aed)$/i.test(lower) || /(দুবাই.*অডিট)|(দুবাই.*কন্টেইনার)|(এইডি.*ব্যালেন্স)|(aed.*ক্যাশ)|(এমরান.*মামা)|(মেস.*ফান্ড)|(শারজাহ)|dubai.*audit/i.test(lower)) {
             return await executeErpTool('get_dubai_container_audit', {});
         }
 
         // 8. Daily Expenses
-        if (/(আজকের.*খরচ)|(অফিস.*খরচ)|(মোট.*খরচ)|(খরচের.*হিসাব)|(কত.*খরচ)/i.test(lower)) {
+        if (/^(expense|expenses|cost|khoroch)$/i.test(lower) || /(আজকের.*খরচ)|(অফিস.*খরচ)|(মোট.*খরচ)|(খরচের.*হিসাব)|(কত.*খরচ)|daily.*expense/i.test(lower)) {
             return await executeErpTool('get_daily_expenses', {});
         }
 
         // 9. Demographics
-        if (/(মোট.*কাস্টমার)|(কত.*জন.*কাস্টমার)|(দেনাদার.*কত)|(কাস্টমার.*সংখ্যা)|(কয়টি.*ব্যাংক)/i.test(lower)) {
+        if (/^(demographics|customers|total.*customer)$/i.test(lower) || /(মোট.*কাস্টমার)|(কত.*জন.*কাস্টমার)|(দেনাদার.*কত)|(কাস্টমার.*সংখ্যা)|(কয়টি.*ব্যাংক)/i.test(lower)) {
             return await executeErpTool('get_business_demographics', {});
         }
 
         // 10. Ledger Audit & Dispute Checking
-        if (/(লেজার.*অডিট)|(হিসাব.*ঠিক.*নাই)|(গরমিল.*আছে)|(ভুল.*হিসাব)|(অডিট.*করো)/i.test(lower)) {
+        if (/^(audit|ledger|check)$/i.test(lower) || /(লেজার.*অডিট)|(হিসাব.*ঠিক.*নাই)|(গরমিল.*আছে)|(ভুল.*হিসাব)|(অডিট.*করো)|ledger.*audit/i.test(lower)) {
             return await executeErpTool('get_ledger_math_audit', {});
         }
 
