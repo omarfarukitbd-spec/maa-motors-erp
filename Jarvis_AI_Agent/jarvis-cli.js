@@ -74,6 +74,9 @@ function saveConfig(cfg) {
 }
 
 let config = loadConfig();
+if (config.geminiKey) {
+    process.env.GEMINI_API_KEY = config.geminiKey;
+}
 
 // Edge TTS Audio Engine
 async function speak(text, voice = config.voice || 'bn-BD-PradeepNeural') {
@@ -358,19 +361,25 @@ async function ensureAuthenticated(rl) {
 
 // Banner Display
 function printBanner(user) {
+    const aiBrain = process.env.GEMINI_API_KEY
+        ? `${C.green}⚡ Google Gemini 2.0 Flash (Cloud Neural LLM)${C.reset}`
+        : `${C.yellow}🚀 Autonomous High-Speed Semantic Engine (Tier 2 Local NLU)${C.reset}`;
     console.log(`
 ${C.cyan}${C.bold}==================================================================${C.reset}
 ${C.cyan}${C.bold}  🎙️  JARVIS EXECUTIVE TERMINAL AGENT — MAA MOTORS ERP${C.reset}
 ${C.dim}  Connected: ${user?.email || 'Admin'} | Database: 100% Read-Only Safety Guard${C.reset}
+${C.dim}  Active Brain: ${aiBrain}${C.reset}
 ${C.cyan}------------------------------------------------------------------${C.reset}
-${C.white}${C.bold}  দ্রুত কমান্ড / Quick Commands:${C.reset}
-   ${C.green}[1] Cash${C.reset}     : আজকে শোরুম ক্যাশ কত?      ${C.dim}(Type: 1 or cash)${C.reset}
-   ${C.green}[2] Bank${C.reset}     : ব্যাংক ব্যালেন্স কত আছে?     ${C.dim}(Type: 2 or bank)${C.reset}
-   ${C.green}[3] Report${C.reset}   : আজকের পূর্ণাঙ্গ রিপোর্ট      ${C.dim}(Type: 3 or report)${C.reset}
-   ${C.green}[4] Dubai${C.reset}    : দুবাই কনটেইনার অডিট       ${C.dim}(Type: 4 or dubai)${C.reset}
-   ${C.green}[5] Debtors${C.reset}  : শীর্ষ বকেয়া তালিকা         ${C.dim}(Type: 5 or top)${C.reset}
-   ${C.green}[6] Name${C.reset}     : করিমের বকেয়া কত?          ${C.dim}(Type: Customer Name)${C.reset}
-   ${C.yellow}Exit${C.reset}         : বন্ধ করতে 'exit' অথবা 'quit' লিখুন
+${C.white}${C.bold}  যেকোনো স্বাভাবিক ভাষায় প্রশ্ন করুন (বাংলা / Banglish / English):${C.reset}
+   • ${C.green}আজকে কত বিক্রি হইছে?${C.reset}       ${C.dim}(বা আজকের পূর্ণাঙ্গ রিপোর্ট)${C.reset}
+   • ${C.green}শোরুম ক্যাশে কত আছে?${C.reset}       ${C.dim}(বা নগদ ক্যাশ ব্যালেন্স)${C.reset}
+   • ${C.green}ব্যাংক ব্যালেন্স কত?${C.reset}        ${C.dim}(বা ব্যাংকে কত টাকা আছে)${C.reset}
+   • ${C.green}করিমের বাকি কত?${C.reset}             ${C.dim}(বা যেকোনো কাস্টমারের নাম)${C.reset}
+   • ${C.green}মার্কেটের দেনাদার কারা?${C.reset}     ${C.dim}(বা শীর্ষ বকেয়া তালিকা)${C.reset}
+   • ${C.green}দুবাই কন্টেইনার অডিট${C.reset}       ${C.dim}(বা এইডি ক্যাশ ব্যালেন্স)${C.reset}
+   • ${C.green}আজকের খরচ কত?${C.reset}              ${C.dim}(বা দৈনিক মোট খরচ)${C.reset}
+   • ${C.yellow}key <apiKey>${C.reset}              ${C.dim}(জেমিনি এআই কি যুক্ত করতে)${C.reset}
+   • ${C.yellow}exit / quit${C.reset}               ${C.dim}(টার্মিনাল বন্ধ করতে)${C.reset}
 ${C.cyan}${C.bold}==================================================================${C.reset}
 `);
 }
@@ -428,6 +437,25 @@ async function main() {
                 console.log(`\n${C.yellow}বিদায় স্যার! ভালো থাকবেন।${C.reset}\n`);
                 rl.close();
                 process.exit(0);
+            }
+
+            if (input.toLowerCase().startsWith('key ') || input.toLowerCase() === 'key') {
+                const parts = input.split(/\s+/);
+                const newKey = parts[1]?.trim();
+                if (newKey === 'status' || !newKey) {
+                    const active = process.env.GEMINI_API_KEY
+                        ? `${C.green}Google Gemini 2.0 Flash (Cloud Active)${C.reset}`
+                        : `${C.yellow}Autonomous High-Speed Semantic Engine (Tier 2 Local NLU Active)${C.reset}`;
+                    console.log(`\n  ${C.cyan}বর্তমান এআই ব্রেন:${C.reset} ${active}`);
+                    console.log(`  ${C.dim}কি সেট করতে লিখুন: key <আপনার-জেমিনি-এপিআই-কি>${C.reset}\n`);
+                } else {
+                    config.geminiKey = newKey;
+                    process.env.GEMINI_API_KEY = newKey;
+                    saveConfig(config);
+                    console.log(`\n${C.green}✅ গুগল জেমিনি ২.০ ফ্ল্যাশ এআই ব্রেন কি সফলভাবে যুক্ত হয়েছে!${C.reset}\n`);
+                }
+                promptUser();
+                return;
             }
 
             console.log(`${C.dim}⏳ উপাত্ত সংগ্রহ ও বিশ্লেষণ করা হচ্ছে...${C.reset}`);
