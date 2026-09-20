@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#050811" />
+  <meta name="theme-color" content="#030712" />
   <title>JARVIS AI — মেসার্স মা মোটরস পার্সোনাল এক্সিকিউটিভ এআই</title>
   
   <link rel="manifest" href="/manifest.json" />
@@ -81,11 +81,56 @@
     </div>
   </header>
 
+  <!-- Live Executive KPI Pulse Strip -->
+  <div class="executive-kpi-bar">
+    <div class="kpi-strip-container">
+      <div class="kpi-chip" onclick="window.triggerQuickCommand('আজকের পূর্ণাঙ্গ রিপোর্ট')" title="আজকের মোট বিক্রি জানতে ক্লিক করুন">
+        <div class="kpi-icon-wrap bg-sky-500/10 text-sky-400 border-sky-500/20">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">আজকের বিক্রি</span>
+          <span class="kpi-value" id="kpi-today-sales">লোড হচ্ছে...</span>
+        </div>
+      </div>
+
+      <div class="kpi-chip" onclick="window.triggerQuickCommand('শোরুম ক্যাশ কত?')" title="শোরুমের ক্যাশ স্থিতি জানতে ক্লিক করুন">
+        <div class="kpi-icon-wrap bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+          <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">শোরুম ক্যাশ</span>
+          <span class="kpi-value text-emerald-400" id="kpi-showroom-cash">লোড হচ্ছে...</span>
+        </div>
+      </div>
+
+      <div class="kpi-chip" onclick="window.triggerQuickCommand('ব্যাংক ব্যালেন্স কত?')" title="ব্যাংক স্থিতি জানতে ক্লিক করুন">
+        <div class="kpi-icon-wrap bg-amber-500/10 text-amber-400 border-amber-500/20">
+          <i class="fa-solid fa-building-columns"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">ব্যাংক ব্যালেন্স</span>
+          <span class="kpi-value text-amber-400" id="kpi-bank-deposit">লোড হচ্ছে...</span>
+        </div>
+      </div>
+
+      <div class="kpi-chip" onclick="window.triggerQuickCommand('দুবাই কনটেইনার অডিট বলো')" title="দুবাই কন্টেইনার ব্যালেন্স জানতে ক্লিক করুন">
+        <div class="kpi-icon-wrap bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+          <i class="fa-solid fa-ship"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">দুবাই কন্টেইনার অডিট</span>
+          <span class="kpi-value text-indigo-400" id="kpi-dubai-status">লোড হচ্ছে...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Viewport Layout -->
   <main class="app-main">
 
-    <!-- Top Executive Hero: Ambient AI Voice Core -->
-    <section class="hero-stage">
+    <!-- Center Stage: Living AI Core & Action Cards -->
+    <section class="command-center-stage">
       
       <!-- Living AI Orb & Soundwave Canvas -->
       <div class="orb-visualizer-container">
@@ -115,15 +160,15 @@
         </button>
       </div>
 
-      <!-- 1-Tap Executive Action Grid (High-Frequency ERP Inquiries) -->
+      <!-- High-Contrast Executive Action Grid (2x3 Balanced Matrix) -->
       <div class="executive-cards-grid">
         <button type="button" class="exec-card" onclick="window.triggerQuickCommand('আজকের পূর্ণাঙ্গ রিপোর্ট')">
           <div class="exec-card-icon bg-sky-500/10 border-sky-500/20 text-sky-400">
             <i class="fa-solid fa-chart-pie"></i>
           </div>
           <div class="exec-card-texts">
-            <span class="exec-card-title">আজকের রিপোর্ট</span>
-            <span class="exec-card-desc">দৈনিক সেলস, খরচ ও নিট আয়</span>
+            <span class="exec-card-title">আজকের পূর্ণাঙ্গ রিপোর্ট</span>
+            <span class="exec-card-desc">দৈনিক বিক্রি, আদায়, খরচ ও নিট আয়</span>
           </div>
         </button>
 
@@ -132,8 +177,8 @@
             <i class="fa-solid fa-cash-register"></i>
           </div>
           <div class="exec-card-texts">
-            <span class="exec-card-title">শোরুম ক্যাশ</span>
-            <span class="exec-card-desc">হাতে নগদ ক্যাশ ব্যালেন্স</span>
+            <span class="exec-card-title">শোরুম ক্যাশ স্থিতি</span>
+            <span class="exec-card-desc">হাতে নগদ জমা ও ড্রয়ার ব্যালেন্স</span>
           </div>
         </button>
 
@@ -142,8 +187,8 @@
             <i class="fa-solid fa-building-columns"></i>
           </div>
           <div class="exec-card-texts">
-            <span class="exec-card-title">ব্যাংক ব্যালেন্স</span>
-            <span class="exec-card-desc">সব ব্যাংক একাউন্টের স্থিতি</span>
+            <span class="exec-card-title">ব্যাংক ব্যালেন্স হিসাব</span>
+            <span class="exec-card-desc">পূবালী, ইসলামী ইত্যাদি সব ব্যাংকের স্থিতি</span>
           </div>
         </button>
 
@@ -152,8 +197,8 @@
             <i class="fa-solid fa-user-clock"></i>
           </div>
           <div class="exec-card-texts">
-            <span class="exec-card-title">বকেয়া তাগাদা</span>
-            <span class="exec-card-desc">সর্বোচ্চ বাকি থাকা কাস্টমার</span>
+            <span class="exec-card-title">শীর্ষ দেনাদার তালিকা</span>
+            <span class="exec-card-desc">মার্কেটে সর্বোচ্চ বকেয়া থাকা ৫ জন গ্রাহক</span>
           </div>
         </button>
 
@@ -162,8 +207,18 @@
             <i class="fa-solid fa-ship"></i>
           </div>
           <div class="exec-card-texts">
-            <span class="exec-card-title">দুবাই অডিট</span>
-            <span class="exec-card-desc">কনটেইনার ও AED ব্যালেন্স</span>
+            <span class="exec-card-title">দুবাই কনটেইনার অডিট</span>
+            <span class="exec-card-desc">আমদানি মেমো ও এইডি (AED) ব্যালেন্স</span>
+          </div>
+        </button>
+
+        <button type="button" class="exec-card" onclick="window.triggerQuickCommand('আজকের খরচ কত?')">
+          <div class="exec-card-icon bg-purple-500/10 border-purple-500/20 text-purple-400">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div class="exec-card-texts">
+            <span class="exec-card-title">দৈনিক অফিস খরচ</span>
+            <span class="exec-card-desc">আজকের মোট খরচ ও ক্যাশ ব্যয় বিবরণী</span>
           </div>
         </button>
       </div>
@@ -183,17 +238,7 @@
             <span class="msg-time">এখন</span>
           </div>
           <div class="msg-content">
-            শুভ অপরাহ্ন স্যার! আমি মেসার্স মা মোটরস-এর পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস। আমি সম্পূর্ণ সক্রিয় এবং ইআরপি ডেটাবেজের সাথে সরাসরি সংযুক্ত আছি!
-          </div>
-          <div class="msg-action-row">
-            <button class="msg-action-btn" onclick="window.triggerVoiceTest()">
-              <i class="fa-solid fa-volume-high text-cyan-400"></i>
-              <span>সাউন্ড টেস্ট</span>
-            </button>
-            <button class="msg-action-btn" onclick="window.triggerGoogleAuth()">
-              <i class="fa-solid fa-key text-amber-400"></i>
-              <span>লগইন একাউন্ট</span>
-            </button>
+            শুভ অপরাহ্ন স্যার! আমি মেসার্স মা মোটরসের পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস। মেসার্স মা মোটরসের যেকোনো কাস্টমার বকেয়া, শোরুম ক্যাশ বা ব্যাংক হিসাব জানতে প্রশ্ন করতে পারেন।
           </div>
         </div>
       </div>

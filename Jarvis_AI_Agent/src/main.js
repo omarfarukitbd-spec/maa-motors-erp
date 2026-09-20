@@ -6,6 +6,7 @@ import { VoiceListener } from './voice/voice_listener.js';
 import { voiceSpeaker } from './voice/voice_speaker.js';
 import { VoiceVisualizer } from './voice/voice_visualizer.js';
 import { wakeWordListener } from './voice/wake_word_listener.js';
+import { ERPBridge } from './bridge/erp_bridge.js';
 
 // 1. Initialize Voice & Visualizer
 const canvas = document.getElementById('visualizer-canvas');
@@ -175,7 +176,9 @@ wakeWordListener.onWake = async ({ hasCommand, command }) => {
     } else {
         try {
             await voiceSpeaker.speak('জি স্যার, শুনছি! বলুন...');
-        } catch (e) {}
+        } catch (e) {
+            console.error('Wake speech warning:', e);
+        }
         listener.start();
         setCoreState('listening');
     }
@@ -221,7 +224,7 @@ jarvisBrain.onMessage((msg) => {
 
         tableHtml = `
             <div class="table-card-box">
-                <div class="table-card-header">${msg.data.title || 'হিসাব বিবরণী'}</div>
+                <div class="table-card-header"><i class="fa-solid fa-chart-simple mr-1 text-cyan-400"></i>${msg.data.title || 'হিসাব বিবরণী'}</div>
                 <div class="table-card-body">${rowsHtml}</div>
             </div>
         `;
@@ -240,7 +243,55 @@ jarvisBrain.onMessage((msg) => {
     transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
 });
 
-// 7. Firebase Auth Persistent State & Modals
+// 7. Load Live Executive KPI Strip from Firestore
+async function loadLiveKpiStrip() {
+    const kpiSales = document.getElementById('kpi-today-sales');
+    const kpiCash = document.getElementById('kpi-showroom-cash');
+    const kpiBank = document.getElementById('kpi-bank-deposit');
+    const kpiDubai = document.getElementById('kpi-dubai-status');
+
+    try {
+        // 1. Sales & Pulse
+        try {
+            const pulse = await ERPBridge.getExecutiveBusinessPulse();
+            if (kpiSales) kpiSales.innerText = `৳ ${Number(pulse?.todayTotalBills || 0).toLocaleString('bn-BD')}`;
+        } catch (e) {
+            console.warn('Sales KPI load err:', e);
+            if (kpiSales) kpiSales.innerText = '৳ ০';
+        }
+
+        // 2. Showroom Cash
+        try {
+            const cash = await ERPBridge.getTodayShowroomCashCollections();
+            if (kpiCash) kpiCash.innerText = `৳ ${Number(cash?.todayNetShowroomCash || 0).toLocaleString('bn-BD')}`;
+        } catch (e) {
+            console.warn('Cash KPI load err:', e);
+            if (kpiCash) kpiCash.innerText = '৳ ০';
+        }
+
+        // 3. Bank balances
+        try {
+            const banks = await ERPBridge.getWeeklyBankCollectionSummary();
+            if (kpiBank) kpiBank.innerText = `৳ ${Number(banks?.grandTotalBankDeposits || 0).toLocaleString('bn-BD')}`;
+        } catch (e) {
+            console.warn('Bank KPI load err:', e);
+            if (kpiBank) kpiBank.innerText = '৳ ০';
+        }
+
+        // 4. Dubai audit
+        try {
+            const dubai = await ERPBridge.getDubaiWeeklyAuditSummary();
+            if (kpiDubai) kpiDubai.innerText = `${Number(dubai?.cashBalance || 0).toLocaleString('bn-BD')} AED`;
+        } catch (e) {
+            console.warn('Dubai KPI load err:', e);
+            if (kpiDubai) kpiDubai.innerText = '০ AED';
+        }
+    } catch (err) {
+        console.warn('Failed to load KPI strip:', err);
+    }
+}
+
+// 8. Firebase Auth Persistent State & Modals
 const authBtn = document.getElementById('auth-btn');
 const authBtnText = document.getElementById('auth-btn-text');
 const authBtnIcon = document.getElementById('auth-btn-icon');
@@ -250,7 +301,7 @@ const modalGoogleBtn = document.getElementById('modal-google-btn');
 const emailLoginForm = document.getElementById('email-login-form');
 const authErrorMsg = document.getElementById('auth-error-msg');
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (user) {
         if (authBtnText) authBtnText.innerText = user.email.split('@')[0];
         if (authBtnIcon) authBtnIcon.className = 'fa-solid fa-circle-user text-emerald-400';
@@ -258,6 +309,7 @@ onAuthStateChanged(auth, (user) => {
         if (authBtnText) authBtnText.innerText = 'লগইন';
         if (authBtnIcon) authBtnIcon.className = 'fa-solid fa-key text-cyan-400';
     }
+    await loadLiveKpiStrip();
 });
 
 if (authBtn) {
@@ -315,7 +367,7 @@ if (emailLoginForm) {
     });
 }
 
-// 8. AI Settings Modal
+// 9. AI Settings Modal
 const openAiSettingsBtn = document.getElementById('open-ai-settings-btn');
 const aiSettingsModal = document.getElementById('ai-settings-modal');
 const closeAiSettingsModal = document.getElementById('close-ai-settings-modal');
@@ -348,7 +400,7 @@ if (saveSettingsBtn) {
     });
 }
 
-// 9. Sound Test Button
+// 10. Sound Test Button
 window.triggerVoiceTest = async () => {
     await unlockMobileAudio();
     await voiceSpeaker.speak('আসসালামু আলাইকুম স্যার! মেসার্স মা মোটরস পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস সম্পূর্ণ প্রস্তুত।');
@@ -365,3 +417,6 @@ try {
 } catch (e) {
     console.warn('Wake word auto-start deferred until user permission:', e);
 }
+
+// Initial Load of KPIs
+loadLiveKpiStrip();
