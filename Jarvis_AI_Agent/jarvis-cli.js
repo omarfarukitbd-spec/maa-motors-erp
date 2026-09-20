@@ -98,12 +98,20 @@ async function speak(text, voice = config.voice || 'bn-BD-PradeepNeural') {
             $player.Close();
         `;
 
-        await new Promise((resolve) => {
-            exec(`powershell -NoProfile -Command "${psScript.replace(/\r?\n/g, ' ')}"`, () => {
-                try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
-                resolve();
-            });
-        });
+        await Promise.race([
+            new Promise((resolve) => {
+                exec(`powershell -STA -NoProfile -Command "${psScript.replace(/\r?\n/g, ' ')}"`, () => {
+                    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
+                    resolve();
+                });
+            }),
+            new Promise((resolve) => {
+                setTimeout(() => {
+                    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
+                    resolve();
+                }, 12000);
+            })
+        ]);
     } catch (err) {
         console.error(`${C.red}[TTS Error]${C.reset}`, err.message);
     }
