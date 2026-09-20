@@ -1,7 +1,0 @@
-node_modules/
-dist/
-.DS_Store
-*.local
-.firebase/
-*.log
-jarvis_cli_config.json
