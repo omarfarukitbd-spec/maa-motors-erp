@@ -56,16 +56,50 @@ function safeResumeWakeWord() {
     }, 600);
 }
 
-// Hook Visualizer States
+// Hook Visualizer & Core Living Orb States
+function setCoreState(state) {
+    const btn = document.getElementById('mic-toggle-btn');
+    const dockBtn = document.getElementById('dock-mic-btn');
+    const orbIcon = document.getElementById('orb-mic-icon');
+    if (!btn) return;
+
+    btn.classList.remove('listening', 'speaking', 'thinking', 'active');
+    if (dockBtn) dockBtn.classList.remove('listening', 'speaking', 'thinking', 'bg-emerald-500');
+
+    if (state === 'listening') {
+        btn.classList.add('listening', 'active');
+        if (dockBtn) dockBtn.classList.add('listening', 'bg-emerald-500');
+        if (orbIcon) orbIcon.className = 'fa-solid fa-microphone-lines text-2xl text-emerald-300';
+    } else if (state === 'speaking') {
+        btn.classList.add('speaking');
+        if (dockBtn) dockBtn.classList.add('speaking');
+        if (orbIcon) orbIcon.className = 'fa-solid fa-volume-high text-2xl text-cyan-300';
+    } else if (state === 'thinking') {
+        btn.classList.add('thinking');
+        if (orbIcon) orbIcon.className = 'fa-solid fa-brain text-2xl text-amber-300';
+    } else {
+        if (orbIcon) orbIcon.className = 'fa-solid fa-microphone text-2xl text-cyan-300';
+    }
+}
+
+// Auto hook visualizer state to core orb
+const origVisualizerSetState = visualizer.setState.bind(visualizer);
+visualizer.setState = (state) => {
+    origVisualizerSetState(state);
+    setCoreState(state);
+};
+
 listener.on('onStart', () => {
     clearTimeout(resumeWakeWordTimer);
     wakeWordListener.pause();
     visualizer.setState('listening');
+    setCoreState('listening');
 });
 listener.on('onEnd', () => {
     isAwaitingCommandAfterWake = false;
     if (!voiceSpeaker.isSpeaking) {
         visualizer.setState('idle');
+        setCoreState('idle');
         safeResumeWakeWord();
     }
 });
@@ -79,6 +113,7 @@ voiceSpeaker.onStart(() => {
         updateMicUI(false);
     }
     visualizer.setState('speaking');
+    setCoreState('speaking');
     if (stopSpeechBtn) stopSpeechBtn.classList.remove('hidden');
     const statusEl = document.getElementById('mic-status-text');
     if (statusEl) statusEl.innerText = 'জার্ভিস কথা বলছে...';
@@ -87,10 +122,11 @@ voiceSpeaker.onEnd(() => {
     if (stopSpeechBtn) stopSpeechBtn.classList.add('hidden');
     const statusEl = document.getElementById('mic-status-text');
     if (statusEl && !listener.isListening && !isAwaitingCommandAfterWake) {
-        statusEl.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
+        statusEl.innerText = 'কথা বলতে স্পর্শ করুন বা বলুন "জার্ভিস"';
     }
     if (!listener.isListening && !isAwaitingCommandAfterWake) {
         visualizer.setState('idle');
+        setCoreState('idle');
         safeResumeWakeWord();
     }
 });
@@ -100,8 +136,9 @@ if (stopSpeechBtn) {
         voiceSpeaker.stop();
         stopSpeechBtn.classList.add('hidden');
         visualizer.setState('idle');
+        setCoreState('idle');
         const statusEl = document.getElementById('mic-status-text');
-        if (statusEl) statusEl.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
+        if (statusEl) statusEl.innerText = 'কথা বলতে স্পর্শ করুন বা বলুন "জার্ভিস"';
         safeResumeWakeWord();
     });
 }
@@ -111,61 +148,40 @@ memoryVault.syncWithCloud();
 
 // 3. UI DOM Bindings
 const micBtn = document.getElementById('mic-toggle-btn');
+const dockMicBtn = document.getElementById('dock-mic-btn');
 const micStatusText = document.getElementById('mic-status-text');
 const transcriptContainer = document.getElementById('transcript-container');
 const textInput = document.getElementById('manual-command-input');
 const sendBtn = document.getElementById('manual-send-btn');
-const skillsListEl = document.getElementById('skills-list');
-const memoryListEl = document.getElementById('memory-list');
-
-// Responsive Drawer Elements
-const drawerBackdrop = document.getElementById('drawer-backdrop');
-const memorySidebar = document.getElementById('memory-sidebar');
-const skillsSidebar = document.getElementById('skills-sidebar');
-const toggleMemoryBtn = document.getElementById('toggle-memory-btn');
-const toggleSkillsBtn = document.getElementById('toggle-skills-btn');
-const closeMemoryBtn = document.getElementById('close-memory-btn');
-const closeSkillsBtn = document.getElementById('close-skills-btn');
-
-function closeAllDrawers() {
-    if (memorySidebar) memorySidebar.classList.remove('drawer-open');
-    if (skillsSidebar) skillsSidebar.classList.remove('drawer-open');
-    if (drawerBackdrop) drawerBackdrop.classList.remove('active');
-}
-
-function openDrawer(sidebarEl) {
-    closeAllDrawers();
-    if (sidebarEl) sidebarEl.classList.add('drawer-open');
-    if (drawerBackdrop) drawerBackdrop.classList.add('active');
-}
-
-if (toggleMemoryBtn) toggleMemoryBtn.addEventListener('click', () => openDrawer(memorySidebar));
-if (closeMemoryBtn) closeMemoryBtn.addEventListener('click', closeAllDrawers);
-if (toggleSkillsBtn) toggleSkillsBtn.addEventListener('click', () => openDrawer(skillsSidebar));
-if (closeSkillsBtn) closeSkillsBtn.addEventListener('click', closeAllDrawers);
-if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeAllDrawers);
 
 // Mic Toggle Logic
 function updateMicUI(isListening) {
     if (isListening) {
-        micBtn.classList.add('active');
-        micStatusText.innerText = 'শুনছি... (Listening)';
-        micStatusText.classList.add('text-emerald-400');
+        setCoreState('listening');
+        if (micStatusText) {
+            micStatusText.innerText = 'শুনছি... (বলুন স্যার)';
+            micStatusText.classList.add('text-emerald-400');
+        }
     } else {
-        micBtn.classList.remove('active');
-        micStatusText.innerText = 'মাইক অন করতে চাপুন বা "জার্ভিস" বলুন';
-        micStatusText.classList.remove('text-emerald-400');
+        setCoreState('idle');
+        if (micStatusText) {
+            micStatusText.innerText = 'কথা বলতে স্পর্শ করুন বা বলুন "জার্ভিস"';
+            micStatusText.classList.remove('text-emerald-400');
+        }
     }
 }
 
-micBtn.addEventListener('click', async () => {
+async function toggleMicrophone() {
     await voiceSpeaker.unlockAudio();
     if (!isMicPermissionGranted) {
         await requestMicrophonePermission();
     }
     listener.toggle();
     updateMicUI(listener.isListening);
-});
+}
+
+if (micBtn) micBtn.addEventListener('click', toggleMicrophone);
+if (dockMicBtn) dockMicBtn.addEventListener('click', toggleMicrophone);
 
 // Keyboard Shortcut: Press and hold Space for Push-to-Talk (Desktop)
 let spacePressed = false;

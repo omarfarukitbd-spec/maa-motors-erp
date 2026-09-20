@@ -4,307 +4,239 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="referrer" content="no-referrer" />
-  <title>JARVIS AI AGENT — মেসার্স মা মোটরস পার্সোনাল এক্সিকিউটিভ এআই</title>
+  <title>JARVIS AI — মেসার্স মা মোটরস পার্সোনাল এক্সিকিউটিভ এআই</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><circle cx='12' cy='12' r='9'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="./src/style.css" />
 </head>
-<body>
+<body class="theme-executive">
 
-  <!-- Backdrop overlay for mobile sliding drawers -->
-  <div id="drawer-backdrop" class="drawer-backdrop"></div>
+  <!-- Persistent Audio Element for 100% Reliable Playback -->
+  <audio id="jarvis-persistent-audio" preload="auto" playsinline class="hidden"></audio>
 
-  <!-- Top App Navigation Bar -->
+  <!-- Top Executive Navigation Bar -->
   <header class="app-header">
     <div class="header-left">
-      <!-- Mobile Drawer Toggle: Memory -->
-      <button id="toggle-memory-btn" class="drawer-toggle-btn" title="স্মৃতিভাণ্ডার দেখুন" aria-label="Memory Vault">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-        </svg>
-        <span class="mobile-btn-text">স্মৃতি</span>
-      </button>
-
       <div class="brand-group">
-        <div class="brand-logo">J</div>
+        <div class="brand-orb-logo">
+          <div class="brand-core-dot"></div>
+          <div class="brand-pulse-ring"></div>
+        </div>
         <div class="brand-titles">
           <div class="brand-row">
-            <span class="brand-name">JARVIS AI</span>
-            <span class="brand-tag">Maa Motors</span>
+            <span class="brand-name">JARVIS</span>
+            <span class="brand-badge">EXECUTIVE</span>
           </div>
-          <span class="brand-subtitle">Bangla Voice Executive</span>
+          <span class="brand-subtitle">Maa Motors Enterprise Brain</span>
         </div>
       </div>
     </div>
 
+    <!-- Center Security Badge -->
+    <div class="header-center">
+      <div class="security-pill" title="ERP ডাটাবেজ ১০০% সুরক্ষিত (কেবল পড়ার অনুমতি)">
+        <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+        <span>১০০% রিড-অনলি মোড</span>
+      </div>
+    </div>
+
+    <!-- Right Header Quick Controls -->
     <div class="header-right">
-      <div class="header-status">
-        <div class="status-dot"></div>
-        <span class="status-label">সক্রিয়</span>
+      <!-- Voice Engine Selector -->
+      <div class="voice-picker-wrap">
+        <select id="voice-selector" class="header-select" title="ভয়েস নির্বাচন করুন">
+          <option value="bn-BD-PradeepNeural" selected>প্রদীপ (Edge Natural BD)</option>
+          <option value="bn-BD-NabanitaNeural">নবনিতা (Edge Natural BD)</option>
+          <option value="onyx">Onyx (ChatGPT Male)</option>
+          <option value="shimmer">Shimmer (ChatGPT Female)</option>
+        </select>
       </div>
 
-      <!-- Voice Test Button -->
-      <button id="test-voice-btn" class="header-action-btn" title="জার্ভিসের ভয়েস টেস্ট করুন">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
-        </svg>
-        <span>সাউন্ড</span>
+      <!-- Sound Test Button -->
+      <button id="test-voice-btn" class="header-icon-btn" title="সাউন্ড ও স্পিকার টেস্ট করুন" aria-label="Test Sound">
+        <i class="fa-solid fa-volume-high text-cyan-400"></i>
       </button>
 
-      <!-- AI Brain & Voice Settings Button -->
-      <button id="open-ai-settings-btn" class="header-action-btn ai-settings-btn" title="ChatGPT ও Gemini AI ভয়েস সেটিংস">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-        </svg>
-        <span>AI সেটিংস</span>
+      <!-- AI Studio Settings Button -->
+      <button id="open-ai-settings-btn" class="header-icon-btn" title="AI Brain ও API কী সেটিংস" aria-label="AI Settings">
+        <i class="fa-solid fa-sliders text-sky-400"></i>
       </button>
 
-      <!-- Voice Selector (Google Gemini & Microsoft Natural BD / ChatGPT) -->
-      <select id="voice-selector" class="header-action-btn voice-select" title="ভয়েস কণ্ঠস্বর নির্বাচন করুন">
-        <optgroup label="বাংলা ভয়েস (Google Gemini ব্রেন ও ফ্রি)">
-          <option value="bn-BD-PradeepNeural" selected>প্রদীপ (পুরুষ কণ্ঠ - Natural BD)</option>
-          <option value="bn-BD-NabanitaNeural">নবনিতা (নারী কণ্ঠ - Natural BD)</option>
-        </optgroup>
-        <optgroup label="ChatGPT নিউরাল ভয়েস (OpenAI)">
-          <option value="onyx">Onyx (গম্ভীর পুরুষ - ChatGPT)</option>
-          <option value="echo">Echo (উষ্ণ পুরুষ - ChatGPT)</option>
-          <option value="alloy">Alloy (ব্যালেন্সড - ChatGPT)</option>
-          <option value="nova">Nova (মিষ্টি নারী - ChatGPT)</option>
-          <option value="shimmer">Shimmer (শান্ত নারী - ChatGPT)</option>
-        </optgroup>
-      </select>
+      <!-- Stop Speech (Conditional) -->
+      <button id="stop-speech-btn" class="header-icon-btn stop-btn hidden" title="কথা বন্ধ করুন" aria-label="Stop Speaking">
+        <i class="fa-solid fa-circle-stop text-rose-400"></i>
+      </button>
 
-      <!-- Google Sign-In Button -->
-      <button id="auth-btn" class="header-action-btn auth-btn" title="গুগল দিয়ে লগইন করুন">
-        <svg width="16" height="16" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-        </svg>
+      <!-- Google / Auth Account Button -->
+      <button id="auth-btn" class="header-auth-btn" title="অ্যাকাউন্টে সাইন-ইন করুন">
+        <i class="fa-solid fa-user-check text-emerald-400" id="auth-btn-icon"></i>
         <span id="auth-btn-text">লগইন</span>
-      </button>
-
-      <!-- Stop Speech Synthesis Button -->
-      <button id="stop-speech-btn" class="header-icon-btn hidden" title="কথা বন্ধ করুন" aria-label="Stop Speaking">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <rect x="6" y="6" width="12" height="12" rx="2"></rect>
-        </svg>
-      </button>
-
-      <!-- Mobile Drawer Toggle: Skills -->
-      <button id="toggle-skills-btn" class="drawer-toggle-btn" title="স্কিল হাব দেখুন" aria-label="Skills Hub">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
-        </svg>
-        <span class="mobile-btn-text">স্কিল</span>
       </button>
     </div>
   </header>
 
-  <!-- Main 3-Column Studio Interface -->
-  <main class="app-body">
+  <!-- Main Viewport Layout -->
+  <main class="app-main">
 
-    <!-- 1. Left Sidebar / Drawer: Memory Vault (স্মৃতিভাণ্ডার) -->
-    <aside id="memory-sidebar" class="sidebar left-sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-          </svg>
-          <span>স্মৃতিভাণ্ডার (Memory)</span>
-        </div>
-        <button id="close-memory-btn" class="close-drawer-btn" aria-label="Close Memory">&times;</button>
-      </div>
-
-      <!-- Quick Add Memory Input -->
-      <div class="memory-quick-add">
-        <input type="text" id="quick-memory-input" placeholder="নতুন স্মৃতি লিখুন (যেমন: ম্যানেজার সুমন)..." />
-        <button id="quick-memory-btn" title="যোগ করুন">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
-          </svg>
+    <!-- Top Executive Hero: Ambient AI Voice Core -->
+    <section class="hero-stage">
+      
+      <!-- Living AI Orb & Soundwave Canvas -->
+      <div class="orb-visualizer-container">
+        <canvas id="visualizer-canvas" class="visualizer-canvas"></canvas>
+        
+        <!-- Multi-layer Glassmorphic Voice Core Button -->
+        <button id="mic-toggle-btn" class="living-core-orb" title="কথা বলতে ট্যাপ করুন" aria-label="Voice Activation">
+          <div class="orb-outer-glow"></div>
+          <div class="orb-reactive-ring"></div>
+          <div class="orb-inner-sphere">
+            <i class="fa-solid fa-microphone text-2xl text-cyan-300" id="orb-mic-icon"></i>
+          </div>
         </button>
       </div>
 
-      <div class="card-list" id="memory-list">
-        <!-- Dynamic Memory Cards -->
-      </div>
-    </aside>
-
-    <!-- 2. Central Stage: Arc Reactor Visualizer + Quick Prompts + Transcript + Controls -->
-    <section class="stage">
-      
-      <!-- Visualizer & Glowing Voice Arc Core -->
-      <div class="visualizer-wrapper">
-        <canvas id="visualizer-canvas"></canvas>
-        <div class="mic-btn-container">
-          <button id="mic-toggle-btn" class="mic-btn" title="কথা বলতে চাপুন বা স্পেসবার ধরে রাখুন" aria-label="Voice Input">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
-            </svg>
-          </button>
+      <!-- State Caption -->
+      <div class="core-status-wrap">
+        <div class="mic-status-label" id="mic-status-text">
+          কথা বলতে স্পর্শ করুন বা বলুন <span class="text-cyan-400 font-bold">"জার্ভিস"</span>
         </div>
-      </div>
-
-      <div class="mic-status-label" id="mic-status-text">
-        মাইক অন করতে চাপুন বা "জার্ভিস" বলুন
-      </div>
-
-      <!-- Hands-Free Wake Word Pill Badge -->
-      <div class="wake-word-badge-container">
-        <button id="wake-word-toggle-btn" class="wake-word-pill" title="হ্যান্ডস-ফ্রি ওয়েক ওয়ার্ড চালু করতে ক্লিক করুন">
-          <span class="pulse-dot"></span>
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
-          </svg>
+        
+        <!-- Compact Wake Word Pill -->
+        <button id="wake-word-toggle-btn" class="wake-word-chip" title="হ্যান্ডস-ফ্রি ওয়েক ওয়ার্ড টগল">
+          <span class="live-pulse-dot"></span>
+          <i class="fa-solid fa-ear-listen text-xs text-sky-400"></i>
           <span id="wake-word-status-label">ওয়েক ওয়ার্ড: <strong>চেক হচ্ছে...</strong></span>
         </button>
       </div>
 
-      <!-- Quick Voice Prompt Action Chips -->
-      <div class="quick-prompts-bar">
-        <button class="prompt-chip" data-command="করিমের বকেয়া কত?">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-          <span>করিমের বকেয়া কত?</span>
-        </button>
-        <button class="prompt-chip" data-command="এই মাসের বিক্রি কত?">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-          <span>এই মাসের বিক্রি</span>
-        </button>
-        <button class="prompt-chip" data-command="আজকে কি কি চালান হলো?">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          <span>আজকের চালান</span>
-        </button>
-        <button class="prompt-chip" data-command="সেরা ক্রেতা কারা?">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
-          <span>সেরা ক্রেতা</span>
-        </button>
-        <button class="prompt-chip" data-command="কালেকশন রিকভারি রেট কেমন?">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-          <span>রিকভারি রেট</span>
-        </button>
-        <button class="prompt-chip" data-command="গত পরশু কত কালেকশন হয়েছিল?">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-          <span>গত পরশু কালেকশন</span>
-        </button>
-        <button class="prompt-chip" data-command="আজকের ক্যাশ ও ব্যাংকে কত টাকা আছে?">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span>ক্যাশ ও ব্যাংক স্থিতি</span>
-        </button>
-        <button class="prompt-chip" data-command="দুবাই কনটেইনার অডিটের হিসাব বলো">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"></path></svg>
-          <span>দুবাই অডিট (AED)</span>
-        </button>
-        <button class="prompt-chip" data-command="মনে রাখবা বৃহস্পতিবার আমাদের অডিট ডে">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-          <span>নোট সেভ করুন</span>
-        </button>
-      </div>
-
-      <!-- Real-time Conversation Stream -->
-      <div class="transcript-wrapper">
-        <div class="transcript-stream" id="transcript-container">
-          <div class="message-bubble jarvis-msg">
-            <div class="msg-header">
-              <span class="msg-sender">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="msg-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                জার্ভিস এক্সিকিউটিভ
-              </span>
-              <span class="msg-time">এখন</span>
-            </div>
-            <div class="msg-body">
-              শুভ অপরাহ্ন স্যার! আমি মেসার্স মা মোটরস এর পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস। আমি পুরোপুরি সক্রিয় আছি। আপনি মুখে পরিষ্কার বাংলায় কথা বলুন অথবা নিচের বাটনে চাপুন।
-              <div class="msg-action-row">
-                <button class="msg-action-btn" onclick="window.triggerVoiceTest()">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-                  <span>সাউন্ড টেস্ট করুন</span>
-                </button>
-                <button class="msg-action-btn auth-action-btn" onclick="window.triggerGoogleAuth()">
-                  <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                  <span>গুগল লগইন</span>
-                </button>
-              </div>
-            </div>
+      <!-- 1-Tap Executive Action Grid (High-Frequency ERP Inquiries) -->
+      <div class="executive-cards-grid">
+        <button type="button" class="exec-card" onclick="window.triggerQuickCommand('আজকের পূর্ণাঙ্গ রিপোর্ট')">
+          <div class="exec-card-icon bg-sky-500/10 border-sky-500/20 text-sky-400">
+            <i class="fa-solid fa-chart-pie"></i>
           </div>
-        </div>
-      </div>
+          <div class="exec-card-texts">
+            <span class="exec-card-title">আজকের রিপোর্ট</span>
+            <span class="exec-card-desc">দৈনিক সেলস, খরচ ও নিট আয়</span>
+          </div>
+        </button>
 
-      <!-- Quick Action Pills for Immediate 1-Click Operations -->
-      <div class="quick-action-bar">
-        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('আজকের পূর্ণাঙ্গ রিপোর্ট')">
-          <i class="fa-solid fa-chart-pie text-sky-400"></i>
-          <span>আজকের রিপোর্ট</span>
+        <button type="button" class="exec-card" onclick="window.triggerQuickCommand('শোরুম ক্যাশ কত?')">
+          <div class="exec-card-icon bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
+            <i class="fa-solid fa-cash-register"></i>
+          </div>
+          <div class="exec-card-texts">
+            <span class="exec-card-title">শোরুম ক্যাশ</span>
+            <span class="exec-card-desc">হাতে নগদ ক্যাশ ব্যালেন্স</span>
+          </div>
         </button>
-        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('শোরুম ক্যাশ কত?')">
-          <i class="fa-solid fa-cash-register text-emerald-400"></i>
-          <span>শোরুম ক্যাশ</span>
-        </button>
-        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('ব্যাংক ব্যালেন্স কত?')">
-          <i class="fa-solid fa-building-columns text-amber-400"></i>
-          <span>ব্যাংক ব্যালেন্স</span>
-        </button>
-        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('আজকের মোট বিক্রি কত?')">
-          <i class="fa-solid fa-receipt text-indigo-400"></i>
-          <span>আজকের বিক্রি</span>
-        </button>
-        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('টপ দেনাদার কারা?')">
-          <i class="fa-solid fa-users text-rose-400"></i>
-          <span>টপ দেনাদার</span>
-        </button>
-        <button type="button" class="quick-pill-btn" onclick="window.triggerQuickCommand('লেজার অডিট করো')">
-          <i class="fa-solid fa-shield-halved text-teal-400"></i>
-          <span>লেজার অডিট</span>
-        </button>
-      </div>
 
-      <!-- Manual Bottom Input Bar -->
-      <div class="input-bar">
-        <input type="text" id="manual-command-input" placeholder="বাংলায় ভয়েস দিন অথবা টাইপ করুন (যেমন: করিমের বকেয়া কত?)..." autocomplete="off" />
-        <button id="manual-send-btn" aria-label="Send">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-          </svg>
-          <span class="send-btn-text">পাঠান</span>
+        <button type="button" class="exec-card" onclick="window.triggerQuickCommand('ব্যাংক ব্যালেন্স কত?')">
+          <div class="exec-card-icon bg-amber-500/10 border-amber-500/20 text-amber-400">
+            <i class="fa-solid fa-building-columns"></i>
+          </div>
+          <div class="exec-card-texts">
+            <span class="exec-card-title">ব্যাংক ব্যালেন্স</span>
+            <span class="exec-card-desc">সব ব্যাংক একাউন্টের স্থিতি</span>
+          </div>
+        </button>
+
+        <button type="button" class="exec-card" onclick="window.triggerQuickCommand('টপ দেনাদার কারা?')">
+          <div class="exec-card-icon bg-rose-500/10 border-rose-500/20 text-rose-400">
+            <i class="fa-solid fa-user-clock"></i>
+          </div>
+          <div class="exec-card-texts">
+            <span class="exec-card-title">বকেয়া তাগাদা</span>
+            <span class="exec-card-desc">সর্বোচ্চ বাকি থাকা কাস্টমার</span>
+          </div>
+        </button>
+
+        <button type="button" class="exec-card" onclick="window.triggerQuickCommand('দুবাই কনটেইনার অডিটের হিসাব বলো')">
+          <div class="exec-card-icon bg-purple-500/10 border-purple-500/20 text-purple-400">
+            <i class="fa-solid fa-ship"></i>
+          </div>
+          <div class="exec-card-texts">
+            <span class="exec-card-title">দুবাই অডিট</span>
+            <span class="exec-card-desc">কনটেইনার ও AED ব্যালেন্স</span>
+          </div>
         </button>
       </div>
 
     </section>
 
-    <!-- 3. Right Sidebar / Drawer: Active Skills Hub (সক্রিয় স্কিল তালিকা) -->
-    <aside id="skills-sidebar" class="sidebar right-sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
-          </svg>
-          <span>সক্রিয় স্কিল হাব (Skills)</span>
+    <!-- Conversation Stream / Executive Response Showcase -->
+    <section class="conversation-feed-section">
+      <div class="conversation-container" id="transcript-container">
+        <!-- Welcome Executive Card -->
+        <div class="message-bubble jarvis-bubble">
+          <div class="bubble-header">
+            <div class="bubble-sender">
+              <i class="fa-solid fa-robot text-cyan-400"></i>
+              <span>জার্ভিস এক্সিকিউটিভ</span>
+            </div>
+            <span class="bubble-time">এখন</span>
+          </div>
+          <div class="bubble-body">
+            শুভ অপরাহ্ন স্যার! আমি মেসার্স মা মোটরস-এর পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস। আমি সম্পূর্ণ সক্রিয় এবং ইআরপি ডেটাবেজের সাথে সরাসরি সংযুক্ত আছি।
+            <div class="bubble-actions">
+              <button class="bubble-btn" onclick="window.triggerVoiceTest()">
+                <i class="fa-solid fa-volume-high text-cyan-400"></i>
+                <span>সাউন্ড টেস্ট</span>
+              </button>
+              <button class="bubble-btn" onclick="window.triggerGoogleAuth()">
+                <i class="fa-solid fa-key text-amber-400"></i>
+                <span>লগইন একাউন্ট</span>
+              </button>
+            </div>
+          </div>
         </div>
-        <button id="close-skills-btn" class="close-drawer-btn" aria-label="Close Skills">&times;</button>
       </div>
-      <div class="card-list" id="skills-list">
-        <!-- Dynamic Skill Cards -->
+    </section>
+
+    <!-- Floating Bottom Command & Voice Dock -->
+    <footer class="floating-command-dock">
+      <div class="dock-inner">
+        <!-- Dock Voice Mic Quick Button -->
+        <button id="dock-mic-btn" class="dock-mic-action" title="কথা বলুন" aria-label="Dock Voice Input">
+          <i class="fa-solid fa-microphone text-white"></i>
+        </button>
+
+        <!-- Command Text Input -->
+        <div class="dock-input-wrap">
+          <input 
+            type="text" 
+            id="manual-command-input" 
+            placeholder="যেকোনো প্রশ্ন বাংলায় লিখুন বা মুখে বলুন..." 
+            autocomplete="off" 
+            spellcheck="false"
+          />
+        </div>
+
+        <!-- Send Button -->
+        <button id="manual-send-btn" class="dock-send-action" title="পাঠান" aria-label="Send">
+          <i class="fa-solid fa-arrow-up"></i>
+        </button>
       </div>
-    </aside>
+    </footer>
 
   </main>
 
-  <!-- Auth Modal (Google & Email/Password) -->
-  <div id="auth-modal" class="auth-modal-backdrop hidden">
-    <div class="auth-modal-card">
-      <div class="auth-modal-header">
-        <div class="auth-modal-title">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-          </svg>
+  <!-- Clean Auth Modal (Google & Email/Password) -->
+  <div id="auth-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-shield-halved text-cyan-400"></i>
           <span>মা মোটরস অথেনটিকেশন</span>
         </div>
-        <button id="close-auth-modal" class="close-drawer-btn" aria-label="Close Modal">&times;</button>
+        <button id="close-auth-modal" class="modal-close-btn" aria-label="Close Modal">&times;</button>
       </div>
 
-      <div class="auth-modal-body">
-        <!-- 1. Google 1-Click Sign In -->
-        <button id="modal-google-btn" class="modal-google-btn" type="button">
+      <div class="modal-body">
+        <button id="modal-google-btn" class="google-auth-btn" type="button">
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -318,7 +250,6 @@
           <span>অথবা ইমেইল ও পাসওয়ার্ড</span>
         </div>
 
-        <!-- 2. Email & Password Form (Always works on all domains/IPs) -->
         <form id="email-login-form" class="auth-form">
           <div class="form-group">
             <label for="login-email">ইমেইল অ্যাড্রেস</label>
@@ -326,374 +257,141 @@
           </div>
           <div class="form-group">
             <label for="login-password">পাসওয়ার্ড</label>
-            <input type="password" id="login-password" placeholder="আপনার অ্যাকাউন্টের পাসওয়ার্ড দিন" required autocomplete="current-password" />
+            <input type="password" id="login-password" placeholder="আপনার পাসওয়ার্ড দিন" required autocomplete="current-password" />
           </div>
-          <div id="auth-error-msg" class="auth-error-msg hidden"></div>
+          <div id="auth-error-msg" class="auth-error-banner hidden"></div>
           <button type="submit" id="email-login-submit" class="auth-submit-btn">
             লগইন করুন
           </button>
         </form>
-
-        <div class="auth-hint-box">
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-amber-400 flex-shrink-0">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span>ইমেইল ও পাসওয়ার্ড দিয়ে যেকোনো মোবাইল, ল্যাপটপ বা আইপিতে সবসময় নিশ্চিতভাবে সরাসরি লগইন করা যায়।</span>
-        </div>
       </div>
     </div>
   </div>
 
-  <!-- AI Brain & Voice Engine Settings Studio Modal (Widescreen 3-Column Cockpit) -->
-  <div id="ai-settings-modal" class="auth-modal-backdrop hidden">
-    <div class="ai-studio-card">
-      <!-- Studio Header -->
-      <div class="ai-studio-header">
-        <div class="ai-studio-title-wrap">
-          <div class="ai-studio-icon-glow">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-cyan-400">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-            </svg>
-          </div>
-          <div>
-            <div class="ai-studio-heading">
-              <span>জার্ভিস এআই এক্সিকিউটিভ স্টুডিও (AI Studio & Engine Cockpit)</span>
-              <span class="studio-status-pill">Enterprise Cockpit</span>
-            </div>
-            <div class="ai-studio-subheading">
-              মাল্টি-প্রোভাইডার এআই ব্রেইন, নিউরাল ভয়েস সিন্থেসাইজার ও রিয়েল-টাইম ডায়াগনস্টিকস
-            </div>
-          </div>
+  <!-- AI Brain & Engine Settings Modal (Unified Studio Cockpit) -->
+  <div id="ai-settings-modal" class="modal-backdrop hidden">
+    <div class="modal-card studio-modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-sliders text-cyan-400"></i>
+          <span>জার্ভিস এআই স্টুডিও ও ইঞ্জিন সেটিংস</span>
         </div>
-
-        <div class="ai-studio-header-actions">
-          <button type="button" id="btn-save-ai-settings-top" class="studio-top-save-btn">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            <span>সেটিংস সেভ</span>
+        <div class="modal-header-actions">
+          <button type="button" id="btn-save-ai-settings-top" class="studio-save-btn">
+            <i class="fa-solid fa-floppy-disk mr-1"></i>
+            <span>সেভ করুন</span>
           </button>
-          <button id="close-ai-settings-modal" class="studio-close-btn" aria-label="Close Settings">&times;</button>
+          <button id="close-ai-settings-modal" class="modal-close-btn" aria-label="Close Settings">&times;</button>
         </div>
       </div>
 
-      <!-- Studio Grid (3 Columns) -->
-      <div class="ai-studio-body">
-        <div class="ai-studio-grid">
-          
-          <!-- ==================== COLUMN 1: AI BRAIN & MULTI-KEY GATEWAYS ==================== -->
-          <div class="studio-col studio-brain-col">
-            <div class="studio-col-header">
-              <div class="studio-col-title">
-                <svg width="18" height="18" fill="none" stroke="#38bdf8" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                <span>১. এআই ব্রেন ও মাল্টি-কী গেটওয়ে</span>
-              </div>
-              <span class="studio-badge-glow">Multi-Provider</span>
+      <div class="modal-body studio-modal-body">
+        <!-- Auto Failover Banner -->
+        <div class="failover-strip">
+          <div class="failover-strip-info">
+            <div class="failover-strip-title">
+              <i class="fa-solid fa-bolt text-amber-400"></i>
+              <span>স্মার্ট অটো-ফেলওভার (Auto-Failover)</span>
             </div>
-
-            <!-- Auto Failover Card -->
-            <div class="auto-failover-card">
-              <div class="failover-info">
-                <div class="failover-title">
-                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  <span>স্মার্ট অটো-ফেলওভার (Auto-Failover)</span>
-                </div>
-                <div class="failover-desc">
-                  একটি কী-এর রেট লিমিট বা কোটা শেষ হলে পরবর্তী কী বা অল্টারনেট মডেলে স্বয়ংক্রিয় সুইচ করবে
-                </div>
-              </div>
-              <label class="switch-toggle">
-                <input type="checkbox" id="input-auto-failover-toggle" checked>
-                <span class="switch-slider"></span>
-              </label>
-            </div>
-
-            <!-- Provider Switcher -->
-            <div class="form-group" style="margin-top: 14px;">
-              <label class="form-label">সক্রিয় এআই প্রোভাইডার নির্বাচন করুন</label>
-              <div class="provider-switch-grid">
-                <button type="button" id="select-provider-gemini" class="provider-tab-btn active">
-                  <div class="provider-tab-header">
-                    <span class="provider-title">Google Gemini Flash</span>
-                    <span class="provider-tag green">Recommended</span>
-                  </div>
-                  <span class="provider-subtitle">১৫০০ ফ্রি রিকোয়েস্ট/দিন ও হাই-স্পিড বাংলা</span>
-                </button>
-                <button type="button" id="select-provider-groq" class="provider-tab-btn">
-                  <div class="provider-tab-header">
-                    <span class="provider-title">Groq Cloud (LPU)</span>
-                    <span class="provider-tag amber">Fastest</span>
-                  </div>
-                  <span class="provider-subtitle">সুপারফাস্ট Llama 3.3 ও Whisper STT</span>
-                </button>
-                <button type="button" id="select-provider-openrouter" class="provider-tab-btn">
-                  <div class="provider-tab-header">
-                    <span class="provider-title">OpenRouter / OmniRouters</span>
-                    <span class="provider-tag purple">Free Gateway</span>
-                  </div>
-                  <span class="provider-subtitle">Llama 3.3, DeepSeek R1 ও রাউটার এআই</span>
-                </button>
-                <button type="button" id="select-provider-openai" class="provider-tab-btn">
-                  <div class="provider-tab-header">
-                    <span class="provider-title">OpenAI (ChatGPT)</span>
-                    <span class="provider-tag blue">Official</span>
-                  </div>
-                  <span class="provider-subtitle">চ্যাটজিপিটি অফিসিয়াল এআই ও ভয়েস</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Gemini Key Section -->
-            <div id="gemini-config-section" class="provider-section">
-              <div class="form-group">
-                <div class="label-row">
-                  <label for="input-gemini-key">Google Gemini API Key(s)</label>
-                  <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="help-link">ফ্রি কী সংগ্রহ করুন &rarr;</a>
-                </div>
-                <div class="key-input-wrapper">
-                  <input type="password" id="input-gemini-key" placeholder="AIzaSy... বা AQ.Ab8... (একাধিক কী দিতে কমা ব্যবহার করুন)" autocomplete="off" />
-                  <button type="button" id="toggle-gemini-key-vis" class="toggle-vis-btn" title="Show/Hide">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                  </button>
-                </div>
-                <p class="form-hint hint-gemini">
-                  📌 গুগল জেমিনি এআই কী আপনার জিমেইল একাউন্ট দিয়ে <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a> থেকে ১ ক্লিকে কপি করুন। এটি সম্পূর্ণ ফ্রিতে প্রতিদিন ১৫০০ রিকোয়েস্ট প্রদান করে।
-                </p>
-              </div>
-            </div>
-
-            <!-- Groq Key Section -->
-            <div id="groq-config-section" class="provider-section hidden">
-              <div class="form-group">
-                <div class="label-row">
-                  <label for="input-groq-key">Groq Cloud API Key(s)</label>
-                  <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="help-link">ফ্রি কী নিন &rarr;</a>
-                </div>
-                <div class="key-input-wrapper">
-                  <input type="password" id="input-groq-key" placeholder="gsk_... (একাধিক কী দিতে কমা ব্যবহার করুন)" autocomplete="off" />
-                  <button type="button" id="toggle-groq-key-vis" class="toggle-vis-btn" title="Show/Hide">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                  </button>
-                </div>
-                <p class="form-hint hint-groq">
-                  ⚡ <strong>Groq LPU:</strong> বিশ্বের দ্রুততম এআই ইঞ্জিন (৩০০+ টোকেন/সেকেন্ড)! সম্পূর্ণ বিনামূল্যে Llama-3.3-70B এবং উন্নত Whisper Large v3 ভয়েস ইনপুট প্রদান করে।
-                </p>
-              </div>
-            </div>
-
-            <!-- OpenRouter / OmniRouters Key Section -->
-            <div id="openrouter-config-section" class="provider-section hidden">
-              <div class="form-group">
-                <div class="label-row">
-                  <label for="input-openrouter-key">OpenRouter / OmniRouters API Key(s)</label>
-                  <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" class="help-link">OpenRouter কী নিন &rarr;</a>
-                </div>
-                <div class="key-input-wrapper">
-                  <input type="password" id="input-openrouter-key" placeholder="sk-or-v1-... বা sk-jk... (একাধিক কী দিতে কমা ব্যবহার করুন)" autocomplete="off" />
-                  <button type="button" id="toggle-openrouter-key-vis" class="toggle-vis-btn" title="Show/Hide">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                  </button>
-                </div>
-                <p class="form-hint hint-openrouter">
-                  🌐 <strong>রাউটার সাপোর্ট:</strong> এই গেটওয়েতে <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a> (<code>sk-or-v1-...</code>) এবং <a href="https://omnirouters.com/keys" target="_blank" rel="noopener">OmniRouters</a> (<code>sk-jk...</code>) উভয় মডেল ক্লাস্টার সমর্থিত। Llama 3.3 70B ও DeepSeek R1 মডেলগুলো বিনামূল্যে ব্যবহার করা যায়।
-                </p>
-              </div>
-            </div>
-
-            <!-- OpenAI Key Section -->
-            <div id="openai-config-section" class="provider-section hidden">
-              <div class="form-group">
-                <div class="label-row">
-                  <label for="input-openai-key">OpenAI API Key (ChatGPT Voice & Brain)</label>
-                  <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" class="help-link">কী সংগ্রহ করুন &rarr;</a>
-                </div>
-                <div class="key-input-wrapper">
-                  <input type="password" id="input-openai-key" placeholder="sk-proj-..." autocomplete="off" />
-                  <button type="button" id="toggle-openai-key-vis" class="toggle-vis-btn" title="Show/Hide">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                  </button>
-                </div>
-                <p class="form-hint">আপনার ডিভাইসে কী সুরক্ষিত থাকবে। এর মাধ্যমে চ্যাটজিপিটি-র অফিসিয়াল ভয়েস সরাসরি চলবে।</p>
-              </div>
+            <div class="failover-strip-desc">
+              কোনো একটি কী-এর কোটা শেষ হলে স্বয়ংক্রিয়ভাবে ব্যাকআপ কী বা প্রোভাইডারে সুইচ করবে
             </div>
           </div>
-
-          <!-- ==================== COLUMN 2: NEURAL VOICE ENGINES ==================== -->
-          <div class="studio-col studio-voice-col">
-            <div class="studio-col-header">
-              <div class="studio-col-title">
-                <svg width="18" height="18" fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                <span>২. নিউরাল ভয়েস ও অডিও ইঞ্জিন</span>
-              </div>
-              <span class="studio-badge-glow green">Studio Quality</span>
-            </div>
-
-            <!-- Microsoft Natural Voice Section (Zero Config / Free) -->
-            <div class="voice-panel-box primary">
-              <div class="voice-panel-title">
-                <div class="voice-panel-name">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <span>Microsoft Natural বাংলাদেশী কণ্ঠ (১০০% ফ্রি)</span>
-                </div>
-                <span class="studio-pill-ready">রেডি টু প্লে</span>
-              </div>
-              <p class="voice-panel-desc">
-                কোনো পেইড এপিআই বা কনফিগারেশন ছাড়াই মানুষের মতো চমৎকার ও প্রাণবন্ত বাংলা কথা বলবে।
-              </p>
-              <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
-                <label for="select-gemini-voice" style="font-size: 11.5px; color: #67e8f9; font-weight: 600;">বাংলা নিউরাল ভয়েস মডেল</label>
-                <select id="select-gemini-voice" class="settings-select" style="width: 100%;">
-                  <option value="bn-BD-PradeepNeural">প্রদীপ (গম্ভীর ও আত্মবিশ্বাসী পুরুষ কণ্ঠ — রিকমেন্ডেড)</option>
-                  <option value="bn-BD-NabanitaNeural">নবনিতা (মধুর ও স্পষ্ট নারী কণ্ঠ)</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- ChatGPT Voice Selector -->
-            <div class="voice-panel-box">
-              <div class="voice-panel-title">
-                <div class="voice-panel-name">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                  <span>OpenAI চ্যাটজিপিটি অফিসিয়াল ভয়েস</span>
-                </div>
-                <span class="studio-pill-tag">OpenAI</span>
-              </div>
-              <div class="form-group" style="margin-top: 8px; margin-bottom: 0;">
-                <label for="select-openai-voice" style="font-size: 11.5px; color: #94a3b8;">চ্যাটজিপিটি ভয়েস পার্সোনা</label>
-                <select id="select-openai-voice" class="settings-select" style="width: 100%;">
-                  <option value="onyx">Onyx (গম্ভীর পুরুষ নির্বাহী — রিকমেন্ডেড)</option>
-                  <option value="echo">Echo (উষ্ণ ও আন্তরিক পুরুষ কণ্ঠ)</option>
-                  <option value="alloy">Alloy (আধুনিক ও ব্যালেন্সড কণ্ঠ)</option>
-                  <option value="nova">Nova (প্রাণবন্ত ও মিষ্টি নারী কণ্ঠ)</option>
-                  <option value="shimmer">Shimmer (শান্ত ও মার্জিত নারী কণ্ঠ)</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- ElevenLabs TTS (Optional) -->
-            <div class="voice-panel-box eleven">
-              <div class="voice-panel-title">
-                <div class="voice-panel-name">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                  <span>ElevenLabs Voice API (ঐচ্ছিক)</span>
-                </div>
-                <a href="https://elevenlabs.io" target="_blank" rel="noopener" class="help-link">Free Key নিন &rarr;</a>
-              </div>
-              <div class="key-input-wrapper" style="margin-top: 8px;">
-                <input type="password" id="input-elevenlabs-key" placeholder="AQ.Ab8R... বা sk_... (১০,০০০ অক্ষর/মাস ফ্রি)" autocomplete="off" />
-              </div>
-              <div style="margin-top: 8px;">
-                <label style="color: #a7f3d0; font-size: 11px; display: block; margin-bottom: 4px;">Voice ID (ঐচ্ছিক — কাস্টম ক্লোন করা কণ্ঠের আইডি)</label>
-                <input type="text" id="input-elevenlabs-voice-id" placeholder="pNInz6obpgDQGcFmaJgB" autocomplete="off" class="studio-sub-input" />
-              </div>
-            </div>
-
-            <!-- Google Cloud TTS (Optional) -->
-            <div class="voice-panel-box gcp">
-              <div class="voice-panel-title">
-                <div class="voice-panel-name">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
-                  <span>Google Cloud TTS (ঐচ্ছিক)</span>
-                </div>
-                <a href="https://console.cloud.google.com/apis/library/texttospeech.googleapis.com" target="_blank" rel="noopener" class="help-link">Enable &rarr;</a>
-              </div>
-              <div class="key-input-wrapper" style="margin-top: 8px;">
-                <input type="password" id="input-gcp-tts-key" placeholder="AIzaSy... (১০ লক্ষ অক্ষর/মাস ফ্রি)" autocomplete="off" />
-              </div>
-            </div>
-          </div>
-
-          <!-- ==================== COLUMN 3: LIVE DIAGNOSTICS & TEST SANDBOX ==================== -->
-          <div class="studio-col studio-diagnostics-col">
-            <div class="studio-col-header">
-              <div class="studio-col-title">
-                <svg width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                <span>৩. লাইভ ডায়াগনস্টিকস ও স্যান্ডবক্স</span>
-              </div>
-              <span class="studio-badge-glow amber">Real-Time</span>
-            </div>
-
-            <!-- Health Status Panel -->
-            <div class="diagnostics-panel">
-              <div class="diag-status-row">
-                <span class="diag-label">বর্তমান সক্রিয় ব্রেইন:</span>
-                <span id="studio-active-provider-badge" class="diag-val-badge">Google Gemini</span>
-              </div>
-              <div class="diag-status-row">
-                <span class="diag-label">সংরক্ষিত কী পুল:</span>
-                <span id="studio-total-keys-count" class="diag-val-badge">১ টি সক্রিয় কী</span>
-              </div>
-              <div class="diag-status-row">
-                <span class="diag-label">ভয়েস ইঞ্জিন মোড:</span>
-                <span id="studio-active-voice-badge" class="diag-val-badge green">Microsoft Natural</span>
-              </div>
-            </div>
-
-            <!-- Interactive API Key Ping / Speed Test Sandbox -->
-            <div class="sandbox-box">
-              <div class="sandbox-header">
-                <span class="sandbox-title">⚡ রিয়েল-টাইম এপিআই স্পিড ও পিং টেস্ট</span>
-                <button type="button" id="btn-test-active-key" class="btn-test-ping">
-                  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  <span>পিং টেস্ট করুন</span>
-                </button>
-              </div>
-              <div id="studio-key-test-output" class="sandbox-output">
-                এখানে ক্লিক করে সক্রিয় এপিআই কী ও রেসপন্স স্পিড সরাসরি যাচাই করুন...
-              </div>
-            </div>
-
-            <!-- Voice Preview Sandbox -->
-            <div class="sandbox-box">
-              <div class="sandbox-header">
-                <span class="sandbox-title">🎙️ ভয়েস প্রিভিউ ও অডিও টেস্ট</span>
-              </div>
-              <p style="font-size: 11.5px; color: #94a3b8; margin: 6px 0 10px 0; line-height: 1.4;">
-                বাটনে ক্লিক করলে নির্বাচিত ভয়েস দিয়ে জার্ভিস আপনাকে সালাম ও শুভেচ্ছা জানাবে।
-              </p>
-              <button type="button" id="btn-preview-voice" class="voice-preview-btn" style="width: 100%; justify-content: center;">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span>ভয়েস প্রিভিউ শুনুন</span>
-              </button>
-            </div>
-
-            <!-- Quick Free Key Guide -->
-            <div class="quick-guide-box">
-              <div class="guide-title">
-                <svg width="14" height="14" fill="none" stroke="#38bdf8" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>দ্রুত ফ্রি এপিআই কী সংগ্রহের লিংক:</span>
-              </div>
-              <ul class="guide-list">
-                <li><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>: ১৫০০ রিকোয়েস্ট/দিন (১০০% ফ্রি)</li>
-                <li><a href="https://console.groq.com/keys" target="_blank" rel="noopener">Groq Cloud Console</a>: সুপারফাস্ট Llama 3.3 (ফ্রি)</li>
-                <li><a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter Keys</a>: ২০+ ফ্রি মডেল লাইব্রেরি</li>
-              </ul>
-            </div>
-          </div>
-
+          <label class="switch-toggle">
+            <input type="checkbox" id="input-auto-failover-toggle" checked>
+            <span class="switch-slider"></span>
+          </label>
         </div>
-      </div>
 
-      <!-- Studio Footer -->
-      <div class="ai-studio-footer">
-        <div id="ai-settings-feedback" class="settings-feedback-msg hidden"></div>
-        <div class="ai-studio-footer-buttons">
-          <button type="button" id="close-ai-settings-footer-btn" class="studio-btn-cancel">বন্ধ করুন</button>
-          <button type="button" id="btn-save-ai-settings" class="settings-save-btn">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-            <span>সেটিংস সেভ ও সক্রিয় করুন</span>
-          </button>
+        <!-- Provider Switcher -->
+        <div class="form-group">
+          <label class="form-label">সক্রিয় এআই প্রোভাইডার নির্বাচন করুন</label>
+          <div class="provider-switch-grid">
+            <button type="button" id="select-provider-gemini" class="provider-tab-btn active">
+              <span class="provider-title">Google Gemini Flash</span>
+              <span class="provider-tag green">Recommended</span>
+            </button>
+            <button type="button" id="select-provider-groq" class="provider-tab-btn">
+              <span class="provider-title">Groq Cloud</span>
+              <span class="provider-tag amber">Fastest</span>
+            </button>
+            <button type="button" id="select-provider-openrouter" class="provider-tab-btn">
+              <span class="provider-title">OmniRouters / OpenRouter</span>
+              <span class="provider-tag purple">Free Multi-Key</span>
+            </button>
+            <button type="button" id="select-provider-openai" class="provider-tab-btn">
+              <span class="provider-title">OpenAI (ChatGPT)</span>
+              <span class="provider-tag blue">Official</span>
+            </button>
+          </div>
         </div>
+
+        <!-- Gemini Config Section -->
+        <div id="gemini-config-section" class="provider-section">
+          <div class="form-group">
+            <label for="input-gemini-key">Google Gemini API Key(s)</label>
+            <textarea id="input-gemini-key" rows="2" placeholder="AIzaSy... অথবা AQ.... (একাধিক কী দিতে পারেন কমা বা নতুন লাইনে)"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="select-gemini-model">মডেল</label>
+            <select id="select-gemini-model" class="form-select">
+              <option value="gemini-3.6-flash" selected>Gemini 3.6 Flash (সর্বাধুনিক ও দ্রুততম)</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Groq Config Section -->
+        <div id="groq-config-section" class="provider-section hidden">
+          <div class="form-group">
+            <label for="input-groq-key">Groq API Key(s)</label>
+            <textarea id="input-groq-key" rows="2" placeholder="gsk_..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="select-groq-model">মডেল</label>
+            <select id="select-groq-model" class="form-select">
+              <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B Versatile</option>
+              <option value="llama3-70b-8192">Llama 3 70B</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- OpenRouter Config Section -->
+        <div id="openrouter-config-section" class="provider-section hidden">
+          <div class="form-group">
+            <label for="input-openrouter-key">OmniRouters / OpenRouter API Key(s)</label>
+            <textarea id="input-openrouter-key" rows="2" placeholder="sk-jk-... অথবা sk-or-..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="select-openrouter-model">মডেল</label>
+            <select id="select-openrouter-model" class="form-select">
+              <option value="meta-llama/llama-3.3-70b-instruct:free" selected>Llama 3.3 70B Instruct (Free)</option>
+              <option value="deepseek/deepseek-r1:free">DeepSeek R1 (Free)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- OpenAI Config Section -->
+        <div id="openai-config-section" class="provider-section hidden">
+          <div class="form-group">
+            <label for="input-openai-key">OpenAI API Key(s)</label>
+            <textarea id="input-openai-key" rows="2" placeholder="sk-proj-..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="select-openai-model">মডেল</label>
+            <select id="select-openai-model" class="form-select">
+              <option value="gpt-4o-mini" selected>GPT-4o Mini</option>
+              <option value="gpt-4o">GPT-4o</option>
+            </select>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
-  <!-- Persistent Audio Element for 100% Autoplay Compliance -->
-  <audio id="jarvis-persistent-audio" preload="auto" class="hidden"></audio>
 
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
-
