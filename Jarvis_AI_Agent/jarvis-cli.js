@@ -141,6 +141,7 @@ function getGoogleAuthHtml(port) {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
 
     const btn = document.getElementById('login-btn');
     const status = document.getElementById('status');
@@ -150,20 +151,33 @@ function getGoogleAuthHtml(port) {
         status.innerText = "⏳ গুগল সাইন-ইন উইন্ডো ওপেন হচ্ছে...";
         status.style.color = "#38bdf8";
         const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        const idToken = await user.getIdToken();
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const googleIdToken = credential ? credential.idToken : null;
+        const googleAccessToken = credential ? credential.accessToken : null;
         
         status.innerText = "⏳ টার্মিনালে অনুমোদন পাঠানো হচ্ছে...";
-        await fetch('http://localhost:${port}/auth-success', {
+        const resp = await fetch('http://localhost:${port}/auth-success', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken, email: user.email, uid: user.uid })
+          body: JSON.stringify({ 
+            googleIdToken, 
+            googleAccessToken, 
+            email: result.user.email, 
+            uid: result.user.uid 
+          })
         });
+
+        const resData = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          throw new Error(resData.error || 'টার্মিনাল অনুমোদন ব্যর্থ হয়েছে');
+        }
 
         status.innerText = "✅ সাইন-ইন সফল! আপনি এই ট্যাবটি বন্ধ করে টার্মিনালে ফিরে যেতে পারেন।";
         status.style.color = "#10b981";
         btn.style.display = 'none';
-        setTimeout(() => window.close(), 3000);
+        setTimeout(() => {
+          try { window.close(); } catch(e) {}
+        }, 2000);
       } catch (err) {
         status.innerText = "❌ ত্রুটি: " + err.message;
         status.style.color = "#f87171";
@@ -209,28 +223,42 @@ function loginWithGoogleBrowser() {
                 req.on('end', async () => {
                     try {
                         const data = JSON.parse(body);
-                        const idToken = data.idToken;
-                        const email = data.email;
+                        const googleIdToken = data.googleIdToken;
+                        const googleAccessToken = data.googleAccessToken;
 
-                        const credential = GoogleAuthProvider.credential(idToken);
+                        if (!googleIdToken && !googleAccessToken) {
+                            throw new Error('গুগল ক্রেডেনশিয়াল টোকেন পাওয়া যায়নি');
+                        }
+
+                        const credential = googleIdToken
+                            ? GoogleAuthProvider.credential(googleIdToken, googleAccessToken)
+                            : GoogleAuthProvider.credential(null, googleAccessToken);
+
                         const cred = await signInWithCredential(auth, credential);
 
-                        config.idToken = idToken;
-                        config.email = email;
+                        config.googleIdToken = googleIdToken;
+                        config.googleAccessToken = googleAccessToken;
+                        config.email = data.email;
                         saveConfig(config);
 
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ status: 'ok' }));
 
-                        console.log(`\n${C.green}✅ গুগল সাইন-ইন সফল: ${email}${C.reset}\n`);
-                        server.close();
-                        resolve(cred.user);
+                        console.log(`\n${C.green}✅ গুগল সাইন-ইন সফল: ${data.email}${C.reset}\n`);
+                        setTimeout(() => {
+                            server.close(() => {
+                                resolve(cred.user);
+                            });
+                        }, 100);
                     } catch (err) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: err.message }));
-                        console.error(`${C.red}গুগল সাইন-ইন যাচাই ত্রুটি:${C.reset}`, err.message);
-                        server.close();
-                        resolve(null);
+                        console.error(`\n${C.red}গুগল সাইন-ইন যাচাই ত্রুটি:${C.reset}`, err.message);
+                        setTimeout(() => {
+                            server.close(() => {
+                                resolve(null);
+                            });
+                        }, 100);
                     }
                 });
                 return;
@@ -257,12 +285,16 @@ function loginWithGoogleBrowser() {
 async function ensureAuthenticated(rl) {
     if (auth.currentUser) return auth.currentUser;
 
-    if (config.idToken) {
+    if (config.googleIdToken || config.googleAccessToken) {
         try {
-            const cred = await signInWithCredential(auth, GoogleAuthProvider.credential(config.idToken));
+            const credential = config.googleIdToken
+                ? GoogleAuthProvider.credential(config.googleIdToken, config.googleAccessToken)
+                : GoogleAuthProvider.credential(null, config.googleAccessToken);
+            const cred = await signInWithCredential(auth, credential);
             return cred.user;
         } catch (e) {
-            config.idToken = '';
+            config.googleIdToken = '';
+            config.googleAccessToken = '';
         }
     }
 
