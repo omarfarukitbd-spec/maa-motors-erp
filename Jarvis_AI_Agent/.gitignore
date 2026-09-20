@@ -4,4 +4,4 @@ dist/
 *.local
 .firebase/
 *.log
-
+jarvis_cli_config.json
