@@ -79,11 +79,12 @@ async function speak(text, voice = config.voice || 'bn-BD-PradeepNeural') {
     try {
         const tts = new MsEdgeTTS();
         await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-        const tempFile = path.join(os.tmpdir(), `jarvis_cli_${Date.now()}.mp3`);
-        const filePath = await tts.toFile(tempFile, text);
+        const tempDir = path.join(os.tmpdir(), `jarvis_tts_${Date.now()}`);
+        fs.mkdirSync(tempDir, { recursive: true });
+        const { audioFilePath } = await tts.toFile(tempDir, text);
 
         // Windows PresentationCore MediaPlayer
-        const cleanPath = filePath.replace(/\\/g, '/');
+        const cleanPath = audioFilePath.replace(/\\/g, '/');
         const psScript = `
             Add-Type -AssemblyName presentationCore;
             $player = New-Object system.windows.media.mediaplayer;
@@ -98,7 +99,7 @@ async function speak(text, voice = config.voice || 'bn-BD-PradeepNeural') {
 
         await new Promise((resolve) => {
             exec(`powershell -NoProfile -Command "${psScript.replace(/\r?\n/g, ' ')}"`, () => {
-                try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) { console.error('Audio cleanup error:', e); }
+                try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
                 resolve();
             });
         });
