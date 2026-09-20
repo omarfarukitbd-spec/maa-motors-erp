@@ -21,6 +21,8 @@ import { fileURLToPath } from 'url';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 
 // Firebase & ERP Bridge
+import { auth } from './src/config.js';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { ERPBridge, parseRelativeBengaliDate, getTodayLocalDateString, formatAmountWithComma } from './src/bridge/erp_bridge.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -105,8 +107,40 @@ async function speak(text, voice = config.voice || 'bn-BD-PradeepNeural') {
     }
 }
 
+// Authentication Gatekeeper
+async function ensureAuthenticated(rl) {
+    if (auth.currentUser) return auth.currentUser;
+
+    let email = config.email || process.env.ERP_EMAIL;
+    let password = config.password || process.env.ERP_PASSWORD;
+
+    if (!email || !password) {
+        console.log(`\n${C.yellow}${C.bold}🔐 মা মোটরস ফায়ারবেস অথেনটিকেশন${C.reset}`);
+        console.log(`${C.dim}ক্লাউড ফায়ারবেসের তথ্য সুরক্ষার কারণে অনুমোদিত অ্যাডমিন একাউন্ট দিয়ে ১-বার লগইন করুন।${C.reset}\n`);
+
+        email = await new Promise(resolve => rl.question(`${C.cyan}ইমেইল (যেমন: office.maamotors@gmail.com): ${C.reset}`, ans => resolve(ans.trim())));
+        password = await new Promise(resolve => rl.question(`${C.cyan}পাসওয়ার্ড: ${C.reset}`, ans => resolve(ans.trim())));
+    }
+
+    try {
+        process.stdout.write(`${C.dim}⏳ লগইন যাচাই হচ্ছে...${C.reset}`);
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        config.email = email;
+        config.password = password;
+        saveConfig(config);
+        process.stdout.write(`\r${C.green}✅ সফলভাবে অথেনটিকেটেড: ${cred.user.email}${C.reset}\n\n`);
+        return cred.user;
+    } catch (err) {
+        console.log(`\r${C.red}❌ লগইন ব্যর্থ হয়েছে: ${err.message}${C.reset}`);
+        config.email = '';
+        config.password = '';
+        saveConfig(config);
+        return null;
+    }
+}
+
 // Banner Display
-function printBanner() {
+function printBanner(user) {
     console.clear();
     console.log(`
 ${C.cyan}${C.bold}══════════════════════════════════════════════════════════════════${C.reset}
@@ -114,6 +148,7 @@ ${C.cyan}${C.bold}   🎙️  JARVIS EXECUTIVE TERMINAL AGENT — MAA MOTORS ERP
 ${C.dim}   Bangla Neural Speech • 100% Read-Only Safety Guard • Edge-TTS${C.reset}
 ${C.cyan}${C.bold}══════════════════════════════════════════════════════════════════${C.reset}
   ${C.green}● Database Status :${C.reset} 100% Read-Only Protected (Cloud Firestore)
+  ${C.green}● Logged In User  :${C.reset} ${user?.email || 'Admin'}
   ${C.yellow}● Voice Engine    :${C.reset} Microsoft Edge Neural (${config.voice})
   ${C.blue}● Active Brain    :${C.reset} Google Gemini Flash / NLU Tool Engine
 ${C.cyan}──────────────────────────────────────────────────────────────────${C.reset}
@@ -240,12 +275,19 @@ function printCard(res) {
 
 // Interactive CLI Loop
 async function main() {
-    printBanner();
-
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     });
+
+    const user = await ensureAuthenticated(rl);
+    if (!user) {
+        console.log(`${C.red}লগইন ছাড়া ইআরপি ডেটা রিড করা যাবে না। পুনরায় চালান: npm run cli${C.reset}`);
+        rl.close();
+        process.exit(1);
+    }
+
+    printBanner(user);
 
     const promptUser = () => {
         rl.question(`${C.cyan}${C.bold}JARVIS > ${C.reset}`, async (line) => {
