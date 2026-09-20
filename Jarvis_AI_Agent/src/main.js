@@ -68,6 +68,12 @@ window.addEventListener('click', unlockMobileAudio, { passive: true, once: true 
 listener.on('onStart', () => {
     wakeWordListener.pause();
     setCoreState('listening');
+    if (micStatusText) micStatusText.innerHTML = '<span class="text-emerald-400 font-bold">শুনছি স্যার...</span> কথা বলা শেষ হলে থামুন বা আবার ট্যাপ করুন';
+});
+
+listener.on('onInterim', (interimText) => {
+    if (textInput) textInput.value = interimText;
+    if (micStatusText) micStatusText.innerHTML = `<span class="text-emerald-400 font-bold">শুনছি:</span> "${interimText}"`;
 });
 
 listener.on('onEnd', () => {
@@ -115,10 +121,11 @@ if (stopSpeechBtn) {
 function toggleMicrophone() {
     unlockMobileAudio();
     if (listener.isListening) {
+        // User tapped again to complete and execute immediately!
         listener.stop();
-        setCoreState('idle');
     } else {
         if (voiceSpeaker.isSpeaking) voiceSpeaker.stop();
+        if (textInput) textInput.value = '';
         listener.start();
         setCoreState('listening');
     }
@@ -188,12 +195,25 @@ const wakeWordToggleBtn = document.getElementById('wake-word-toggle-btn');
 const wakeWordStatusLabel = document.getElementById('wake-word-status-label');
 
 if (wakeWordToggleBtn) {
+    // Sync initial UI
+    if (wakeWordListener.isEnabled) {
+        if (wakeWordStatusLabel) wakeWordStatusLabel.innerHTML = 'ওয়েক ওয়ার্ড: <strong>সক্রিয় (শুনছি...)</strong>';
+        wakeWordToggleBtn.classList.remove('opacity-50');
+    } else {
+        if (wakeWordStatusLabel) wakeWordStatusLabel.innerHTML = 'ওয়েক ওয়ার্ড: <strong>বন্ধ (চালু করতে চাপুন)</strong>';
+        wakeWordToggleBtn.classList.add('opacity-50');
+    }
+
     wakeWordToggleBtn.addEventListener('click', () => {
-        if (wakeWordListener.isListening) {
+        if (wakeWordListener.isRunning) {
             wakeWordListener.stop();
-            if (wakeWordStatusLabel) wakeWordStatusLabel.innerHTML = 'ওয়েক ওয়ার্ড: <strong>বন্ধ</strong>';
+            wakeWordListener.isEnabled = false;
+            localStorage.setItem('jarvis_wake_word_enabled', 'false');
+            if (wakeWordStatusLabel) wakeWordStatusLabel.innerHTML = 'ওয়েক ওয়ার্ড: <strong>বন্ধ (চালু করতে চাপুন)</strong>';
             wakeWordToggleBtn.classList.add('opacity-50');
         } else {
+            wakeWordListener.isEnabled = true;
+            localStorage.setItem('jarvis_wake_word_enabled', 'true');
             wakeWordListener.start();
             if (wakeWordStatusLabel) wakeWordStatusLabel.innerHTML = 'ওয়েক ওয়ার্ড: <strong>সক্রিয় (শুনছি...)</strong>';
             wakeWordToggleBtn.classList.remove('opacity-50');
@@ -411,11 +431,13 @@ if (testVoiceBtn) {
     testVoiceBtn.addEventListener('click', window.triggerVoiceTest);
 }
 
-// Start Wake Word Listener
-try {
-    wakeWordListener.start();
-} catch (e) {
-    console.warn('Wake word auto-start deferred until user permission:', e);
+// Start Wake Word Listener ONLY if enabled
+if (wakeWordListener.isEnabled) {
+    try {
+        wakeWordListener.start();
+    } catch (e) {
+        console.warn('Wake word auto-start deferred:', e);
+    }
 }
 
 // 11. Dynamic Voice Engine Population & Selector Sync

@@ -43,7 +43,8 @@ export class VoiceListener {
         this.accumulatedFinalText = '';
         this.currentInterimText = '';
         this.vadSilenceTimer = null;
-        this.VAD_SILENCE_DELAY_MS = 1300; // 1.3s of natural silence before finalizing
+        this.lastSpeechTimestamp = 0;
+        this.VAD_SILENCE_DELAY_MS = 2500; // 2.5s of natural silence before finalizing
         this.isFinalizing = false;
 
         this._detectMode();
@@ -140,11 +141,12 @@ export class VoiceListener {
 
             const fullDisplayText = (this.accumulatedFinalText + ' ' + interimText).trim();
             if (fullDisplayText) {
+                this.lastSpeechTimestamp = Date.now();
                 this.callbacks.onInterim(fullDisplayText);
             }
 
             // Adaptive VAD Silence Timer: Every time the user speaks a word or sound, reset the timer!
-            // Only after 1.3 seconds of sustained silence after speaking do we finalize the full sentence.
+            // Only after 2.5 seconds of sustained silence after speaking do we finalize the full sentence.
             clearTimeout(this.vadSilenceTimer);
             this.vadSilenceTimer = setTimeout(() => {
                 this._finalizeSpeech();

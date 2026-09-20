@@ -21,7 +21,7 @@ import { voiceSpeaker } from './voice_speaker.js';
  */
 export class WakeWordListener {
     constructor() {
-        this.isEnabled = (typeof window !== 'undefined' && localStorage.getItem('jarvis_wake_word_enabled')) !== 'false';
+        this.isEnabled = typeof window !== 'undefined' && localStorage.getItem('jarvis_wake_word_enabled') === 'true';
         this.isRunning = false;
         this.recognition = null;
         this.audioCtx = null;
@@ -92,7 +92,7 @@ export class WakeWordListener {
                     clearTimeout(this.restartTimer);
                     this.restartTimer = setTimeout(() => {
                         this._safeStart();
-                    }, 400);
+                    }, 1500);
                 }
             };
 
