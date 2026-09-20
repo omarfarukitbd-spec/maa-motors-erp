@@ -932,6 +932,55 @@ body.theme-executive {
   }
 }
 
+/* Structured Accounting Table Cards inside Chat Bubble */
+.table-card-box {
+  margin-top: 10px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.table-card-header {
+  background: rgba(30, 41, 59, 0.85);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan-primary);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.table-card-body {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.table-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+.table-card-row:last-child {
+  border-bottom: none;
+}
+
+.table-card-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.table-card-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
 @media (max-width: 600px) {
   .app-header {
     padding: 0 12px;
@@ -953,6 +1002,10 @@ body.theme-executive {
   }
   .executive-cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .executive-cards-grid .exec-card:last-child {
+    grid-column: span 2;
   }
   .exec-card {
     padding: 8px 10px;
@@ -963,4 +1016,9 @@ body.theme-executive {
   .message-bubble {
     max-width: 95%;
   }
+  .floating-command-dock {
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: calc(100% - 20px);
+  }
 }
+

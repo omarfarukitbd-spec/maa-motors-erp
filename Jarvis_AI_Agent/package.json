@@ -5,9 +5,9 @@
   "description": "Ultra-Advanced Autonomous Voice Assistant with Long-Term Memory & Skill Registry for Maa Motors ERP",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5180",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "node ../Web_ERP/node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5180",
+    "build": "node ../Web_ERP/node_modules/vite/bin/vite.js build",
+    "preview": "node ../Web_ERP/node_modules/vite/bin/vite.js preview",
     "cli": "node jarvis-cli.js"
   },
   "dependencies": {

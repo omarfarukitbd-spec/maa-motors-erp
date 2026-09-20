@@ -25,6 +25,7 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { auth } from './src/config.js';
 import { signInWithEmailAndPassword, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { ERPBridge, parseRelativeBengaliDate, getTodayLocalDateString, formatAmountWithComma } from './src/bridge/erp_bridge.js';
+import { cognitiveEngine } from './src/core/cognitive_engine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -379,96 +380,12 @@ ${C.cyan}═══════════════════════�
 `);
 }
 
-// Simple rule-based & tool execution router for common questions
+// Unified Cognitive Brain Query Processor
 async function resolveIntent(query) {
-    const q = query.trim().toLowerCase();
-
-    // 1. Showroom Cash
-    if (q.includes('ক্যাশ') || q.includes('শোরুম') || q.includes('নগদ')) {
-        const cash = await ERPBridge.getTodayShowroomCashCollections();
-        const spoken = `আজকে শোরুমের মোট নগদ জমা হয়েছে ${cash.totalCashCollected.toLocaleString('bn-BD')} টাকা। খরচ বাদ দিয়ে বর্তমান ক্যাশ স্থিতি ${cash.todayNetShowroomCash.toLocaleString('bn-BD')} টাকা।`;
-        return {
-            title: 'শোরুম ক্যাশ স্থিতি',
-            spoken,
-            rows: [
-                ['মোট নগদ জমা', `৳ ${cash.totalCashCollected.toLocaleString('bn-BD')}`],
-                ['ক্যাশ খরচ', `৳ ${cash.todayCashExpenses.toLocaleString('bn-BD')}`],
-                ['নিট ক্যাশ স্থিতি', `৳ ${cash.todayNetShowroomCash.toLocaleString('bn-BD')}`],
-                ['জমা প্রদানকারী', `${cash.customerPaymentsCount} জন`]
-            ]
-        };
-    }
-
-    // 2. Bank Balances
-    if (q.includes('ব্যাংক') || q.includes('bank') || q.includes('পূবালী') || q.includes('ইসলামী')) {
-        const banks = await ERPBridge.getWeeklyBankCollectionSummary();
-        const spoken = `ব্যাংক অ্যাকাউন্টে মোট জমা স্থিতি আছে ${banks.grandTotalBankDeposits.toLocaleString('bn-BD')} টাকা।`;
-        const rows = (banks.bankList || []).map(b => [b.bankName, `৳ ${b.totalAmount.toLocaleString('bn-BD')}`]);
-        return {
-            title: 'ব্যাংক হিসাব স্থিতি',
-            spoken,
-            rows
-        };
-    }
-
-    // 3. Daily Executive Report
-    if (q.includes('আজকের রিপোর্ট') || q.includes('বিজনেস') || q.includes('পূর্ণাঙ্গ') || q.includes('ক্লোজিং')) {
-        const rep = await ERPBridge.getExecutiveBusinessPulse();
-        const spoken = `আজকে মা মোটরসে মোট বিক্রি হয়েছে ${rep.todayTotalBills.toLocaleString('bn-BD')} টাকা, মোট আদায় ${rep.todayTotalCollections.toLocaleString('bn-BD')} টাকা, এবং মোট খরচ ${rep.todayTotalExpenses.toLocaleString('bn-BD')} টাকা। আজকের নিট ক্যাশ ফ্লো ${rep.todayNetCashFlow.toLocaleString('bn-BD')} টাকা।`;
-        return {
-            title: 'দৈনিক এক্সিকিউটিভ বিজনেস রিপোর্ট',
-            spoken,
-            rows: [
-                ['মোট বিক্রি (Bills)', `৳ ${rep.todayTotalBills.toLocaleString('bn-BD')}`],
-                ['মোট আদায় (Collection)', `৳ ${rep.todayTotalCollections.toLocaleString('bn-BD')}`],
-                ['মোট খরচ (Expense)', `৳ ${rep.todayTotalExpenses.toLocaleString('bn-BD')}`],
-                ['নিট ক্যাশ ফ্লো', `৳ ${rep.todayNetCashFlow.toLocaleString('bn-BD')}`],
-                ['সক্রিয় কাস্টমার', `${rep.activeCustomersCount} জন`]
-            ]
-        };
-    }
-
-    // 4. Dubai Procurement & Audit
-    if (q.includes('দুবাই') || q.includes('dubai') || q.includes('কনটেইনার') || q.includes('দেরহাম') || q.includes('aed')) {
-        const dubai = await ERPBridge.getDubaiWeeklyAuditSummary();
-        const spoken = `দুবাই কনটেইনার অডিটে বর্তমান সপ্তাহে মোট রেমিট্যান্স ${dubai.totalRemittance.toLocaleString('bn-BD')} এইডি এবং খরচ ও পারচেজ বাদ দিয়ে ক্যাশ স্থিতি রয়েছে ${dubai.cashBalance.toLocaleString('bn-BD')} এইডি।`;
-        return {
-            title: 'দুবাই কনটেইনার ও অডিট সামারি (AED)',
-            spoken,
-            rows: [
-                ['মোট রেমিট্যান্স', `${dubai.totalRemittance.toLocaleString('bn-BD')} AED`],
-                ['মোট মেমো পারচেজ', `${dubai.totalPurchase.toLocaleString('bn-BD')} AED`],
-                ['মোট খরচ', `${dubai.totalExpenses.toLocaleString('bn-BD')} AED`],
-                ['বর্তমান ব্যালেন্স', `${dubai.cashBalance.toLocaleString('bn-BD')} AED`]
-            ]
-        };
-    }
-
-    // 5. Customer Specific Due Inquiry
-    const nameMatch = q.replace(/(এর|ভাইয়ের|ট্রেডার্সের|বকেয়া|বাকি|কত|হিসাব|টাকা|বলো|জানাও|\?)/g, '').trim();
-    if (nameMatch.length >= 2) {
-        const results = await ERPBridge.searchCustomers(nameMatch);
-        if (results && results.length > 0) {
-            const c = results[0];
-            const spoken = `${c.name} এর বর্তমান অবশিষ্ট বকেয়া রয়েছে ${Number(c.totalDue || 0).toLocaleString('bn-BD')} টাকা।`;
-            return {
-                title: `কাস্টমার প্রোফাইল: ${c.name}`,
-                spoken,
-                rows: [
-                    ['নাম', c.name],
-                    ['মোবাইল', c.phone || 'N/A'],
-                    ['ঠিকানা', c.address || 'N/A'],
-                    ['অবশিষ্ট বকেয়া', `৳ ${Number(c.totalDue || 0).toLocaleString('bn-BD')}`]
-                ]
-            };
-        }
-    }
-
-    // Fallback
-    const spoken = 'জি স্যার, আমি আপনার প্রশ্নটি বুঝতে পারছি। আপনি শোরুম ক্যাশ, ব্যাংক ব্যালেন্স, কাস্টমার বকেয়া অথবা আজকের পূর্ণাঙ্গ রিপোর্ট সম্পর্কে জানতে পারেন।';
-    return {
+    const res = await cognitiveEngine.process(query);
+    return res || {
         title: 'সহযোগিতা',
-        spoken,
+        spoken: 'জি স্যার, আমি আপনার প্রশ্নটি বুঝতে পারছি না। মেসার্স মা মোটরসের শোরুম ক্যাশ, ব্যাংক ব্যালেন্স, কাস্টমার বকেয়া অথবা আজকের পূর্ণাঙ্গ রিপোর্ট সম্পর্কে জানতে প্রশ্ন করতে পারেন।',
         rows: []
     };
 }

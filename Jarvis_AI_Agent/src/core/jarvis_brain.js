@@ -1,4 +1,4 @@
-import { llmAgent } from './llm_agent.js';
+import { cognitiveEngine } from './cognitive_engine.js';
 import { voiceSpeaker } from '../voice/voice_speaker.js';
 
 export class JarvisBrain {
@@ -11,7 +11,7 @@ export class JarvisBrain {
     }
 
     /**
-     * Process an incoming voice or text command using Cognitive LLM & Tool Calling
+     * Process an incoming voice or text command using Unified Cognitive Engine
      * @param {string} rawInput 
      * @returns {Promise<{spoken: string, data?: any}>}
      */
@@ -19,7 +19,7 @@ export class JarvisBrain {
         const text = (rawInput || '').trim();
         if (!text) return null;
 
-        // Concurrency Guard: Mutex Lock to prevent parallel execution & duplicate speaking
+        // Concurrency Guard: Mutex Lock to prevent duplicate triggers
         if (this.isProcessing) {
             console.warn(`[JarvisBrain] ⚠️ Mutex busy lock: dropped concurrent trigger: "${text}"`);
             return null;
@@ -38,16 +38,15 @@ export class JarvisBrain {
         this.addHistory('user', text);
 
         try {
-            // Cognitive Conversational Reasoning with Emotional Acumen & Tool Execution
-            const result = await llmAgent.chat(this.conversationHistory, text);
+            const result = await cognitiveEngine.process(text);
 
             if (result && result.spoken) {
-                await this.handleResponse(result.spoken, result.data);
+                await this.handleResponse(result.spoken, result);
                 return result;
             }
 
-            const fallback = 'জি স্যার, আমি আপনার কথা শুনেছি। আপনার মা মোটরসের কাস্টমার বকেয়া বা ক্যাশ হিসাবের কোনো তথ্য প্রয়োজন হলে বলুন।';
-            await this.handleResponse(fallback);
+            const fallback = 'জি স্যার, আমি আপনার কথা শুনেছি। মা মোটরসের কাস্টমার বকেয়া বা ক্যাশ হিসাবের কোনো তথ্য লাগলে বলুন।';
+            await this.handleResponse(fallback, { title: 'সহযোগিতা', spoken: fallback, rows: [] });
             return { spoken: fallback };
 
         } catch (err) {

@@ -2,13 +2,18 @@
 <html lang="bn">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="referrer" content="no-referrer" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#050811" />
   <title>JARVIS AI — মেসার্স মা মোটরস পার্সোনাল এক্সিকিউটিভ এআই</title>
+  
+  <link rel="manifest" href="/manifest.json" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><circle cx='12' cy='12' r='9'/></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="./src/style.css" />
 </head>
@@ -50,8 +55,6 @@
         <select id="voice-selector" class="header-select" title="ভয়েস নির্বাচন করুন">
           <option value="bn-BD-PradeepNeural" selected>প্রদীপ (Edge Natural BD)</option>
           <option value="bn-BD-NabanitaNeural">নবনিতা (Edge Natural BD)</option>
-          <option value="onyx">Onyx (ChatGPT Male)</option>
-          <option value="shimmer">Shimmer (ChatGPT Female)</option>
         </select>
       </div>
 
@@ -60,7 +63,7 @@
         <i class="fa-solid fa-volume-high text-cyan-400"></i>
       </button>
 
-      <!-- AI Studio Settings Button -->
+      <!-- AI Settings Button -->
       <button id="open-ai-settings-btn" class="header-icon-btn" title="AI Brain ও API কী সেটিংস" aria-label="AI Settings">
         <i class="fa-solid fa-sliders text-sky-400"></i>
       </button>
@@ -108,7 +111,7 @@
         <button id="wake-word-toggle-btn" class="wake-word-chip" title="হ্যান্ডস-ফ্রি ওয়েক ওয়ার্ড টগল">
           <span class="live-pulse-dot"></span>
           <i class="fa-solid fa-ear-listen text-xs text-sky-400"></i>
-          <span id="wake-word-status-label">ওয়েক ওয়ার্ড: <strong>চেক হচ্ছে...</strong></span>
+          <span id="wake-word-status-label">ওয়েক ওয়ার্ড: <strong>সক্রিয় (শুনছি...)</strong></span>
         </button>
       </div>
 
@@ -154,8 +157,8 @@
           </div>
         </button>
 
-        <button type="button" class="exec-card" onclick="window.triggerQuickCommand('দুবাই কনটেইনার অডিটের হিসাব বলো')">
-          <div class="exec-card-icon bg-purple-500/10 border-purple-500/20 text-purple-400">
+        <button type="button" class="exec-card" onclick="window.triggerQuickCommand('দুবাই কনটেইনার অডিট বলো')">
+          <div class="exec-card-icon bg-indigo-500/10 border-indigo-500/20 text-indigo-400">
             <i class="fa-solid fa-ship"></i>
           </div>
           <div class="exec-card-texts">
@@ -167,36 +170,36 @@
 
     </section>
 
-    <!-- Conversation Stream / Executive Response Showcase -->
-    <section class="conversation-feed-section">
-      <div class="conversation-container" id="transcript-container">
-        <!-- Welcome Executive Card -->
-        <div class="message-bubble jarvis-bubble">
-          <div class="bubble-header">
-            <div class="bubble-sender">
-              <i class="fa-solid fa-robot text-cyan-400"></i>
-              <span>জার্ভিস এক্সিকিউটিভ</span>
-            </div>
-            <span class="bubble-time">এখন</span>
+    <!-- Interactive Dialogue Stream -->
+    <section class="dialogue-stream-area" id="chat-stream-section">
+      <div id="transcript-container" class="transcript-scroll-flow">
+        <!-- Initial Welcome Bubble -->
+        <div class="message-bubble jarvis-msg">
+          <div class="msg-header">
+            <span class="msg-sender-name">
+              <i class="fa-solid fa-robot text-cyan-400 mr-1.5"></i>
+              জার্ভিস এক্সিকিউটিভ
+            </span>
+            <span class="msg-time">এখন</span>
           </div>
-          <div class="bubble-body">
-            শুভ অপরাহ্ন স্যার! আমি মেসার্স মা মোটরস-এর পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস। আমি সম্পূর্ণ সক্রিয় এবং ইআরপি ডেটাবেজের সাথে সরাসরি সংযুক্ত আছি।
-            <div class="bubble-actions">
-              <button class="bubble-btn" onclick="window.triggerVoiceTest()">
-                <i class="fa-solid fa-volume-high text-cyan-400"></i>
-                <span>সাউন্ড টেস্ট</span>
-              </button>
-              <button class="bubble-btn" onclick="window.triggerGoogleAuth()">
-                <i class="fa-solid fa-key text-amber-400"></i>
-                <span>লগইন একাউন্ট</span>
-              </button>
-            </div>
+          <div class="msg-content">
+            শুভ অপরাহ্ন স্যার! আমি মেসার্স মা মোটরস-এর পার্সোনাল এক্সিকিউটিভ এআই জার্ভিস। আমি সম্পূর্ণ সক্রিয় এবং ইআরপি ডেটাবেজের সাথে সরাসরি সংযুক্ত আছি!
+          </div>
+          <div class="msg-action-row">
+            <button class="msg-action-btn" onclick="window.triggerVoiceTest()">
+              <i class="fa-solid fa-volume-high text-cyan-400"></i>
+              <span>সাউন্ড টেস্ট</span>
+            </button>
+            <button class="msg-action-btn" onclick="window.triggerGoogleAuth()">
+              <i class="fa-solid fa-key text-amber-400"></i>
+              <span>লগইন একাউন্ট</span>
+            </button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Floating Bottom Command & Voice Dock -->
+    <!-- Floating Mobile & Desktop Voice & Text Dock -->
     <footer class="floating-command-dock">
       <div class="dock-inner">
         <!-- Dock Voice Mic Quick Button -->
@@ -268,126 +271,26 @@
     </div>
   </div>
 
-  <!-- AI Brain & Engine Settings Modal (Unified Studio Cockpit) -->
+  <!-- Lightweight AI Settings Modal -->
   <div id="ai-settings-modal" class="modal-backdrop hidden">
-    <div class="modal-card studio-modal-card">
+    <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
           <i class="fa-solid fa-sliders text-cyan-400"></i>
-          <span>জার্ভিস এআই স্টুডিও ও ইঞ্জিন সেটিংস</span>
+          <span>জার্ভিস এআই সেটিংস</span>
         </div>
-        <div class="modal-header-actions">
-          <button type="button" id="btn-save-ai-settings-top" class="studio-save-btn">
-            <i class="fa-solid fa-floppy-disk mr-1"></i>
-            <span>সেভ করুন</span>
-          </button>
-          <button id="close-ai-settings-modal" class="modal-close-btn" aria-label="Close Settings">&times;</button>
-        </div>
+        <button id="close-ai-settings-modal" class="modal-close-btn" aria-label="Close Settings">&times;</button>
       </div>
 
-      <div class="modal-body studio-modal-body">
-        <!-- Auto Failover Banner -->
-        <div class="failover-strip">
-          <div class="failover-strip-info">
-            <div class="failover-strip-title">
-              <i class="fa-solid fa-bolt text-amber-400"></i>
-              <span>স্মার্ট অটো-ফেলওভার (Auto-Failover)</span>
-            </div>
-            <div class="failover-strip-desc">
-              কোনো একটি কী-এর কোটা শেষ হলে স্বয়ংক্রিয়ভাবে ব্যাকআপ কী বা প্রোভাইডারে সুইচ করবে
-            </div>
-          </div>
-          <label class="switch-toggle">
-            <input type="checkbox" id="input-auto-failover-toggle" checked>
-            <span class="switch-slider"></span>
-          </label>
-        </div>
-
-        <!-- Provider Switcher -->
+      <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">সক্রিয় এআই প্রোভাইডার নির্বাচন করুন</label>
-          <div class="provider-switch-grid">
-            <button type="button" id="select-provider-gemini" class="provider-tab-btn active">
-              <span class="provider-title">Google Gemini Flash</span>
-              <span class="provider-tag green">Recommended</span>
-            </button>
-            <button type="button" id="select-provider-groq" class="provider-tab-btn">
-              <span class="provider-title">Groq Cloud</span>
-              <span class="provider-tag amber">Fastest</span>
-            </button>
-            <button type="button" id="select-provider-openrouter" class="provider-tab-btn">
-              <span class="provider-title">OmniRouters / OpenRouter</span>
-              <span class="provider-tag purple">Free Multi-Key</span>
-            </button>
-            <button type="button" id="select-provider-openai" class="provider-tab-btn">
-              <span class="provider-title">OpenAI (ChatGPT)</span>
-              <span class="provider-tag blue">Official</span>
-            </button>
-          </div>
+          <label for="gemini-api-key-input">Google Gemini API Key (ঐচ্ছিক)</label>
+          <input type="password" id="gemini-api-key-input" placeholder="AIzaSy... (না দিলেও লোকাল মোডে চলবে)" class="form-input" />
+          <p class="form-hint">কী না দিলেও জার্ভিস স্বয়ংক্রিয়ভাবে ফায়ারবেসের রিয়েল-টাইম ডেটা থেকে হিসাব দেবে।</p>
         </div>
-
-        <!-- Gemini Config Section -->
-        <div id="gemini-config-section" class="provider-section">
-          <div class="form-group">
-            <label for="input-gemini-key">Google Gemini API Key(s)</label>
-            <textarea id="input-gemini-key" rows="2" placeholder="AIzaSy... অথবা AQ.... (একাধিক কী দিতে পারেন কমা বা নতুন লাইনে)"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="select-gemini-model">মডেল</label>
-            <select id="select-gemini-model" class="form-select">
-              <option value="gemini-3.6-flash" selected>Gemini 3.6 Flash (সর্বাধুনিক ও দ্রুততম)</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Groq Config Section -->
-        <div id="groq-config-section" class="provider-section hidden">
-          <div class="form-group">
-            <label for="input-groq-key">Groq API Key(s)</label>
-            <textarea id="input-groq-key" rows="2" placeholder="gsk_..."></textarea>
-          </div>
-          <div class="form-group">
-            <label for="select-groq-model">মডেল</label>
-            <select id="select-groq-model" class="form-select">
-              <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B Versatile</option>
-              <option value="llama3-70b-8192">Llama 3 70B</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- OpenRouter Config Section -->
-        <div id="openrouter-config-section" class="provider-section hidden">
-          <div class="form-group">
-            <label for="input-openrouter-key">OmniRouters / OpenRouter API Key(s)</label>
-            <textarea id="input-openrouter-key" rows="2" placeholder="sk-jk-... অথবা sk-or-..."></textarea>
-          </div>
-          <div class="form-group">
-            <label for="select-openrouter-model">মডেল</label>
-            <select id="select-openrouter-model" class="form-select">
-              <option value="meta-llama/llama-3.3-70b-instruct:free" selected>Llama 3.3 70B Instruct (Free)</option>
-              <option value="deepseek/deepseek-r1:free">DeepSeek R1 (Free)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- OpenAI Config Section -->
-        <div id="openai-config-section" class="provider-section hidden">
-          <div class="form-group">
-            <label for="input-openai-key">OpenAI API Key(s)</label>
-            <textarea id="input-openai-key" rows="2" placeholder="sk-proj-..."></textarea>
-          </div>
-          <div class="form-group">
-            <label for="select-openai-model">মডেল</label>
-            <select id="select-openai-model" class="form-select">
-              <option value="gpt-4o-mini" selected>GPT-4o Mini</option>
-              <option value="gpt-4o">GPT-4o</option>
-            </select>
-          </div>
-        </div>
-
+        <button type="button" id="save-settings-btn" class="auth-submit-btn">
+          সেভ করুন
+        </button>
       </div>
     </div>
   </div>
