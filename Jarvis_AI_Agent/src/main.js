@@ -418,5 +418,56 @@ try {
     console.warn('Wake word auto-start deferred until user permission:', e);
 }
 
+// 11. Dynamic Voice Engine Population & Selector Sync
+function syncAvailableVoices() {
+    const selector = document.getElementById('voice-selector');
+    if (!selector) return;
+
+    const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+    const voices = synth ? synth.getVoices() : [];
+    
+    // Check for native Bengali voices in current browser (e.g. Edge Natural / Google)
+    const bnVoices = voices.filter(v => 
+        v.lang.startsWith('bn') || 
+        v.name.toLowerCase().includes('bangla') || 
+        v.name.toLowerCase().includes('bengali') ||
+        v.name.includes('Pradeep') || 
+        v.name.includes('Nabanita')
+    );
+
+    selector.innerHTML = '';
+
+    if (bnVoices.length > 0) {
+        bnVoices.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.name;
+            opt.textContent = `${v.name.replace(/Microsoft |Online \(Natural\) - /g, '')} (ব্রাউজার)`;
+            selector.appendChild(opt);
+        });
+
+        const active = voiceSpeaker.getNativeBnVoice();
+        if (active) selector.value = active.name;
+    } else {
+        // Fallback for Chrome without native Edge/Windows Bengali packs
+        const opt = document.createElement('option');
+        opt.value = 'google-cloud-stream';
+        opt.textContent = 'গুগল হাই-কোয়ালিটি বাংলা (Active)';
+        opt.selected = true;
+        selector.appendChild(opt);
+    }
+}
+
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+    syncAvailableVoices();
+    window.speechSynthesis.onvoiceschanged = syncAvailableVoices;
+}
+
+const voiceSelectorEl = document.getElementById('voice-selector');
+if (voiceSelectorEl) {
+    voiceSelectorEl.addEventListener('change', (e) => {
+        voiceSpeaker.setAzureVoice(e.target.value);
+    });
+}
+
 // Initial Load of KPIs
 loadLiveKpiStrip();

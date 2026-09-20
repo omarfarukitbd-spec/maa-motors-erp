@@ -279,11 +279,17 @@ export class VoiceSpeaker {
                 }
             }
 
-            // ── Priority 6: Standard Browser SpeechSynthesis (Native bn-BD in Chrome/Edge/Firefox) ──
-            if (this.synth && !browserSpeechAttempted) {
+            // ── Priority 6: Standard Browser SpeechSynthesis (ONLY IF genuine Bengali voice exists) ──
+            const hasGenuineBnVoice = activeVoice && (
+                activeVoice.lang.startsWith('bn') || 
+                activeVoice.name.toLowerCase().includes('bangla') || 
+                activeVoice.name.toLowerCase().includes('bengali')
+            );
+
+            if (this.synth && !browserSpeechAttempted && hasGenuineBnVoice) {
                 browserSpeechAttempted = true;
                 try {
-                    console.log(`[VoiceSpeaker] 🎙️ Speaking with Browser SpeechSynthesis (${activeVoice ? activeVoice.name : 'bn-BD'})...`);
+                    console.log(`[VoiceSpeaker] 🎙️ Speaking with Browser SpeechSynthesis (${activeVoice.name})...`);
                     await this.speakBrowser(cleanText, emotion);
                     return;
                 } catch (err) {
@@ -494,6 +500,9 @@ export class VoiceSpeaker {
     async speakBrowser(text, emotion) {
         if (!this.synth) throw new Error('SpeechSynthesis not supported');
         const voice = this.getNativeBnVoice();
+        if (!voice) {
+            throw new Error('No native Bengali voice found in browser');
+        }
 
         try {
             this.synth.cancel();
