@@ -134,7 +134,7 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
 
         const sRf = (d.receivedFrom || '').replace(/'/g, "\\'");
         const sRt = (d.receivedType || '').replace(/'/g, "\\'");
-        const sNotes = (d.notes || '').replace(/'/g, "\\'");
+        const sNotes = String(d.notes || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
 
         let entryTime = '';
         let fullEntryDateTime = '';
