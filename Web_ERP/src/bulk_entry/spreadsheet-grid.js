@@ -43,9 +43,12 @@ export function addSpreadsheetRow() {
             </select>
         </td>
         <td class="!px-1 !py-1 border-b border-slate-800/50" id="bank-cell-${rowIndex}">
-            <select class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold cursor-pointer text-slate-300" onkeydown="window.handleGridKey(event, this)">
+            <select class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold cursor-pointer text-slate-300" onkeydown="window.handleBankCellKey(event, this)">
                 ${window.cachedBanksHtml || '<option value="" class="!bg-slate-900 !text-slate-400">-- ব্যাংক নির্বাচন করুন --</option>'}
             </select>
+        </td>
+        <td class="!px-1 !py-1 border-b border-slate-800/50">
+            <input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs text-slate-200" placeholder="বিবরণ / মন্তব্য..." onkeydown="window.handleGridKey(event, this)">
         </td>
     `;
     tbody.appendChild(tr);
@@ -64,6 +67,23 @@ export function handleGridKey(event, element) {
     }
 }
 
+export function handleBankCellKey(event, element) {
+    if (event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault();
+        const row = element.closest('tr');
+        const tds = row ? row.querySelectorAll('td') : null;
+        const notesInput = (tds && tds.length > 7) ? tds[7].querySelector('input') : null;
+        if (notesInput) {
+            notesInput.focus();
+            if (notesInput.select) notesInput.select();
+        } else {
+            handleGridKey(event, element);
+        }
+    }
+}
+window.handleBankCellKey = handleBankCellKey;
+window.handleGridKey = handleGridKey;
+
 export function updateGridBankOptions(selectEl, rowIndex) {
     const type = selectEl.value;
     const targetCell = document.getElementById(`bank-cell-${rowIndex}`);
@@ -72,17 +92,17 @@ export function updateGridBankOptions(selectEl, rowIndex) {
     if (type === 'Cash') {
         selectEl.classList.replace('text-blue-400', 'text-emerald-400');
         selectEl.classList.replace('text-purple-400', 'text-emerald-400');
-        targetCell.innerHTML = `<select class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold cursor-pointer text-slate-300" onkeydown="window.handleGridKey(event, this)">
+        targetCell.innerHTML = `<select class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold cursor-pointer text-slate-300" onkeydown="window.handleBankCellKey(event, this)">
             ${window.cachedCashHtml || '<option value="Cash" class="!bg-slate-900 !text-slate-200">Cash</option>'}
         </select>`;
     } else if (type === 'Less') {
         selectEl.classList.replace('text-blue-400', 'text-purple-400');
         selectEl.classList.replace('text-emerald-400', 'text-purple-400');
-        targetCell.innerHTML = `<input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold text-slate-300" placeholder="যেমন: সম্মানিতে ছাড়..." onkeydown="window.handleGridKey(event, this)">`;
+        targetCell.innerHTML = `<input type="text" class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold text-slate-300" placeholder="যেমন: সম্মানিতে ছাড়..." onkeydown="window.handleBankCellKey(event, this)">`;
     } else {
         selectEl.classList.replace('text-emerald-400', 'text-blue-400');
         selectEl.classList.replace('text-purple-400', 'text-blue-400');
-        targetCell.innerHTML = `<select class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold cursor-pointer text-slate-300" onkeydown="window.handleGridKey(event, this)">
+        targetCell.innerHTML = `<select class="grid-input m3-field !bg-slate-900/50 !py-1.5 !px-2 text-xs font-bold cursor-pointer text-slate-300" onkeydown="window.handleBankCellKey(event, this)">
             ${window.cachedBanksHtml || '<option value="OneBank (IFRAT)" class="!bg-slate-900 !text-slate-200">OneBank (IFRAT)</option>'}
         </select>`;
     }
@@ -151,8 +171,11 @@ export async function saveSpreadsheetData() {
         const bankInputOrSelect = tds[6].querySelector('select, input');
         const receivedFrom = bankInputOrSelect ? bankInputOrSelect.value.trim() : '';
 
+        const notesInput = tds[7] ? tds[7].querySelector('input') : null;
+        const notes = notesInput ? notesInput.value.trim() : '';
+
         if (nameRaw && (bill > 0 || paid > 0)) {
-            dataToSave.push({ date, name: nameRaw, phone, voucher, bill, paid, receivedType, receivedFrom });
+            dataToSave.push({ date, name: nameRaw, phone, voucher, bill, paid, receivedType, receivedFrom, notes });
         }
     });
 

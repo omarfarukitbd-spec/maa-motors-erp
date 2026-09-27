@@ -7,7 +7,7 @@ import { formatAmountWithComma, formatAppDate } from '../utils.js';
 export function buildTransactionConfirmHtml({
     cleanName, accountNo, phone, areaStr, isAccountTransfer,
     prevDueBadge, b, p, projectedDue, isDue, isAdv, dueStatusText,
-    words, date, voucherNo, channelHtml
+    words, date, voucherNo, channelHtml, notes = ''
 }) {
     const finalBalanceLabel = isDue ? 'হালনাগাদ অবশিষ্ট বকেয়া:' : (isAdv ? 'হালনাগাদ অগ্রিম ব্যালেন্স:' : 'হালনাগাদ ব্যালেন্স:');
 
@@ -137,6 +137,18 @@ export function buildTransactionConfirmHtml({
 
                     <!-- Dedicated Payment Channel Card -->
                     ${channelHtml}
+
+                    <!-- Transaction Notes / Remarks Preview -->
+                    ${notes ? `
+                    <div class="p-2.5 bg-purple-950/20 border border-purple-500/30 rounded-2xl flex items-start gap-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                            <i class="fa-solid fa-note-sticky"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <span class="text-[10px] text-purple-300 font-bold block uppercase tracking-wider">বিবরণ / মন্তব্য</span>
+                            <span class="text-xs text-white font-medium block mt-0.5 break-words">${notes}</span>
+                        </div>
+                    </div>` : ''}
 
                     <!-- Fast Action Toggles -->
                     <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-2.5">

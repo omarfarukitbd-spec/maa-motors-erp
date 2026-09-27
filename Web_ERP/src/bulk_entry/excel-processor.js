@@ -54,9 +54,10 @@ export async function processExcelUpload() {
                 const paid = parseFloat(row[5]) || 0;
                 const receivedType = String(row[6] || 'Bank').trim();
                 const receivedFrom = String(row[7] || '').trim();
+                const notes = String(row[8] || '').trim();
 
                 if (name && (bill > 0 || paid > 0)) {
-                    dataToSave.push({ date: formattedDate, name, phone, voucher, bill, paid, receivedType, receivedFrom });
+                    dataToSave.push({ date: formattedDate, name, phone, voucher, bill, paid, receivedType, receivedFrom, notes });
                 }
             }
 

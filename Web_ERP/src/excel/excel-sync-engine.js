@@ -90,6 +90,7 @@ export async function executeSmartSync(transactionsToSave, newCustomerNamesSet) 
                     paid: item.paid,
                     receivedType: item.receivedType,
                     receivedFrom: item.receivedFrom,
+                    notes: item.notes || '',
                     prevDue: prevDue,
                     currentDue: runningDue,
                     createdBy: (firebase.auth().currentUser?.email || 'Admin Excel Import'),

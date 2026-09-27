@@ -160,8 +160,8 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
     return sendTxnWhatsAppAction(id, name, date, v, bill, paid, due, custId, stateRefs);
 }
 
-export async function editTransaction(id, cid, date, v, b, p, rt, rf) {
-    return editTransactionAction(id, cid, date, v, b, p, rt, rf, editingRef);
+export async function editTransaction(id, cid, date, v, b, p, rt, rf, notes = '') {
+    return editTransactionAction(id, cid, date, v, b, p, rt, rf, editingRef, notes);
 }
 
 export async function deleteTransaction(id, cid, b, p) {
@@ -240,7 +240,7 @@ if (typeof window !== 'undefined') {
         if (btn) { btn.innerText = 'এন্ট্রি সেভ করুন'; btn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20'; }
         document.getElementById('cancel-edit-txn-btn')?.classList.add('hidden');
         if (showFeedback) {
-            ['ledger-bill', 'ledger-paid', 'ledger-voucher'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            ['ledger-bill', 'ledger-paid', 'ledger-voucher', 'ledger-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             updateLedgerLiveText(); showToast('এডিট বাতিল করা হয়েছে', 'info');
         }
     };

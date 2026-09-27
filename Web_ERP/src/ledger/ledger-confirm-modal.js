@@ -8,7 +8,7 @@ import { buildTransactionConfirmHtml } from './ledger-confirm-template.js';
  */
 export async function showTransactionConfirmModal({
     customer, date, voucherNo = '', bill = 0, paid = 0,
-    receivedType = '', receivedFrom = '', preCommitDue = 0, editingRef = {}
+    receivedType = '', receivedFrom = '', notes = '', preCommitDue = 0, editingRef = {}
 }) {
     const cleanName = String(customer?.name || 'Customer').replace(/^\[.*?\]\s*/, '').trim();
     const accountNo = customer?.accountNo ? String(customer.accountNo) : '';
@@ -81,7 +81,7 @@ export async function showTransactionConfirmModal({
     const htmlContent = buildTransactionConfirmHtml({
         cleanName, accountNo, phone, areaStr, isAccountTransfer,
         prevDueBadge, b, p, projectedDue, isDue, isAdv, dueStatusText,
-        words, date, voucherNo, channelHtml
+        words, date, voucherNo, channelHtml, notes
     });
 
     const result = await Swal.fire({

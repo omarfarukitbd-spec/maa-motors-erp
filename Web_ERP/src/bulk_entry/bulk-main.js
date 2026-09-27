@@ -91,7 +91,7 @@ export function switchBulkTab(tab) {
                 </div>
             </div>
             <div class="m3-table-container">
-                <table class="m3-table w-full table-fixed min-w-[960px]">
+                <table class="m3-table w-full table-fixed min-w-[1100px]">
                     <thead>
                         <tr class="font-bn">
                             <th class="w-[130px]">তারিখ</th>
@@ -101,6 +101,7 @@ export function switchBulkTab(tab) {
                             <th class="w-[130px]">জমা (Credit)</th>
                             <th class="w-[110px]">মাধ্যম</th>
                             <th class="w-[140px]">ব্যাংক / নাম</th>
+                            <th class="w-[180px]">বিবরণ / মন্তব্য</th>
                         </tr>
                     </thead>
                     <tbody id="spreadsheet-body" class="font-bn"></tbody>

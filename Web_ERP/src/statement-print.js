@@ -48,7 +48,10 @@ function generateRowsArray(initialDue, docs) {
             } else {
                 typeDisp = `<strong style="color:#059669; font-size:10px; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:5px; display:inline-block;">${label}</strong>`;
             }
-        } else if (b > 0 && txn.notes) {
+            if (txn.notes) {
+                typeDisp += ` <span style="font-size:9.5px; color:#475569; font-style:italic;">• ${txn.notes}</span>`;
+            }
+        } else if (txn.notes) {
             typeDisp = `<span style="font-size:10px; color:#475569;">${txn.notes}</span>`;
         }
         const voucher = txn.voucherNo && txn.voucherNo !== 'OPENING' ? `<span style="font-size:9.5px; color:#0284c7; font-weight:900; font-family:monospace; margin-left:4px;">#${txn.voucherNo}</span>` : '';

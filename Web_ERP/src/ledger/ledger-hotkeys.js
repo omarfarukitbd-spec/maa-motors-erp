@@ -123,11 +123,16 @@ function handleFormEnterAdvancement(e) {
         if (p > 0) {
             document.getElementById('ledger-received-from')?.focus();
         } else {
-            document.getElementById('save-txn-btn')?.focus();
+            document.getElementById('ledger-notes')?.focus();
         }
     } else if (target.id === 'ledger-received-from') {
         e.preventDefault();
-        document.getElementById('save-txn-btn')?.focus();
+        document.getElementById('ledger-notes')?.focus();
+    } else if (target.id === 'ledger-notes') {
+        e.preventDefault();
+        const p = parseFloat(document.getElementById('ledger-paid')?.value?.replace(/,/g, '') || '0') || 0;
+        const targetBtn = (p > 0) ? document.getElementById('save-txn-btn') : (document.getElementById('save-txn-btn-standalone') || document.getElementById('save-txn-btn'));
+        targetBtn?.focus();
     }
 }
 

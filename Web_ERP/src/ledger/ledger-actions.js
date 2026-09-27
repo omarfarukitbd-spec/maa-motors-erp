@@ -15,6 +15,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
     const id = sel.value; const name = sel.options[sel.selectedIndex].text.replace(/\s*\([^)]*\)\s*$/, '').trim();
     const date = toDBDate(document.getElementById('ledger-date').value);
     const v = document.getElementById('ledger-voucher').value.trim();
+    const notes = document.getElementById('ledger-notes')?.value?.trim() || '';
     const b = parseAmount(document.getElementById('ledger-bill').value);
     const p = parseAmount(document.getElementById('ledger-paid').value);
     if(b === 0 && p === 0) return Swal.fire('Error', 'বিল বা জমা দিন', 'error');
@@ -112,6 +113,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         paid: p,
         receivedType,
         receivedFrom,
+        notes,
         preCommitDue,
         editingRef
     });
@@ -130,24 +132,24 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
             const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0));
             const oldCid = editingRef.oldCid || id;
             if (oldCid !== id) {
-                batch.update(TransactionDAO.getRef(editingRef.id), { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, currentDue: safeRound(preCommitDue + balanceDiff) });
+                batch.update(TransactionDAO.getRef(editingRef.id), { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, currentDue: safeRound(preCommitDue + balanceDiff) });
                 batch.update(CustomerDAO.getRef(oldCid), { totalDue: firebase.firestore.FieldValue.increment(-oldDiff) });
                 batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
                 actualDelta = balanceDiff;
             } else {
                 const netIncrement = safeRound(balanceDiff - oldDiff);
                 actualDelta = netIncrement;
-                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
+                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
                 batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
             }
-            auditLog('UPDATE', 'Ledger', editingRef.id, name, { oldBill: editingRef.oldBill, oldPaid: editingRef.oldPaid, newBill: b, newPaid: p });
+            auditLog('UPDATE', 'Ledger', editingRef.id, name, { oldBill: editingRef.oldBill, oldPaid: editingRef.oldPaid, newBill: b, newPaid: p, notes });
             editingRef.id = null;
             editingRef.oldCid = null;
         } else {
             txnRef = TransactionDAO.getRef();
-            batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
-            auditLog('CREATE', 'Ledger', txnRef.id, name, { bill: b, paid: p, type: receivedType || 'Bill' });
+            auditLog('CREATE', 'Ledger', txnRef.id, name, { bill: b, paid: p, type: receivedType || 'Bill', notes });
         }
         
         const finalSmsDue = safeRound(preCommitDue + actualDelta);
@@ -205,13 +207,14 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         resetLiveWords('ledger-bill-words'); resetLiveWords('ledger-paid-words');
         const vEl = document.getElementById('ledger-voucher'); if (vEl) vEl.value = '';
         const rfEl = document.getElementById('ledger-received-from'); if (rfEl) rfEl.value = '';
+        const notesEl = document.getElementById('ledger-notes'); if (notesEl) notesEl.value = '';
         if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(id);
         setTimeout(() => { document.getElementById('ledger-bill')?.focus(); }, 150);
     } catch(e) { handleError(e, 'লেনদেন সেভ করতে ব্যর্থ'); }
     finally { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; mainBtn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20'; } }
 }
 
-export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}) {
+export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}, notes = '') {
     if (!(await promptSecurityPin("খতিয়ান এডিট (Authorization)"))) return;
     editingRef.id = id; editingRef.oldCid = cid; editingRef.oldBill = b; editingRef.oldPaid = p;
     window._ledgerEditingRef = editingRef;
@@ -230,6 +233,7 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
     if (addressInput) addressInput.value = (cust?.zone ? `[${cust.zone}] ` : '') + (cust?.address || 'ঠিকানা নেই');
     if (document.getElementById('ledger-date')) document.getElementById('ledger-date').value = date;
     if (document.getElementById('ledger-voucher')) document.getElementById('ledger-voucher').value = v;
+    if (document.getElementById('ledger-notes')) document.getElementById('ledger-notes').value = notes || '';
     
     const billInput = document.getElementById('ledger-bill'); const paidInput = document.getElementById('ledger-paid');
     if (billInput) { billInput.value = b > 0 ? formatAmountWithComma(b) : ''; if (window.updateLiveWords) window.updateLiveWords(billInput, 'ledger-bill-words'); }

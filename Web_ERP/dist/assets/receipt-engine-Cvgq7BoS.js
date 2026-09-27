@@ -80,7 +80,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                         `).join(``)}
                     </tbody>
                 </table>
-            `;else{let e=f.bill>0?f.paid>0?`Transaction Entry / Payment`:`Opening Balance / Bill Entry`:`Cash Received / Payment`,t=f.bill>0?f.bill:f.paid;k=`
+            `;else{let e=f.bill>0?f.paid>0?`Transaction Entry / Payment`:`Opening Balance / Bill Entry`:`Cash Received / Payment`,t=f.notes?c(f.notes):e,n=f.bill>0?f.bill:f.paid;k=`
                 <table class="print-items-table">
                     <thead>
                         <tr>
@@ -92,8 +92,8 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                     <tbody>
                         <tr>
                             <td style="text-align:center;">01</td>
-                            <td class="text-left" style="font-weight:700; color:#0f172a;">${e}</td>
-                            <td class="text-right" style="font-weight:900; color:#0f172a;">৳${i(t)}</td>
+                            <td class="text-left" style="font-weight:700; color:#0f172a;">${t}</td>
+                            <td class="text-right" style="font-weight:900; color:#0f172a;">৳${i(n)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -169,6 +169,10 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                         </div>`:``}
                     </div>
                     <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
+                    ${f.notes?`
+                    <div style="border: 1px dashed #64748b; padding: 4px 6px; margin: 5px 0; font-size: 10px; text-align: left; background: #f8fafc; border-radius: 4px;">
+                        <strong>বিবরণ:</strong> ${c(f.notes)}
+                    </div>`:``}
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের বকেয়া:</span><span>৳ ${i(S)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${i(f.bill)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা${j}:</span><span>- ৳ ${i(f.paid)}</span></div>

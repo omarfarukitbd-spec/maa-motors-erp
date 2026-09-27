@@ -51,7 +51,8 @@ export async function uploadAdminExcelBackup(fileInput) {
             const bill = parseAmount(row[find(['বিল', 'debit', 'bill'])]);
             const paid = parseAmount(row[find(['জমা', 'credit', 'paid'])]);
             const type = String(row[find(['মাধ্যম', 'type'])] || 'Bank').trim();
-            const from = String(row[find(['ব্যাংক', 'বিবরণ', 'details'])] || '').trim();
+            const from = String(row[find(['রিসিভার', 'ব্যাংক'])] || '').trim();
+            const notes = String(row[find(['মন্তব্য', 'বিবরণ', 'notes', 'remarks'])] || '').trim();
 
             if (!nameRaw || nameRaw.includes('নমুনা') || (bill === 0 && paid === 0)) return;
 
@@ -90,7 +91,8 @@ export async function uploadAdminExcelBackup(fileInput) {
                 date: isoDate, customerName: cleanName, matchedCustId: matchedCust?.id || null,
                 phone: phoneRaw, voucher, bill, paid,
                 receivedType: type.toLowerCase().includes('cash') ? 'Cash' : 'Bank',
-                receivedFrom: from
+                receivedFrom: from,
+                notes: notes
             });
         });
 

@@ -130,8 +130,8 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
                 </table>
             `;
         } else {
-            // Fake table for Opening Balance or Cash Received to prevent blank middle space
-            const rowDesc = txn.bill > 0 ? (txn.paid > 0 ? 'Transaction Entry / Payment' : 'Opening Balance / Bill Entry') : 'Cash Received / Payment';
+            const defaultDesc = txn.bill > 0 ? (txn.paid > 0 ? 'Transaction Entry / Payment' : 'Opening Balance / Bill Entry') : 'Cash Received / Payment';
+            const rowDesc = txn.notes ? escapeHTML(txn.notes) : defaultDesc;
             const rowTotal = txn.bill > 0 ? txn.bill : txn.paid;
             itemsHtml = `
                 <table class="print-items-table">
@@ -242,6 +242,10 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
                         </div>` : ''}
                     </div>
                     <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
+                    ${txn.notes ? `
+                    <div style="border: 1px dashed #64748b; padding: 4px 6px; margin: 5px 0; font-size: 10px; text-align: left; background: #f8fafc; border-radius: 4px;">
+                        <strong>বিবরণ:</strong> ${escapeHTML(txn.notes)}
+                    </div>` : ''}
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>পূর্বের বকেয়া:</span><span>৳ ${formatAmountWithComma(effectivePrevDue)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;"><span>আজকের বিল:</span><span>৳ ${formatAmountWithComma(txn.bill)}</span></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; font-weight: 700;"><span>আজকের জমা${paymentMethodStr}:</span><span>- ৳ ${formatAmountWithComma(txn.paid)}</span></div>

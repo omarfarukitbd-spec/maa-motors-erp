@@ -19,7 +19,8 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
             bill: parseAmount(item.bill) || 0,
             paid: parseAmount(item.paid) || 0,
             receivedType: item.receivedType || 'Bank',
-            receivedFrom: item.receivedFrom || ''
+            receivedFrom: item.receivedFrom || '',
+            notes: item.notes ? String(item.notes).trim() : ''
         })).filter(item => item.bill > 0 || item.paid > 0);
 
         if (dataToSave.length === 0) {
@@ -43,6 +44,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
                             <span class="text-emerald-400 font-mono font-bold">জমা: ৳ ${formatAmountWithComma(item.paid)} ${item.paid > 0 ? `<span class="text-purple-400 font-bn tracking-wider ml-1 px-1.5 py-0.5 bg-purple-500/10 rounded-md border border-purple-500/20 text-[10px] uppercase">${item.receivedType}${item.receivedFrom ? ' - ' + item.receivedFrom : ''}</span>` : ''}</span>
                         </div>
                     </div>
+                    ${item.notes ? `<div class="text-[11px] text-slate-400 font-medium italic mt-1 pt-1 border-t border-slate-800/60 truncate" title="${item.notes}"><i class="fa-solid fa-pen-to-square text-[10px] text-purple-400 mr-1"></i>বিবরণ: ${item.notes}</div>` : ''}
                 </div>
             `;
         }).join('');
@@ -186,6 +188,7 @@ export async function executeBulkSave(rawDataToSave, isExcel = false) {
                 bill: safeRound(item.bill), paid: safeRound(item.paid),
                 receivedType: item.paid > 0 ? (item.receivedType || 'Bank') : '',
                 receivedFrom: item.paid > 0 ? (item.receivedFrom || '') : '',
+                notes: item.notes || '',
                 prevDue, currentDue,
                 createdBy: window.AppState?.currentUserEmail || 'Unknown',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
