@@ -25,6 +25,7 @@ export function renderCustomerTable(data) {
                 <td class="py-2.5 px-3 text-center font-mono font-bold text-blue-400 whitespace-nowrap">${c.customerAccountNo}</td>
                 <td class="py-2.5 px-3 font-bold text-white">
                     <div class="truncate max-w-[150px] sm:max-w-[200px]">${c.customerName}</div>
+                    ${c.customerAddress ? `<div class="text-[9.5px] text-slate-400 font-normal truncate max-w-[150px] sm:max-w-[200px]">${c.customerAddress}</div>` : ''}
                     <div class="text-[10px] text-slate-400 font-normal font-mono">${c.customerPhone}</div>
                 </td>
                 <td class="py-2.5 px-3 text-slate-300 whitespace-nowrap">${c.customerZone}</td>

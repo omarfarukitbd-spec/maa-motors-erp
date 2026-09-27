@@ -75,6 +75,7 @@ export async function printCustomerCollectionRegister(summaryData) {
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 3px; font-size: 10px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.customerAccountNo || '-')}</td>
                 <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 5px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a;">
                     <strong>${escapeHTML(c.customerName)}</strong><br>
+                    ${c.customerAddress ? `<span style="font-size:8.5px; color:#64748b; font-weight:600;">${escapeHTML(c.customerAddress)}<br></span>` : ''}
                     <span style="font-size:9px; color:#475569;">${escapeHTML(c.customerPhone || '-')}</span>
                 </td>
                 <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 5px 5px; font-size: 9.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.15; color: #334155;">${escapeHTML(c.customerZone || '-')}</td>

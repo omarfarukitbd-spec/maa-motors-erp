@@ -190,14 +190,26 @@ export async function printClosingDepositPdfReport(summaryData) {
         const methodDisplay = c.receivedType === 'Cash' ? 'ক্যাশ' : (c.receivedFrom || c.receivedType || 'ব্যাংক');
         const dueVal = Number(c.currentDue || 0);
 
+        const addressParts = [];
+        if (c.customerAddress && c.customerAddress.trim() !== '') {
+            addressParts.push(c.customerAddress.trim());
+        }
+        if (c.customerZone && c.customerZone.trim() !== '' && c.customerZone !== '-' && (!c.customerAddress || !c.customerAddress.toLowerCase().includes(c.customerZone.toLowerCase()))) {
+            addressParts.push(c.customerZone.trim());
+        }
+        const fullAddressStr = addressParts.join(', ');
+
         return `
             <tr class="print-row-no-break" style="${bgStyle}">
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 9px; font-family: 'Inter', sans-serif;">${idx + 1}</td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', sans-serif; white-space: nowrap;">${formatAppDate(c.date || startDate)}</td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 9px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${escapeHTML(c.customerAccountNo || '-')}</td>
-                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 5px; font-size: 9.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a;">
-                    <strong>${escapeHTML(c.customerName)}</strong>
-                    ${c.customerPhone ? `<span style="font-size:8px; color:#475569; margin-left:3px;">(${escapeHTML(c.customerPhone)})</span>` : ''}
+                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 5px; font-size: 9.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #0f172a;">
+                    <div style="font-weight: 800; color: #0f172a;">
+                        ${escapeHTML(c.customerName)}
+                        ${c.customerPhone && c.customerPhone !== '-' ? `<span style="font-size:8px; font-weight: 600; color:#475569; margin-left:3px;">(${escapeHTML(c.customerPhone)})</span>` : ''}
+                    </div>
+                    ${fullAddressStr ? `<div style="font-size:8px; color:#475569; font-weight:600; margin-top:1px; line-height:1.15;">${escapeHTML(fullAddressStr)}</div>` : ''}
                 </td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', monospace; color: #475569;">${escapeHTML(c.voucherNo || '-')}</td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 8.5px; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; color: #1e293b;">${escapeHTML(methodDisplay)}</td>
@@ -213,7 +225,7 @@ export async function printClosingDepositPdfReport(summaryData) {
                 <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 22px;">SL</th>
                 <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 55px;">তারিখ</th>
                 <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 42px;">A/C</th>
-                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 4px 5px; font-size: 9px; font-weight: 900; color: #1e293b;">কাস্টমার ও মোবাইল</th>
+                <th style="text-align: left; border: 1px solid #cbd5e1; padding: 4px 5px; font-size: 9px; font-weight: 900; color: #1e293b;">কাস্টমার, ঠিকানা ও মোবাইল</th>
                 <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 2px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 45px;">ভাউচার</th>
                 <th style="text-align: center; border: 1px solid #cbd5e1; padding: 4px 4px; font-size: 8.5px; font-weight: 900; color: #1e293b; width: 85px;">পদ্ধতি / ব্যাংক</th>
                 <th style="text-align: right; border: 1px solid #cbd5e1; padding: 4px 5px; font-size: 9px; font-weight: 900; color: #1e293b; width: 75px;">জমা (৳)</th>

@@ -94,7 +94,12 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
             const bill = Number(t.bill) || 0;
             const paid = Number(t.paid) || 0;
             const d = t.date || startDate;
-            const cust = custMap.get(t.customerId) || {};
+            let cust = custMap.get(t.customerId);
+            if (!cust && t.customerName) {
+                const cleanName = String(t.customerName).replace(/\[.*?\]/, '').trim();
+                cust = (customerCache || []).find(c => c.name && c.name.trim() === cleanName);
+            }
+            cust = cust || {};
 
             if (!dayMap.has(d)) {
                 dayMap.set(d, {
@@ -159,6 +164,7 @@ export async function fetchFinancialSummaryData(startDate, endDate) {
                     customerName: cust.name || t.customerName || 'অজানা কাস্টমার',
                     customerPhone: cust.phone || '-',
                     customerZone: cust.zone || '-',
+                    customerAddress: cust.address ? String(cust.address).trim() : '',
                     customerAccountNo: cust.accountNo || '-',
                     currentDue: t.currentDue !== undefined ? Number(t.currentDue) : (Number(cust.totalDue) || 0),
                     voucherNo: t.voucherNo || '-',
