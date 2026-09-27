@@ -92,7 +92,7 @@ export function renderLedger(container, params, callbacks = {}) {
             <div data-perm="addLedgerEntry" class="col-span-12 hide-for-boss">
                 <div class="relative flex items-center">
                     <i class="fa-solid fa-pen-to-square absolute left-3 top-1/2 -translate-y-1/2 text-purple-400 text-xs pointer-events-none z-10"></i>
-                    <input type="text" id="ledger-notes" placeholder="বিবরণ / মন্তব্য লিখুন (যেমন: মবিল ড্রাম ডেলিভারি, চেক নং ১২৩৪৫, ইত্যাদি)..." class="w-full bg-slate-950/80 border border-slate-700/70 rounded-xl h-9 pl-9 pr-3 text-xs font-medium text-slate-200 outline-none focus:border-purple-500 shadow-inner transition-all">
+                    <input type="text" id="ledger-notes" placeholder="বিবরণ বা মন্তব্য লিখুন..." class="w-full bg-slate-950/80 border border-slate-700/70 rounded-xl h-9 pl-9 pr-3 text-xs font-medium text-slate-200 outline-none focus:border-purple-500 shadow-inner transition-all">
                 </div>
             </div>
 
