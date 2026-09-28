@@ -267,6 +267,7 @@ export function initLedgerMemoAttachment() {
     if (removeBtn) {
         removeBtn.onclick = () => {
             window._stagedLedgerMemo = null;
+            if (window._ledgerEditingRef) window._ledgerEditingRef.oldMemoPhotoUrl = null;
             if (chip) chip.classList.add('hidden');
             if (fileInput) fileInput.value = '';
         };
@@ -274,11 +275,12 @@ export function initLedgerMemoAttachment() {
 
     if (viewBtn) {
         viewBtn.onclick = async () => {
-            if (window._stagedLedgerMemo?.dataUrl) {
+            const previewUrl = window._stagedLedgerMemo?.dataUrl || window._ledgerEditingRef?.oldMemoPhotoUrl;
+            if (previewUrl) {
                 try {
                     const { openMemoViewerModal } = await import('../utils/memo-viewer-modal.js');
                     await openMemoViewerModal({
-                        url: window._stagedLedgerMemo.dataUrl,
+                        url: previewUrl,
                         voucherNo: voucherInput.value || 'প্রিভিউ',
                         customerName: 'এন্ট্রি প্রিভিউ'
                     });
