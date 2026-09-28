@@ -291,17 +291,26 @@ export async function printStatement(currentCustomerInfo, currentOpeningBalance,
         const [y, m, d] = todayStr.split('-');
 
         // Smart DOM-measured pagination — auto column widths, no blank pages
-        const paginatedHtml = await smartPaginateStatement({
+        const extraPagesCount = selectedMemos.length;
+        const paginateResult = await smartPaginateStatement({
             rowsArray, page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml, page1ExtraHtml,
-            summaryHtml: customNoteHtml, signatureHtml, formattedDate: `${d}/${m}/${y}`
+            summaryHtml: customNoteHtml, signatureHtml, formattedDate: `${d}/${m}/${y}`,
+            extraPagesCount
         });
+
+        const paginatedHtml = paginateResult.html || String(paginateResult);
+        const stmtPageCount = paginateResult.stmtPageCount || 1;
+        const grandTotal = paginateResult.totalPageCount || (stmtPageCount + selectedMemos.length);
 
         let memoPagesHtml = '';
         if (selectedMemos.length > 0) {
             selectedMemos.forEach((memo, idx) => {
+                const pageNum = stmtPageCount + idx + 1;
                 memoPagesHtml += renderScannedMemoPrintPage(memo, {
                     currentIdx: idx + 1,
                     totalMemos: selectedMemos.length,
+                    pageNum: pageNum,
+                    totalPages: grandTotal,
                     customerName: currentCustomerInfo?.name,
                     accountNo: currentCustomerInfo?.accountNo
                 }, settings);

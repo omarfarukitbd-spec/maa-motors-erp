@@ -168,6 +168,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos
             }, settings);
 
             const hasAttachedMemos = Array.isArray(selectedMemos) && selectedMemos.length > 0;
+            const totalDocPages = 1 + (hasAttachedMemos ? selectedMemos.length : 0);
             const a4WrapperHtml = `
                 <div class="a4-wrapper font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a; page-break-after: ${hasAttachedMemos ? 'always' : 'auto'}; break-after: ${hasAttachedMemos ? 'page' : 'auto'};">
                     ${printHeader}
@@ -213,15 +214,24 @@ export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; width: 140px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">গ্রাহকের স্বাক্ষর</div>
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; width: 140px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
+
+                    <!-- A4 Invoice Bottom Page Footer -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #64748b; font-weight: 700; border-top: 1px solid #cbd5e1; padding-top: 6px; margin-top: 24px; font-family: 'Inter', 'Kalpurush', sans-serif;">
+                        <span>তারিখ: ${formatAppDate(txn.date)}</span>
+                        <span style="font-family: monospace;">পৃষ্ঠা 1 / ${totalDocPages}</span>
+                    </div>
                 </div>
             `;
 
             if (hasAttachedMemos) {
                 let memoPagesHtml = '';
                 selectedMemos.forEach((memo, idx) => {
+                    const pageNum = 1 + idx + 1;
                     memoPagesHtml += renderScannedMemoPrintPage(memo, {
                         currentIdx: idx + 1,
                         totalMemos: selectedMemos.length,
+                        pageNum: pageNum,
+                        totalPages: totalDocPages,
                         customerName: cleanCustName,
                         accountNo: cData.accountNo
                     }, settings);

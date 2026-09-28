@@ -1,4 +1,4 @@
-import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}from"./dao-BAvPFDr3.js";import{_ as i,b as a,c as o,f as s,g as c,l,m as u,o as d}from"./ui-helpers-ChDNPFdp.js";import{n as f}from"./vendor-ui-n4g2UPZQ.js";import{r as p}from"./smart-print-engine-BIa7XdT8.js";import{t as m}from"./memo-print-page-CVm18fer.js";var h=e(f());async function g(e){if(!e)return;let t=document.getElementById(`login-screen`),i=document.getElementById(`app-container`);t&&(t.style.display=`none`),i&&i.classList.add(`hidden`);let a=document.getElementById(`public-memo-view`);a||(a=document.createElement(`div`),a.id=`public-memo-view`,a.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-3 sm:p-6 font-bn flex flex-col items-center justify-start`,document.body.appendChild(a)),a.innerHTML=`<div class="text-center py-20 text-white font-bold"><i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mb-3"></i><p>মেমো ভাউচার লোড হচ্ছে...</p></div>`;try{let t=await n.getById(e);if(!t){a.innerHTML=`<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">মেমো ভাউচার ডাটা পাওয়া যায়নি!</div>`;return}let i={};try{i=await r.getAppSettings()||{}}catch(e){console.warn(`Public settings load fallback:`,e)}let o=i.shopName||`M/S. Maa Motors`,s=i.shopPhone||`01819-397669, 01815-707934`,c=i.shopAddress||`Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road`;a.innerHTML=`
+import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}from"./dao-BAvPFDr3.js";import{_ as i,b as a,c as o,f as s,g as c,l,m as u,o as d}from"./ui-helpers-ChDNPFdp.js";import{n as f}from"./vendor-ui-n4g2UPZQ.js";import{r as p}from"./smart-print-engine-B__k_DLo.js";import{t as m}from"./memo-print-page-DPA2LzK9.js";var h=e(f());async function g(e){if(!e)return;let t=document.getElementById(`login-screen`),i=document.getElementById(`app-container`);t&&(t.style.display=`none`),i&&i.classList.add(`hidden`);let a=document.getElementById(`public-memo-view`);a||(a=document.createElement(`div`),a.id=`public-memo-view`,a.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-3 sm:p-6 font-bn flex flex-col items-center justify-start`,document.body.appendChild(a)),a.innerHTML=`<div class="text-center py-20 text-white font-bold"><i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mb-3"></i><p>মেমো ভাউচার লোড হচ্ছে...</p></div>`;try{let t=await n.getById(e);if(!t){a.innerHTML=`<div class="m3-card text-center py-12 text-red-400 font-bold max-w-md mx-auto">মেমো ভাউচার ডাটা পাওয়া যায়নি!</div>`;return}let i={};try{i=await r.getAppSettings()||{}}catch(e){console.warn(`Public settings load fallback:`,e)}let o=i.shopName||`M/S. Maa Motors`,s=i.shopPhone||`01819-397669, 01815-707934`,c=i.shopAddress||`Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road`;a.innerHTML=`
             <div class="w-full max-w-2xl bg-slate-900 rounded-3xl border border-slate-800 p-4 sm:p-6 shadow-2xl mb-6 font-bn">
                 <div class="flex items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
                     <div class="flex items-center gap-2 text-white font-black text-sm sm:text-base"><i class="fa-solid fa-file-invoice text-blue-400"></i> ${o} - ডিজিটাল মেমো</div>
@@ -97,7 +97,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                         </tr>
                     </tbody>
                 </table>
-            `}let N=String(h.customerName||y.name||``).replace(/^\[.*?\]\s*/,``).trim(),P=``;if(h.paid>0&&h.receivedType&&(P=` <span style="font-size: 9px; opacity: 0.8;">(${c(h.receivedType)}${h.receivedFrom?` - `+c(h.receivedFrom):``})</span>`),o===`a4`){let t=v({title:`INVOICE`,dateRangeStr:`ভাউচার #: #${c(h.voucherNo||e.slice(-6).toUpperCase())} • তারিখ: ${l(h.date)} (${s(h.date)})`},D),n=Array.isArray(f)&&f.length>0,r=`
+            `}let N=String(h.customerName||y.name||``).replace(/^\[.*?\]\s*/,``).trim(),P=``;if(h.paid>0&&h.receivedType&&(P=` <span style="font-size: 9px; opacity: 0.8;">(${c(h.receivedType)}${h.receivedFrom?` - `+c(h.receivedFrom):``})</span>`),o===`a4`){let t=v({title:`INVOICE`,dateRangeStr:`ভাউচার #: #${c(h.voucherNo||e.slice(-6).toUpperCase())} • তারিখ: ${l(h.date)} (${s(h.date)})`},D),n=Array.isArray(f)&&f.length>0,r=1+(n?f.length:0),a=`
                 <div class="a4-wrapper font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a; page-break-after: ${n?`always`:`auto`}; break-after: ${n?`page`:`auto`};">
                     ${t}
 
@@ -142,8 +142,14 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; width: 140px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">গ্রাহকের স্বাক্ষর</div>
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; width: 140px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
+
+                    <!-- A4 Invoice Bottom Page Footer -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #64748b; font-weight: 700; border-top: 1px solid #cbd5e1; padding-top: 6px; margin-top: 24px; font-family: 'Inter', 'Kalpurush', sans-serif;">
+                        <span>তারিখ: ${l(h.date)}</span>
+                        <span style="font-family: monospace;">পৃষ্ঠা 1 / ${r}</span>
+                    </div>
                 </div>
-            `;if(n){let t=``;f.forEach((e,n)=>{t+=m(e,{currentIdx:n+1,totalMemos:f.length,customerName:N,accountNo:y.accountNo},D)}),p(r+t,``,`Maa_Motors_Invoice_${c(h.voucherNo||e.slice(-6))}`),d(`মেমো সহ প্রিন্ট প্রস্তুত (${o.toUpperCase()})!`,`success`,`প্রিন্ট Engine`);return}j.className=`print-a4`,j.innerHTML=`
+            `;if(n){let t=``;f.forEach((e,n)=>{let i=1+n+1;t+=m(e,{currentIdx:n+1,totalMemos:f.length,pageNum:i,totalPages:r,customerName:N,accountNo:y.accountNo},D)}),p(a+t,``,`Maa_Motors_Invoice_${c(h.voucherNo||e.slice(-6))}`),d(`মেমো সহ প্রিন্ট প্রস্তুত (${o.toUpperCase()})!`,`success`,`প্রিন্ট Engine`);return}j.className=`print-a4`,j.innerHTML=`
                 <style>
                     .print-items-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
                     .print-items-table th { background: #f1f5f9 !important; border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-weight: 900; color: #0f172a; }
@@ -151,7 +157,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{a as t,c as n,s as r}f
                     .print-items-table .text-left { text-align: left; }
                     .print-items-table .text-right { text-align: right; }
                 </style>
-                ${r}
+                ${a}
             `}else{let t=c(D.shopOwner||`Mohammed Amran`);j.className=`print-pos`,j.innerHTML=`
                 <div class="pos-wrapper font-bn text-center" style="width: 80mm; padding: 10px; box-sizing: border-box; background: white; color: black; font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif;">
                     <h2 style="font-size: 16px; font-weight: 900; margin: 0 0 2px 0; text-transform: uppercase;">${O}</h2>

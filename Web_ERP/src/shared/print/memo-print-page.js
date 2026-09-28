@@ -15,6 +15,8 @@ export function renderScannedMemoPrintPage(memo, meta = {}, settings = {}) {
 
     const currentIdx = meta.currentIdx || 1;
     const totalMemos = meta.totalMemos || 1;
+    const pageNum = meta.pageNum !== undefined ? meta.pageNum : currentIdx;
+    const totalPages = meta.totalPages !== undefined ? meta.totalPages : totalMemos;
     const customerName = escapeHTML((meta.customerName || '').replace(/^\[.*?\]\s*/, '').trim() || 'সম্মানিত গ্রাহক');
     const accountNo = escapeHTML(meta.accountNo || '');
 
@@ -66,7 +68,7 @@ export function renderScannedMemoPrintPage(memo, meta = {}, settings = {}) {
             <!-- Subtle Corporate Footer Line -->
             <div style="width: 100%; display: flex; justify-content: space-between; font-size: 8.5px; color: #94a3b8; padding-top: 6px; border-top: 1px dashed #e2e8f0; margin-top: auto;">
                 <span>মা মোটরস্ ইআরপি ক্লাউড আর্কাইভে সংরক্ষিত মূল স্ক্যান ভাউচার</span>
-                <span style="font-family: monospace;">পৃষ্ঠা ${currentIdx} / ${totalMemos}</span>
+                <span style="font-family: monospace;">পৃষ্ঠা ${pageNum} / ${totalPages}</span>
             </div>
 
         </div>

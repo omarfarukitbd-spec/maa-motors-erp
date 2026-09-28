@@ -126,7 +126,8 @@ export async function smartPaginatePrint({
 
 export async function smartPaginateStatement({
     rowsArray, page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
-    page1ExtraHtml = '', summaryHtml = '', signatureHtml = '', formattedDate
+    page1ExtraHtml = '', summaryHtml = '', signatureHtml = '', formattedDate,
+    extraPagesCount = 0
 }) {
     const [rawRowHeights, extraH, sumH, sigH] = await Promise.all([
         measureRowHeights(rowsArray, tableColHeaderHtml),
@@ -158,23 +159,31 @@ export async function smartPaginateStatement({
     }
     if (cur.length) pages.push(cur);
 
-    return _buildPageHtml(pages, {
+    const pagesHtml = _buildPageHtml(pages, {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
         page1ExtraHtml, summaryHtml, signatureHtml, formattedDate,
-        tableClass: 'print-items-table'
+        tableClass: 'print-items-table',
+        extraPagesCount: extraPagesCount || 0
     });
+
+    return {
+        html: pagesHtml,
+        stmtPageCount: pages.length,
+        totalPageCount: pages.length + (extraPagesCount || 0),
+        toString() { return this.html; }
+    };
 }
 
 function _buildPageHtml(pages, opts) {
     const {
         page1HeaderHtml, repeatHeaderHtml, tableColHeaderHtml,
         page1ExtraHtml = '', summaryHtml = '', signatureHtml = '',
-        formattedDate, tableClass
+        formattedDate, tableClass, extraPagesCount = 0
     } = opts;
-    const total = pages.length;
+    const total = pages.length + (extraPagesCount || 0);
 
     return pages.map((rows, i) => {
-        const num = i + 1, isFirst = num === 1, isLast = num === total;
+        const num = i + 1, isFirst = num === 1, isLast = (num === pages.length && extraPagesCount === 0);
         const brk = isLast ? '' : 'page-break-after:always;break-after:always;';
         const tbodyStyle = tableClass === 'print-items-table' ? ' style="font-size:10px;"' : '';
         return `<div style="${brk}width:100%;box-sizing:border-box;background:white;color:#0f172a;padding:6px 12px;">
@@ -184,7 +193,7 @@ function _buildPageHtml(pages, opts) {
                 ${tableColHeaderHtml}
                 <tbody${tbodyStyle}>${rows.join('')}</tbody>
             </table>
-            ${isLast ? summaryHtml + signatureHtml : ''}
+            ${num === pages.length ? summaryHtml + signatureHtml : ''}
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#475569;font-weight:700;border-top:1px solid #cbd5e1;padding-top:6px;margin-top:8px;font-family:'Inter','Kalpurush',sans-serif;">
                 <span>${formattedDate ? 'তারিখ: ' + formattedDate : ''}</span>
                 <span>পৃষ্ঠা ${num} / ${total}</span>

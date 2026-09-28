@@ -1,4 +1,4 @@
-import{_ as e,g as t,l as n}from"./ui-helpers-ChDNPFdp.js";function r(r,i={},a={}){let o=r.voucherNo?String(r.voucherNo).trim():`মেমো`,s=o.startsWith(`#`)?o:`#${o}`,c=r.date?n(r.date):``,l=Number(r.bill||0),u=Number(r.paid||0),d=i.currentIdx||1,f=i.totalMemos||1,p=t((i.customerName||``).replace(/^\[.*?\]\s*/,``).trim()||`সম্মানিত গ্রাহক`),m=t(i.accountNo||``),h=t(a.shopName||`M/S. MAA-MOTOR'S`),g=t(a.shopPhone||`01819-397669, 01815-707934`);return`
+import{_ as e,g as t,l as n}from"./ui-helpers-ChDNPFdp.js";function r(r,i={},a={}){let o=r.voucherNo?String(r.voucherNo).trim():`মেমো`,s=o.startsWith(`#`)?o:`#${o}`,c=r.date?n(r.date):``,l=Number(r.bill||0),u=Number(r.paid||0),d=i.currentIdx||1,f=i.totalMemos||1,p=i.pageNum===void 0?d:i.pageNum,m=i.totalPages===void 0?f:i.totalPages,h=t((i.customerName||``).replace(/^\[.*?\]\s*/,``).trim()||`সম্মানিত গ্রাহক`),g=t(i.accountNo||``),_=t(a.shopName||`M/S. MAA-MOTOR'S`),v=t(a.shopPhone||`01819-397669, 01815-707934`);return`
         <div class="print-page memo-print-page" style="page-break-before: always; break-before: page; min-height: 1123px; width: 794px; padding: 18px 24px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; margin: 0 auto; font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif;">
             
             <!-- Compact Corporate Scanned Memo Header -->
@@ -8,8 +8,8 @@ import{_ as e,g as t,l as n}from"./ui-helpers-ChDNPFdp.js";function r(r,i={},a={
                         <img src="${a.shopLogo||`/shop-official-logo.jpg`}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />
                     </div>
                     <div>
-                        <h2 style="font-size: 15px; font-weight: 900 !important; margin: 0; text-transform: uppercase; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', sans-serif;">${h}</h2>
-                        <p style="font-size: 9.5px; margin: 2px 0 0 0; opacity: 0.95; font-weight: 600 !important; color: #ffffff !important;">সংযুক্ত মূল মেমো • মুরাদপুর, চট্টগ্রাম | মোবাইল: ${g}</p>
+                        <h2 style="font-size: 15px; font-weight: 900 !important; margin: 0; text-transform: uppercase; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', sans-serif;">${_}</h2>
+                        <p style="font-size: 9.5px; margin: 2px 0 0 0; opacity: 0.95; font-weight: 600 !important; color: #ffffff !important;">সংযুক্ত মূল মেমো • মুরাদপুর, চট্টগ্রাম | মোবাইল: ${v}</p>
                     </div>
                 </div>
                 <div style="text-align: right; flex-shrink: 0;">
@@ -23,7 +23,7 @@ import{_ as e,g as t,l as n}from"./ui-helpers-ChDNPFdp.js";function r(r,i={},a={
             <!-- Structured Metadata Strip -->
             <div style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 10.5px; color: #334155;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span><strong>গ্রাহক:</strong> <span style="color: #0f172a; font-weight: 800;">${p}</span>${m?` <span style="color: #64748b; font-size: 9.5px;">(A/C: ${m})</span>`:``}</span>
+                    <span><strong>গ্রাহক:</strong> <span style="color: #0f172a; font-weight: 800;">${h}</span>${g?` <span style="color: #64748b; font-size: 9.5px;">(A/C: ${g})</span>`:``}</span>
                     <span style="color: #cbd5e1;">•</span>
                     ${c?`<span><strong>তারিখ:</strong> <span style="font-weight: 700;">${c}</span></span>`:``}
                 </div>
@@ -42,7 +42,7 @@ import{_ as e,g as t,l as n}from"./ui-helpers-ChDNPFdp.js";function r(r,i={},a={
             <!-- Subtle Corporate Footer Line -->
             <div style="width: 100%; display: flex; justify-content: space-between; font-size: 8.5px; color: #94a3b8; padding-top: 6px; border-top: 1px dashed #e2e8f0; margin-top: auto;">
                 <span>মা মোটরস্ ইআরপি ক্লাউড আর্কাইভে সংরক্ষিত মূল স্ক্যান ভাউচার</span>
-                <span style="font-family: monospace;">পৃষ্ঠা ${d} / ${f}</span>
+                <span style="font-family: monospace;">পৃষ্ঠা ${p} / ${m}</span>
             </div>
 
         </div>
