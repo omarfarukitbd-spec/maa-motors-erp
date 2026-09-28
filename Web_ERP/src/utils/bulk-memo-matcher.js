@@ -2,7 +2,7 @@ import Swal from 'sweetalert2';
 import { TransactionDAO } from '../dao.js';
 import { uploadMemoToR2 } from './r2-memo-uploader.js';
 import { compressScannedMemo, isValidImageFile } from './memo-compressor.js';
-import { showToast, formatAmountWithComma, formatAppDate, promptSecurityPin } from '../utils.js';
+import { showToast, formatAmountWithComma, formatAppDate } from '../utils.js';
 
 /**
  * Normalizes voucher string: converts Bengali numerals to English,
@@ -398,8 +398,6 @@ async function executeBulkUpload(files, allTxns, selectedYear) {
         return false;
     }
 
-    const isPinValid = await promptSecurityPin("বাল্ক মেমো আপলোড ও লিঙ্ক");
-    if (!isPinValid) return false;
 
     const progressContainer = document.getElementById('bulk-progress-container');
     const progressBar = document.getElementById('bulk-progress-bar');
