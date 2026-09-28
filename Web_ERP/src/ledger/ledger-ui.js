@@ -23,6 +23,7 @@ export function renderLedger(container, params, callbacks = {}) {
                 </div>
                 <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <div id="live-due-calc" class="bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700 text-xs font-black text-blue-400">৳ ০</div>
+                    <button type="button" class="h-9 px-3 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer" onclick="window.openBulkMemoMatcherModal && window.openBulkMemoMatcherModal()" title="একসাথে একাধিক স্ক্যান মেমো স্বয়ংক্রিয়ভাবে লেনদেনের সাথে ম্যাচ করুন"><i class="fa-solid fa-layer-group text-amber-400"></i><span>বাল্ক মেমো ম্যাচ</span></button>
                     <button data-perm="exportLedger" class="h-9 px-3 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0" onclick="window.exportTableToExcel('ledger-table', 'ledger-statement.xlsx')" title="এক্সেল ডাউনলোড"><i class="fa-solid fa-file-excel text-emerald-400"></i><span>এক্সেল</span></button>
                 </div>
             </div>
@@ -263,6 +264,27 @@ export function initLedgerMemoAttachment() {
         const file = e.dataTransfer?.files?.[0];
         if (file) processFile(file);
     };
+
+    // Direct Clipboard Paste Listener (Ctrl+V)
+    const handlePasteImage = (e) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type && items[i].type.indexOf('image') !== -1) {
+                const blob = items[i].getAsFile();
+                if (blob) {
+                    e.preventDefault();
+                    showToast('ক্লিপবোর্ড থেকে মেমোর ছবি গ্রহণ করা হয়েছে', 'info');
+                    processFile(blob);
+                    break;
+                }
+            }
+        }
+    };
+
+    voucherInput.addEventListener('paste', handlePasteImage);
+    const formCard = document.getElementById('ledger-form-card');
+    if (formCard) formCard.addEventListener('paste', handlePasteImage);
 
     if (removeBtn) {
         removeBtn.onclick = () => {

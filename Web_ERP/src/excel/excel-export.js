@@ -53,8 +53,8 @@ export async function downloadAdminExcelBackup() {
 
         // --- Sheet 2: Transactions & Template ---
         const wsTemplateData = [
-            ["মা মোটরস ইআরপি — সকল লেনদেন ও রশিদ বই এন্ট্রি শিট", "", "", "", "", "", "", "", "", `ডাউনলোড: ${formattedToday}`],
-            ["তারিখ (DD/MM/YYYY)", "কাস্টমারের নাম / আইডি", "মোবাইল", "ভাউচার নং", "বিল (Debit)", "জমা (Credit)", "ব্যালেন্স", "মাধ্যম (Bank/Cash)", "ব্যাংক/রিসিভার", "বিবরণ / মন্তব্য"]
+            ["মা মোটরস ইআরপি — সকল লেনদেন ও রশিদ বই এন্ট্রি শিট", "", "", "", "", "", "", "", "", "", `ডাউনলোড: ${formattedToday}`],
+            ["তারিখ (DD/MM/YYYY)", "কাস্টমারের নাম / আইডি", "মোবাইল", "ভাউচার নং", "বিল (Debit)", "জমা (Credit)", "ব্যালেন্স", "মাধ্যম (Bank/Cash)", "ব্যাংক/রিসিভার", "সংযুক্ত মেমো কপি (Clickable Link)", "বিবরণ / মন্তব্য"]
         ];
 
         realTxns.forEach((t, idx) => {
@@ -65,6 +65,9 @@ export async function downloadAdminExcelBackup() {
             }
             const matchedCust = customers.find(c => c.id === t.customerId);
             const custDisp = matchedCust ? `[${matchedCust.accountNo}] ${matchedCust.name}` : t.customerName;
+            const memoCell = t.memoPhotoUrl 
+                ? { f: `HYPERLINK("${t.memoPhotoUrl}", "স্ক্যান মেমো #${t.voucherNo || ''}")` }
+                : "-";
 
             wsTemplateData.push([
                 fDate, custDisp, matchedCust?.phone || '', t.voucherNo || '',
@@ -72,6 +75,7 @@ export async function downloadAdminExcelBackup() {
                 { f: `E${rowNum}-F${rowNum}` },
                 t.receivedType || (t.paid > 0 ? 'Bank' : ''),
                 t.receivedFrom || '',
+                memoCell,
                 t.notes || ''
             ]);
         });
@@ -80,11 +84,11 @@ export async function downloadAdminExcelBackup() {
         const startBlank = wsTemplateData.length + 1;
         for (let r = 0; r < 30; r++) {
             const rNum = startBlank + r;
-            wsTemplateData.push(["", "", "", "", "", "", { f: `IF(AND(E${rNum}="",F${rNum}=""),"",E${rNum}-F${rNum})` }, "Bank", "", ""]);
+            wsTemplateData.push(["", "", "", "", "", "", { f: `IF(AND(E${rNum}="",F${rNum}=""),"",E${rNum}-F${rNum})` }, "Bank", "", "", ""]);
         }
 
         const totalRowIdx = wsTemplateData.length + 1;
-        wsTemplateData.push(["সর্বমোট হিসাব", "", "", `মোট লেনদেন: ${realTxns.length}`, { f: `SUM(E3:E${totalRowIdx-1})` }, { f: `SUM(F3:F${totalRowIdx-1})` }, { f: `E${totalRowIdx}-F${totalRowIdx}` }, "", "", ""]);
+        wsTemplateData.push(["সর্বমোট হিসাব", "", "", `মোট লেনদেন: ${realTxns.length}`, { f: `SUM(E3:E${totalRowIdx-1})` }, { f: `SUM(F3:F${totalRowIdx-1})` }, { f: `E${totalRowIdx}-F${totalRowIdx}` }, "", "", "", ""]);
 
         const wsTemplate = XLSX.utils.aoa_to_sheet(wsTemplateData);
         const maxCustRow = Math.max(lastCustRow, 3);
@@ -94,7 +98,7 @@ export async function downloadAdminExcelBackup() {
         ];
 
         wsCustomers['!cols'] = [{ wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 30 }, { wch: 24 }];
-        wsTemplate['!cols'] = [{ wch: 18 }, { wch: 32 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 35 }];
+        wsTemplate['!cols'] = [{ wch: 18 }, { wch: 32 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 28 }, { wch: 35 }];
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, wsCustomers, "কাস্টমার তালিকা ও বর্তমান ব্যালেন্স");

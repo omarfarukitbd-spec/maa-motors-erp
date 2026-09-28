@@ -4,3 +4,11 @@ Web_ERP_BACKUP_SNAPSHOT/
 ~$*
 *.tmp
 .idea/
+Memo Book Editor/.venv/
+Memo Book Editor/crops/
+Memo Book Editor/sample/
+Memo Book Editor/sample_webp/
+Memo Book Editor/temp_webp/
+Memo Book Editor/inspect_crops/
+Memo Book Editor/*.pdf
+

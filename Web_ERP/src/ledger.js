@@ -276,6 +276,10 @@ if (typeof window !== 'undefined') {
             }
         });
     };
+    window.openBulkMemoMatcherModal = async () => {
+        const { openBulkMemoMatcherModal } = await import('./utils/bulk-memo-matcher.js');
+        await openBulkMemoMatcherModal();
+    };
     window.promptAttachMemo = async (txnId, voucherNo = '', customerName = '') => {
         const { openLateMemoUploadModal } = await import('./utils/memo-viewer-modal.js');
         await openLateMemoUploadModal(txnId, voucherNo, customerName, () => {

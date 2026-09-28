@@ -1,0 +1,539 @@
+{
+  "total_pages": 75,
+  "total_converted": 75,
+  "missing_memos": [
+    146,
+    159
+  ],
+  "duplicate_memos": [],
+  "min_memo": 101,
+  "max_memo": 177,
+  "average_size_kb": 71.0,
+  "memos": [
+    {
+      "page": 1,
+      "memo_no": 101,
+      "filename": "101.webp",
+      "size_kb": 74.7,
+      "dimensions": "950x1201"
+    },
+    {
+      "page": 2,
+      "memo_no": 102,
+      "filename": "102.webp",
+      "size_kb": 32.4,
+      "dimensions": "950x1186"
+    },
+    {
+      "page": 3,
+      "memo_no": 103,
+      "filename": "103.webp",
+      "size_kb": 90.0,
+      "dimensions": "950x1202"
+    },
+    {
+      "page": 4,
+      "memo_no": 104,
+      "filename": "104.webp",
+      "size_kb": 93.7,
+      "dimensions": "950x1186"
+    },
+    {
+      "page": 5,
+      "memo_no": 105,
+      "filename": "105.webp",
+      "size_kb": 94.9,
+      "dimensions": "950x1180"
+    },
+    {
+      "page": 6,
+      "memo_no": 106,
+      "filename": "106.webp",
+      "size_kb": 95.3,
+      "dimensions": "950x1182"
+    },
+    {
+      "page": 7,
+      "memo_no": 107,
+      "filename": "107.webp",
+      "size_kb": 100.0,
+      "dimensions": "950x1181"
+    },
+    {
+      "page": 8,
+      "memo_no": 108,
+      "filename": "108.webp",
+      "size_kb": 79.4,
+      "dimensions": "950x1197"
+    },
+    {
+      "page": 9,
+      "memo_no": 109,
+      "filename": "109.webp",
+      "size_kb": 70.1,
+      "dimensions": "950x1173"
+    },
+    {
+      "page": 10,
+      "memo_no": 110,
+      "filename": "110.webp",
+      "size_kb": 68.7,
+      "dimensions": "950x1171"
+    },
+    {
+      "page": 11,
+      "memo_no": 111,
+      "filename": "111.webp",
+      "size_kb": 92.4,
+      "dimensions": "950x1179"
+    },
+    {
+      "page": 12,
+      "memo_no": 112,
+      "filename": "112.webp",
+      "size_kb": 100.5,
+      "dimensions": "950x1156"
+    },
+    {
+      "page": 13,
+      "memo_no": 113,
+      "filename": "113.webp",
+      "size_kb": 99.4,
+      "dimensions": "950x1194"
+    },
+    {
+      "page": 14,
+      "memo_no": 114,
+      "filename": "114.webp",
+      "size_kb": 100.9,
+      "dimensions": "950x1201"
+    },
+    {
+      "page": 15,
+      "memo_no": 115,
+      "filename": "115.webp",
+      "size_kb": 100.2,
+      "dimensions": "950x1193"
+    },
+    {
+      "page": 16,
+      "memo_no": 116,
+      "filename": "116.webp",
+      "size_kb": 72.2,
+      "dimensions": "950x1201"
+    },
+    {
+      "page": 17,
+      "memo_no": 117,
+      "filename": "117.webp",
+      "size_kb": 62.6,
+      "dimensions": "950x1188"
+    },
+    {
+      "page": 18,
+      "memo_no": 118,
+      "filename": "118.webp",
+      "size_kb": 95.1,
+      "dimensions": "950x1181"
+    },
+    {
+      "page": 19,
+      "memo_no": 119,
+      "filename": "119.webp",
+      "size_kb": 50.7,
+      "dimensions": "950x1196"
+    },
+    {
+      "page": 20,
+      "memo_no": 120,
+      "filename": "120.webp",
+      "size_kb": 103.3,
+      "dimensions": "950x1202"
+    },
+    {
+      "page": 21,
+      "memo_no": 121,
+      "filename": "121.webp",
+      "size_kb": 100.2,
+      "dimensions": "950x1191"
+    },
+    {
+      "page": 22,
+      "memo_no": 122,
+      "filename": "122.webp",
+      "size_kb": 64.9,
+      "dimensions": "950x1191"
+    },
+    {
+      "page": 23,
+      "memo_no": 123,
+      "filename": "123.webp",
+      "size_kb": 91.2,
+      "dimensions": "950x1193"
+    },
+    {
+      "page": 24,
+      "memo_no": 124,
+      "filename": "124.webp",
+      "size_kb": 93.8,
+      "dimensions": "950x1218"
+    },
+    {
+      "page": 25,
+      "memo_no": 125,
+      "filename": "125.webp",
+      "size_kb": 62.2,
+      "dimensions": "950x1196"
+    },
+    {
+      "page": 26,
+      "memo_no": 126,
+      "filename": "126.webp",
+      "size_kb": 37.9,
+      "dimensions": "950x1193"
+    },
+    {
+      "page": 27,
+      "memo_no": 127,
+      "filename": "127.webp",
+      "size_kb": 36.4,
+      "dimensions": "950x1184"
+    },
+    {
+      "page": 28,
+      "memo_no": 128,
+      "filename": "128.webp",
+      "size_kb": 75.1,
+      "dimensions": "950x1176"
+    },
+    {
+      "page": 29,
+      "memo_no": 129,
+      "filename": "129.webp",
+      "size_kb": 73.1,
+      "dimensions": "950x1202"
+    },
+    {
+      "page": 30,
+      "memo_no": 130,
+      "filename": "130.webp",
+      "size_kb": 47.4,
+      "dimensions": "950x1178"
+    },
+    {
+      "page": 31,
+      "memo_no": 131,
+      "filename": "131.webp",
+      "size_kb": 89.2,
+      "dimensions": "950x1188"
+    },
+    {
+      "page": 32,
+      "memo_no": 132,
+      "filename": "132.webp",
+      "size_kb": 63.7,
+      "dimensions": "950x1199"
+    },
+    {
+      "page": 33,
+      "memo_no": 133,
+      "filename": "133.webp",
+      "size_kb": 87.0,
+      "dimensions": "950x1191"
+    },
+    {
+      "page": 34,
+      "memo_no": 134,
+      "filename": "134.webp",
+      "size_kb": 91.6,
+      "dimensions": "950x1198"
+    },
+    {
+      "page": 35,
+      "memo_no": 135,
+      "filename": "135.webp",
+      "size_kb": 28.7,
+      "dimensions": "950x1227"
+    },
+    {
+      "page": 36,
+      "memo_no": 136,
+      "filename": "136.webp",
+      "size_kb": 87.9,
+      "dimensions": "950x1196"
+    },
+    {
+      "page": 37,
+      "memo_no": 137,
+      "filename": "137.webp",
+      "size_kb": 40.5,
+      "dimensions": "950x1219"
+    },
+    {
+      "page": 38,
+      "memo_no": 138,
+      "filename": "138.webp",
+      "size_kb": 59.6,
+      "dimensions": "950x1217"
+    },
+    {
+      "page": 39,
+      "memo_no": 139,
+      "filename": "139.webp",
+      "size_kb": 42.7,
+      "dimensions": "950x1205"
+    },
+    {
+      "page": 40,
+      "memo_no": 140,
+      "filename": "140.webp",
+      "size_kb": 24.6,
+      "dimensions": "950x1170"
+    },
+    {
+      "page": 41,
+      "memo_no": 141,
+      "filename": "141.webp",
+      "size_kb": 91.1,
+      "dimensions": "950x1208"
+    },
+    {
+      "page": 42,
+      "memo_no": 142,
+      "filename": "142.webp",
+      "size_kb": 70.8,
+      "dimensions": "950x1197"
+    },
+    {
+      "page": 43,
+      "memo_no": 143,
+      "filename": "143.webp",
+      "size_kb": 89.4,
+      "dimensions": "950x1196"
+    },
+    {
+      "page": 44,
+      "memo_no": 144,
+      "filename": "144.webp",
+      "size_kb": 29.5,
+      "dimensions": "950x1200"
+    },
+    {
+      "page": 45,
+      "memo_no": 145,
+      "filename": "145.webp",
+      "size_kb": 41.9,
+      "dimensions": "950x1215"
+    },
+    {
+      "page": 46,
+      "memo_no": 147,
+      "filename": "147.webp",
+      "size_kb": 33.0,
+      "dimensions": "950x1192"
+    },
+    {
+      "page": 47,
+      "memo_no": 148,
+      "filename": "148.webp",
+      "size_kb": 27.2,
+      "dimensions": "950x1197"
+    },
+    {
+      "page": 48,
+      "memo_no": 149,
+      "filename": "149.webp",
+      "size_kb": 76.6,
+      "dimensions": "950x1203"
+    },
+    {
+      "page": 49,
+      "memo_no": 150,
+      "filename": "150.webp",
+      "size_kb": 44.8,
+      "dimensions": "950x1184"
+    },
+    {
+      "page": 50,
+      "memo_no": 151,
+      "filename": "151.webp",
+      "size_kb": 106.5,
+      "dimensions": "950x1210"
+    },
+    {
+      "page": 51,
+      "memo_no": 152,
+      "filename": "152.webp",
+      "size_kb": 44.8,
+      "dimensions": "950x1195"
+    },
+    {
+      "page": 52,
+      "memo_no": 153,
+      "filename": "153.webp",
+      "size_kb": 28.7,
+      "dimensions": "950x1204"
+    },
+    {
+      "page": 53,
+      "memo_no": 154,
+      "filename": "154.webp",
+      "size_kb": 34.7,
+      "dimensions": "950x1185"
+    },
+    {
+      "page": 54,
+      "memo_no": 155,
+      "filename": "155.webp",
+      "size_kb": 27.1,
+      "dimensions": "950x1205"
+    },
+    {
+      "page": 55,
+      "memo_no": 156,
+      "filename": "156.webp",
+      "size_kb": 24.9,
+      "dimensions": "950x1199"
+    },
+    {
+      "page": 56,
+      "memo_no": 157,
+      "filename": "157.webp",
+      "size_kb": 60.9,
+      "dimensions": "950x1186"
+    },
+    {
+      "page": 57,
+      "memo_no": 158,
+      "filename": "158.webp",
+      "size_kb": 32.5,
+      "dimensions": "950x1208"
+    },
+    {
+      "page": 58,
+      "memo_no": 160,
+      "filename": "160.webp",
+      "size_kb": 28.7,
+      "dimensions": "950x1181"
+    },
+    {
+      "page": 59,
+      "memo_no": 161,
+      "filename": "161.webp",
+      "size_kb": 34.4,
+      "dimensions": "950x1192"
+    },
+    {
+      "page": 60,
+      "memo_no": 162,
+      "filename": "162.webp",
+      "size_kb": 23.9,
+      "dimensions": "950x1215"
+    },
+    {
+      "page": 61,
+      "memo_no": 163,
+      "filename": "163.webp",
+      "size_kb": 65.0,
+      "dimensions": "950x1167"
+    },
+    {
+      "page": 62,
+      "memo_no": 164,
+      "filename": "164.webp",
+      "size_kb": 26.1,
+      "dimensions": "950x1191"
+    },
+    {
+      "page": 63,
+      "memo_no": 165,
+      "filename": "165.webp",
+      "size_kb": 31.2,
+      "dimensions": "950x1171"
+    },
+    {
+      "page": 64,
+      "memo_no": 166,
+      "filename": "166.webp",
+      "size_kb": 62.2,
+      "dimensions": "950x1191"
+    },
+    {
+      "page": 65,
+      "memo_no": 167,
+      "filename": "167.webp",
+      "size_kb": 28.8,
+      "dimensions": "950x1178"
+    },
+    {
+      "page": 66,
+      "memo_no": 168,
+      "filename": "168.webp",
+      "size_kb": 62.7,
+      "dimensions": "950x1173"
+    },
+    {
+      "page": 67,
+      "memo_no": 169,
+      "filename": "169.webp",
+      "size_kb": 127.7,
+      "dimensions": "950x1159"
+    },
+    {
+      "page": 68,
+      "memo_no": 170,
+      "filename": "170.webp",
+      "size_kb": 126.7,
+      "dimensions": "950x1165"
+    },
+    {
+      "page": 69,
+      "memo_no": 171,
+      "filename": "171.webp",
+      "size_kb": 121.0,
+      "dimensions": "950x1166"
+    },
+    {
+      "page": 70,
+      "memo_no": 172,
+      "filename": "172.webp",
+      "size_kb": 123.4,
+      "dimensions": "950x1162"
+    },
+    {
+      "page": 71,
+      "memo_no": 173,
+      "filename": "173.webp",
+      "size_kb": 124.6,
+      "dimensions": "950x1175"
+    },
+    {
+      "page": 72,
+      "memo_no": 174,
+      "filename": "174.webp",
+      "size_kb": 124.7,
+      "dimensions": "950x1212"
+    },
+    {
+      "page": 73,
+      "memo_no": 175,
+      "filename": "175.webp",
+      "size_kb": 135.9,
+      "dimensions": "950x1231"
+    },
+    {
+      "page": 74,
+      "memo_no": 176,
+      "filename": "176.webp",
+      "size_kb": 126.5,
+      "dimensions": "950x1173"
+    },
+    {
+      "page": 75,
+      "memo_no": 177,
+      "filename": "177.webp",
+      "size_kb": 112.2,
+      "dimensions": "950x1161"
+    }
+  ]
+}

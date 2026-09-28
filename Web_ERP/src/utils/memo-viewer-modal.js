@@ -278,7 +278,7 @@ export async function openLateMemoUploadModal(txnId, voucherNo = '', customerNam
                     <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 text-xl group-hover:text-amber-400">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                     </div>
-                    <div class="text-xs text-slate-200 font-bold">কম্পিউটার থেকে ছবি টেনে আনুন (Drag & Drop) অথবা <span class="text-amber-400 underline">ব্রাউজ করুন</span></div>
+                    <div class="text-xs text-slate-200 font-bold">কম্পিউটার থেকে ছবি টেনে আনুন (Drag & Drop), <span class="text-amber-400 underline">ব্রাউজ করুন</span> অথবা <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono text-[11px] border border-slate-700">Ctrl + V</kbd> পেস্ট করুন</div>
                     <div class="text-[10px] text-slate-500 font-medium">স্বয়ংক্রিয়ভাবে ২০–৫০ KB WebP ফরমেটে অপ্টিমাইজ হবে</div>
                 </div>
 
@@ -333,6 +333,22 @@ export async function openLateMemoUploadModal(txnId, voucherNo = '', customerNam
                 } catch (e) {
                     console.error('Late compression error:', e);
                     showToast(e.message || 'ছবি প্রসেস করতে ব্যর্থ', 'error');
+                }
+            };
+
+            popup.onpaste = (e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type && items[i].type.indexOf('image') !== -1) {
+                        const blob = items[i].getAsFile();
+                        if (blob) {
+                            e.preventDefault();
+                            showToast('ক্লিপবোর্ড থেকে ছবি গ্রহণ করা হয়েছে', 'info');
+                            handleFile(blob);
+                            break;
+                        }
+                    }
                 }
             };
 

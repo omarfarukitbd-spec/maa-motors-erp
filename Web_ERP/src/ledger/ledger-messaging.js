@@ -253,7 +253,28 @@ export async function executePrint(txnId, layoutType) {
     }
 }
 
-export function choosePrintType(txnId) {
+export async function choosePrintType(txnId) {
+    let txn = null;
+    if (window._currentLedgerTxnsMap && window._currentLedgerTxnsMap[txnId]) {
+        txn = window._currentLedgerTxnsMap[txnId];
+    } else if (Array.isArray(window._currentLedgerTxns)) {
+        txn = window._currentLedgerTxns.find(t => t.id === txnId);
+    }
+    if (!txn && txnId) {
+        try {
+            txn = await TransactionDAO.getById(txnId);
+        } catch(e) {
+            console.error("Error fetching txn in choosePrintType:", e);
+        }
+    }
+
+    const hasScanMemo = Boolean(txn?.memoPhotoUrl);
+    const memoBtnHtml = hasScanMemo ? `
+        <button type="button" onclick="if(window.viewMemoPhoto) window.viewMemoPhoto('${txnId}'); if(typeof Swal !== 'undefined' && Swal.close) Swal.close();" class="h-11 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-600/30 transition-all cursor-pointer">
+            <i class="fa-solid fa-file-invoice text-sm"></i> আসল স্ক্যান মেমো প্রিন্ট / ভিউ
+        </button>
+    ` : '';
+
     Swal.fire({ 
         title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-lg text-white"><i class="fa-solid fa-print text-emerald-400"></i><span>রিসিট প্রিন্ট ফরম্যাট নির্বাচন করুন</span></div>', 
         html: `
@@ -264,6 +285,7 @@ export function choosePrintType(txnId) {
                 <button type="button" onclick="window.executePrint('${txnId}', 'a4')" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition-all cursor-pointer">
                     <i class="fa-solid fa-file-invoice text-sm text-purple-400"></i> A4 ফুল পেপার মেমো (Standard Invoice)
                 </button>
+                ${memoBtnHtml}
             </div>
         `,
         showConfirmButton: false,
