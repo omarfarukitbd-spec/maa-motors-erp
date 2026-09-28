@@ -124,6 +124,20 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
     }
 
     try {
+        let memoPhotoUrl = editingRef.id ? (editingRef.oldMemoPhotoUrl || null) : null;
+        if (window._stagedLedgerMemo?.blob) {
+            try {
+                const { uploadMemoToR2 } = await import('../utils/r2-memo-uploader.js');
+                const uploadRes = await uploadMemoToR2(window._stagedLedgerMemo.blob, v, id);
+                if (uploadRes?.success && uploadRes?.url) {
+                    memoPhotoUrl = uploadRes.url;
+                }
+            } catch (upErr) {
+                console.error("Memo R2 upload error during save:", upErr);
+                showToast('লেনদেন সেভ হলেও মেমোর ছবি আপলোড ব্যর্থ হয়েছে। পরে যুক্ত করতে পারবেন।', 'warning');
+            }
+        }
+
         const batch = db.batch(); const balanceDiff = safeRound(b - p);
         let actualDelta = balanceDiff;
         let txnRef = null;
@@ -132,22 +146,23 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
             const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0));
             const oldCid = editingRef.oldCid || id;
             if (oldCid !== id) {
-                batch.update(TransactionDAO.getRef(editingRef.id), { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, currentDue: safeRound(preCommitDue + balanceDiff) });
+                batch.update(TransactionDAO.getRef(editingRef.id), { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, currentDue: safeRound(preCommitDue + balanceDiff) });
                 batch.update(CustomerDAO.getRef(oldCid), { totalDue: firebase.firestore.FieldValue.increment(-oldDiff) });
                 batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
                 actualDelta = balanceDiff;
             } else {
                 const netIncrement = safeRound(balanceDiff - oldDiff);
                 actualDelta = netIncrement;
-                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
+                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
                 batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
             }
             auditLog('UPDATE', 'Ledger', editingRef.id, name, { oldBill: editingRef.oldBill, oldPaid: editingRef.oldPaid, newBill: b, newPaid: p, notes });
             editingRef.id = null;
             editingRef.oldCid = null;
+            editingRef.oldMemoPhotoUrl = null;
         } else {
             txnRef = TransactionDAO.getRef();
-            batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
             auditLog('CREATE', 'Ledger', txnRef.id, name, { bill: b, paid: p, type: receivedType || 'Bill', notes });
         }
@@ -208,16 +223,36 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         const vEl = document.getElementById('ledger-voucher'); if (vEl) vEl.value = '';
         const rfEl = document.getElementById('ledger-received-from'); if (rfEl) rfEl.value = '';
         const notesEl = document.getElementById('ledger-notes'); if (notesEl) notesEl.value = '';
+        window._stagedLedgerMemo = null;
+        const stagedChip = document.getElementById('ledger-staged-memo-chip');
+        if (stagedChip) stagedChip.classList.add('hidden');
+        const memoFileInput = document.getElementById('ledger-memo-file-input');
+        if (memoFileInput) memoFileInput.value = '';
         if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(id);
         setTimeout(() => { document.getElementById('ledger-bill')?.focus(); }, 150);
     } catch(e) { handleError(e, 'লেনদেন সেভ করতে ব্যর্থ'); }
     finally { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; mainBtn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20'; } }
 }
 
-export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}, notes = '') {
+export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}, notes = '', memoPhotoUrl = null) {
     if (!(await promptSecurityPin("খতিয়ান এডিট (Authorization)"))) return;
-    editingRef.id = id; editingRef.oldCid = cid; editingRef.oldBill = b; editingRef.oldPaid = p;
+    editingRef.id = id; editingRef.oldCid = cid; editingRef.oldBill = b; editingRef.oldPaid = p; editingRef.oldMemoPhotoUrl = memoPhotoUrl || null;
     window._ledgerEditingRef = editingRef;
+    window._stagedLedgerMemo = null;
+
+    const stagedChip = document.getElementById('ledger-staged-memo-chip');
+    const nameEl = document.getElementById('ledger-staged-memo-name');
+    const sizeEl = document.getElementById('ledger-staged-memo-size');
+    const memoFileInput = document.getElementById('ledger-memo-file-input');
+    if (memoFileInput) memoFileInput.value = '';
+
+    if (memoPhotoUrl && stagedChip) {
+        if (nameEl) nameEl.innerText = v ? `#${v.replace(/^#/, '')}` : 'মেমো ছবি';
+        if (sizeEl) sizeEl.innerText = 'সংরক্ষিত WebP';
+        stagedChip.classList.remove('hidden');
+    } else if (stagedChip) {
+        stagedChip.classList.add('hidden');
+    }
 
     const cust = (getCustomerCache() || []).find(c => c.id === cid);
     const sel = document.getElementById('ledger-customer-select');

@@ -234,8 +234,13 @@ export function clearLedgerCustomerSearch() {
 if (typeof window !== 'undefined') {
     window._ledgerEditingRef = editingRef;
     window.cancelLedgerEdit = (showFeedback = true) => {
-        editingRef.id = null; editingRef.oldCid = null; editingRef.oldBill = 0; editingRef.oldPaid = 0;
+        editingRef.id = null; editingRef.oldCid = null; editingRef.oldBill = 0; editingRef.oldPaid = 0; editingRef.oldMemoPhotoUrl = null;
         window._ledgerEditingRef = editingRef;
+        window._stagedLedgerMemo = null;
+        const stagedChip = document.getElementById('ledger-staged-memo-chip');
+        if (stagedChip) stagedChip.classList.add('hidden');
+        const memoFileInput = document.getElementById('ledger-memo-file-input');
+        if (memoFileInput) memoFileInput.value = '';
         const btn = document.getElementById('save-txn-btn');
         if (btn) { btn.innerText = 'এন্ট্রি সেভ করুন'; btn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20'; }
         document.getElementById('cancel-edit-txn-btn')?.classList.add('hidden');
@@ -243,6 +248,40 @@ if (typeof window !== 'undefined') {
             ['ledger-bill', 'ledger-paid', 'ledger-voucher', 'ledger-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             updateLedgerLiveText(); showToast('এডিট বাতিল করা হয়েছে', 'info');
         }
+    };
+    window.viewMemoPhoto = async (txnId) => {
+        let txn = stateRefs.currentLedgerTxnsMap?.[txnId];
+        if (!txn || !txn.memoPhotoUrl) {
+            try {
+                txn = await TransactionDAO.getById(txnId);
+            } catch (e) {
+                console.error('Fetch txn error for memo photo:', e);
+            }
+        }
+        if (!txn || !txn.memoPhotoUrl) {
+            showToast('এই লেনদেনের কোনো স্ক্যান মেমো পাওয়া যায়নি', 'error');
+            return;
+        }
+        const { openMemoViewerModal } = await import('./utils/memo-viewer-modal.js');
+        await openMemoViewerModal({
+            url: txn.memoPhotoUrl,
+            voucherNo: txn.voucherNo,
+            customerName: txn.customerName,
+            date: txn.date,
+            bill: txn.bill,
+            paid: txn.paid,
+            txnId: txn.id,
+            onUpdated: () => {
+                loadRecentTransactions(null, document.getElementById('ledger-customer-select')?.value);
+            }
+        });
+    };
+    window.promptAttachMemo = async (txnId, voucherNo = '', customerName = '') => {
+        const { openLateMemoUploadModal } = await import('./utils/memo-viewer-modal.js');
+        await openLateMemoUploadModal(txnId, voucherNo, customerName, () => {
+            showToast('মেমো সফলভাবে সংযুক্ত করা হয়েছে', 'success');
+            loadRecentTransactions(null, document.getElementById('ledger-customer-select')?.value);
+        });
     };
     Object.assign(window, {
         loadRecentTransactions, saveTransaction, sendTxnSMS, sendTxnWhatsApp, updateLedgerLiveText,

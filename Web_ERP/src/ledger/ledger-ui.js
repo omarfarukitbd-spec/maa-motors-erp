@@ -1,5 +1,6 @@
-import { getTodayLocalDateString } from '../utils.js';
+import { getTodayLocalDateString, showToast } from '../utils.js';
 import { loadBankOptions, loadCashCollectorOptions } from './ledger-bank-cash.js';
+import { compressScannedMemo, isValidImageFile } from '../utils/memo-compressor.js';
 
 export function renderLedger(container, params, callbacks = {}) {
     const { loadCustomersForDropdown, loadRecentTransactions, filterLedgerByCustomer } = callbacks;
@@ -49,8 +50,29 @@ export function renderLedger(container, params, callbacks = {}) {
 
                 <!-- Voucher (2 cols) -->
                 <div data-perm="addLedgerEntry" class="col-span-6 md:col-span-2 relative hide-for-boss">
-                    <label class="m3-label text-slate-400 mb-1 block text-xs font-bold truncate">ভাউচার <span class="m3-label-sub text-[10px] opacity-70">(Voucher)</span></label>
-                    <input type="text" id="ledger-voucher" placeholder="যেমন: #100" class="m3-field py-1 bg-slate-950/80 h-10 text-xs font-mono">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="m3-label text-slate-400 block text-xs font-bold truncate">ভাউচার <span class="m3-label-sub text-[10px] opacity-70">(Voucher)</span></label>
+                        <button type="button" id="ledger-memo-trigger-btn" onclick="document.getElementById('ledger-memo-file-input')?.click()" class="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors cursor-pointer" title="স্ক্যান মেমোর ছবি যুক্ত করুন">
+                            <i class="fa-solid fa-paperclip text-[9px]"></i><span>মেমো ছবি</span>
+                        </button>
+                    </div>
+                    <div class="relative flex items-center">
+                        <input type="text" id="ledger-voucher" placeholder="যেমন: #100" class="m3-field py-1 bg-slate-950/80 h-10 text-xs font-mono pr-8">
+                        <button type="button" onclick="document.getElementById('ledger-memo-file-input')?.click()" class="absolute right-1 text-slate-500 hover:text-amber-400 w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer" title="মেমোর ছবি সিলেক্ট করুন">
+                            <i class="fa-solid fa-image text-xs"></i>
+                        </button>
+                    </div>
+                    <input type="file" id="ledger-memo-file-input" accept="image/*" class="hidden">
+                    <div id="ledger-staged-memo-chip" class="hidden mt-1 bg-slate-900/90 border border-amber-500/40 rounded-xl px-2 py-1 flex items-center justify-between text-[11px]">
+                        <div class="flex items-center gap-1.5 overflow-hidden cursor-pointer" id="ledger-view-staged-memo" title="প্রিভিউ দেখতে ক্লিক করুন">
+                            <i class="fa-solid fa-file-invoice text-amber-400 text-xs"></i>
+                            <span id="ledger-staged-memo-name" class="font-bold text-white truncate max-w-[90px]">মেমো ছবি</span>
+                            <span id="ledger-staged-memo-size" class="text-[9px] text-emerald-400 font-mono font-bold">32 KB</span>
+                        </div>
+                        <button type="button" id="ledger-remove-staged-memo" class="text-slate-400 hover:text-red-400 p-0.5 ml-1" title="ছবি বাদ দিন">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Bill / Debit (2 cols - Red) -->
@@ -174,6 +196,7 @@ export function renderLedger(container, params, callbacks = {}) {
     loadBankOptions();
     loadCashCollectorOptions();
     if (window.initLedgerHotkeys) window.initLedgerHotkeys();
+    initLedgerMemoAttachment();
 
     const targetCustId = params ? (params.customerId || params.custId) : null;
     if (targetCustId) {
@@ -190,4 +213,81 @@ export function renderLedger(container, params, callbacks = {}) {
         loadRecentTransactions();
     }
 }
+
+export function initLedgerMemoAttachment() {
+    const fileInput = document.getElementById('ledger-memo-file-input');
+    const voucherInput = document.getElementById('ledger-voucher');
+    const chip = document.getElementById('ledger-staged-memo-chip');
+    const nameEl = document.getElementById('ledger-staged-memo-name');
+    const sizeEl = document.getElementById('ledger-staged-memo-size');
+    const removeBtn = document.getElementById('ledger-remove-staged-memo');
+    const viewBtn = document.getElementById('ledger-view-staged-memo');
+
+    if (!fileInput || !voucherInput) return;
+
+    const processFile = async (file) => {
+        if (!isValidImageFile(file)) {
+            showToast('শুধুমাত্র ছবির ফাইল (JPG, PNG, WebP) গ্রহণযোগ্য', 'error');
+            return;
+        }
+        try {
+            showToast('মেমোর ছবি অপ্টিমাইজ হচ্ছে...', 'info');
+            const comp = await compressScannedMemo(file);
+            window._stagedLedgerMemo = {
+                blob: comp.blob,
+                dataUrl: comp.dataUrl,
+                sizeKB: comp.sizeKB,
+                name: file.name
+            };
+            const vText = voucherInput.value.trim();
+            if (nameEl) nameEl.innerText = vText ? `#${vText.replace(/^#/, '')}` : 'মেমো ছবি';
+            if (sizeEl) sizeEl.innerText = `${comp.sizeKB} KB`;
+            if (chip) chip.classList.remove('hidden');
+            showToast(`মেমো প্রস্তুত (${comp.sizeKB} KB)`, 'success');
+        } catch (err) {
+            console.error('Memo stage error:', err);
+            showToast(err.message || 'ছবি প্রসেস করতে ব্যর্থ', 'error');
+        }
+    };
+
+    fileInput.onchange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) processFile(file);
+    };
+
+    voucherInput.ondragover = (e) => { e.preventDefault(); voucherInput.classList.add('!border-amber-400'); };
+    voucherInput.ondragleave = () => { voucherInput.classList.remove('!border-amber-400'); };
+    voucherInput.ondrop = (e) => {
+        e.preventDefault();
+        voucherInput.classList.remove('!border-amber-400');
+        const file = e.dataTransfer?.files?.[0];
+        if (file) processFile(file);
+    };
+
+    if (removeBtn) {
+        removeBtn.onclick = () => {
+            window._stagedLedgerMemo = null;
+            if (chip) chip.classList.add('hidden');
+            if (fileInput) fileInput.value = '';
+        };
+    }
+
+    if (viewBtn) {
+        viewBtn.onclick = async () => {
+            if (window._stagedLedgerMemo?.dataUrl) {
+                try {
+                    const { openMemoViewerModal } = await import('../utils/memo-viewer-modal.js');
+                    await openMemoViewerModal({
+                        url: window._stagedLedgerMemo.dataUrl,
+                        voucherNo: voucherInput.value || 'প্রিভিউ',
+                        customerName: 'এন্ট্রি প্রিভিউ'
+                    });
+                } catch (e) {
+                    console.error('Preview staged memo error:', e);
+                }
+            }
+        };
+    }
+}
+
 

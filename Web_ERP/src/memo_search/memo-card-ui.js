@@ -146,6 +146,15 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
 
                         <!-- Compact Single-Line Action Toolbar -->
                         <div class="flex items-center gap-1.5 pt-0.5 overflow-x-auto custom-scrollbar no-scrollbar">
+                            ${txn.memoPhotoUrl ? `
+                                <button onclick="window.viewMemoPhoto('${txn.id}')" class="h-8 px-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-amber-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="আসল স্ক্যান মেমোর ছবি দেখুন">
+                                    <i class="fa-solid fa-file-invoice text-amber-400"></i><span>স্ক্যান মেমো</span>
+                                </button>
+                            ` : `
+                                <button onclick="window.promptAttachMemo('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${escapeHTML(cleanCustName)}')" class="h-8 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] flex items-center gap-1 border border-slate-700 shrink-0 active:scale-95 transition-all cursor-pointer" title="স্ক্যান মেমো যুক্ত করুন">
+                                    <i class="fa-solid fa-paperclip text-slate-400"></i><span>মেমো যুক্ত</span>
+                                </button>
+                            `}
                             <button onclick="window.printMemoReceipt('${txn.id}', 'a4')" class="h-8 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-[11px] flex items-center gap-1 shadow-sm shrink-0 active:scale-95 transition-all cursor-pointer" title="A4 সাইজ ইনভয়েস প্রিন্ট">
                                 <i class="fa-solid fa-print"></i><span>A4 প্রিন্ট</span>
                             </button>

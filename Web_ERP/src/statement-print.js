@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { SettingsDAO } from './dao.js';
-import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound, toDBDate } from './utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound, toDBDate, escapeHTML } from './utils.js';
 import { smartPaginateStatement, printViaIframe } from './utils/smart-print-engine.js';
 
 
@@ -147,11 +147,120 @@ function getSharedHtmlTemplates(customer, totalBill, totalPaid, totalDue, runnin
     return { page1HeaderHtml, repeatHeaderHtml, page1ExtraHtml, tableColHeaderHtml, signatureHtml };
 }
 
+async function promptStatementMemoSelection(availableMemos, customerName) {
+    let selectedMemos = [];
+    const memoRowsHtml = availableMemos.map(t => {
+        const cleanV = t.voucherNo ? (String(t.voucherNo).startsWith('#') ? t.voucherNo : `#${t.voucherNo}`) : 'ভাউচার';
+        const formattedDate = t.date ? formatAppDate(t.date) : '';
+        const b = Number(t.bill || 0);
+        const p = Number(t.paid || 0);
+        return `
+            <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 cursor-pointer text-xs transition-colors">
+                <div class="flex items-center gap-2.5 overflow-hidden">
+                    <input type="checkbox" class="stmt-memo-cb w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer" data-url="${escapeHTML(t.memoPhotoUrl)}" data-voucher="${escapeHTML(cleanV)}" data-date="${escapeHTML(t.date || '')}" data-bill="${b}" data-paid="${p}">
+                    <img src="${escapeHTML(t.memoPhotoUrl)}" class="w-9 h-9 object-cover rounded-lg border border-slate-700 shrink-0">
+                    <div class="truncate">
+                        <div class="font-mono font-black text-amber-300 text-xs">${escapeHTML(cleanV)}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">${formattedDate}</div>
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    ${b > 0 ? `<div class="text-red-400 font-bold font-mono text-xs">৳ ${formatAmountWithComma(b)}</div>` : ''}
+                    ${p > 0 ? `<div class="text-emerald-400 font-bold font-mono text-xs">৳ ${formatAmountWithComma(p)}</div>` : ''}
+                </div>
+            </label>
+        `;
+    }).join('');
+
+    const res = await Swal.fire({
+        title: '<div class="flex items-center gap-2 font-bn font-black text-lg text-white"><i class="fa-solid fa-file-invoice text-amber-400"></i><span>স্ক্যান মেমো প্রিন্ট সংযুক্তি</span></div>',
+        html: `
+            <div class="text-left font-bn space-y-2 p-1 text-slate-300">
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    এই গ্রাহকের স্টেটমেন্টের সাথে মোট <strong class="text-amber-400">${availableMemos.length}টি</strong> স্ক্যান মেমোর ছবি রয়েছে। কোন কোন মেমো স্টেটমেন্টের সাথে প্রিন্ট/PDF-এ যুক্ত করতে চান?
+                </p>
+                <div class="flex items-center justify-between pt-1 pb-1 border-b border-slate-800">
+                    <label class="flex items-center gap-1.5 text-xs font-bold text-cyan-400 cursor-pointer">
+                        <input type="checkbox" id="stmt-memo-toggle-all" class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-0 cursor-pointer">
+                        <span>সকল মেমো সিলেক্ট করুন</span>
+                    </label>
+                    <span id="stmt-memo-count-disp" class="text-[11px] text-slate-400 font-mono">০টি সিলেক্টেড</span>
+                </div>
+                <div class="max-h-60 overflow-y-auto custom-scrollbar space-y-1.5 pt-1 pr-1">
+                    ${memoRowsHtml}
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: '<i class="fa-solid fa-print mr-1.5"></i>মেমো সহ প্রিন্ট',
+        denyButtonText: 'শুধু স্টেটমেন্ট প্রিন্ট',
+        cancelButtonText: 'বাতিল',
+        confirmButtonColor: '#059669',
+        denyButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b',
+        customClass: {
+            popup: '!bg-slate-950 !rounded-3xl border border-slate-800 shadow-2xl font-bn',
+            confirmButton: 'm3-btn-primary font-bold !px-5 !py-2.5 !rounded-xl text-xs',
+            denyButton: 'm3-btn-primary !bg-blue-600 hover:!bg-blue-500 font-bold !px-5 !py-2.5 !rounded-xl text-xs',
+            cancelButton: 'm3-btn-tonal font-bold !px-4 !py-2.5 !rounded-xl text-xs'
+        },
+        didOpen: (popup) => {
+            const toggleAll = popup.querySelector('#stmt-memo-toggle-all');
+            const cbs = popup.querySelectorAll('.stmt-memo-cb');
+            const countDisp = popup.querySelector('#stmt-memo-count-disp');
+
+            const updateCount = () => {
+                const count = popup.querySelectorAll('.stmt-memo-cb:checked').length;
+                if (countDisp) countDisp.innerText = `${count}টি সিলেক্টেড`;
+                if (toggleAll) toggleAll.checked = (count === cbs.length && cbs.length > 0);
+            };
+
+            if (toggleAll) {
+                toggleAll.onchange = () => {
+                    cbs.forEach(cb => { cb.checked = toggleAll.checked; });
+                    updateCount();
+                };
+            }
+
+            cbs.forEach(cb => {
+                cb.onchange = updateCount;
+            });
+        }
+    });
+
+    if (res.isDismissed) return null;
+    if (res.isDenied) return [];
+
+    const popup = Swal.getPopup();
+    if (popup) {
+        const checkedBoxes = popup.querySelectorAll('.stmt-memo-cb:checked');
+        checkedBoxes.forEach(cb => {
+            selectedMemos.push({
+                url: cb.dataset.url,
+                voucherNo: cb.dataset.voucher,
+                date: cb.dataset.date,
+                bill: cb.dataset.bill,
+                paid: cb.dataset.paid
+            });
+        });
+    }
+    return selectedMemos;
+}
+
 export async function printStatement(currentCustomerInfo, currentOpeningBalance, currentStatementData, customNote = '') {
     try {
         const settings = await SettingsDAO.getAppSettings();
         let container = document.getElementById('print-receipt-container');
         if (!container) { container = document.createElement('div'); container.id = 'print-receipt-container'; document.body.appendChild(container); }
+
+        const availableMemos = (currentStatementData || []).filter(t => t.memoPhotoUrl && String(t.memoPhotoUrl).trim() !== '');
+        let selectedMemos = [];
+        if (availableMemos.length > 0) {
+            const userChoice = await promptStatementMemoSelection(availableMemos, currentCustomerInfo?.name || '');
+            if (userChoice === null) return;
+            selectedMemos = userChoice;
+        }
 
         const start = document.getElementById('stmt-start-date')?.value || '';
         const end = document.getElementById('stmt-end-date')?.value || '';
@@ -186,8 +295,33 @@ export async function printStatement(currentCustomerInfo, currentOpeningBalance,
             summaryHtml: customNoteHtml, signatureHtml, formattedDate: `${d}/${m}/${y}`
         });
 
+        let memoPagesHtml = '';
+        if (selectedMemos.length > 0) {
+            selectedMemos.forEach((memo, idx) => {
+                const cleanV = memo.voucherNo || 'মেমো';
+                const memoDate = memo.date ? formatAppDate(memo.date) : '';
+                memoPagesHtml += `
+                    <div class="print-page memo-print-page" style="page-break-before: always; break-before: page; min-height: 1123px; width: 794px; padding: 24px 32px; box-sizing: border-box; background: #fff; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; margin: 0 auto;">
+                        <div style="width: 100%; border-bottom: 2px solid #0284c7; padding-bottom: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
+                            <div>
+                                <div style="font-size: 15px; font-weight: 900; color: #0f172a; font-family: 'Inter', 'Kalpurush', sans-serif;">মেসার্স মা মোটরস্ - সংযুক্ত স্ক্যান মেমো (${idx + 1}/${selectedMemos.length})</div>
+                                <div style="font-size: 11px; color: #475569; font-family: 'Hind Siliguri', sans-serif; font-weight: 600;">ভাউচার: <strong style="color: #0284c7; font-family: monospace;">${cleanV}</strong> | গ্রাহক: <strong>${(currentCustomerInfo?.name || '').replace(/^\[.*?\]\s*/, '')}</strong></div>
+                            </div>
+                            <div style="font-size: 11px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; text-align: right;">
+                                ${memoDate ? `তারিখ: ${memoDate}` : ''}
+                                ${Number(memo.bill || 0) > 0 ? ` | বিল: ৳ ${formatAmountWithComma(memo.bill)}` : ''}
+                            </div>
+                        </div>
+                        <div style="width: 100%; flex-grow: 1; display: flex; align-items: center; justify-content: center; max-height: 980px;">
+                            <img src="${memo.url}" style="max-width: 100%; max-height: 960px; object-fit: contain; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" alt="Scanned Memo ${cleanV}">
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         // iframe print — suppresses Chrome URL/date header+footer
-        printViaIframe(paginatedHtml);
+        printViaIframe(paginatedHtml + memoPagesHtml);
     } catch(err) {
         console.error("Statement print error:", err);
         Swal.fire('Error', 'প্রিন্ট করতে সমস্যা হয়েছে', 'error');
