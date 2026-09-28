@@ -1,13 +1,13 @@
 {
   "total_pages": 75,
-  "total_converted": 75,
+  "total_converted": 78,
   "missing_memos": [
     146,
     159
   ],
   "duplicate_memos": [],
   "min_memo": 101,
-  "max_memo": 177,
+  "max_memo": 180,
   "average_size_kb": 71.0,
   "memos": [
     {
@@ -534,6 +534,27 @@
       "filename": "177.webp",
       "size_kb": 112.2,
       "dimensions": "950x1161"
+    },
+    {
+      "page": 76,
+      "memo_no": 178,
+      "filename": "178.webp",
+      "size_kb": 53.9,
+      "dimensions": "950x1160"
+    },
+    {
+      "page": 77,
+      "memo_no": 179,
+      "filename": "179.webp",
+      "size_kb": 25.5,
+      "dimensions": "950x1160"
+    },
+    {
+      "page": 78,
+      "memo_no": 180,
+      "filename": "180.webp",
+      "size_kb": 92.5,
+      "dimensions": "950x1160"
     }
   ]
 }
