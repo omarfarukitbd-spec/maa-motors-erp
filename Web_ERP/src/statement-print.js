@@ -2,6 +2,7 @@ import Swal from 'sweetalert2';
 import { SettingsDAO } from './dao.js';
 import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound, toDBDate, escapeHTML } from './utils.js';
 import { smartPaginateStatement, printViaIframe } from './utils/smart-print-engine.js';
+import { renderScannedMemoPrintPage } from './shared/print/memo-print-page.js';
 
 
 function generateRowsArray(initialDue, docs) {
@@ -298,25 +299,12 @@ export async function printStatement(currentCustomerInfo, currentOpeningBalance,
         let memoPagesHtml = '';
         if (selectedMemos.length > 0) {
             selectedMemos.forEach((memo, idx) => {
-                const cleanV = memo.voucherNo || 'মেমো';
-                const memoDate = memo.date ? formatAppDate(memo.date) : '';
-                memoPagesHtml += `
-                    <div class="print-page memo-print-page" style="page-break-before: always; break-before: page; min-height: 1123px; width: 794px; padding: 24px 32px; box-sizing: border-box; background: #fff; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; margin: 0 auto;">
-                        <div style="width: 100%; border-bottom: 2px solid #0284c7; padding-bottom: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
-                            <div>
-                                <div style="font-size: 15px; font-weight: 900; color: #0f172a; font-family: 'Inter', 'Kalpurush', sans-serif;">মেসার্স মা মোটরস্ - সংযুক্ত স্ক্যান মেমো (${idx + 1}/${selectedMemos.length})</div>
-                                <div style="font-size: 11px; color: #475569; font-family: 'Hind Siliguri', sans-serif; font-weight: 600;">ভাউচার: <strong style="color: #0284c7; font-family: monospace;">${cleanV}</strong> | গ্রাহক: <strong>${(currentCustomerInfo?.name || '').replace(/^\[.*?\]\s*/, '')}</strong></div>
-                            </div>
-                            <div style="font-size: 11px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600; text-align: right;">
-                                ${memoDate ? `তারিখ: ${memoDate}` : ''}
-                                ${Number(memo.bill || 0) > 0 ? ` | বিল: ৳ ${formatAmountWithComma(memo.bill)}` : ''}
-                            </div>
-                        </div>
-                        <div style="width: 100%; flex-grow: 1; display: flex; align-items: center; justify-content: center; max-height: 980px;">
-                            <img src="${memo.url}" style="max-width: 100%; max-height: 960px; object-fit: contain; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" alt="Scanned Memo ${cleanV}">
-                        </div>
-                    </div>
-                `;
+                memoPagesHtml += renderScannedMemoPrintPage(memo, {
+                    currentIdx: idx + 1,
+                    totalMemos: selectedMemos.length,
+                    customerName: currentCustomerInfo?.name,
+                    accountNo: currentCustomerInfo?.accountNo
+                }, settings);
             });
         }
 

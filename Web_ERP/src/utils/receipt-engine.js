@@ -29,6 +29,8 @@ export function triggerUniversalPrint(container) {
 }
 
 import { renderSharedPrintHeader } from '../shared/print/print-header.js';
+import { renderScannedMemoPrintPage } from '../shared/print/memo-print-page.js';
+import { printViaIframe } from './smart-print-engine.js';
 
 /**
  * Universal Corporate Print Header Generator
@@ -42,7 +44,7 @@ export function renderPrintHeader(options = {}, settings = {}) {
  * Core Receipt Printing Engine
  * Fully Restored - 100% functional parity with original utils.js
  */
-export async function printReceiptEngine(txnId, layoutType = 'a4') {
+export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos = []) {
     try {
         showToast(`রিসিট লেআউট তৈরি হচ্ছে (${layoutType.toUpperCase()})...`, 'info', 'প্রিন্ট Engine');
         const txn = await TransactionDAO.getById(txnId);
@@ -165,16 +167,9 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
                 dateRangeStr: `ভাউচার #: #${escapeHTML(txn.voucherNo || txnId.slice(-6).toUpperCase())} • তারিখ: ${formatAppDate(txn.date)} (${getDayOfWeekBangla(txn.date)})`
             }, settings);
 
-            container.className = 'print-a4';
-            container.innerHTML = `
-                <style>
-                    .print-items-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
-                    .print-items-table th { background: #f1f5f9 !important; border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-weight: 900; color: #0f172a; }
-                    .print-items-table td { border: 1px solid #e2e8f0; padding: 7px 10px; color: #334155; }
-                    .print-items-table .text-left { text-align: left; }
-                    .print-items-table .text-right { text-align: right; }
-                </style>
-                <div class="a4-wrapper font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a;">
+            const hasAttachedMemos = Array.isArray(selectedMemos) && selectedMemos.length > 0;
+            const a4WrapperHtml = `
+                <div class="a4-wrapper font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a; page-break-after: ${hasAttachedMemos ? 'always' : 'auto'}; break-after: ${hasAttachedMemos ? 'page' : 'auto'};">
                     ${printHeader}
 
                     <!-- Customer Details Box (Full Width) -->
@@ -219,6 +214,34 @@ export async function printReceiptEngine(txnId, layoutType = 'a4') {
                         <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; width: 140px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
                 </div>
+            `;
+
+            if (hasAttachedMemos) {
+                let memoPagesHtml = '';
+                selectedMemos.forEach((memo, idx) => {
+                    memoPagesHtml += renderScannedMemoPrintPage(memo, {
+                        currentIdx: idx + 1,
+                        totalMemos: selectedMemos.length,
+                        customerName: cleanCustName,
+                        accountNo: cData.accountNo
+                    }, settings);
+                });
+
+                printViaIframe(a4WrapperHtml + memoPagesHtml, '', `Maa_Motors_Invoice_${escapeHTML(txn.voucherNo || txnId.slice(-6))}`);
+                showToast(`মেমো সহ প্রিন্ট প্রস্তুত (${layoutType.toUpperCase()})!`, 'success', 'প্রিন্ট Engine');
+                return;
+            }
+
+            container.className = 'print-a4';
+            container.innerHTML = `
+                <style>
+                    .print-items-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
+                    .print-items-table th { background: #f1f5f9 !important; border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-weight: 900; color: #0f172a; }
+                    .print-items-table td { border: 1px solid #e2e8f0; padding: 7px 10px; color: #334155; }
+                    .print-items-table .text-left { text-align: left; }
+                    .print-items-table .text-right { text-align: right; }
+                </style>
+                ${a4WrapperHtml}
             `;
         } else {
             const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");

@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, formatSmsCounterText, buildSmsMessage, promptSecurityPin, sendSMS, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, formatSmsCounterText, buildSmsMessage, promptSecurityPin, sendSMS, showToast, escapeHTML } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 
 export async function sendTxnSMS(id, name, date, v, bill, paid, due, custId, stateRefs = {}) {
@@ -238,15 +238,15 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
     }
 }
 
-export async function executePrint(txnId, layoutType) {
+export async function executePrint(txnId, layoutType, selectedMemos = []) {
     try {
         if (typeof Swal !== 'undefined' && Swal.close) Swal.close();
         if (typeof window.printReceiptEngine === 'function') {
-            await window.printReceiptEngine(txnId, layoutType);
+            await window.printReceiptEngine(txnId, layoutType, selectedMemos);
         } else {
             const { printReceiptEngine } = await import('../utils/receipt-engine.js');
             window.printReceiptEngine = printReceiptEngine;
-            await window.printReceiptEngine(txnId, layoutType);
+            await window.printReceiptEngine(txnId, layoutType, selectedMemos);
         }
     } catch (err) {
         if (typeof showToast === 'function') showToast(`প্রিন্ট লোড ব্যর্থ: ${err.message}`, 'error', 'প্রিন্ট Error');
@@ -263,37 +263,139 @@ export async function choosePrintType(txnId) {
     if (!txn && txnId) {
         try {
             txn = await TransactionDAO.getById(txnId);
-        } catch(e) {
+        } catch (e) {
             console.error("Error fetching txn in choosePrintType:", e);
         }
     }
 
-    const hasScanMemo = Boolean(txn?.memoPhotoUrl);
-    const memoBtnHtml = hasScanMemo ? `
-        <button type="button" onclick="if(window.viewMemoPhoto) window.viewMemoPhoto('${txnId}'); if(typeof Swal !== 'undefined' && Swal.close) Swal.close();" class="h-11 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-600/30 transition-all cursor-pointer">
-            <i class="fa-solid fa-file-invoice text-sm"></i> আসল স্ক্যান মেমো প্রিন্ট / ভিউ
-        </button>
-    ` : '';
+    const currentTxns = Array.isArray(window._currentLedgerTxns) ? window._currentLedgerTxns : [];
+    const allCandidateMemos = [];
+    if (txn?.memoPhotoUrl) allCandidateMemos.push(txn);
+    currentTxns.forEach(t => {
+        if (t.memoPhotoUrl && t.id !== txn?.id) {
+            allCandidateMemos.push(t);
+        }
+    });
 
-    Swal.fire({ 
-        title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-lg text-white"><i class="fa-solid fa-print text-emerald-400"></i><span>রিসিট প্রিন্ট ফরম্যাট নির্বাচন করুন</span></div>', 
+    const seenUrls = new Set();
+    const availableMemos = [];
+    allCandidateMemos.forEach(m => {
+        if (m.memoPhotoUrl && !seenUrls.has(m.memoPhotoUrl)) {
+            seenUrls.add(m.memoPhotoUrl);
+            availableMemos.push(m);
+        }
+    });
+
+    let memoSectionHtml = '';
+    if (availableMemos.length > 0) {
+        const memoItemsHtml = availableMemos.map(m => {
+            const isCurrent = m.id === txn?.id || (txn?.voucherNo && m.voucherNo === txn.voucherNo);
+            const rawV = m.voucherNo ? String(m.voucherNo).trim() : 'মেমো';
+            const cleanV = rawV.startsWith('#') ? rawV : `#${rawV}`;
+            const formattedDate = m.date ? formatAppDate(m.date) : '';
+            const b = Number(m.bill || 0);
+            const p = Number(m.paid || 0);
+            return `
+                <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900 border ${isCurrent ? 'border-amber-500/40 bg-amber-500/5' : 'border-slate-800'} hover:border-slate-700 cursor-pointer text-xs transition-colors">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <input type="checkbox" class="ledger-memo-cb w-4 h-4 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 cursor-pointer" data-url="${escapeHTML(m.memoPhotoUrl)}" data-voucher="${escapeHTML(cleanV)}" data-date="${escapeHTML(m.date || '')}" data-bill="${b}" data-paid="${p}">
+                        <img src="${escapeHTML(m.memoPhotoUrl)}" class="w-9 h-9 object-cover rounded-lg border border-slate-700 shrink-0" onclick="event.preventDefault(); if(window.viewMemoPhoto) window.viewMemoPhoto('${m.id || txnId}');" title="বড় করে দেখতে ক্লিক করুন">
+                        <div class="truncate">
+                            <div class="font-mono font-black text-amber-300 text-xs flex items-center gap-1.5">
+                                <span>${escapeHTML(cleanV)}</span>
+                                ${isCurrent ? '<span class="text-[9px] font-sans font-bold bg-amber-500/20 text-amber-400 px-1 py-0.2 rounded border border-amber-500/30">এই ভাউচার</span>' : ''}
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-medium">${formattedDate}</div>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        ${b > 0 ? `<div class="text-red-400 font-bold font-mono text-xs">৳ ${formatAmountWithComma(b)}</div>` : ''}
+                        ${p > 0 ? `<div class="text-emerald-400 font-bold font-mono text-xs">৳ ${formatAmountWithComma(p)}</div>` : ''}
+                    </div>
+                </label>
+            `;
+        }).join('');
+
+        memoSectionHtml = `
+            <div class="mb-2 text-left">
+                <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800">
+                    <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-invoice text-amber-400 text-xs"></i>
+                        <span>স্ক্যান মেমো সংযুক্তি (ঐচ্ছিক)</span>
+                    </span>
+                    <span id="ledger-memo-count-disp" class="text-[10px] text-slate-400 font-mono">০টি নির্বাচিত</span>
+                </div>
+                <div class="max-h-40 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
+                    ${memoItemsHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    Swal.fire({
+        title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-base text-white"><i class="fa-solid fa-print text-emerald-400"></i><span>রিসিট প্রিন্ট ফরম্যাট নির্বাচন করুন</span></div>',
         html: `
-            <div class="flex flex-col gap-3 p-1 font-bn mt-2">
-                <button type="button" onclick="window.executePrint('${txnId}', 'pos')" class="h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer">
-                    <i class="fa-solid fa-receipt text-sm"></i> POS রিসিট (80mm Thermal Printer)
+            <div class="flex flex-col gap-2 p-1 font-bn mt-1 text-left">
+                ${memoSectionHtml}
+                <button type="button" id="ledger-print-a4-btn" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition-all cursor-pointer">
+                    <i class="fa-solid fa-file-invoice text-sm text-purple-400"></i>
+                    <span id="ledger-a4-text">A4 ফুল পেপার মেমো (Standard Invoice)</span>
                 </button>
-                <button type="button" onclick="window.executePrint('${txnId}', 'a4')" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition-all cursor-pointer">
-                    <i class="fa-solid fa-file-invoice text-sm text-purple-400"></i> A4 ফুল পেপার মেমো (Standard Invoice)
+                <button type="button" id="ledger-print-pos-btn" class="h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer">
+                    <i class="fa-solid fa-receipt text-sm"></i>
+                    <span>POS রিসিট (80mm Thermal Printer)</span>
                 </button>
-                ${memoBtnHtml}
             </div>
         `,
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'বাতিল',
-        customClass: { 
-            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 shadow-2xl font-bn',
+        customClass: {
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 shadow-2xl font-bn max-w-md w-full',
             cancelButton: '!bg-slate-900 hover:!bg-slate-800 !text-slate-400 !px-6 !py-2 !rounded-xl text-xs font-bold border border-slate-800'
+        },
+        didOpen: (popup) => {
+            const a4Btn = popup.querySelector('#ledger-print-a4-btn');
+            const posBtn = popup.querySelector('#ledger-print-pos-btn');
+            const a4Text = popup.querySelector('#ledger-a4-text');
+            const countDisp = popup.querySelector('#ledger-memo-count-disp');
+            const memoCbs = popup.querySelectorAll('.ledger-memo-cb');
+
+            const getSelected = () => Array.from(popup.querySelectorAll('.ledger-memo-cb:checked')).map(cb => ({
+                url: cb.dataset.url,
+                voucherNo: cb.dataset.voucher,
+                date: cb.dataset.date,
+                bill: Number(cb.dataset.bill || 0),
+                paid: Number(cb.dataset.paid || 0)
+            }));
+
+            memoCbs.forEach(cb => {
+                cb.onchange = () => {
+                    const sel = getSelected();
+                    if (countDisp) countDisp.innerText = `${sel.length}টি নির্বাচিত`;
+                    if (a4Text) {
+                        a4Text.innerHTML = sel.length > 0
+                            ? `<span class="text-amber-300 font-bold">মেমো সহ A4 প্রিন্ট (${sel.length}টি মেমো)</span>`
+                            : 'A4 ফুল পেপার মেমো (Standard Invoice)';
+                    }
+                    if (a4Btn) {
+                        if (sel.length > 0) a4Btn.classList.add('!border-amber-500/60', '!bg-slate-800/90');
+                        else a4Btn.classList.remove('!border-amber-500/60', '!bg-slate-800/90');
+                    }
+                };
+            });
+
+            if (a4Btn) {
+                a4Btn.onclick = () => {
+                    const sel = getSelected();
+                    executePrint(txnId, 'a4', sel);
+                };
+            }
+            if (posBtn) {
+                posBtn.onclick = () => {
+                    executePrint(txnId, 'pos', []);
+                };
+            }
         }
     });
 }
