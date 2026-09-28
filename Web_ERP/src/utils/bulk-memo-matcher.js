@@ -141,8 +141,6 @@ function renderMatchPreview(files, allTxns) {
     previewSection.classList.remove('hidden');
     if (confirmBtn) confirmBtn.style.display = 'inline-flex';
 
-    countBadge.innerHTML = `<i class="fa-solid fa-images"></i> <span>${files.length}টি ছবি নির্বাচিত</span>`;
-
     // Build lookup map by voucherNo
     const txnByVoucher = new Map();
     allTxns.forEach(t => {
@@ -153,6 +151,37 @@ function renderMatchPreview(files, allTxns) {
         }
     });
 
+    // Count ready and unmatched
+    let readyCount = 0;
+    let unmatchedCount = 0;
+
+    files.forEach(file => {
+        const v = extractVoucherFromFilename(file.name);
+        const list = txnByVoucher.get(v) || [];
+        if (list.length) readyCount++;
+        else unmatchedCount++;
+    });
+
+    countBadge.innerHTML = `
+        <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-xs font-bold text-amber-400 flex items-center gap-1">
+                <i class="fa-solid fa-images"></i> <span>মোট ${files.length}টি ছবি</span>
+            </span>
+            <span class="text-[10px] text-slate-500">•</span>
+            <button type="button" class="bulk-filter-tab text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 cursor-pointer hover:bg-emerald-500/30 transition-all" data-tab="ready">
+                <i class="fa-solid fa-circle-check mr-1 text-[9px]"></i>প্রস্তুত (${readyCount})
+            </button>
+            ${unmatchedCount > 0 ? `
+                <button type="button" class="bulk-filter-tab text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 cursor-pointer hover:bg-rose-500/30 transition-all" data-tab="unmatched">
+                    <i class="fa-solid fa-circle-xmark mr-1 text-[9px]"></i>এন্ট্রি নেই (${unmatchedCount})
+                </button>
+            ` : ''}
+            <button type="button" class="bulk-filter-tab text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition-all" data-tab="all">
+                সবগুলো
+            </button>
+        </div>
+    `;
+
     let html = '';
     files.forEach((file, idx) => {
         const detectedVoucher = extractVoucherFromFilename(file.name);
@@ -162,15 +191,18 @@ function renderMatchPreview(files, allTxns) {
 
         let statusBadge = '';
         let isCheckable = false;
+        let itemStatus = 'unmatched';
 
         if (matchedTxn) {
             isCheckable = true;
+            itemStatus = 'ready';
             if (matchedTxn.memoPhotoUrl) {
                 statusBadge = `<span class="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20" title="পূর্বে মেমো আপলোড ছিল, প্রতিস্থাপন হবে"><i class="fa-solid fa-triangle-exclamation text-[8px] mr-1"></i>মেমো আছে</span>`;
             } else {
                 statusBadge = `<span class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20"><i class="fa-solid fa-circle-check text-[8px] mr-1"></i>প্রস্তুত</span>`;
             }
         } else {
+            itemStatus = 'unmatched';
             statusBadge = `<span class="text-[9px] font-bold text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20"><i class="fa-solid fa-circle-xmark text-[8px] mr-1"></i>লেনদেন নেই</span>`;
         }
 
@@ -181,13 +213,13 @@ function renderMatchPreview(files, allTxns) {
                    ${matchedTxn.bill > 0 ? `<span class="text-red-400">বিল: ৳${formatAmountWithComma(matchedTxn.bill)}</span>` : ''}
                    ${matchedTxn.paid > 0 ? `<span class="text-emerald-400">জমা: ৳${formatAmountWithComma(matchedTxn.paid)}</span>` : ''}
                </div>`
-            : `<div class="text-[11px] text-slate-500 italic">খতিয়ানে ভাউচার #${detectedVoucher} পাওয়া যায়নি</div>`;
+            : `<div class="text-[11px] text-rose-300 font-medium">খতিয়ানে ভাউচার #${detectedVoucher} এন্ট্রি করা হয়নি</div>`;
 
         html += `
-            <div class="flex items-center justify-between gap-2 p-2 hover:bg-slate-900/60 transition-colors" data-idx="${idx}">
+            <div class="bulk-match-row flex items-center justify-between gap-2 p-2 hover:bg-slate-900/60 transition-colors" data-idx="${idx}" data-status="${itemStatus}">
                 <div class="flex items-center gap-2 overflow-hidden">
                     <input type="checkbox" class="bulk-item-check rounded accent-emerald-500 w-4 h-4 cursor-pointer" ${isCheckable ? 'checked' : 'disabled'} data-idx="${idx}">
-                    <img src="${thumbUrl}" alt="thumb" class="w-9 h-11 object-cover rounded bg-slate-800 border border-slate-700 shrink-0">
+                    <img src="${thumbUrl}" alt="thumb" class="w-9 h-11 object-cover rounded bg-slate-800 border border-slate-700 shrink-0 cursor-pointer" onclick="window.open('${thumbUrl}', '_blank')" title="বড় করে দেখতে ক্লিক করুন">
                     <div class="flex flex-col overflow-hidden">
                         <div class="flex items-center gap-1.5">
                             <span class="text-[11px] font-mono font-black text-cyan-400">#${detectedVoucher || '—'}</span>
@@ -204,6 +236,22 @@ function renderMatchPreview(files, allTxns) {
     });
 
     matchList.innerHTML = html;
+
+    // Filter tab switching
+    document.querySelectorAll('.bulk-filter-tab').forEach(tabBtn => {
+        tabBtn.onclick = () => {
+            const targetTab = tabBtn.dataset.tab;
+            document.querySelectorAll('.bulk-match-row').forEach(row => {
+                if (targetTab === 'all') {
+                    row.style.display = 'flex';
+                } else if (targetTab === 'ready') {
+                    row.style.display = row.dataset.status === 'ready' ? 'flex' : 'none';
+                } else if (targetTab === 'unmatched') {
+                    row.style.display = row.dataset.status === 'unmatched' ? 'flex' : 'none';
+                }
+            });
+        };
+    });
 
     // Toggle select all
     const selectAllBtn = document.getElementById('bulk-select-all-btn');
