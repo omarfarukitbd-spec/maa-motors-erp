@@ -49,20 +49,15 @@ export function getTxnYear(t) {
 }
 
 
-/**
- * Generates HTML for customer information line
- */
 function renderCustInfoHtml(matchedTxn, voucher) {
-    if (matchedTxn) {
-        return `
-            <div class="font-bold text-white text-xs truncate max-w-[170px]">${matchedTxn.customerName || 'কাস্টমার'}</div>
-            <div class="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
-                <span>${formatAppDate(matchedTxn.date)}</span>
-                ${matchedTxn.bill > 0 ? `<span class="text-red-400">বিল: ৳${formatAmountWithComma(matchedTxn.bill)}</span>` : ''}
-                ${matchedTxn.paid > 0 ? `<span class="text-emerald-400">জমা: ৳${formatAmountWithComma(matchedTxn.paid)}</span>` : ''}
-            </div>`;
-    }
-    return `<div class="text-[11px] text-rose-300 font-medium">খতিয়ানে ভাউচার #${voucher || '—'} নেই</div>`;
+    if (!matchedTxn) return `<div class="text-[11px] text-rose-300 font-medium">খতিয়ানে ভাউচার #${voucher || '—'} নেই</div>`;
+    return `
+        <div class="font-bold text-white text-xs truncate max-w-[170px]">${matchedTxn.customerName || 'কাস্টমার'}</div>
+        <div class="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
+            <span>${formatAppDate(matchedTxn.date)}</span>
+            ${matchedTxn.bill > 0 ? `<span class="text-red-400">বিল: ৳${formatAmountWithComma(matchedTxn.bill)}</span>` : ''}
+            ${matchedTxn.paid > 0 ? `<span class="text-emerald-400">জমা: ৳${formatAmountWithComma(matchedTxn.paid)}</span>` : ''}
+        </div>`;
 }
 
 /**
@@ -76,6 +71,17 @@ function renderStatusBadge(matchedTxn) {
         return { cls: "text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20", html: '<i class="fa-solid fa-triangle-exclamation text-[8px] mr-1"></i>মেমো আছে' };
     }
     return { cls: "text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20", html: '<i class="fa-solid fa-circle-check text-[8px] mr-1"></i>প্রস্তুত' };
+}
+
+/**
+ * Formats seconds into human-friendly Bengali time string
+ */
+function formatRemainingTimeBangla(totalSec) {
+    if (totalSec <= 1) return 'কয়েক সেকেন্ড';
+    if (totalSec < 60) return `${totalSec} সেকেন্ড`;
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return s > 0 ? `${m} মি. ${s} সে.` : `${m} মিনিট`;
 }
 
 /**
@@ -122,11 +128,7 @@ export async function openBulkMemoMatcherModal() {
 
         if (!detectedYears.includes(currentYear)) detectedYears.unshift(currentYear);
 
-        const yearOptionsHtml = detectedYears.map(yr => `
-            <option value="${yr}" ${yr === currentYear ? 'selected' : ''}>
-                ${yr === currentYear ? `${yr} (চলতি সাল)` : `${yr} সাল`}
-            </option>
-        `).join('') + `<option value="all">সকল সাল (All Years)</option>`;
+        const yearOptionsHtml = detectedYears.map(yr => `<option value="${yr}" ${yr === currentYear ? 'selected' : ''}>${yr === currentYear ? `${yr} (চলতি সাল)` : `${yr} সাল`}</option>`).join('') + `<option value="all">সকল সাল (All Years)</option>`;
 
         Swal.fire({
             title: `
@@ -137,8 +139,7 @@ export async function openBulkMemoMatcherModal() {
                     </div>
                     <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-700/80 px-2 py-1 rounded-xl">
                         <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                            <i class="fa-solid fa-calendar-days text-amber-400 text-[10px]"></i>
-                            <span>সাল:</span>
+                            <i class="fa-solid fa-calendar-days text-amber-400 text-[10px]"></i><span>সাল:</span>
                         </span>
                         <select id="bulk-year-select" class="bg-slate-950 text-cyan-400 font-mono font-bold text-xs border border-slate-700/80 rounded-lg px-2 py-0.5 outline-none focus:border-amber-400 cursor-pointer">
                             ${yearOptionsHtml}
@@ -157,20 +158,24 @@ export async function openBulkMemoMatcherModal() {
                     </div>
                     <div id="bulk-preview-section" class="hidden flex flex-col gap-2">
                         <div class="flex items-center justify-between px-1">
-                            <div id="bulk-count-badge" class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                                <i class="fa-solid fa-images"></i> <span>০টি ছবি নির্বাচিত</span>
-                            </div>
+                            <div id="bulk-count-badge" class="text-xs font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-images"></i> <span>০টি ছবি নির্বাচিত</span></div>
                             <button type="button" id="bulk-select-all-btn" class="text-[11px] font-bold text-cyan-400 hover:underline cursor-pointer">সবগুলো আনচেক</button>
                         </div>
                         <div class="max-h-72 overflow-y-auto custom-scrollbar border border-slate-800 rounded-xl bg-slate-950/60 divide-y divide-slate-800/80" id="bulk-match-list"></div>
                     </div>
-                    <div id="bulk-progress-container" class="hidden flex flex-col gap-1.5 p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <div id="bulk-progress-container" class="hidden flex flex-col gap-2 p-3 rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
                         <div class="flex items-center justify-between text-xs font-bold">
-                            <span id="bulk-progress-status" class="text-slate-300">আপলোড শুরু হচ্ছে...</span>
-                            <span id="bulk-progress-pct" class="text-amber-400 font-mono">০%</span>
+                            <span id="bulk-progress-status" class="text-slate-300 truncate max-w-[260px]">আপলোড শুরু হচ্ছে...</span>
+                            <span id="bulk-progress-pct" class="text-amber-400 font-mono font-black text-sm">০%</span>
                         </div>
                         <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                            <div id="bulk-progress-bar" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+                            <div id="bulk-progress-bar" class="h-full bg-gradient-to-r from-amber-500 via-cyan-400 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] text-slate-400 pt-0.5 border-t border-slate-900 font-mono">
+                            <div id="bulk-progress-eta" class="flex items-center gap-1 text-slate-300 font-sans font-medium">
+                                <i class="fa-solid fa-hourglass-start text-cyan-400 text-[10px]"></i><span>সময় হিসাব হচ্ছে...</span>
+                            </div>
+                            <div id="bulk-progress-count" class="text-cyan-300 font-bold">০ / ০ সম্পন্ন</div>
                         </div>
                     </div>
                 </div>`,
@@ -403,6 +408,8 @@ async function executeBulkUpload(files, allTxns, selectedYear) {
     const progressBar = document.getElementById('bulk-progress-bar');
     const progressStatus = document.getElementById('bulk-progress-status');
     const progressPct = document.getElementById('bulk-progress-pct');
+    const progressEta = document.getElementById('bulk-progress-eta');
+    const progressCount = document.getElementById('bulk-progress-count');
     const confirmBtn = Swal.getConfirmButton();
     const cancelBtn = Swal.getCancelButton();
 
@@ -414,6 +421,7 @@ async function executeBulkUpload(files, allTxns, selectedYear) {
     let successCount = 0;
     let failCount = 0;
     const totalToUpload = selectedIndices.length;
+    const uploadStartTime = Date.now();
 
     for (let i = 0; i < totalToUpload; i++) {
         const fileIdx = selectedIndices[i];
@@ -428,6 +436,16 @@ async function executeBulkUpload(files, allTxns, selectedYear) {
         if (progressStatus) progressStatus.innerText = `${currentNum}/${totalToUpload}: ভাউচার #${voucherNo} আপলোড হচ্ছে...`;
         if (progressPct) progressPct.innerText = `${pct}%`;
         if (progressBar) progressBar.style.width = `${pct}%`;
+
+        if (i > 0) {
+            const elapsedMs = Date.now() - uploadStartTime;
+            const avgMs = elapsedMs / i;
+            const remainSec = Math.ceil(((totalToUpload - i) * avgMs) / 1000);
+            if (progressEta) {
+                progressEta.innerHTML = `<i class="fa-solid fa-stopwatch text-amber-400 text-[10px] mr-1"></i>বাকি: <strong class="text-amber-300">${formatRemainingTimeBangla(remainSec)}</strong>`;
+            }
+        }
+        if (progressCount) progressCount.innerText = `${i} / ${totalToUpload} সম্পন্ন`;
 
         try {
             if (!targetTxn) throw new Error('লেনদেন পাওয়া যায়নি');
