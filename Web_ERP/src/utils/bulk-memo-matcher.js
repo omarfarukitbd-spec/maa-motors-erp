@@ -36,10 +36,18 @@ export function extractVoucherFromFilename(filename) {
  * Safely extracts 4-digit year from transaction date
  */
 export function getTxnYear(t) {
-    if (!t || !t.date) return '';
-    const match = String(t.date).trim().match(/^(\d{4})/);
-    return match ? match[1] : '';
+    if (!t) return '';
+    if (t.date && typeof t.date.toDate === 'function') {
+        return String(t.date.toDate().getFullYear());
+    }
+    const dStr = String(t.date || t.createdAt || '').trim();
+    const yStart = dStr.match(/^(\d{4})/);
+    if (yStart) return yStart[1];
+    const yAny = dStr.match(/(?:^|[\/\-\s])(\d{4})(?:$|[\/\-\sT])/);
+    if (yAny) return yAny[1];
+    return '';
 }
+
 
 /**
  * Generates HTML for customer information line
