@@ -1,38 +1,39 @@
 import os
+import io
 import re
-from PIL import Image, ImageDraw
+import pymupdf
+from PIL import Image
 
 def generate_pdf():
     folder = r"E:\maa-motors-erp\Lulu exchange image"
-    pdf_out_path = os.path.join(folder, "Lulu_Exchange_A4_Print.pdf")
-    root_pdf_path = r"E:\maa-motors-erp\Lulu_Exchange_A4_Print.pdf"
+    pdf_out = os.path.join(folder, "Lulu_Exchange_A4_Print.pdf")
+    root_pdf = r"E:\maa-motors-erp\Lulu_Exchange_A4_Print.pdf"
 
-    # Find and sort all image files
-    files = [f for f in os.listdir(folder) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')) and not f.startswith('thumb')]
-    
+    # Find and sort all image files numerically
+    files = [
+        f for f in os.listdir(folder)
+        if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')) and not f.startswith(('thumb', 'preview'))
+    ]
+
     def get_num(s):
         m = re.search(r'(\d+)', s)
         return int(m.group(1)) if m else 0
-    
+
     files.sort(key=get_num)
-    print(f"Total images found: {len(files)}")
+    print(f"Total files found: {len(files)}")
 
-    # Standard A4 at 300 DPI
-    PAGE_W = 2480
-    PAGE_H = 3508
-    MID_Y = PAGE_H // 2  # 1754
-    
-    # Gap between top and bottom slip: 90 px (~7.6 mm)
-    GAP_PX = 90
-    SIDE_MARGIN = 35
-    TOP_MARGIN = 35
-    BOTTOM_MARGIN = 35
+    doc = pymupdf.open()
+    PAGE_W = 595.28  # Exact A4 width in points
+    PAGE_H = 841.89  # Exact A4 height in points
+    MID_Y = PAGE_H / 2.0  # 420.945 pt
+    GAP = 12.0  # ~4.2 mm cutting gap in the exact middle
 
-    top_box = (SIDE_MARGIN, TOP_MARGIN, PAGE_W - SIDE_MARGIN, MID_Y - (GAP_PX // 2))
-    bot_box = (SIDE_MARGIN, MID_Y + (GAP_PX // 2), PAGE_W - SIDE_MARGIN, PAGE_H - BOTTOM_MARGIN)
+    # Zero margins: edge-to-edge full bleed on left, right, top and bottom
+    rect_top = pymupdf.Rect(0, 0, PAGE_W, MID_Y - (GAP / 2.0))
+    rect_bot = pymupdf.Rect(0, MID_Y + (GAP / 2.0), PAGE_W, PAGE_H)
 
-    def prepare_image(img_path, box):
-        img = Image.open(img_path)
+    def get_optimized_bytes(f_path):
+        img = Image.open(f_path)
         if img.mode != 'RGB':
             bg = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'RGBA':
@@ -40,84 +41,38 @@ def generate_pdf():
             else:
                 bg.paste(img.convert('RGB'))
             img = bg
-        
-        bx0, by0, bx1, by1 = box
-        bw = bx1 - bx0
-        bh = by1 - by0
-        
-        iw, ih = img.size
-        scale = min(bw / iw, bh / ih)
-        nw = int(iw * scale)
-        nh = int(ih * scale)
-        
-        resized = img.resize((nw, nh), Image.Resampling.LANCZOS)
-        
-        # Center horizontally and vertically within the half-page box
-        x = bx0 + (bw - nw) // 2
-        y = by0 + (bh - nh) // 2
-        return resized, (x, y)
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG', quality=92, optimize=True)
+        return buf.getvalue()
 
-    pages = []
-    
-    # Pair images 2 per page
     for i in range(0, len(files), 2):
-        canvas = Image.new('RGB', (PAGE_W, PAGE_H), (255, 255, 255))
-        draw = ImageDraw.Draw(canvas)
-        
-        # 1. Top Image
-        file_top = files[i]
-        path_top = os.path.join(folder, file_top)
-        img_top, pos_top = prepare_image(path_top, top_box)
-        canvas.paste(img_top, pos_top)
-        
-        # 2. Bottom Image (if exists)
+        page = doc.new_page(width=PAGE_W, height=PAGE_H)
+
+        # 1. Top Image (Full bleed, 0 margin on left, right, top)
+        b_top = get_optimized_bytes(os.path.join(folder, files[i]))
+        page.insert_image(rect_top, stream=b_top, keep_proportion=False)
+
+        # 2. Bottom Image (Full bleed, 0 margin on left, right, bottom)
         if i + 1 < len(files):
-            file_bot = files[i + 1]
-            path_bot = os.path.join(folder, file_bot)
-            img_bot, pos_bot = prepare_image(path_bot, bot_box)
-            canvas.paste(img_bot, pos_bot)
-            
-            # Draw subtle cutting guide line in the exact middle
-            dash_len = 30
-            space_len = 20
-            line_color = (200, 200, 200) # Subtle light grey
-            for x in range(SIDE_MARGIN, PAGE_W - SIDE_MARGIN, dash_len + space_len):
-                draw.line([(x, MID_Y), (min(x + dash_len, PAGE_W - SIDE_MARGIN), MID_Y)], fill=line_color, width=3)
-        
-        pages.append(canvas)
-        print(f"Generated Page {len(pages)}: {file_top} + {files[i+1] if i+1 < len(files) else 'None'}")
+            b_bot = get_optimized_bytes(os.path.join(folder, files[i + 1]))
+            page.insert_image(rect_bot, stream=b_bot, keep_proportion=False)
 
-    # Save multi-page PDF
-    if pages:
-        first_page = pages[0]
-        other_pages = pages[1:] if len(pages) > 1 else []
-        
-        # Save to Lulu exchange image folder
-        first_page.save(
-            pdf_out_path,
-            "PDF",
-            resolution=300.0,
-            save_all=True,
-            append_images=other_pages,
-            quality=88,
-            optimize=True
-        )
-        print(f"Saved PDF to: {pdf_out_path}")
-        
-        # Also save copy to root for quick access
-        first_page.save(
-            root_pdf_path,
-            "PDF",
-            resolution=300.0,
-            save_all=True,
-            append_images=other_pages,
-            quality=88,
-            optimize=True
-        )
-        print(f"Saved copy to: {root_pdf_path}")
+            # Middle cutting dashed line (subtle light grey guide)
+            page.draw_line(
+                pymupdf.Point(0, MID_Y),
+                pymupdf.Point(PAGE_W, MID_Y),
+                color=(0.78, 0.78, 0.78),
+                width=1.0,
+                dashes="[6 4] 0"
+            )
 
-        pdf_size_mb = os.path.getsize(pdf_out_path) / (1024 * 1024)
-        print(f"PDF Size: {pdf_size_mb:.2f} MB ({len(pages)} Pages)")
+        print(f"Added Page {len(doc)} (Zero Margin): {files[i]} + {files[i+1] if i+1 < len(files) else 'None'}")
+
+    # Save to both locations
+    doc.save(pdf_out, garbage=4, deflate=True)
+    doc.save(root_pdf, garbage=4, deflate=True)
+    size_mb = os.path.getsize(pdf_out) / (1024 * 1024)
+    print(f"Success! Saved {len(doc)} pages to {pdf_out}. Size: {size_mb:.2f} MB")
 
 if __name__ == "__main__":
     generate_pdf()
