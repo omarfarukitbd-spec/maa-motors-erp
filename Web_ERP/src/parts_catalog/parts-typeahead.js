@@ -13,7 +13,17 @@ let currentMatches = [];
 export function handleInvoiceItemDescInput(rowIndex, inputEl) {
     const query = (inputEl.value || '').trim();
     const dropdownEl = document.getElementById(`parts-typeahead-dropdown-${rowIndex}`);
+    const hintEl = document.getElementById(`price-hint-${rowIndex}`);
     if (!dropdownEl) return;
+
+    // Reset floor price metadata if user changes description away from selected part
+    if (inputEl.dataset.selectedName && inputEl.value !== inputEl.dataset.selectedName) {
+        delete inputEl.dataset.selectedName;
+        delete inputEl.dataset.partId;
+        delete inputEl.dataset.floorPrice;
+        delete inputEl.dataset.askingPrice;
+        if (hintEl) hintEl.classList.add('hidden');
+    }
 
     if (query.length < 2) {
         dropdownEl.classList.add('hidden');
@@ -87,7 +97,13 @@ export function selectTypeaheadPart(rowIndex, matchIndex) {
         : '';
     const cleanDesc = `${part.nameBn}${modelTag}`;
 
-    if (descInput) descInput.value = cleanDesc;
+    if (descInput) {
+        descInput.value = cleanDesc;
+        descInput.dataset.selectedName = cleanDesc;
+        descInput.dataset.partId = part.id;
+        descInput.dataset.floorPrice = part.floorPrice || 0;
+        descInput.dataset.askingPrice = part.askingPrice || 0;
+    }
     if (unitSelect) {
         // Map unit to select options
         if (part.defaultUnit === 'জোড়া' || part.defaultUnit === 'Pair') unitSelect.value = 'Set';
@@ -100,16 +116,9 @@ export function selectTypeaheadPart(rowIndex, matchIndex) {
 
     // Update global invoice item state if available
     if (window.updateInvoiceItem) {
-        window.updateInvoiceItem(rowIndex, 'desc', { value: cleanDesc });
-        window.updateInvoiceItem(rowIndex, 'unit', { value: unitSelect ? unitSelect.value : 'Pcs' });
-        window.updateInvoiceItem(rowIndex, 'rate', { value: part.askingPrice || 0 });
-    }
-
-    // Attach metadata to the row for floor validation
-    if (descInput) {
-        descInput.dataset.partId = part.id;
-        descInput.dataset.floorPrice = part.floorPrice || 0;
-        descInput.dataset.askingPrice = part.askingPrice || 0;
+        if (descInput) window.updateInvoiceItem(rowIndex, 'desc', descInput);
+        if (unitSelect) window.updateInvoiceItem(rowIndex, 'unit', unitSelect);
+        if (rateInput) window.updateInvoiceItem(rowIndex, 'rate', rateInput);
     }
 
     // Show price hint with floor guidance

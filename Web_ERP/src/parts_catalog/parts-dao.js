@@ -51,7 +51,7 @@ class PartsCatalogDAOClass {
                 return { docId: doc.id, ...doc.data() };
             }
             // Fallback search by 'id' field if document ID differs
-            const snap = await this.collection.where('id', '===', partId).limit(1).get();
+            const snap = await this.collection.where('id', '==', partId).limit(1).get();
             if (!snap.empty) {
                 const first = snap.docs[0];
                 return { docId: first.id, ...first.data() };

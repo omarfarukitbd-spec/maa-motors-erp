@@ -6,6 +6,7 @@ import { PartsCatalogDAO } from './parts-dao.js';
 let cachedParts = [];
 let catalogListenerUnsubscribe = null;
 let isCacheLoaded = false;
+const activeUiListeners = new Set();
 
 export function getPartsCatalogCache() {
     return cachedParts;
@@ -22,32 +23,55 @@ export function isPartsCacheReady() {
 }
 
 /**
- * Initialize cache with real-time listener
+ * Subscribe a UI callback to parts catalog updates
+ * @param {Function} callback Function to call with updated parts
+ * @returns {Function} Unsubscribe function
+ */
+export function subscribePartsCatalog(callback) {
+    if (typeof callback === 'function') {
+        activeUiListeners.add(callback);
+        // Call immediately with existing cache if ready
+        if (cachedParts.length > 0) {
+            callback(cachedParts);
+        }
+    }
+    return () => {
+        activeUiListeners.delete(callback);
+    };
+}
+
+/**
+ * Initialize permanent background cache listener
  */
 export function initPartsCatalogCache(onUpdateCallback = null) {
-    if (catalogListenerUnsubscribe) {
-        if (typeof onUpdateCallback === 'function') {
+    if (typeof onUpdateCallback === 'function') {
+        activeUiListeners.add(onUpdateCallback);
+        if (cachedParts.length > 0) {
             onUpdateCallback(cachedParts);
         }
+    }
+
+    if (catalogListenerUnsubscribe) {
         return;
     }
 
     catalogListenerUnsubscribe = PartsCatalogDAO.listen((parts) => {
         setPartsCatalogCache(parts);
-        if (typeof onUpdateCallback === 'function') {
-            onUpdateCallback(parts);
-        }
+        activeUiListeners.forEach(cb => {
+            try {
+                cb(parts);
+            } catch (err) {
+                console.error('Error in parts catalog listener callback:', err);
+            }
+        });
     });
 }
 
 /**
- * Unsubscribe listener on view change
+ * Unsubscribe all listeners on logout or cleanup
  */
 export function unsubscribePartsCatalog() {
-    if (catalogListenerUnsubscribe) {
-        catalogListenerUnsubscribe();
-        catalogListenerUnsubscribe = null;
-    }
+    activeUiListeners.clear();
 }
 
 /**

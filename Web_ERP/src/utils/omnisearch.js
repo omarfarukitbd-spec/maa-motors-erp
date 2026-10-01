@@ -95,6 +95,7 @@ function handleOmniSearch(query) {
         { title: 'ফাস্ট এন্ট্রি (F7 / Alt+B)', subtitle: 'দ্রুত ইনভয়েস ও মেমো তৈরি', icon: 'fa-bolt text-amber-400', action: () => goNav('bulk') },
         { title: 'ইনভয়েস / ভাউচার জেনারেটর (F2 / Alt+I)', subtitle: 'সর্বশেষ রসিদ ও ভাউচার', icon: 'fa-receipt text-emerald-400', action: () => goNav('invoice') },
         { title: 'মেমো / ভাউচার ইনস্ট্যান্ট সার্চ (F9 / Alt+M)', subtitle: 'মেমো নম্বর দিয়ে তাৎক্ষণিক বিবরণ ও প্রিন্ট', icon: 'fa-barcode text-cyan-400', action: () => goNav('memo-search') },
+        { title: 'পার্টস মাস্টার ক্যাটালগ ও ফিটমেন্ট', subtitle: 'জাপানি রিকন্ডিশন্ড পার্টস, ফিটমেন্ট ও দর করিডোর', icon: 'fa-gears text-amber-400', action: () => goNav('parts-catalog') },
         { title: 'দৈনিক খরচ (F6 / Alt+E)', subtitle: 'দোকানের খরচের তালিকা', icon: 'fa-file-invoice-dollar text-red-400', action: () => goNav('expenses') },
         { title: 'সফটওয়্যার সেটিংস (F8 / Alt+S)', subtitle: 'দোকানের নাম ও সিকিউরিটি পিন', icon: 'fa-gear text-slate-400', action: () => goNav('settings') }
     ];
@@ -119,6 +120,30 @@ function handleOmniSearch(query) {
                 });
             }
         });
+
+        // 3. Parts Catalog Search
+        if (window.partsCatalogCache && Array.isArray(window.partsCatalogCache)) {
+            const parts = window.partsCatalogCache.filter(p => {
+                const text = `${p.id} ${p.nameBn} ${p.nameEn || ''} ${p.oemPartNumber || ''} ${Array.isArray(p.popularModels) ? p.popularModels.join(' ') : ''}`.toLowerCase();
+                return text.includes(query);
+            }).slice(0, 5);
+
+            parts.forEach(p => {
+                searchItems.push({
+                    title: p.nameBn,
+                    subtitle: `${p.id} • ${p.oemPartNumber || 'OEM N/A'} | আস্কিং: ৳${p.askingPrice || 0} (ফ্লোর: ৳${p.floorPrice || 0})`,
+                    icon: 'fa-gears text-amber-400',
+                    action: () => {
+                        goNav('parts-catalog');
+                        setTimeout(() => {
+                            if (window.partsCatalogUI && window.partsCatalogUI.handleSearch) {
+                                window.partsCatalogUI.handleSearch(p.id);
+                            }
+                        }, 100);
+                    }
+                });
+            });
+        }
     }
 
     selectedIndex = 0;
