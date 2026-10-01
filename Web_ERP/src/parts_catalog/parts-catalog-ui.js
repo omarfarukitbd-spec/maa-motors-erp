@@ -166,23 +166,37 @@ function renderMetricsCards(parts) {
     });
 
     const metrics = [
-        { label: 'স্টিয়ারিং ও সাসপেনশন', count: catCounts['স্টিয়ারিং ও সাসপেনশন'] || 0, icon: 'fa-circle-dot', color: 'text-amber-400 border-amber-500/20 bg-amber-500/10' },
-        { label: 'ব্রেকিং ও হাইড্রোলিক', count: catCounts['ব্রেকিং সিস্টেম'] || 0, icon: 'fa-gauge-high', color: 'text-rose-400 border-rose-500/20 bg-rose-500/10' },
-        { label: 'ইঞ্জিন ও ট্রান্সমিশন', count: catCounts['ইঞ্জিন ও ট্রান্সমিশন'] || 0, icon: 'fa-gear', color: 'text-sky-400 border-sky-500/20 bg-sky-500/10' },
-        { label: 'ইলেকট্রিক্যাল ও সেন্সর', count: catCounts['ইলেকট্রিক্যাল ও সেন্সর'] || 0, icon: 'fa-bolt', color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' },
-        { label: 'কুলিং ও এসি', count: catCounts['কুলিং ও এসি'] || 0, icon: 'fa-snowflake', color: 'text-cyan-400 border-cyan-500/20 bg-cyan-500/10' },
-        { label: 'বডি ও সাসপেনশন', count: catCounts['বডি ও সাসপেনশন'] || 0, icon: 'fa-car-side', color: 'text-purple-400 border-purple-500/20 bg-purple-500/10' }
+        { label: 'স্টিয়ারিং ও সাসপেনশন', catKey: 'স্টিয়ারিং ও সাসপেনশন', count: catCounts['স্টিয়ারিং ও সাসপেনশন'] || 0, icon: 'fa-circle-dot', activeColor: 'ring-2 ring-amber-400 border-amber-500 bg-amber-500/20 shadow-lg shadow-amber-500/20 scale-[1.02]', defaultColor: 'border-amber-500/20 bg-amber-500/10 hover:border-amber-500/50 hover:bg-amber-500/15', textColor: 'text-amber-400' },
+        { label: 'ব্রেকিং ও হাইড্রোলিক', catKey: 'ব্রেকিং সিস্টেম', count: catCounts['ব্রেকিং সিস্টেম'] || 0, icon: 'fa-gauge-high', activeColor: 'ring-2 ring-rose-400 border-rose-500 bg-rose-500/20 shadow-lg shadow-rose-500/20 scale-[1.02]', defaultColor: 'border-rose-500/20 bg-rose-500/10 hover:border-rose-500/50 hover:bg-rose-500/15', textColor: 'text-rose-400' },
+        { label: 'ইঞ্জিন ও ট্রান্সমিশন', catKey: 'ইঞ্জিন ও ট্রান্সমিশন', count: catCounts['ইঞ্জিন ও ট্রান্সমিশন'] || 0, icon: 'fa-gear', activeColor: 'ring-2 ring-sky-400 border-sky-500 bg-sky-500/20 shadow-lg shadow-sky-500/20 scale-[1.02]', defaultColor: 'border-sky-500/20 bg-sky-500/10 hover:border-sky-500/50 hover:bg-sky-500/15', textColor: 'text-sky-400' },
+        { label: 'ইলেকট্রিক্যাল ও সেন্সর', catKey: 'ইলেকট্রিক্যাল ও সেন্সর', count: catCounts['ইলেকট্রিক্যাল ও সেন্সর'] || 0, icon: 'fa-bolt', activeColor: 'ring-2 ring-emerald-400 border-emerald-500 bg-emerald-500/20 shadow-lg shadow-emerald-500/20 scale-[1.02]', defaultColor: 'border-emerald-500/20 bg-emerald-500/10 hover:border-emerald-500/50 hover:bg-emerald-500/15', textColor: 'text-emerald-400' },
+        { label: 'কুলিং ও এসি', catKey: 'কুলিং ও এসি', count: catCounts['কুলিং ও এসি'] || 0, icon: 'fa-snowflake', activeColor: 'ring-2 ring-cyan-400 border-cyan-500 bg-cyan-500/20 shadow-lg shadow-cyan-500/20 scale-[1.02]', defaultColor: 'border-cyan-500/20 bg-cyan-500/10 hover:border-cyan-500/50 hover:bg-cyan-500/15', textColor: 'text-cyan-400' },
+        { label: 'বডি ও সাসপেনশন', catKey: 'বডি ও সাসপেনশন', count: catCounts['বডি ও সাসপেনশন'] || 0, icon: 'fa-car-side', activeColor: 'ring-2 ring-purple-400 border-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/20 scale-[1.02]', defaultColor: 'border-purple-500/20 bg-purple-500/10 hover:border-purple-500/50 hover:bg-purple-500/15', textColor: 'text-purple-400' }
     ];
 
-    container.innerHTML = metrics.map(m => `
-        <div class="p-3.5 rounded-2xl border ${m.color} backdrop-blur-md flex items-center justify-between">
-            <div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${m.label}</p>
-                <p class="text-base sm:text-lg font-black text-white mt-0.5">${m.count} <span class="text-xs font-normal text-slate-400">আইটেম</span></p>
+    container.innerHTML = metrics.map(m => {
+        const isActive = currentCategoryFilter === m.catKey;
+        const cardStyle = isActive ? m.activeColor : m.defaultColor;
+
+        return `
+            <div onclick="window.partsCatalogUI.filterCategory('${m.catKey}')" 
+                 class="p-3.5 rounded-2xl border ${cardStyle} backdrop-blur-md flex items-center justify-between cursor-pointer transition-all duration-200 select-none active:scale-95 group" 
+                 title="ক্লিক করে ${m.label} ফিল্টার করুন">
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-slate-200 transition-colors">${m.label}</p>
+                        ${isActive ? `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>` : ''}
+                    </div>
+                    <p class="text-base sm:text-lg font-black text-white mt-0.5">
+                        ${m.count} <span class="text-xs font-normal text-slate-400">আইটেম</span>
+                    </p>
+                </div>
+                <div class="w-8 h-8 rounded-xl flex items-center justify-center ${m.textColor} bg-slate-950/40 border border-white/5 transition-transform group-hover:scale-110">
+                    <i class="fa-solid ${m.icon} text-sm"></i>
+                </div>
             </div>
-            <i class="fa-solid ${m.icon} text-lg opacity-80"></i>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /**
@@ -301,8 +315,14 @@ window.partsCatalogUI = {
         renderTableRows();
     },
     filterCategory: (cat) => {
-        currentCategoryFilter = cat;
+        // Toggle back to 'all' if the same active category is clicked again
+        if (currentCategoryFilter === cat && cat !== 'all') {
+            currentCategoryFilter = 'all';
+        } else {
+            currentCategoryFilter = cat;
+        }
         renderCategoryChips();
+        renderMetricsCards(getPartsCatalogCache());
         renderTableRows();
     }
 };
