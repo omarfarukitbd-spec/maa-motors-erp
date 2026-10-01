@@ -13,11 +13,12 @@ class PartsCatalogDAOClass {
     /**
      * Get all parts ordered by part code or name
      */
-    async getAll(orderByField = 'id', direction = 'asc') {
+    async getAll() {
         try {
-            const snap = await this.collection.orderBy(orderByField, direction).get();
+            const snap = await this.collection.get();
             const results = [];
             snap.forEach(doc => results.push({ docId: doc.id, ...doc.data() }));
+            results.sort((a, b) => (a.id || '').localeCompare(b.id || '', undefined, { numeric: true }));
             return results;
         } catch (e) {
             console.error('PartsCatalogDAO.getAll error:', e);
@@ -28,15 +29,17 @@ class PartsCatalogDAOClass {
     /**
      * Real-time listener for parts catalog
      */
-    listen(callback, orderByField = 'id', direction = 'asc') {
-        return this.collection.orderBy(orderByField, direction).onSnapshot(
+    listen(callback) {
+        return this.collection.onSnapshot(
             snap => {
                 const results = [];
                 snap.forEach(doc => results.push({ docId: doc.id, ...doc.data() }));
+                results.sort((a, b) => (a.id || '').localeCompare(b.id || '', undefined, { numeric: true }));
                 callback(results);
             },
             err => {
                 console.error('PartsCatalogDAO.listen error:', err);
+                callback([]);
             }
         );
     }

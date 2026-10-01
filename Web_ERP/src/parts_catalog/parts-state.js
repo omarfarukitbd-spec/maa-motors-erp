@@ -1,19 +1,26 @@
 import { PartsCatalogDAO } from './parts-dao.js';
+import { INITIAL_PARTS_CATALOG } from './initial-catalog-data.js';
 
 /**
  * Global In-Memory Cache and Search Engine for Auto Parts Catalog
  */
-let cachedParts = [];
+let cachedParts = Array.isArray(INITIAL_PARTS_CATALOG) ? [...INITIAL_PARTS_CATALOG] : [];
 let catalogListenerUnsubscribe = null;
-let isCacheLoaded = false;
+let isCacheLoaded = true;
+let isAutoSeeding = false;
 const activeUiListeners = new Set();
+window.partsCatalogCache = cachedParts;
 
 export function getPartsCatalogCache() {
     return cachedParts;
 }
 
 export function setPartsCatalogCache(parts) {
-    cachedParts = Array.isArray(parts) ? parts : [];
+    if (Array.isArray(parts) && parts.length > 0) {
+        cachedParts = parts;
+    } else if (cachedParts.length === 0 && Array.isArray(INITIAL_PARTS_CATALOG)) {
+        cachedParts = [...INITIAL_PARTS_CATALOG];
+    }
     window.partsCatalogCache = cachedParts;
     isCacheLoaded = true;
 }
@@ -56,10 +63,25 @@ export function initPartsCatalogCache(onUpdateCallback = null) {
     }
 
     catalogListenerUnsubscribe = PartsCatalogDAO.listen((parts) => {
-        setPartsCatalogCache(parts);
+        if (parts && parts.length > 0) {
+            setPartsCatalogCache(parts);
+        } else if (!isAutoSeeding && cachedParts.length > 0) {
+            isAutoSeeding = true;
+            (async () => {
+                try {
+                    const count = await PartsCatalogDAO.seedBatch(cachedParts);
+                    console.log(`Auto-seeded ${count} parts to Firestore`);
+                } catch (err) {
+                    console.warn('Auto-seed note:', err);
+                } finally {
+                    isAutoSeeding = false;
+                }
+            })();
+        }
+
         activeUiListeners.forEach(cb => {
             try {
-                cb(parts);
+                cb(cachedParts);
             } catch (err) {
                 console.error('Error in parts catalog listener callback:', err);
             }
