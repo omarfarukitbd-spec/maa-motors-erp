@@ -63,20 +63,26 @@ export function initPartsCatalogCache(onUpdateCallback = null) {
     }
 
     catalogListenerUnsubscribe = PartsCatalogDAO.listen((parts) => {
-        if (parts && parts.length > 0) {
+        const masterCount = Array.isArray(INITIAL_PARTS_CATALOG) ? INITIAL_PARTS_CATALOG.length : 0;
+        
+        if (parts && parts.length >= masterCount) {
             setPartsCatalogCache(parts);
-        } else if (!isAutoSeeding && cachedParts.length > 0) {
+        } else if (!isAutoSeeding && masterCount > 0) {
             isAutoSeeding = true;
             (async () => {
                 try {
-                    const count = await PartsCatalogDAO.seedBatch(cachedParts);
-                    console.log(`Auto-seeded ${count} parts to Firestore`);
+                    const count = await PartsCatalogDAO.seedBatch(INITIAL_PARTS_CATALOG);
+                    console.log(`Auto-upgraded ${count} verified parts to Firestore`);
                 } catch (err) {
                     console.warn('Auto-seed note:', err);
                 } finally {
                     isAutoSeeding = false;
                 }
             })();
+            // Immediately render full 134 verified parts in memory & UI
+            setPartsCatalogCache(INITIAL_PARTS_CATALOG);
+        } else if (parts && parts.length > 0) {
+            setPartsCatalogCache(parts);
         }
 
         activeUiListeners.forEach(cb => {

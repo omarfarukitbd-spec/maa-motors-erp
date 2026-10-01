@@ -52,7 +52,7 @@ export function renderPartsCatalog(container) {
             </div>
 
             <!-- Category Summary Metrics Cards -->
-            <div id="parts-metrics-cards" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+            <div id="parts-metrics-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"></div>
 
             <!-- Search Bar & Filters -->
             <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 backdrop-blur-md">
@@ -135,6 +135,7 @@ function renderCategoryChips() {
         'ইঞ্জিন ও ট্রান্সমিশন': 'ইঞ্জিন ও গিয়ার',
         'ইলেকট্রিক্যাল ও সেন্সর': 'ইলেকট্রিক্যাল',
         'কুলিং ও এসি': 'কুলিং ও এসি',
+        'বডি ও সাসপেনশন': 'বডি ও এক্সেল',
         'বডি ও এক্সটেরিয়র': 'বডি পার্টস',
         'ড্রাইভট্রেন ও এক্সেল': 'এক্সেল ও ড্রাইভ'
     };
@@ -169,7 +170,8 @@ function renderMetricsCards(parts) {
         { label: 'ব্রেকিং ও হাইড্রোলিক', count: catCounts['ব্রেকিং সিস্টেম'] || 0, icon: 'fa-gauge-high', color: 'text-rose-400 border-rose-500/20 bg-rose-500/10' },
         { label: 'ইঞ্জিন ও ট্রান্সমিশন', count: catCounts['ইঞ্জিন ও ট্রান্সমিশন'] || 0, icon: 'fa-gear', color: 'text-sky-400 border-sky-500/20 bg-sky-500/10' },
         { label: 'ইলেকট্রিক্যাল ও সেন্সর', count: catCounts['ইলেকট্রিক্যাল ও সেন্সর'] || 0, icon: 'fa-bolt', color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' },
-        { label: 'কুলিং ও এসি', count: catCounts['কুলিং ও এসি'] || 0, icon: 'fa-snowflake', color: 'text-cyan-400 border-cyan-500/20 bg-cyan-500/10' }
+        { label: 'কুলিং ও এসি', count: catCounts['কুলিং ও এসি'] || 0, icon: 'fa-snowflake', color: 'text-cyan-400 border-cyan-500/20 bg-cyan-500/10' },
+        { label: 'বডি ও সাসপেনশন', count: catCounts['বডি ও সাসপেনশন'] || 0, icon: 'fa-car-side', color: 'text-purple-400 border-purple-500/20 bg-purple-500/10' }
     ];
 
     container.innerHTML = metrics.map(m => `
