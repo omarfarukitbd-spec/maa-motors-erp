@@ -80,23 +80,31 @@ for line in lines:
             primary_name = clean_memo_name.split('/')[0].strip()
 
             min_val, max_val = parse_price(raw_price)
-            asking = max_val
-            if min_val > 0 and min_val < max_val:
-                floor = min_val
+            # The actual memo price is the true wholesale baseline (Floor)
+            floor = min_val if min_val > 0 else max_val
+
+            # Wholesale Asking Buffer (হোলসেলারদের বাস্তব নেগোসিয়েশন করিডোর: বড় ফিগারে ৩-৪ হাজার, ছোটতে সামঞ্জস্যপূর্ণ)
+            if max_val >= 100000:
+                asking = max_val + 4000
+            elif max_val >= 50000:
+                asking = max_val + 2000
+            elif max_val >= 20000:
+                asking = max_val + 1500
+            elif max_val >= 10000:
+                asking = max_val + 800
+            elif max_val >= 5000:
+                asking = max_val + 600
+            elif max_val >= 2000:
+                asking = max_val + 300
+            elif max_val >= 1000:
+                asking = max_val + 200
+            elif max_val >= 500:
+                asking = max_val + 100
+            elif max_val > 0:
+                asking = max_val + 50
             else:
-                # Dynamic floor pricing corridor based on price band
-                if asking >= 100000:
-                    floor = asking - 10000
-                elif asking >= 20000:
-                    floor = asking - 2000
-                elif asking >= 5000:
-                    floor = asking - 500
-                elif asking >= 1000:
-                    floor = asking - 200
-                elif asking > 0:
-                    floor = max(50, asking - 50)
-                else:
-                    floor = 0
+                asking = 0
+                floor = 0
 
             # Determine Japanese OEM production year range and chassis codes
             v_lower = vehicles.lower()
@@ -236,7 +244,7 @@ for line in lines:
             matches = re.findall(r'মেমো\s*([০-৯]+)\s*(?:\(লাইন\s*([^)]+)\))?', memo_ref)
             for m_bn, line_bn in matches:
                 m_en = ''.join(bn_digits.get(c, c) for c in m_bn)
-                item_rate = asking
+                item_rate = max_val
                 for k, vmap in range_rate_mappings.items():
                     if k in clean_memo_name.lower():
                         if m_en in vmap:

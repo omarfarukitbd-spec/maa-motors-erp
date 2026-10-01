@@ -65,34 +65,42 @@ export function initPartsCatalogCache(onUpdateCallback = null) {
     catalogListenerUnsubscribe = PartsCatalogDAO.listen((parts) => {
         const masterCount = Array.isArray(INITIAL_PARTS_CATALOG) ? INITIAL_PARTS_CATALOG.length : 0;
         
-        // Enrich any parts missing memoHistory from INITIAL_PARTS_CATALOG
+        // Enrich any parts missing memoHistory or needing wholesale price corridor upgrade
         const enriched = (Array.isArray(parts) ? parts : []).map(p => {
-            if (!p.memoHistory || p.memoHistory.length === 0) {
-                const initItem = INITIAL_PARTS_CATALOG.find(i => i.id === p.id);
-                if (initItem && initItem.memoHistory) {
-                    return { ...p, memoHistory: initItem.memoHistory, memoReference: p.memoReference || initItem.memoReference };
-                }
+            const initItem = INITIAL_PARTS_CATALOG.find(i => i.id === p.id);
+            if (initItem) {
+                const isOldPrice = (initItem.id === 'PART-1001' && p.askingPrice < 239000);
+                return {
+                    ...p,
+                    askingPrice: isOldPrice ? initItem.askingPrice : (p.askingPrice || initItem.askingPrice),
+                    floorPrice: isOldPrice ? initItem.floorPrice : (p.floorPrice || initItem.floorPrice),
+                    singlePiecePrice: isOldPrice ? initItem.singlePiecePrice : (p.singlePiecePrice || initItem.singlePiecePrice),
+                    memoHistory: (p.memoHistory && p.memoHistory.length > 0) ? p.memoHistory : initItem.memoHistory,
+                    memoReference: p.memoReference || initItem.memoReference
+                };
             }
             return p;
         });
 
         const needsMemoUpgrade = enriched.length >= masterCount && parts && parts.some(p => !p.memoHistory || p.memoHistory.length === 0);
+        const needsPriceUpgrade = parts && parts.some(p => p.id === 'PART-1001' && p.askingPrice < 239000);
+        const needsUpgrade = needsMemoUpgrade || needsPriceUpgrade;
 
-        if (enriched.length >= masterCount && !needsMemoUpgrade) {
+        if (enriched.length >= masterCount && !needsUpgrade) {
             setPartsCatalogCache(enriched);
         } else if (!isAutoSeeding && masterCount > 0) {
             isAutoSeeding = true;
             (async () => {
                 try {
                     const count = await PartsCatalogDAO.seedBatch(INITIAL_PARTS_CATALOG);
-                    console.log(`Auto-upgraded ${count} verified parts with memoHistory to Firestore`);
+                    console.log(`Auto-upgraded ${count} verified parts with wholesale corridor to Firestore`);
                 } catch (err) {
                     console.warn('Auto-seed note:', err);
                 } finally {
                     isAutoSeeding = false;
                 }
             })();
-            // Immediately render full 134 verified parts with memoHistory in memory & UI
+            // Immediately render full 134 verified parts with wholesale corridor in memory & UI
             setPartsCatalogCache(INITIAL_PARTS_CATALOG);
         } else if (enriched.length > 0) {
             setPartsCatalogCache(enriched);

@@ -76,11 +76,11 @@ export async function openMemoPriceHistoryModal(partId) {
         const rateDiff = (part.askingPrice || 0) - (m.rate || 0);
         let diffBadge = '';
         if (rateDiff > 0) {
-            diffBadge = `<span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">-৳${formatAmountWithComma(rateDiff)} ছাড়</span>`;
+            diffBadge = `<span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">+৳${formatAmountWithComma(rateDiff)} বাফার</span>`;
         } else if (rateDiff === 0) {
-            diffBadge = `<span class="text-[10px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">আস্কিং সমান</span>`;
+            diffBadge = `<span class="text-[10px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">মেমো সমান</span>`;
         } else {
-            diffBadge = `<span class="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">+৳${formatAmountWithComma(Math.abs(rateDiff))}</span>`;
+            diffBadge = `<span class="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">-৳${formatAmountWithComma(Math.abs(rateDiff))}</span>`;
         }
 
         return `
@@ -157,14 +157,14 @@ export async function openMemoPriceHistoryModal(partId) {
                 <!-- Price Corridor & Stats Cards -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     <div class="p-3 rounded-2xl bg-slate-900 border border-emerald-500/30 text-center">
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">সর্বোচ্চ বিক্রয় দর</div>
-                        <div class="text-base sm:text-lg font-black text-emerald-400 font-mono mt-0.5">৳ ${formatAmountWithComma(maxRate)}</div>
-                        <div class="text-[10px] text-emerald-400/80 font-bold">আস্কিং দর</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">বর্তমান আস্কিং দর</div>
+                        <div class="text-base sm:text-lg font-black text-emerald-400 font-mono mt-0.5">৳ ${formatAmountWithComma(part.askingPrice || 0)}</div>
+                        <div class="text-[10px] text-emerald-400/80 font-bold">দোকানে চাওয়া দর</div>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-900 border border-amber-500/30 text-center">
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">সর্বনিম্ন বিক্রয় দর</div>
-                        <div class="text-base sm:text-lg font-black text-amber-400 font-mono mt-0.5">৳ ${formatAmountWithComma(minRate)}</div>
-                        <div class="text-[10px] text-amber-400/80 font-bold">ফ্লোর দর (নিরাপদ)</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">মেমো ফ্লোর দর</div>
+                        <div class="text-base sm:text-lg font-black text-amber-400 font-mono mt-0.5">৳ ${formatAmountWithComma(part.floorPrice || 0)}</div>
+                        <div class="text-[10px] text-amber-400/80 font-bold">নিরাপদ হোলসেল সীমা</div>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center">
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">মেমো সংখ্যা</div>
