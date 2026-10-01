@@ -3,6 +3,7 @@ import { PartsCatalogDAO } from './parts-dao.js';
 import { getPartsCatalogCache } from './parts-state.js';
 import { promptSecurityPin, showToast, parseAmount, safeRound } from '../utils.js';
 import { INITIAL_PARTS_CATALOG } from './initial-catalog-data.js';
+import { openMemoPriceHistoryModal, viewScannedMemo } from './parts-memo-history-modal.js';
 
 /**
  * Open Modal to Add or Edit a Part in the Master Catalog
@@ -363,5 +364,7 @@ window.partsCatalogActions = {
     promptDelete: (id) => promptDeletePart(id),
     exportExcel: () => exportPartsToExcel(),
     bulkPriceShift: () => promptBulkPriceShift(),
-    seedDefault: () => seedDefaultCatalog()
+    seedDefault: () => seedDefaultCatalog(),
+    showMemoHistory: (id) => openMemoPriceHistoryModal(id),
+    viewScannedMemo: (memoNo, memoNoBn, partName, rate) => viewScannedMemo(memoNo, memoNoBn, partName, rate)
 };

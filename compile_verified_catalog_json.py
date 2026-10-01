@@ -217,6 +217,41 @@ for line in lines:
             # Vehicle models clean list
             models_list = [m.strip() for m in re.split(r'[,/]', vehicles) if m.strip()]
 
+            # Specific manual mappings for the 10 multi-memo items with price ranges
+            range_rate_mappings = {
+                'vvti কাভার': {'107': 1200, '113': 1400, '132': 1300, '170': 1200},
+                'রাশের বুস্টার': {'105': 3800, '112': 4000},
+                'trh বুস্টার': {'103': 13000, '112': 13500},
+                'axio ২০১৪ রেক': {'103': 5000, '106': 5000, '111': 5200, '131': 5000},
+                'axio ২০১৪ মেইন মনটিন': {'101': 2500, '113': 2700},
+                '৪০/৬৫ কয়েল': {'108': 10300, '132': 10500},
+                '১২ পিন ইনজেকটার': {'101': 2800, '108': 2900},
+                'axio তারওয়ালা মোটর': {'106': 1500, '113': 1700, '170': 1500},
+                'axio ফ্যান মোটর': {'106': 1500, '113': 1700, '170': 1500},
+                'axio ওয়াটার জেকেট পাইপসহ': {'107': 1100, '114': 1300},
+                'wish প্লেইন কাটিং': {'103': 9300, '104': 9500, '107': 9500, '111': 10000}
+            }
+
+            memo_history = []
+            matches = re.findall(r'মেমো\s*([০-৯]+)\s*(?:\(লাইন\s*([^)]+)\))?', memo_ref)
+            for m_bn, line_bn in matches:
+                m_en = ''.join(bn_digits.get(c, c) for c in m_bn)
+                item_rate = asking
+                for k, vmap in range_rate_mappings.items():
+                    if k in clean_memo_name.lower():
+                        if m_en in vmap:
+                            item_rate = vmap[m_en]
+                        break
+
+                memo_history.append({
+                    "memoNo": m_en,
+                    "memoNoBn": m_bn,
+                    "line": line_bn.strip() if line_bn else "",
+                    "rate": item_rate,
+                    "unit": unit,
+                    "memoImageUrl": f"/memos/{m_en}.webp"
+                })
+
             entry = {
                 "id": part_id,
                 "nameBn": primary_name,
@@ -244,7 +279,8 @@ for line in lines:
                 "secretCode": secret_code,
                 "locationShop": location,
                 "lastContainerTag": container,
-                "memoReference": memo_ref
+                "memoReference": memo_ref,
+                "memoHistory": memo_history
             }
             catalog.append(entry)
 

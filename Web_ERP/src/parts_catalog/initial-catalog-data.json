@@ -39,7 +39,17 @@
     "secretCode": "ENG-9PN",
     "locationShop": "গোডাউন-১, ফ্লোর A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ১)"
+    "memoReference": "মেমো ১০৩ (লাইন ১)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "১",
+        "rate": 235000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      }
+    ]
   },
   {
     "id": "PART-1002",
@@ -80,7 +90,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৯ (লাইন ১), মেমো ১১০ (লাইন ১), মেমো ১৩১ (লাইন ৪)"
+    "memoReference": "মেমো ১০৯ (লাইন ১), মেমো ১১০ (লাইন ১), মেমো ১৩১ (লাইন ৪)",
+    "memoHistory": [
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "১",
+        "rate": 237000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      },
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "১",
+        "rate": 237000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      },
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "৪",
+        "rate": 237000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1003",
@@ -121,7 +157,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৩১ (লাইন ১)"
+    "memoReference": "মেমো ১৩১ (লাইন ১)",
+    "memoHistory": [
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "১",
+        "rate": 205000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1004",
@@ -163,7 +209,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৮০ (লাইন ১)"
+    "memoReference": "মেমো ১৮০ (লাইন ১)",
+    "memoHistory": [
+      {
+        "memoNo": "180",
+        "memoNoBn": "১৮০",
+        "line": "১",
+        "rate": 241000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/180.webp"
+      }
+    ]
   },
   {
     "id": "PART-1005",
@@ -203,7 +259,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৯ (লাইন ৩), মেমো ১১০ (লাইন ৪), মেমো ১৩১ (লাইন ৩)"
+    "memoReference": "মেমো ১০৯ (লাইন ৩), মেমো ১১০ (লাইন ৪), মেমো ১৩১ (লাইন ৩)",
+    "memoHistory": [
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "৩",
+        "rate": 208000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      },
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "৪",
+        "rate": 208000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      },
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "৩",
+        "rate": 208000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1006",
@@ -245,7 +327,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৯ (লাইন ২), মেমো ১১০ (লাইন ৫), মেমো ১৩১ (লাইন ৫)"
+    "memoReference": "মেমো ১০৯ (লাইন ২), মেমো ১১০ (লাইন ৫), মেমো ১৩১ (লাইন ৫)",
+    "memoHistory": [
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "২",
+        "rate": 245000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      },
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "৫",
+        "rate": 245000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      },
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "৫",
+        "rate": 245000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1007",
@@ -287,7 +395,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৮০ (লাইন ২)"
+    "memoReference": "মেমো ১৮০ (লাইন ২)",
+    "memoHistory": [
+      {
+        "memoNo": "180",
+        "memoNoBn": "১৮০",
+        "line": "২",
+        "rate": 141000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/180.webp"
+      }
+    ]
   },
   {
     "id": "PART-1008",
@@ -327,7 +445,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১০ (লাইন ৩), মেমো ১৩১ (লাইন ২)"
+    "memoReference": "মেমো ১১০ (লাইন ৩), মেমো ১৩১ (লাইন ২)",
+    "memoHistory": [
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "৩",
+        "rate": 205000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      },
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "২",
+        "rate": 205000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1009",
@@ -367,7 +503,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৯ (লাইন ৫), মেমো ১১০ (লাইন ২)"
+    "memoReference": "মেমো ১০৯ (লাইন ৫), মেমো ১১০ (লাইন ২)",
+    "memoHistory": [
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "৫",
+        "rate": 205000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      },
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "২",
+        "rate": 205000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      }
+    ]
   },
   {
     "id": "PART-1010",
@@ -408,7 +562,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৯ (লাইন ৪)"
+    "memoReference": "মেমো ১০৯ (লাইন ৪)",
+    "memoHistory": [
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "৪",
+        "rate": 215000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      }
+    ]
   },
   {
     "id": "PART-1011",
@@ -450,7 +614,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৯ (লাইন ৬), মেমো ১১০ (লাইন ৬)"
+    "memoReference": "মেমো ১০৯ (লাইন ৬), মেমো ১১০ (লাইন ৬)",
+    "memoHistory": [
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "৬",
+        "rate": 105000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      },
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "৬",
+        "rate": 105000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      }
+    ]
   },
   {
     "id": "PART-1012",
@@ -492,7 +674,25 @@
     "secretCode": "THT-11",
     "locationShop": "দোকান তাক H-1",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ১৭), মেমো ১১২ (লাইন ২৮)"
+    "memoReference": "মেমো ১০৫ (লাইন ১৭), মেমো ১১২ (লাইন ২৮)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "১৭",
+        "rate": 1100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২৮",
+        "rate": 1100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1013",
@@ -533,7 +733,41 @@
     "secretCode": "CVR-14",
     "locationShop": "দোকান তাক H-6",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৪৬), মেমো ১১৩ (লাইন ৩৯), মেমো ১৩২ (লাইন ১৬), মেমো ১৭০ (লাইন ২৪)"
+    "memoReference": "মেমো ১০৭ (লাইন ৪৬), মেমো ১১৩ (লাইন ৩৯), মেমো ১৩২ (লাইন ১৬), মেমো ১৭০ (লাইন ২৪)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৪৬",
+        "rate": 1200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/107.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩৯",
+        "rate": 1400,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/113.webp"
+      },
+      {
+        "memoNo": "132",
+        "memoNoBn": "১৩২",
+        "line": "১৬",
+        "rate": 1300,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/132.webp"
+      },
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "২৪",
+        "rate": 1200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1014",
@@ -573,7 +807,17 @@
     "secretCode": "MAP-40",
     "locationShop": "দোকান ড্রয়ার E-6",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৩৩)"
+    "memoReference": "মেমো ১০৬ (লাইন ৩৩)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩৩",
+        "rate": 400,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1015",
@@ -614,7 +858,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৪ (লাইন ৫৯)"
+    "memoReference": "মেমো ১১৪ (লাইন ৫৯)",
+    "memoHistory": [
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫৯",
+        "rate": 200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1016",
@@ -655,7 +909,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭৮ (লাইন ২)"
+    "memoReference": "মেমো ১৭৮ (লাইন ২)",
+    "memoHistory": [
+      {
+        "memoNo": "178",
+        "memoNoBn": "১৭৮",
+        "line": "২",
+        "rate": 1000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/178.webp"
+      }
+    ]
   },
   {
     "id": "PART-1017",
@@ -696,7 +960,41 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ২), মেমো ১০৯ (লাইন ৮), মেমো ১১০ (লাইন ৮), মেমো ১৩১ (লাইন ৭)"
+    "memoReference": "মেমো ১০৩ (লাইন ২), মেমো ১০৯ (লাইন ৮), মেমো ১১০ (লাইন ৮), মেমো ১৩১ (লাইন ৭)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "২",
+        "rate": 85000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "৮",
+        "rate": 85000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      },
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "৮",
+        "rate": 85000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      },
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "৭",
+        "rate": 85000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1018",
@@ -739,7 +1037,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৯ (লাইন ৮), মেমো ১১০ (লাইন ৭), মেমো ১৩১ (লাইন ৬)"
+    "memoReference": "মেমো ১০৯ (লাইন ৮), মেমো ১১০ (লাইন ৭), মেমো ১৩১ (লাইন ৬)",
+    "memoHistory": [
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "৮",
+        "rate": 120000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      },
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "৭",
+        "rate": 120000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      },
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "৬",
+        "rate": 120000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1019",
@@ -780,7 +1104,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ৩), মেমো ১০৯ (লাইন ৭)"
+    "memoReference": "মেমো ১০৩ (লাইন ৩), মেমো ১০৯ (লাইন ৭)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "৩",
+        "rate": 48000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "৭",
+        "rate": 48000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      }
+    ]
   },
   {
     "id": "PART-1020",
@@ -821,7 +1163,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১০ (লাইন ৯)"
+    "memoReference": "মেমো ১১০ (লাইন ৯)",
+    "memoHistory": [
+      {
+        "memoNo": "110",
+        "memoNoBn": "১১০",
+        "line": "৯",
+        "rate": 81000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/110.webp"
+      }
+    ]
   },
   {
     "id": "PART-1021",
@@ -862,7 +1214,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৯ (লাইন ৯)"
+    "memoReference": "মেমো ১০৯ (লাইন ৯)",
+    "memoHistory": [
+      {
+        "memoNo": "109",
+        "memoNoBn": "১০৯",
+        "line": "৯",
+        "rate": 100000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/109.webp"
+      }
+    ]
   },
   {
     "id": "PART-1022",
@@ -902,7 +1264,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২২), মেমো ১১২ (লাইন ১৫)"
+    "memoReference": "মেমো ১০৫ (লাইন ২২), মেমো ১১২ (লাইন ১৫)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২২",
+        "rate": 3800,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "১৫",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1023",
@@ -943,7 +1323,33 @@
     "secretCode": "BST-50",
     "locationShop": "দোকান তাক E-1",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ১১), মেমো ১০৭ (লাইন ৫৮), মেমো ১১১ (লাইন ১৪)"
+    "memoReference": "মেমো ১০৩ (লাইন ১১), মেমো ১০৭ (লাইন ৫৮), মেমো ১১১ (লাইন ১৪)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "১১",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫৮",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/107.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "১৪",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1024",
@@ -986,7 +1392,17 @@
     "secretCode": "BST-28",
     "locationShop": "দোকান তাক E-2",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২১)"
+    "memoReference": "মেমো ১০৫ (লাইন ২১)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২১",
+        "rate": 2800,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      }
+    ]
   },
   {
     "id": "PART-1025",
@@ -1026,7 +1442,25 @@
     "secretCode": "BST-NZE",
     "locationShop": "দোকান তাক E-3",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ১২), মেমো ১১২ (লাইন ২০)"
+    "memoReference": "মেমো ১০৩ (লাইন ১২), মেমো ১১২ (লাইন ২০)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "১২",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২০",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1026",
@@ -1069,7 +1503,25 @@
     "secretCode": "BST-PRB",
     "locationShop": "দোকান তাক E-4",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ১৩), মেমো ১১২ (লাইন ১৯)"
+    "memoReference": "মেমো ১০৩ (লাইন ১৩), মেমো ১১২ (লাইন ১৯)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "১৩",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "১৯",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1027",
@@ -1111,7 +1563,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১২ (লাইন ১৮)"
+    "memoReference": "মেমো ১১২ (লাইন ১৮)",
+    "memoHistory": [
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "১৮",
+        "rate": 3500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1028",
@@ -1151,7 +1613,25 @@
     "secretCode": "BST-TRH",
     "locationShop": "দোকান তাক E-5",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ১৪), মেমো ১১২ (লাইন ১৬)"
+    "memoReference": "মেমো ১০৩ (লাইন ১৪), মেমো ১১২ (লাইন ১৬)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "১৪",
+        "rate": 13000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "১৬",
+        "rate": 13500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1029",
@@ -1192,7 +1672,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১২ (লাইন ১৭)"
+    "memoReference": "মেমো ১১২ (লাইন ১৭)",
+    "memoHistory": [
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "১৭",
+        "rate": 9000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1030",
@@ -1233,7 +1723,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১২ (লাইন ২১)"
+    "memoReference": "মেমো ১১২ (লাইন ২১)",
+    "memoHistory": [
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২১",
+        "rate": 3500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1031",
@@ -1274,7 +1774,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭৮ (লাইন ৩)"
+    "memoReference": "মেমো ১৭৮ (লাইন ৩)",
+    "memoHistory": [
+      {
+        "memoNo": "178",
+        "memoNoBn": "১৭৮",
+        "line": "৩",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/178.webp"
+      }
+    ]
   },
   {
     "id": "PART-1032",
@@ -1316,7 +1826,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭৮ (লাইন ১)"
+    "memoReference": "মেমো ১৭৮ (লাইন ১)",
+    "memoHistory": [
+      {
+        "memoNo": "178",
+        "memoNoBn": "১৭৮",
+        "line": "১",
+        "rate": 4800,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/178.webp"
+      }
+    ]
   },
   {
     "id": "PART-1033",
@@ -1358,7 +1878,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ১৬), মেমো ১১১ (লাইন ১২)"
+    "memoReference": "মেমো ১০৫ (লাইন ১৬), মেমো ১১১ (লাইন ১২)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "১৬",
+        "rate": 5200,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "১২",
+        "rate": 5200,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1034",
@@ -1398,7 +1936,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১১ (লাইন ১৩)"
+    "memoReference": "মেমো ১১১ (লাইন ১৩)",
+    "memoHistory": [
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "১৩",
+        "rate": 6500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1035",
@@ -1439,7 +1987,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৪৪)"
+    "memoReference": "মেমো ১০৬ (লাইন ৪৪)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৪৪",
+        "rate": 6500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1036",
@@ -1481,7 +2039,33 @@
     "secretCode": "DRM-60",
     "locationShop": "দোকান তাক F-7",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ১৫), মেমো ১০৭ (লাইন ৪৭), মেমো ১১৩ (লাইন ৩০)"
+    "memoReference": "মেমো ১০৪ (লাইন ১৫), মেমো ১০৭ (লাইন ৪৭), মেমো ১১৩ (লাইন ৩০)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "১৫",
+        "rate": 6000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৪৭",
+        "rate": 6000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩০",
+        "rate": 6000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1037",
@@ -1522,7 +2106,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৩ (লাইন ৩১)"
+    "memoReference": "মেমো ১১৩ (লাইন ৩১)",
+    "memoHistory": [
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩১",
+        "rate": 5200,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1038",
@@ -1563,7 +2157,17 @@
     "secretCode": "DRM-TRH",
     "locationShop": "দোকান তাক F-8",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ১৪)"
+    "memoReference": "মেমো ১০৪ (লাইন ১৪)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "১৪",
+        "rate": 13000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      }
+    ]
   },
   {
     "id": "PART-1039",
@@ -1603,7 +2207,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৫৭)"
+    "memoReference": "মেমো ১০৭ (লাইন ৫৭)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫৭",
+        "rate": 1200,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      }
+    ]
   },
   {
     "id": "PART-1040",
@@ -1644,7 +2258,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ২৫)"
+    "memoReference": "মেমো ১৭০ (লাইন ২৫)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "২৫",
+        "rate": 4500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1041",
@@ -1688,7 +2312,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ২৬)"
+    "memoReference": "মেমো ১৭০ (লাইন ২৬)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "২৬",
+        "rate": 4500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1042",
@@ -1732,7 +2366,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ২৭)"
+    "memoReference": "মেমো ১৭০ (লাইন ২৭)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "২৭",
+        "rate": 4000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1043",
@@ -1774,7 +2418,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২৪), মেমো ১১১ (লাইন ১১)"
+    "memoReference": "মেমো ১০৫ (লাইন ২৪), মেমো ১১১ (লাইন ১১)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২৪",
+        "rate": 3500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "১১",
+        "rate": 3500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1044",
@@ -1815,7 +2477,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ১০), মেমো ১০৫ (লাইন ২৮), মেমো ১১৩ (লাইন ৪৪)"
+    "memoReference": "মেমো ১০৩ (লাইন ১০), মেমো ১০৫ (লাইন ২৮), মেমো ১১৩ (লাইন ৪৪)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "১০",
+        "rate": 3500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২৮",
+        "rate": 3500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৪৪",
+        "rate": 3500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1045",
@@ -1856,7 +2544,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২৫), মেমো ১১৩ (লাইন ৪৩)"
+    "memoReference": "মেমো ১০৫ (লাইন ২৫), মেমো ১১৩ (লাইন ৪৩)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২৫",
+        "rate": 2200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৪৩",
+        "rate": 2200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1046",
@@ -1898,7 +2604,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২৬)"
+    "memoReference": "মেমো ১০৫ (লাইন ২৬)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২৬",
+        "rate": 7500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      }
+    ]
   },
   {
     "id": "PART-1047",
@@ -1941,7 +2657,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২৭), মেমো ১১৩ (লাইন ৪২)"
+    "memoReference": "মেমো ১০৫ (লাইন ২৭), মেমো ১১৩ (লাইন ৪২)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২৭",
+        "rate": 8000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৪২",
+        "rate": 8000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1048",
@@ -1983,7 +2717,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ৭), মেমো ১০৪ (লাইন ৬), মেমো ১১১ (লাইন ১)"
+    "memoReference": "মেমো ১০৩ (লাইন ৭), মেমো ১০৪ (লাইন ৬), মেমো ১১১ (লাইন ১)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "৭",
+        "rate": 9200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "৬",
+        "rate": 9200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "১",
+        "rate": 9200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1049",
@@ -2024,7 +2784,17 @@
     "secretCode": "RCK-92",
     "locationShop": "দোকান তাক A-1",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭৮ (লাইন ৫)"
+    "memoReference": "মেমো ১৭৮ (লাইন ৫)",
+    "memoHistory": [
+      {
+        "memoNo": "178",
+        "memoNoBn": "১৭৮",
+        "line": "৫",
+        "rate": 7100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/178.webp"
+      }
+    ]
   },
   {
     "id": "PART-1050",
@@ -2068,7 +2838,41 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ৬), মেমো ১০৬ (লাইন ৩৭), মেমো ১১১ (লাইন ৩), মেমো ১৩১ (লাইন ৯)"
+    "memoReference": "মেমো ১০৩ (লাইন ৬), মেমো ১০৬ (লাইন ৩৭), মেমো ১১১ (লাইন ৩), মেমো ১৩১ (লাইন ৯)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "৬",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩৭",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "৩",
+        "rate": 5200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/111.webp"
+      },
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "৯",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1051",
@@ -2110,7 +2914,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭৮ (লাইন ৪)"
+    "memoReference": "মেমো ১৭৮ (লাইন ৪)",
+    "memoHistory": [
+      {
+        "memoNo": "178",
+        "memoNoBn": "১৭৮",
+        "line": "৪",
+        "rate": 7100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/178.webp"
+      }
+    ]
   },
   {
     "id": "PART-1052",
@@ -2152,7 +2966,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১১ (লাইন ৯)"
+    "memoReference": "মেমো ১১১ (লাইন ৯)",
+    "memoHistory": [
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "৯",
+        "rate": 12000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1053",
@@ -2193,7 +3017,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১১ (লাইন ২)"
+    "memoReference": "মেমো ১১১ (লাইন ২)",
+    "memoHistory": [
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "২",
+        "rate": 9800,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1054",
@@ -2232,7 +3066,17 @@
     "secretCode": "VZL-95",
     "locationShop": "দোকান তাক A-3",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৪৫)"
+    "memoReference": "মেমো ১০১ (লাইন ৪৫)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৪৫",
+        "rate": 9500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/101.webp"
+      }
+    ]
   },
   {
     "id": "PART-1055",
@@ -2271,7 +3115,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৩১ (লাইন ৮)"
+    "memoReference": "মেমো ১৩১ (লাইন ৮)",
+    "memoHistory": [
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "৮",
+        "rate": 13000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1056",
@@ -2311,7 +3165,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৩২ (লাইন ২০)"
+    "memoReference": "মেমো ১৩২ (লাইন ২০)",
+    "memoHistory": [
+      {
+        "memoNo": "132",
+        "memoNoBn": "১৩২",
+        "line": "২০",
+        "rate": 16000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/132.webp"
+      }
+    ]
   },
   {
     "id": "PART-1057",
@@ -2350,7 +3214,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৩১ (লাইন ১০)"
+    "memoReference": "মেমো ১৩১ (লাইন ১০)",
+    "memoHistory": [
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "১০",
+        "rate": 9000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/131.webp"
+      }
+    ]
   },
   {
     "id": "PART-1058",
@@ -2391,7 +3265,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ৫), মেমো ১১১ (লাইন ১০)"
+    "memoReference": "মেমো ১০৪ (লাইন ৫), মেমো ১১১ (লাইন ১০)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "৫",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "১০",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1059",
@@ -2431,7 +3323,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৩৮)"
+    "memoReference": "মেমো ১০৬ (লাইন ৩৮)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩৮",
+        "rate": 9100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1060",
@@ -2472,7 +3374,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৩৯)"
+    "memoReference": "মেমো ১০৬ (লাইন ৩৯)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩৯",
+        "rate": 8000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1061",
@@ -2512,7 +3424,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৪০)"
+    "memoReference": "মেমো ১০৬ (লাইন ৪০)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৪০",
+        "rate": 6000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1062",
@@ -2554,7 +3476,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১২ (লাইন ২৯)"
+    "memoReference": "মেমো ১১২ (লাইন ২৯)",
+    "memoHistory": [
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২৯",
+        "rate": 8500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1063",
@@ -2596,7 +3528,25 @@
     "secretCode": "TNK-10",
     "locationShop": "দোকান তাক I-10",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৪৩), মেমো ১১৪ (লাইন ৫৮)"
+    "memoReference": "মেমো ১০১ (লাইন ৪৩), মেমো ১১৪ (লাইন ৫৮)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৪৩",
+        "rate": 1000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/101.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫৮",
+        "rate": 1000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1064",
@@ -2637,7 +3587,25 @@
     "secretCode": "HB-57K",
     "locationShop": "দোকান তাক D-4",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ৮), মেমো ১১১ (লাইন ৮)"
+    "memoReference": "মেমো ১০৪ (লাইন ৮), মেমো ১১১ (লাইন ৮)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "৮",
+        "rate": 5700,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "৮",
+        "rate": 5700,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1065",
@@ -2678,7 +3646,33 @@
     "secretCode": "HB-57R",
     "locationShop": "দোকান তাক D-3",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ১০), মেমো ১০৭ (লাইন ৫০), মেমো ১১৪ (লাইন ৪৮)"
+    "memoReference": "মেমো ১০৪ (লাইন ১০), মেমো ১০৭ (লাইন ৫০), মেমো ১১৪ (লাইন ৪৮)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "১০",
+        "rate": 5700,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫০",
+        "rate": 5700,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৪৮",
+        "rate": 5700,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1066",
@@ -2721,7 +3715,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২৩), মেমো ১১৪ (লাইন ৫১)"
+    "memoReference": "মেমো ১০৫ (লাইন ২৩), মেমো ১১৪ (লাইন ৫১)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২৩",
+        "rate": 5700,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫১",
+        "rate": 5700,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1067",
@@ -2763,7 +3775,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৪ (লাইন ৪৯)"
+    "memoReference": "মেমো ১১৪ (লাইন ৪৯)",
+    "memoHistory": [
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৪৯",
+        "rate": 4500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1068",
@@ -2805,7 +3827,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৩১ (লাইন ১৩), মেমো ১১৪ (লাইন ৫২)"
+    "memoReference": "মেমো ১৩১ (লাইন ১৩), মেমো ১১৪ (লাইন ৫২)",
+    "memoHistory": [
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "১৩",
+        "rate": 5300,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/131.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫২",
+        "rate": 5300,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1069",
@@ -2846,7 +3886,41 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ৯), মেমো ১০৭ (লাইন ৫২), মেমো ১৩১ (লাইন ১২), মেমো ১১৪ (লাইন ৫৩)"
+    "memoReference": "মেমো ১০৪ (লাইন ৯), মেমো ১০৭ (লাইন ৫২), মেমো ১৩১ (লাইন ১২), মেমো ১১৪ (লাইন ৫৩)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "৯",
+        "rate": 5500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫২",
+        "rate": 5500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      },
+      {
+        "memoNo": "131",
+        "memoNoBn": "১৩১",
+        "line": "১২",
+        "rate": 5500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/131.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫৩",
+        "rate": 5500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1070",
@@ -2887,7 +3961,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৫১)"
+    "memoReference": "মেমো ১০৭ (লাইন ৫১)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫১",
+        "rate": 4700,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      }
+    ]
   },
   {
     "id": "PART-1071",
@@ -2927,7 +4011,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ১৩)"
+    "memoReference": "মেমো ১০৪ (লাইন ১৩)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "১৩",
+        "rate": 8500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      }
+    ]
   },
   {
     "id": "PART-1072",
@@ -2966,7 +4060,17 @@
     "secretCode": "KLK-25",
     "locationShop": "দোকান ড্রয়ার C-1",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ১১)"
+    "memoReference": "মেমো ১০৪ (লাইন ১১)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "১১",
+        "rate": 2500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      }
+    ]
   },
   {
     "id": "PART-1073",
@@ -3007,7 +4111,17 @@
     "secretCode": "KLK-100",
     "locationShop": "দোকান ড্রয়ার C-2",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ১২)"
+    "memoReference": "মেমো ১০৪ (লাইন ১২)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "১২",
+        "rate": 5000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      }
+    ]
   },
   {
     "id": "PART-1074",
@@ -3047,7 +4161,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ১৭)"
+    "memoReference": "মেমো ১৭০ (লাইন ১৭)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "১৭",
+        "rate": 3750,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1075",
@@ -3090,7 +4214,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৫৪)"
+    "memoReference": "মেমো ১০৭ (লাইন ৫৪)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫৪",
+        "rate": 10500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      }
+    ]
   },
   {
     "id": "PART-1076",
@@ -3131,7 +4265,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৫৫)"
+    "memoReference": "মেমো ১০৭ (লাইন ৫৫)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫৫",
+        "rate": 6000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      }
+    ]
   },
   {
     "id": "PART-1077",
@@ -3169,7 +4313,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৫৩)"
+    "memoReference": "মেমো ১০৭ (লাইন ৫৩)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫৩",
+        "rate": 15000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      }
+    ]
   },
   {
     "id": "PART-1078",
@@ -3210,7 +4364,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৫৬)"
+    "memoReference": "মেমো ১০৭ (লাইন ৫৬)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫৬",
+        "rate": 10000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      }
+    ]
   },
   {
     "id": "PART-1079",
@@ -3250,7 +4414,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১১ (লাইন ৬)"
+    "memoReference": "মেমো ১১১ (লাইন ৬)",
+    "memoHistory": [
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "৬",
+        "rate": 3500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1080",
@@ -3291,7 +4465,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২৯), মেমো ১১১ (লাইন ৭)"
+    "memoReference": "মেমো ১০৫ (লাইন ২৯), মেমো ১১১ (লাইন ৭)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২৯",
+        "rate": 1500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "৭",
+        "rate": 1500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1081",
@@ -3331,7 +4523,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ৩০), মেমো ১১৪ (লাইন ৪৬)"
+    "memoReference": "মেমো ১০৫ (লাইন ৩০), মেমো ১১৪ (লাইন ৪৬)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "৩০",
+        "rate": 1100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৪৬",
+        "rate": 1100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1082",
@@ -3371,7 +4581,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৪ (লাইন ৪৭)"
+    "memoReference": "মেমো ১১৪ (লাইন ৪৭)",
+    "memoHistory": [
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৪৭",
+        "rate": 1200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1083",
@@ -3412,7 +4632,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ১৮), মেমো ১০৬ (লাইন ৪২), মেমো ১১৩ (লাইন ৩৭)"
+    "memoReference": "মেমো ১০৫ (লাইন ১৮), মেমো ১০৬ (লাইন ৪২), মেমো ১১৩ (লাইন ৩৭)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "১৮",
+        "rate": 13000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৪২",
+        "rate": 13000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/106.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩৭",
+        "rate": 13000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1084",
@@ -3451,7 +4697,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৪৩)"
+    "memoReference": "মেমো ১০৬ (লাইন ৪৩)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৪৩",
+        "rate": 11000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1085",
@@ -3492,7 +4748,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৪১), মেমো ১১৩ (লাইন ৩৫, ৩৮)"
+    "memoReference": "মেমো ১০৬ (লাইন ৪১), মেমো ১১৩ (লাইন ৩৫, ৩৮)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৪১",
+        "rate": 10000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/106.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩৫, ৩৮",
+        "rate": 10000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1086",
@@ -3534,7 +4808,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৩ (লাইন ৩৩)"
+    "memoReference": "মেমো ১১৩ (লাইন ৩৩)",
+    "memoHistory": [
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩৩",
+        "rate": 15000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1087",
@@ -3575,7 +4859,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৩ (লাইন ৩৪)"
+    "memoReference": "মেমো ১১৩ (লাইন ৩৪)",
+    "memoHistory": [
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩৪",
+        "rate": 10000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1088",
@@ -3618,7 +4912,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭৯ (লাইন ১)"
+    "memoReference": "মেমো ১৭৯ (লাইন ১)",
+    "memoHistory": [
+      {
+        "memoNo": "179",
+        "memoNoBn": "১৭৯",
+        "line": "১",
+        "rate": 4500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/179.webp"
+      }
+    ]
   },
   {
     "id": "PART-1089",
@@ -3661,7 +4965,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ১৯), মেমো ১১৩ (লাইন ৩২)"
+    "memoReference": "মেমো ১০৫ (লাইন ১৯), মেমো ১১৩ (লাইন ৩২)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "১৯",
+        "rate": 6000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/105.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩২",
+        "rate": 6000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1090",
@@ -3704,7 +5026,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৪২), মেমো ১১৩ (লাইন ৪০)"
+    "memoReference": "মেমো ১০১ (লাইন ৪২), মেমো ১১৩ (লাইন ৪০)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৪২",
+        "rate": 2500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/101.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৪০",
+        "rate": 2700,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1091",
@@ -3745,7 +5085,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৪৪)"
+    "memoReference": "মেমো ১০১ (লাইন ৪৪)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৪৪",
+        "rate": 3500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/101.webp"
+      }
+    ]
   },
   {
     "id": "PART-1092",
@@ -3786,7 +5136,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৫ (লাইন ২০)"
+    "memoReference": "মেমো ১০৫ (লাইন ২০)",
+    "memoHistory": [
+      {
+        "memoNo": "105",
+        "memoNoBn": "১০৫",
+        "line": "২০",
+        "rate": 3000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/105.webp"
+      }
+    ]
   },
   {
     "id": "PART-1093",
@@ -3829,7 +5189,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৩ (লাইন ৪১)"
+    "memoReference": "মেমো ১১৩ (লাইন ৪১)",
+    "memoHistory": [
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৪১",
+        "rate": 1000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/113.webp"
+      }
+    ]
   },
   {
     "id": "PART-1094",
@@ -3872,7 +5242,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৩২)"
+    "memoReference": "মেমো ১০৬ (লাইন ৩২)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩২",
+        "rate": 1050,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1095",
@@ -3912,7 +5292,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৮ (লাইন ৭০)"
+    "memoReference": "মেমো ১০৮ (লাইন ৭০)",
+    "memoHistory": [
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৭০",
+        "rate": 800,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/108.webp"
+      }
+    ]
   },
   {
     "id": "PART-1096",
@@ -3952,7 +5342,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ২০)"
+    "memoReference": "মেমো ১৭০ (লাইন ২০)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "২০",
+        "rate": 1800,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1097",
@@ -3995,7 +5395,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৪৭)"
+    "memoReference": "মেমো ১০১ (লাইন ৪৭)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৪৭",
+        "rate": 10500,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/101.webp"
+      }
+    ]
   },
   {
     "id": "PART-1098",
@@ -4037,7 +5447,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৪৬), মেমো ১০৮ (লাইন ৬৮)"
+    "memoReference": "মেমো ১০১ (লাইন ৪৬), মেমো ১০৮ (লাইন ৬৮)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৪৬",
+        "rate": 10200,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/101.webp"
+      },
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬৮",
+        "rate": 10200,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/108.webp"
+      }
+    ]
   },
   {
     "id": "PART-1099",
@@ -4077,7 +5505,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৮ (লাইন ৬৯), মেমো ১৩২ (লাইন ১৭)"
+    "memoReference": "মেমো ১০৮ (লাইন ৬৯), মেমো ১৩২ (লাইন ১৭)",
+    "memoHistory": [
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬৯",
+        "rate": 10300,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/108.webp"
+      },
+      {
+        "memoNo": "132",
+        "memoNoBn": "১৩২",
+        "line": "১৭",
+        "rate": 10500,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/132.webp"
+      }
+    ]
   },
   {
     "id": "PART-1100",
@@ -4118,7 +5564,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৩২ (লাইন ১৮)"
+    "memoReference": "মেমো ১৩২ (লাইন ১৮)",
+    "memoHistory": [
+      {
+        "memoNo": "132",
+        "memoNoBn": "১৩২",
+        "line": "১৮",
+        "rate": 10200,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/132.webp"
+      }
+    ]
   },
   {
     "id": "PART-1101",
@@ -4161,7 +5617,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৩২ (লাইন ১৯)"
+    "memoReference": "মেমো ১৩২ (লাইন ১৯)",
+    "memoHistory": [
+      {
+        "memoNo": "132",
+        "memoNoBn": "১৩২",
+        "line": "১৯",
+        "rate": 7500,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/132.webp"
+      }
+    ]
   },
   {
     "id": "PART-1102",
@@ -4201,7 +5667,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৪৯), মেমো ১০৮ (লাইন ৬৫), মেমো ১৩২ (লাইন ১৪)"
+    "memoReference": "মেমো ১০১ (লাইন ৪৯), মেমো ১০৮ (লাইন ৬৫), মেমো ১৩২ (লাইন ১৪)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৪৯",
+        "rate": 4000,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/101.webp"
+      },
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬৫",
+        "rate": 4000,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/108.webp"
+      },
+      {
+        "memoNo": "132",
+        "memoNoBn": "১৩২",
+        "line": "১৪",
+        "rate": 4000,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/132.webp"
+      }
+    ]
   },
   {
     "id": "PART-1103",
@@ -4241,7 +5733,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৪৮), মেমো ১০৮ (লাইন ৬৪), মেমো ১৩২ (লাইন ১৫)"
+    "memoReference": "মেমো ১০১ (লাইন ৪৮), মেমো ১০৮ (লাইন ৬৪), মেমো ১৩২ (লাইন ১৫)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৪৮",
+        "rate": 3800,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/101.webp"
+      },
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬৪",
+        "rate": 3800,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/108.webp"
+      },
+      {
+        "memoNo": "132",
+        "memoNoBn": "১৩২",
+        "line": "১৫",
+        "rate": 3800,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/132.webp"
+      }
+    ]
   },
   {
     "id": "PART-1104",
@@ -4283,7 +5801,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০১ (লাইন ৫০), মেমো ১০৮ (লাইন ৬৬)"
+    "memoReference": "মেমো ১০১ (লাইন ৫০), মেমো ১০৮ (লাইন ৬৬)",
+    "memoHistory": [
+      {
+        "memoNo": "101",
+        "memoNoBn": "১০১",
+        "line": "৫০",
+        "rate": 2800,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/101.webp"
+      },
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬৬",
+        "rate": 2900,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/108.webp"
+      }
+    ]
   },
   {
     "id": "PART-1105",
@@ -4324,7 +5860,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৮ (লাইন ৬৭)"
+    "memoReference": "মেমো ১০৮ (লাইন ৬৭)",
+    "memoHistory": [
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬৭",
+        "rate": 2800,
+        "unit": "সেট (৪টি)",
+        "memoImageUrl": "/memos/108.webp"
+      }
+    ]
   },
   {
     "id": "PART-1106",
@@ -4366,7 +5912,25 @@
     "secretCode": "STR-40",
     "locationShop": "দোকান তাক H-3",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ৩), মেমো ১১২ (লাইন ২৪)"
+    "memoReference": "মেমো ১০৪ (লাইন ৩), মেমো ১১২ (লাইন ২৪)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "৩",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২৪",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1107",
@@ -4407,7 +5971,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ৪), মেমো ১১২ (লাইন ২৭), মেমো ১৭০ (লাইন ১৫)"
+    "memoReference": "মেমো ১০৪ (লাইন ৪), মেমো ১১২ (লাইন ২৭), মেমো ১৭০ (লাইন ১৫)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "৪",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২৭",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      },
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "১৫",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1108",
@@ -4449,7 +6039,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ১৬)"
+    "memoReference": "মেমো ১৭০ (লাইন ১৬)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "১৬",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1109",
@@ -4492,7 +6092,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১২ (লাইন ২৫)"
+    "memoReference": "মেমো ১১২ (লাইন ২৫)",
+    "memoHistory": [
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২৫",
+        "rate": 5000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1110",
@@ -4533,7 +6143,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১২ (লাইন ২৬)"
+    "memoReference": "মেমো ১১২ (লাইন ২৬)",
+    "memoHistory": [
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২৬",
+        "rate": 5500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1111",
@@ -4574,7 +6194,33 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৩৫), মেমো ১১৩ (লাইন ৩৬), মেমো ১৭০ (লাইন ২১)"
+    "memoReference": "মেমো ১০৬ (লাইন ৩৫), মেমো ১১৩ (লাইন ৩৬), মেমো ১৭০ (লাইন ২১)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩৫",
+        "rate": 1500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      },
+      {
+        "memoNo": "113",
+        "memoNoBn": "১১৩",
+        "line": "৩৬",
+        "rate": 1700,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/113.webp"
+      },
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "২১",
+        "rate": 1500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1112",
@@ -4615,7 +6261,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৩৬)"
+    "memoReference": "মেমো ১০৬ (লাইন ৩৬)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩৬",
+        "rate": 4300,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1113",
@@ -4656,7 +6312,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১২ (লাইন ২২)"
+    "memoReference": "মেমো ১১২ (লাইন ২২)",
+    "memoHistory": [
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২২",
+        "rate": 4000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1114",
@@ -4696,7 +6362,25 @@
     "secretCode": "FAN-45",
     "locationShop": "দোকান তাক I-7",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ৮), মেমো ১১২ (লাইন ২৩)"
+    "memoReference": "মেমো ১০৩ (লাইন ৮), মেমো ১১২ (লাইন ২৩)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "৮",
+        "rate": 4500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "112",
+        "memoNoBn": "১১২",
+        "line": "২৩",
+        "rate": 4500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/112.webp"
+      }
+    ]
   },
   {
     "id": "PART-1115",
@@ -4736,7 +6420,17 @@
     "secretCode": "FAN-35",
     "locationShop": "দোকান তাক I-8",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ৯)"
+    "memoReference": "মেমো ১০৩ (লাইন ৯)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "৯",
+        "rate": 3500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      }
+    ]
   },
   {
     "id": "PART-1116",
@@ -4776,7 +6470,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ১৯)"
+    "memoReference": "মেমো ১৭০ (লাইন ১৯)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "১৯",
+        "rate": 1700,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1117",
@@ -4817,7 +6521,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ২২)"
+    "memoReference": "মেমো ১৭০ (লাইন ২২)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "২২",
+        "rate": 1400,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1118",
@@ -4858,7 +6572,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৩১)"
+    "memoReference": "মেমো ১০৬ (লাইন ৩১)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩১",
+        "rate": 1100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      }
+    ]
   },
   {
     "id": "PART-1119",
@@ -4898,7 +6622,17 @@
     "secretCode": "AIR-52",
     "locationShop": "দোকান তাক H-5",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ৭)"
+    "memoReference": "মেমো ১০৪ (লাইন ৭)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "৭",
+        "rate": 5200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/104.webp"
+      }
+    ]
   },
   {
     "id": "PART-1120",
@@ -4939,7 +6673,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৬ (লাইন ৩৪), মেমো ১১৪ (লাইন ৪৫)"
+    "memoReference": "মেমো ১০৬ (লাইন ৩৪), মেমো ১১৪ (লাইন ৪৫)",
+    "memoHistory": [
+      {
+        "memoNo": "106",
+        "memoNoBn": "১০৬",
+        "line": "৩৪",
+        "rate": 700,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/106.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৪৫",
+        "rate": 700,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1121",
@@ -4981,7 +6733,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ৫)"
+    "memoReference": "মেমো ১০৩ (লাইন ৫)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "৫",
+        "rate": 1200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/103.webp"
+      }
+    ]
   },
   {
     "id": "PART-1122",
@@ -5022,7 +6784,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৪৯), মেমো ১১৪ (লাইন ৫৭)"
+    "memoReference": "মেমো ১০৭ (লাইন ৪৯), মেমো ১১৪ (লাইন ৫৭)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৪৯",
+        "rate": 1100,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/107.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫৭",
+        "rate": 1300,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1123",
@@ -5065,7 +6845,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ১৮)"
+    "memoReference": "মেমো ১৭০ (লাইন ১৮)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "১৮",
+        "rate": 400,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   },
   {
     "id": "PART-1124",
@@ -5105,7 +6895,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৪৮), মেমো ১১৪ (লাইন ৫৫)"
+    "memoReference": "মেমো ১০৭ (লাইন ৪৮), মেমো ১১৪ (লাইন ৫৫)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৪৮",
+        "rate": 1500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/107.webp"
+      },
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫৫",
+        "rate": 1500,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1125",
@@ -5145,7 +6953,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৪ (লাইন ৫৪)"
+    "memoReference": "মেমো ১১৪ (লাইন ৫৪)",
+    "memoHistory": [
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫৪",
+        "rate": 1800,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1126",
@@ -5184,7 +7002,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১১৪ (লাইন ৫৬)"
+    "memoReference": "মেমো ১১৪ (লাইন ৫৬)",
+    "memoHistory": [
+      {
+        "memoNo": "114",
+        "memoNoBn": "১১৪",
+        "line": "৫৬",
+        "rate": 250,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/114.webp"
+      }
+    ]
   },
   {
     "id": "PART-1127",
@@ -5224,7 +7052,41 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৩ (লাইন ৪), মেমো ১০৪ (লাইন ২), মেমো ১০৭ (লাইন ৪৫), মেমো ১১১ (লাইন ৪)"
+    "memoReference": "মেমো ১০৩ (লাইন ৪), মেমো ১০৪ (লাইন ২), মেমো ১০৭ (লাইন ৪৫), মেমো ১১১ (লাইন ৪)",
+    "memoHistory": [
+      {
+        "memoNo": "103",
+        "memoNoBn": "১০৩",
+        "line": "৪",
+        "rate": 9300,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/103.webp"
+      },
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "২",
+        "rate": 9500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৪৫",
+        "rate": 9500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "৪",
+        "rate": 10000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1128",
@@ -5264,7 +7126,25 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৪ (লাইন ১), মেমো ১১১ (লাইন ৫)"
+    "memoReference": "মেমো ১০৪ (লাইন ১), মেমো ১১১ (লাইন ৫)",
+    "memoHistory": [
+      {
+        "memoNo": "104",
+        "memoNoBn": "১০৪",
+        "line": "১",
+        "rate": 6500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/104.webp"
+      },
+      {
+        "memoNo": "111",
+        "memoNoBn": "১১১",
+        "line": "৫",
+        "rate": 6500,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/111.webp"
+      }
+    ]
   },
   {
     "id": "PART-1129",
@@ -5306,7 +7186,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৭ (লাইন ৫৯)"
+    "memoReference": "মেমো ১০৭ (লাইন ৫৯)",
+    "memoHistory": [
+      {
+        "memoNo": "107",
+        "memoNoBn": "১০৭",
+        "line": "৫৯",
+        "rate": 67000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/107.webp"
+      }
+    ]
   },
   {
     "id": "PART-1130",
@@ -5349,7 +7239,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৮ (লাইন ৬০)"
+    "memoReference": "মেমো ১০৮ (লাইন ৬০)",
+    "memoHistory": [
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬০",
+        "rate": 39000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/108.webp"
+      }
+    ]
   },
   {
     "id": "PART-1131",
@@ -5390,7 +7290,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৮ (লাইন ৫৯)"
+    "memoReference": "মেমো ১০৮ (লাইন ৫৯)",
+    "memoHistory": [
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৫৯",
+        "rate": 54000,
+        "unit": "সেট",
+        "memoImageUrl": "/memos/108.webp"
+      }
+    ]
   },
   {
     "id": "PART-1132",
@@ -5432,7 +7342,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৮ (লাইন ৬২)"
+    "memoReference": "মেমো ১০৮ (লাইন ৬২)",
+    "memoHistory": [
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬২",
+        "rate": 18000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/108.webp"
+      }
+    ]
   },
   {
     "id": "PART-1133",
@@ -5473,7 +7393,17 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১০৮ (লাইন ৬১)"
+    "memoReference": "মেমো ১০৮ (লাইন ৬১)",
+    "memoHistory": [
+      {
+        "memoNo": "108",
+        "memoNoBn": "১০৮",
+        "line": "৬১",
+        "rate": 20000,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/108.webp"
+      }
+    ]
   },
   {
     "id": "PART-1134",
@@ -5513,6 +7443,16 @@
     "secretCode": "",
     "locationShop": "দোকান তাক A",
     "lastContainerTag": "CT-2026-AUG-DXB",
-    "memoReference": "মেমো ১৭০ (লাইন ২৩)"
+    "memoReference": "মেমো ১৭০ (লাইন ২৩)",
+    "memoHistory": [
+      {
+        "memoNo": "170",
+        "memoNoBn": "১৭০",
+        "line": "২৩",
+        "rate": 1200,
+        "unit": "পিছ",
+        "memoImageUrl": "/memos/170.webp"
+      }
+    ]
   }
 ]

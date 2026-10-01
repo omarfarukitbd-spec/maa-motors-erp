@@ -267,7 +267,15 @@ function renderTableRows() {
                         <span class="text-slate-600">•</span>
                         <span class="italic text-slate-400 text-[10px]">${item.nameEn || ''}</span>
                     </div>
-                    ${item.memoReference ? `<div class="text-[10px] text-amber-400/90 font-bold mt-0.5 flex items-center gap-1"><i class="fa-solid fa-receipt text-[9px]"></i><span>${item.memoReference}</span></div>` : ''}
+                    ${item.memoReference ? `
+                        <button type="button" 
+                                onclick="window.partsCatalogActions.showMemoHistory('${item.id}')" 
+                                class="mt-1 text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 px-2 py-0.5 rounded-lg transition-all cursor-pointer text-left active:scale-95 group" 
+                                title="ক্লিক করে মেমোর দর হিস্ট্রি ও মূল ক্যাশ মেমো দেখুন">
+                            <i class="fa-solid fa-receipt text-[9px] text-amber-400 shrink-0"></i>
+                            <span class="truncate max-w-[200px] sm:max-w-[280px]">${item.memoReference}</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[8px] opacity-70 group-hover:opacity-100 shrink-0"></i>
+                        </button>` : ''}
                     ${item.secretCode ? `<span class="inline-block mt-1 text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-bold">[${item.secretCode}]</span>` : ''}
                 </td>
                 <td class="py-3 px-4">

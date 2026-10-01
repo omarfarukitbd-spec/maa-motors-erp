@@ -127,11 +127,27 @@ export function selectTypeaheadPart(rowIndex, matchIndex) {
         const years = (part.yearStart && part.yearEnd) ? `${part.yearStart}—${part.yearEnd}` : '';
         const fitmentText = [models, years].filter(Boolean).join(' • ');
 
+        let memoTrailHtml = '';
+        if (Array.isArray(part.memoHistory) && part.memoHistory.length > 0) {
+            const memoTags = part.memoHistory.map(m => `মেমো #${m.memoNoBn || m.memoNo}: ৳${formatAmountWithComma(m.rate || 0)}`).join(' • ');
+            memoTrailHtml = `
+                <span class="text-slate-600">•</span>
+                <button type="button" 
+                        onclick="window.partsCatalogActions && window.partsCatalogActions.showMemoHistory('${part.id}')" 
+                        class="text-amber-300 hover:text-amber-200 font-bold underline decoration-dotted flex items-center gap-1 cursor-pointer" 
+                        title="ক্লিক করে মেমো দর প্রমাণ ও আসল ছবি দেখুন">
+                    <i class="fa-solid fa-receipt text-[8px]"></i>
+                    <span>${memoTags}</span>
+                </button>
+            `;
+        }
+
         hintEl.innerHTML = `
             <div class="flex flex-wrap items-center gap-2 text-[10px] bg-slate-900 border border-slate-700/80 px-2.5 py-1.5 rounded-lg mt-1 shadow-sm">
                 <span class="text-amber-400 font-bold"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>ফ্লোর দর: ৳${formatAmountWithComma(part.floorPrice || 0)}</span>
                 <span class="text-slate-600">•</span>
                 <span class="text-emerald-400 font-bold">আস্কিং: ৳${formatAmountWithComma(part.askingPrice || 0)}</span>
+                ${memoTrailHtml}
                 ${fitmentText ? `<span class="text-slate-600">•</span><span class="text-sky-300 font-semibold"><i class="fa-solid fa-car-side text-[9px] mr-1"></i>${fitmentText}</span>` : ''}
                 ${part.mismatchWarning ? `<span class="text-slate-600">•</span><span class="text-amber-300 font-bold"><i class="fa-solid fa-triangle-exclamation text-[9px] mr-1"></i>${part.mismatchWarning}</span>` : ''}
                 ${part.singlePiecePrice && part.singlePiecePrice !== part.askingPrice ? `<span class="text-slate-600">•</span><span class="text-slate-300">১ পিছ: ৳${formatAmountWithComma(part.singlePiecePrice)}</span>` : ''}

@@ -65,24 +65,37 @@ export function initPartsCatalogCache(onUpdateCallback = null) {
     catalogListenerUnsubscribe = PartsCatalogDAO.listen((parts) => {
         const masterCount = Array.isArray(INITIAL_PARTS_CATALOG) ? INITIAL_PARTS_CATALOG.length : 0;
         
-        if (parts && parts.length >= masterCount) {
-            setPartsCatalogCache(parts);
+        // Enrich any parts missing memoHistory from INITIAL_PARTS_CATALOG
+        const enriched = (Array.isArray(parts) ? parts : []).map(p => {
+            if (!p.memoHistory || p.memoHistory.length === 0) {
+                const initItem = INITIAL_PARTS_CATALOG.find(i => i.id === p.id);
+                if (initItem && initItem.memoHistory) {
+                    return { ...p, memoHistory: initItem.memoHistory, memoReference: p.memoReference || initItem.memoReference };
+                }
+            }
+            return p;
+        });
+
+        const needsMemoUpgrade = enriched.length >= masterCount && parts && parts.some(p => !p.memoHistory || p.memoHistory.length === 0);
+
+        if (enriched.length >= masterCount && !needsMemoUpgrade) {
+            setPartsCatalogCache(enriched);
         } else if (!isAutoSeeding && masterCount > 0) {
             isAutoSeeding = true;
             (async () => {
                 try {
                     const count = await PartsCatalogDAO.seedBatch(INITIAL_PARTS_CATALOG);
-                    console.log(`Auto-upgraded ${count} verified parts to Firestore`);
+                    console.log(`Auto-upgraded ${count} verified parts with memoHistory to Firestore`);
                 } catch (err) {
                     console.warn('Auto-seed note:', err);
                 } finally {
                     isAutoSeeding = false;
                 }
             })();
-            // Immediately render full 134 verified parts in memory & UI
+            // Immediately render full 134 verified parts with memoHistory in memory & UI
             setPartsCatalogCache(INITIAL_PARTS_CATALOG);
-        } else if (parts && parts.length > 0) {
-            setPartsCatalogCache(parts);
+        } else if (enriched.length > 0) {
+            setPartsCatalogCache(enriched);
         }
 
         activeUiListeners.forEach(cb => {
