@@ -4,25 +4,20 @@ import re
 import pymupdf
 from PIL import Image
 
-def generate_pdf():
-    folder = r"E:\maa-motors-erp\Lulu exchange image"
-    pdf_out = os.path.join(folder, "Lulu_Exchange_A4_Print.pdf")
-    root_pdf = r"E:\maa-motors-erp\Lulu_Exchange_A4_Print.pdf"
+def get_optimized_bytes(f_path):
+    img = Image.open(f_path)
+    if img.mode != 'RGB':
+        bg = Image.new('RGB', img.size, (255, 255, 255))
+        if img.mode == 'RGBA':
+            bg.paste(img, mask=img.split()[3])
+        else:
+            bg.paste(img.convert('RGB'))
+        img = bg
+    buf = io.BytesIO()
+    img.save(buf, format='JPEG', quality=92, optimize=True)
+    return buf.getvalue()
 
-    # Find and sort all image files numerically
-    files = [
-        f for f in os.listdir(folder)
-        if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')) and not f.startswith(('thumb', 'preview'))
-    ]
-
-    def get_num(s):
-        m = re.search(r'(\d+)', s)
-        return int(m.group(1)) if m else 0
-
-    files.sort(key=get_num)
-    print(f"Total files found: {len(files)}")
-
-    doc = pymupdf.open()
+def build_pdf_from_images(image_files, pdf_name, folder, root_folder):
     PAGE_W = 595.28  # Exact A4 width in points
     PAGE_H = 841.89  # Exact A4 height in points
     MID_Y = PAGE_H / 2.0  # 420.945 pt
@@ -32,29 +27,18 @@ def generate_pdf():
     rect_top = pymupdf.Rect(0, 0, PAGE_W, MID_Y - (GAP / 2.0))
     rect_bot = pymupdf.Rect(0, MID_Y + (GAP / 2.0), PAGE_W, PAGE_H)
 
-    def get_optimized_bytes(f_path):
-        img = Image.open(f_path)
-        if img.mode != 'RGB':
-            bg = Image.new('RGB', img.size, (255, 255, 255))
-            if img.mode == 'RGBA':
-                bg.paste(img, mask=img.split()[3])
-            else:
-                bg.paste(img.convert('RGB'))
-            img = bg
-        buf = io.BytesIO()
-        img.save(buf, format='JPEG', quality=92, optimize=True)
-        return buf.getvalue()
+    doc = pymupdf.open()
 
-    for i in range(0, len(files), 2):
+    for i in range(0, len(image_files), 2):
         page = doc.new_page(width=PAGE_W, height=PAGE_H)
 
         # 1. Top Image (Full bleed, 0 margin on left, right, top)
-        b_top = get_optimized_bytes(os.path.join(folder, files[i]))
+        b_top = get_optimized_bytes(os.path.join(folder, image_files[i]))
         page.insert_image(rect_top, stream=b_top, keep_proportion=False)
 
         # 2. Bottom Image (Full bleed, 0 margin on left, right, bottom)
-        if i + 1 < len(files):
-            b_bot = get_optimized_bytes(os.path.join(folder, files[i + 1]))
+        if i + 1 < len(image_files):
+            b_bot = get_optimized_bytes(os.path.join(folder, image_files[i + 1]))
             page.insert_image(rect_bot, stream=b_bot, keep_proportion=False)
 
             # Middle cutting dashed line (subtle light grey guide)
@@ -66,13 +50,50 @@ def generate_pdf():
                 dashes="[6 4] 0"
             )
 
-        print(f"Added Page {len(doc)} (Zero Margin): {files[i]} + {files[i+1] if i+1 < len(files) else 'None'}")
+        print(f"[{pdf_name}] Page {len(doc)}: {image_files[i]} + {image_files[i+1] if i+1 < len(image_files) else 'None'}")
 
-    # Save to both locations
+    pdf_out = os.path.join(folder, pdf_name)
+    root_pdf = os.path.join(root_folder, pdf_name)
+
     doc.save(pdf_out, garbage=4, deflate=True)
     doc.save(root_pdf, garbage=4, deflate=True)
+
     size_mb = os.path.getsize(pdf_out) / (1024 * 1024)
-    print(f"Success! Saved {len(doc)} pages to {pdf_out}. Size: {size_mb:.2f} MB")
+    print(f"==> [{pdf_name}] Successfully created with {len(doc)} pages! Size: {size_mb:.2f} MB")
+    print(f"    Saved at: {pdf_out}")
+    print(f"    Saved at: {root_pdf}\n")
+
+def get_num(s):
+    m = re.search(r'(\d+)', s)
+    return int(m.group(1)) if m else 0
+
+def main():
+    folder = r"E:\maa-motors-erp\Lulu exchange image"
+    root_folder = r"E:\maa-motors-erp"
+
+    # 1. Federal Exchange
+    fed_files = sorted([
+        f for f in os.listdir(folder)
+        if f.lower().startswith('federal exchange') and f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
+    ], key=get_num)
+    print(f"Found {len(fed_files)} Federal Exchange images: {fed_files}")
+    build_pdf_from_images(fed_files, "Federal_Exchange_A4_Print.pdf", folder, root_folder)
+
+    # 2. Lulu Exchange
+    lulu_files = sorted([
+        f for f in os.listdir(folder)
+        if f.lower().startswith('lulu exchange') and f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
+    ], key=get_num)
+    print(f"Found {len(lulu_files)} Lulu Exchange images: {lulu_files}")
+    build_pdf_from_images(lulu_files, "Lulu_Exchange_A4_Print.pdf", folder, root_folder)
+
+    # 3. Remit Exchange
+    remit_files = sorted([
+        f for f in os.listdir(folder)
+        if f.lower().startswith('remit exchange') and f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
+    ], key=get_num)
+    print(f"Found {len(remit_files)} Remit Exchange images: {remit_files}")
+    build_pdf_from_images(remit_files, "Remit_Exchange_A4_Print.pdf", folder, root_folder)
 
 if __name__ == "__main__":
-    generate_pdf()
+    main()
