@@ -325,7 +325,7 @@ export async function promptBulkPriceShift() {
 export async function seedDefaultCatalog() {
     const { isConfirmed } = await Swal.fire({
         title: 'মাস্টার ক্যাটালগ আপলোড',
-        text: 'আপনি কি মেমো-ভেরিফাইড ৭৬টি জাপানি রিকন্ডিশন্ড পার্টস ক্লাউড ডাটাবেজে আপলোড করতে চান?',
+        text: 'আপনি কি মেমো-ভেরিফাইড ১৩৪টি জাপানি রিকন্ডিশন্ড পার্টস ক্লাউড ডাটাবেজে আপলোড করতে চান?',
         icon: 'question',
         background: '#0F172A',
         color: '#F8FAFC',
@@ -340,7 +340,7 @@ export async function seedDefaultCatalog() {
 
     Swal.fire({
         title: 'আপলোড হচ্ছে...',
-        text: '৭৬টি পার্টস ক্লাউড ফায়ারস্টোরে সিঙ্ক করা হচ্ছে',
+        text: '১৩৪টি পার্টস ক্লাউড ফায়ারস্টোরে সিঙ্ক করা হচ্ছে',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
     });

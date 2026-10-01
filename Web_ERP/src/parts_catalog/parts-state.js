@@ -122,15 +122,17 @@ export function searchParts(query = '', categoryFilter = 'all') {
         // Build a searchable corpus string for this part
         const id = (item.id || '').toLowerCase();
         const nameBn = (item.nameBn || '').toLowerCase();
+        const memoName = (item.memoOriginalName || '').toLowerCase();
         const nameEn = (item.nameEn || '').toLowerCase();
         const oem = (item.oemPartNumber || '').toLowerCase().replace(/[-\s]/g, '');
         const secret = (item.secretCode || '').toLowerCase();
-        const aliases = Array.isArray(item.aliasesBn) ? item.aliasesBn.join(' ').toLowerCase() : '';
-        const models = Array.isArray(item.popularModels) ? item.popularModels.join(' ').toLowerCase() : '';
-        const chassis = Array.isArray(item.compatibleChassis) ? item.compatibleChassis.join(' ').toLowerCase() : '';
-        const engines = Array.isArray(item.compatibleEngines) ? item.compatibleEngines.join(' ').toLowerCase() : '';
+        const aliases = Array.isArray(item.aliasesBn) ? item.aliasesBn.join(' ').toLowerCase() : (item.aliasesBn || '').toLowerCase();
+        const models = Array.isArray(item.popularModels) ? item.popularModels.join(' ').toLowerCase() : (item.popularModels || '').toLowerCase();
+        const chassis = Array.isArray(item.compatibleChassis) ? item.compatibleChassis.join(' ').toLowerCase() : (item.compatibleChassis || '').toLowerCase();
+        const engines = Array.isArray(item.compatibleEngines) ? item.compatibleEngines.join(' ').toLowerCase() : (item.compatibleEngines || '').toLowerCase();
+        const years = `${item.yearStart || ''} ${item.yearEnd || ''}`;
 
-        const searchableText = `${id} ${nameBn} ${nameEn} ${oem} ${secret} ${aliases} ${models} ${chassis} ${engines}`;
+        const searchableText = `${id} ${nameBn} ${memoName} ${nameEn} ${oem} ${secret} ${aliases} ${models} ${chassis} ${engines} ${years}`;
 
         // Every token must be present in the searchable corpus
         return tokens.every(token => {

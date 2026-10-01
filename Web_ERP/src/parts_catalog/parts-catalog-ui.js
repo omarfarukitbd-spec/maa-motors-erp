@@ -44,7 +44,7 @@ export function renderPartsCatalog(container) {
                         <i class="fa-solid fa-percent text-amber-400 text-sm"></i>
                         <span class="hidden sm:inline">দর সমন্বয়</span>
                     </button>
-                    <button type="button" onclick="window.partsCatalogActions.seedDefault()" class="px-3.5 py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 hover:text-white border border-blue-500/30 font-bold text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer" title="মেমো-ভেরিফাইড ৭৬টি মাস্টার পার্টস ক্লাউডে আপলোড">
+                    <button type="button" onclick="window.partsCatalogActions.seedDefault()" class="px-3.5 py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 hover:text-white border border-blue-500/30 font-bold text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer" title="১৩৪টি মেমো-ভেরিফাইড মাস্টার পার্টস ক্লাউডে আপলোড">
                         <i class="fa-solid fa-cloud-arrow-up text-blue-400 text-sm"></i>
                         <span class="hidden sm:inline">ডাটা সিঙ্ক</span>
                     </button>
@@ -200,10 +200,10 @@ function renderTableRows() {
                     <td colspan="7" class="py-12 text-center text-slate-400 font-bn">
                         <i class="fa-solid fa-boxes-stacked text-4xl text-amber-500/50 mb-3 block"></i>
                         <div class="text-base font-bold text-white mb-1">ক্যাটালগ বর্তমানে খালি রয়েছে</div>
-                        <p class="text-xs text-slate-400 mb-4 max-w-md mx-auto">মা মোটরসের দোকান মেমো থেকে সংগৃহীত ৭৬টি জাপানি রিকন্ডিশন্ড মাস্টার পার্টস ক্লাউড ডাটাবেজে এক ক্লিকে আপলোড করতে পারেন।</p>
+                        <p class="text-xs text-slate-400 mb-4 max-w-md mx-auto">মা মোটরসের দোকান মেমো থেকে সংগৃহীত ১৩৪টি জাপানি রিকন্ডিশন্ড মাস্টার পার্টস ক্লাউড ডাটাবেজে এক ক্লিকে আপলোড করতে পারেন।</p>
                         <button type="button" onclick="window.partsCatalogActions.seedDefault()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition-all shadow-lg shadow-amber-500/20 active:scale-95 inline-flex items-center gap-2 cursor-pointer">
                             <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
-                            <span>৭৬টি মেমো-ভেরিফাইড মাস্টার পার্টস লোড করুন</span>
+                            <span>১৩৪টি মেমো-ভেরিফাইড মাস্টার পার্টস লোড করুন</span>
                         </button>
                     </td>
                 </tr>
@@ -224,6 +224,10 @@ function renderTableRows() {
     tbody.innerHTML = results.map((item, idx) => {
         const modelsHtml = Array.isArray(item.popularModels) 
             ? item.popularModels.map(m => `<span class="inline-block px-1.5 py-0.5 rounded-md bg-slate-800 text-[10px] font-bold text-slate-300 border border-slate-700/60 mr-1 mb-0.5">${m}</span>`).join('')
+            : '';
+
+        const yearsBadge = (item.yearStart && item.yearEnd) 
+            ? `<span class="inline-block px-1.5 py-0.5 rounded-md bg-sky-950/80 text-[10px] font-bold text-sky-300 border border-sky-800/60 mr-1 mb-0.5"><i class="fa-solid fa-calendar-days text-[9px] mr-1"></i>${item.yearStart}—${item.yearEnd}</span>` 
             : '';
 
         const mismatchBadge = item.mismatchWarning 
@@ -247,10 +251,11 @@ function renderTableRows() {
                         <span class="text-slate-600">•</span>
                         <span class="italic text-slate-400 text-[10px]">${item.nameEn || ''}</span>
                     </div>
+                    ${item.memoReference ? `<div class="text-[10px] text-amber-400/90 font-bold mt-0.5 flex items-center gap-1"><i class="fa-solid fa-receipt text-[9px]"></i><span>${item.memoReference}</span></div>` : ''}
                     ${item.secretCode ? `<span class="inline-block mt-1 text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-bold">[${item.secretCode}]</span>` : ''}
                 </td>
                 <td class="py-3 px-4">
-                    <div class="flex flex-wrap">${modelsHtml}</div>
+                    <div class="flex flex-wrap items-center">${modelsHtml}${yearsBadge}</div>
                     ${mismatchBadge}
                 </td>
                 <td class="py-3 px-3 text-center">

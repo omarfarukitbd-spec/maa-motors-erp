@@ -46,21 +46,22 @@ export function handleInvoiceItemDescInput(rowIndex, inputEl) {
     activeDropdownIndex = rowIndex;
 
     dropdownEl.innerHTML = matches.map((item, idx) => {
-        const models = Array.isArray(item.popularModels) ? item.popularModels.slice(0, 3).join(', ') : '';
+        const models = Array.isArray(item.popularModels) ? item.popularModels.slice(0, 3).join(', ') : (item.popularModels || '');
+        const years = (item.yearStart && item.yearEnd) ? ` (${item.yearStart}—${item.yearEnd})` : '';
+        const cleanName = (item.memoOriginalName || item.nameBn || '').replace(/\s*\([a-zA-Z0-9\s\/\-\.]+\)\s*$/, '').trim();
         return `
             <div id="typeahead-item-${rowIndex}-${idx}" 
                  class="typeahead-row p-2.5 hover:bg-slate-800/80 cursor-pointer border-b border-slate-800/60 last:border-b-0 transition-colors flex items-center justify-between gap-2 ${idx === 0 ? 'bg-slate-800/40' : ''}" 
                  onclick="window.partsTypeahead.selectItem(${rowIndex}, ${idx})">
                 <div class="min-w-0 flex-1">
                     <div class="text-xs font-bold text-white truncate flex items-center gap-1.5">
-                        <span>${item.nameBn}</span>
+                        <span>${cleanName}</span>
                         ${item.secretCode ? `<span class="text-[9px] font-mono px-1 rounded bg-purple-500/20 text-purple-300 font-bold">[${item.secretCode}]</span>` : ''}
                     </div>
                     <div class="text-[10px] text-slate-400 font-mono mt-0.5 truncate flex items-center gap-2">
                         <span class="text-blue-400 font-bold">${item.id}</span>
-                        <span class="text-slate-600">•</span>
-                        <span class="text-slate-300">${item.oemPartNumber || 'OEM N/A'}</span>
-                        ${models ? `<span class="text-slate-600">•</span><span class="text-amber-300">${models}</span>` : ''}
+                        ${item.oemPartNumber && item.oemPartNumber !== 'OEM N/A' ? `<span class="text-slate-600">•</span><span class="text-slate-300">${item.oemPartNumber}</span>` : ''}
+                        ${models ? `<span class="text-slate-600">•</span><span class="text-amber-300 font-sans">${models}${years}</span>` : ''}
                     </div>
                     ${item.mismatchWarning ? `<div class="text-[9px] text-amber-400 font-bold truncate mt-0.5"><i class="fa-solid fa-triangle-exclamation text-[8px] mr-1"></i>${item.mismatchWarning}</div>` : ''}
                 </div>
@@ -91,11 +92,10 @@ export function selectTypeaheadPart(rowIndex, matchIndex) {
     const dropdownEl = document.getElementById(`parts-typeahead-dropdown-${rowIndex}`);
     const hintEl = document.getElementById(`price-hint-${rowIndex}`);
 
-    // Clean display description with popular model tag
-    const modelTag = Array.isArray(part.popularModels) && part.popularModels.length > 0 
-        ? ` (${part.popularModels.slice(0, 2).join(', ')})` 
-        : '';
-    const cleanDesc = `${part.nameBn}${modelTag}`;
+    // Strictly clean Bengali description as written in physical shop memos (e.g. 'Axio নিউ রেক খোলা')
+    // NEVER append models, years, or English brackets to the customer memo / invoice text!
+    let cleanDesc = part.memoOriginalName || part.nameBn || '';
+    cleanDesc = cleanDesc.replace(/\s*\([a-zA-Z0-9\s\/\-\.]+\)\s*$/, '').trim();
 
     if (descInput) {
         descInput.value = cleanDesc;
@@ -121,14 +121,20 @@ export function selectTypeaheadPart(rowIndex, matchIndex) {
         if (rateInput) window.updateInvoiceItem(rowIndex, 'rate', rateInput);
     }
 
-    // Show price hint with floor guidance
+    // Show price hint with floor guidance AND vehicle fitment / mismatch warning on screen
     if (hintEl) {
+        const models = Array.isArray(part.popularModels) ? part.popularModels.join(', ') : (part.popularModels || '');
+        const years = (part.yearStart && part.yearEnd) ? `${part.yearStart}—${part.yearEnd}` : '';
+        const fitmentText = [models, years].filter(Boolean).join(' • ');
+
         hintEl.innerHTML = `
-            <div class="flex items-center gap-2 text-[10px] bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-lg">
+            <div class="flex flex-wrap items-center gap-2 text-[10px] bg-slate-900 border border-slate-700/80 px-2.5 py-1.5 rounded-lg mt-1 shadow-sm">
                 <span class="text-amber-400 font-bold"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>ফ্লোর দর: ৳${formatAmountWithComma(part.floorPrice || 0)}</span>
                 <span class="text-slate-600">•</span>
                 <span class="text-emerald-400 font-bold">আস্কিং: ৳${formatAmountWithComma(part.askingPrice || 0)}</span>
-                ${part.singlePiecePrice ? `<span class="text-slate-600">•</span><span class="text-slate-300">১ পিছ: ৳${formatAmountWithComma(part.singlePiecePrice)}</span>` : ''}
+                ${fitmentText ? `<span class="text-slate-600">•</span><span class="text-sky-300 font-semibold"><i class="fa-solid fa-car-side text-[9px] mr-1"></i>${fitmentText}</span>` : ''}
+                ${part.mismatchWarning ? `<span class="text-slate-600">•</span><span class="text-amber-300 font-bold"><i class="fa-solid fa-triangle-exclamation text-[9px] mr-1"></i>${part.mismatchWarning}</span>` : ''}
+                ${part.singlePiecePrice && part.singlePiecePrice !== part.askingPrice ? `<span class="text-slate-600">•</span><span class="text-slate-300">১ পিছ: ৳${formatAmountWithComma(part.singlePiecePrice)}</span>` : ''}
             </div>
         `;
         hintEl.classList.remove('hidden');
