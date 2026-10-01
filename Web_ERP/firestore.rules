@@ -181,6 +181,12 @@ service cloud.firestore {
     match /jarvis_ai_memory/{docId} {
       allow read, write: if isAuthenticated();
     }
+
+    // Auto Parts Master Catalog & Fitment Database
+    match /auto_parts_catalog/{partId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('editLedger', false) == true);
+    }
   }
 }
 

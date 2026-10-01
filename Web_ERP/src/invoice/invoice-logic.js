@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { TransactionDAO, CustomerDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, numberToBanglaWords, toDBDate, safeRound } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, numberToBanglaWords, toDBDate, safeRound, promptSecurityPin } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { getCustomerCache } from '../customer/index.js';
 import { renderInvoice, renderInvoiceItems, calcItemTotals, loadInvoiceCustomers, updateCashTenderUI } from './invoice-ui.js';
@@ -187,6 +187,27 @@ export async function saveAndPrintInvoice(layoutType) {
             const cashBtn = document.getElementById('inv-recv-cash-btn');
             receivedType = (cashBtn && cashBtn.classList.contains('bg-emerald-600')) ? 'Cash' : 'Bank';
             receivedFrom = document.getElementById('inv-received-from')?.value?.trim() || (receivedType === 'Cash' ? 'শোরুম ক্যাশ' : '');
+        }
+
+        // Boss Floor Price Guard: Verify if any item was sold below floor price
+        for (let i = 0; i < invoiceItems.length; i++) {
+            const it = invoiceItems[i];
+            const descEl = document.getElementById(`inv-item-desc-${i}`);
+            const floor = Number(descEl?.dataset.floorPrice) || 0;
+            const rate = Number(it.rate) || 0;
+            if (floor > 0 && rate < floor) {
+                const verified = await promptSecurityPin();
+                if (!verified) {
+                    Swal.fire({
+                        title: 'অনুমোদন মেলেনি',
+                        text: `"${it.desc}" এর বিক্রয় দর (৳ ${formatAmountWithComma(rate)}) নির্ধারিত ফ্লোর দরের (৳ ${formatAmountWithComma(floor)}) চেয়ে কম। বসের সিকিউরিটি পিন ছাড়া এই ইনভয়েস অনুমোদন করা যাবে না।`,
+                        icon: 'error',
+                        background: '#0F172A',
+                        color: '#F8FAFC'
+                    });
+                    return;
+                }
+            }
         }
 
         const confirmPreview = await Swal.fire({

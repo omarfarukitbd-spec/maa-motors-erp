@@ -15,6 +15,7 @@ import { renderFinancialSummary } from '../financial_summary/index.js';
 import { renderTreasury, unsubscribeTreasury } from '../treasury/index.js';
 import { renderMemoSearch } from '../memo_search/index.js';
 import { renderDubaiProcurement, unsubscribeDubaiAudits } from '../dubai_procurement/index.js';
+import { renderPartsCatalog, unsubscribePartsCatalog, initPartsCatalogCache } from '../parts_catalog/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
 import { initDatePickers } from '../utils/date-logic/date-picker.js';
@@ -113,6 +114,7 @@ export function navigate(view, params = {}) {
     if (AppState.currentView === 'recycle-bin' && view !== 'recycle-bin') unsubscribeRecycleBinData();
     if (AppState.currentView === 'treasury' && view !== 'treasury') unsubscribeTreasury();
     if (AppState.currentView === 'dubai-procurement' && view !== 'dubai-procurement') unsubscribeDubaiAudits();
+    if (AppState.currentView === 'parts-catalog' && view !== 'parts-catalog') unsubscribePartsCatalog();
 
     AppState.currentView = view;
     const sidebar = document.getElementById('app-sidebar');
@@ -148,6 +150,8 @@ export function navigate(view, params = {}) {
         case 'treasury': renderTreasury(container, params); break;
         case 'recycle-bin': renderRecycleBin(container); break;
         case 'dubai-procurement': renderDubaiProcurement(container, params); break;
+        case 'parts-catalog':
+        case 'parts_catalog': renderPartsCatalog(container, params); break;
     }
 
     // Refresh date pickers after render
@@ -165,6 +169,7 @@ export function unlockApp() {
     }
 
     initCustomerCache();
+    initPartsCatalogCache(); // Background preload of auto parts catalog
     applyAppBranding(); // Auto-set favicon & PWA icon from shop logo
     const errEl = document.getElementById('login-error');
     if (errEl) errEl.innerText = '';

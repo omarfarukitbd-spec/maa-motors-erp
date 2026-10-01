@@ -13,12 +13,15 @@ export function renderInvoiceItems() {
         <tr class="border-b border-slate-800/60 hover:bg-white/[0.02] transition-colors">
             <td class="w-10 text-center text-slate-400 font-bold text-xs py-2.5 px-2">${i + 1}</td>
             <td class="py-2.5 px-2">
-                <input type="text" class="w-full bg-slate-950/90 border border-slate-700/70 rounded-xl px-3.5 h-10 text-xs text-white font-bold outline-none focus:border-blue-500 transition-all shadow-inner" placeholder="আইটেমের নাম / বিবরণ লিখুন..." value="${item.desc}" oninput="window.updateInvoiceItem(${i}, 'desc', this)">
+                <div id="inv-item-row-container-${i}" class="relative">
+                    <input type="text" id="inv-item-desc-${i}" class="w-full bg-slate-950/90 border border-slate-700/70 rounded-xl px-3.5 h-10 text-xs text-white font-bold outline-none focus:border-blue-500 transition-all shadow-inner" placeholder="আইটেমের নাম / পার্টস কোড / মডেল লিখুন..." value="${item.desc}" oninput="window.updateInvoiceItem(${i}, 'desc', this); window.partsTypeahead && window.partsTypeahead.handleInput(${i}, this);" onkeydown="window.partsTypeahead && window.partsTypeahead.handleKeyDown(${i}, event)" autocomplete="off">
+                    <div id="parts-typeahead-dropdown-${i}" class="hidden absolute left-0 right-0 top-[calc(100%+4px)] bg-slate-900/98 border border-slate-700 rounded-2xl shadow-2xl z-[150] max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-xl"></div>
+                </div>
                 <div id="price-hint-${i}" class="hidden mt-1"></div>
                 <div id="item-live-words-${i}" class="${item.total > 0 ? '' : 'hidden'} text-[10px] text-blue-400 font-bold italic mt-1 flex items-center gap-1"><i class="fa-solid fa-coins text-[9px] text-amber-400"></i><span>${item.total > 0 ? numberToBanglaWords(item.total) : ''}</span></div>
             </td>
             <td class="w-28 py-2.5 px-2">
-                <select class="w-full bg-slate-950/90 border border-slate-700/70 rounded-xl px-2.5 h-10 text-xs text-slate-200 font-bold outline-none cursor-pointer focus:border-blue-500 transition-all shadow-inner" onchange="window.updateInvoiceItem(${i}, 'unit', this)">
+                <select id="inv-item-unit-${i}" class="w-full bg-slate-950/90 border border-slate-700/70 rounded-xl px-2.5 h-10 text-xs text-slate-200 font-bold outline-none cursor-pointer focus:border-blue-500 transition-all shadow-inner" onchange="window.updateInvoiceItem(${i}, 'unit', this)">
                     <option value="Pcs" ${item.unit==='Pcs'?'selected':''}>Pcs</option>
                     <option value="Ltr" ${item.unit==='Ltr'?'selected':''}>Ltr</option>
                     <option value="Set" ${item.unit==='Set'?'selected':''}>Set</option>
