@@ -73,6 +73,7 @@ export async function openMemoPriceHistoryModal(partId) {
     const yearsText = (part.yearStart && part.yearEnd) ? `${part.yearStart}—${part.yearEnd}` : '';
 
     const rowsHtml = history.map((m, idx) => {
+        const isHighestMemoRate = (m.rate === part.floorPrice && history.length > 1);
         const rateDiff = (part.askingPrice || 0) - (m.rate || 0);
         let diffBadge = '';
         if (rateDiff > 0) {
@@ -98,10 +99,13 @@ export async function openMemoPriceHistoryModal(partId) {
                     </div>
                 </td>
                 <td class="py-3 px-3 text-center">
-                    ${m.line ? `<span class="inline-block px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700/60 font-bold text-xs">লাইন ${escapeHTML(m.line)}</span>` : '<span class="text-slate-500 text-xs">-</span>'}
+                    ${m.line ? `<span class="inline-block px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700/60 font-bold text-xs">라인 ${escapeHTML(m.line)}</span>` : '<span class="text-slate-500 text-xs">-</span>'}
                 </td>
                 <td class="py-3 px-3 text-right">
-                    <div class="font-black text-emerald-400 text-sm font-mono">৳ ${formatAmountWithComma(m.rate || 0)}</div>
+                    <div class="font-black text-emerald-400 text-sm font-mono flex items-center justify-end gap-1.5">
+                        ${isHighestMemoRate ? `<span class="text-[9px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.5 rounded font-bn">সর্বোচ্চ রেট</span>` : ''}
+                        <span>৳ ${formatAmountWithComma(m.rate || 0)}</span>
+                    </div>
                     <div class="text-[10px] text-slate-400 font-bold">প্রতি ${escapeHTML(m.unit || 'পিছ')}</div>
                 </td>
                 <td class="py-3 px-3 text-center">
@@ -162,9 +166,9 @@ export async function openMemoPriceHistoryModal(partId) {
                         <div class="text-[10px] text-emerald-400/80 font-bold">দোকানে চাওয়া দর</div>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-900 border border-amber-500/30 text-center">
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">মেমো ফ্লোর দর</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">সর্বোচ্চ মেমো দর (মূল দর)</div>
                         <div class="text-base sm:text-lg font-black text-amber-400 font-mono mt-0.5">৳ ${formatAmountWithComma(part.floorPrice || 0)}</div>
-                        <div class="text-[10px] text-amber-400/80 font-bold">নিরাপদ হোলসেল সীমা</div>
+                        <div class="text-[10px] text-amber-400/80 font-bold">মেমোর সর্বোচ্চ রেট</div>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center">
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">মেমো সংখ্যা</div>

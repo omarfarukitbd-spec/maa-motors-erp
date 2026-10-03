@@ -47,6 +47,8 @@ export function subscribePartsCatalog(callback) {
     };
 }
 
+export const CURRENT_CATALOG_VERSION = 'v2_wholesale_highest_rate_2026';
+
 /**
  * Initialize permanent background cache listener
  */
@@ -69,22 +71,25 @@ export function initPartsCatalogCache(onUpdateCallback = null) {
         const enriched = (Array.isArray(parts) ? parts : []).map(p => {
             const initItem = INITIAL_PARTS_CATALOG.find(i => i.id === p.id);
             if (initItem) {
-                const isOldPrice = (initItem.id === 'PART-1001' && p.askingPrice < 239000);
+                const isOutdated = p.catalogVersion !== CURRENT_CATALOG_VERSION;
                 return {
                     ...p,
-                    askingPrice: isOldPrice ? initItem.askingPrice : (p.askingPrice || initItem.askingPrice),
-                    floorPrice: isOldPrice ? initItem.floorPrice : (p.floorPrice || initItem.floorPrice),
-                    singlePiecePrice: isOldPrice ? initItem.singlePiecePrice : (p.singlePiecePrice || initItem.singlePiecePrice),
-                    memoHistory: (p.memoHistory && p.memoHistory.length > 0) ? p.memoHistory : initItem.memoHistory,
-                    memoReference: p.memoReference || initItem.memoReference
+                    catalogVersion: CURRENT_CATALOG_VERSION,
+                    nameBn: isOutdated ? initItem.nameBn : (p.nameBn || initItem.nameBn),
+                    askingPrice: isOutdated ? initItem.askingPrice : (p.askingPrice || initItem.askingPrice),
+                    floorPrice: isOutdated ? initItem.floorPrice : (p.floorPrice || initItem.floorPrice),
+                    singlePiecePrice: isOutdated ? initItem.singlePiecePrice : (p.singlePiecePrice || initItem.singlePiecePrice),
+                    oldCoreDiscount: isOutdated ? initItem.oldCoreDiscount : (p.oldCoreDiscount || initItem.oldCoreDiscount),
+                    memoHistory: (p.memoHistory && p.memoHistory.length > 0 && !isOutdated) ? p.memoHistory : initItem.memoHistory,
+                    memoReference: initItem.memoReference || p.memoReference
                 };
             }
             return p;
         });
 
+        const needsVersionUpgrade = parts && parts.some(p => p.catalogVersion !== CURRENT_CATALOG_VERSION);
         const needsMemoUpgrade = enriched.length >= masterCount && parts && parts.some(p => !p.memoHistory || p.memoHistory.length === 0);
-        const needsPriceUpgrade = parts && parts.some(p => p.id === 'PART-1001' && p.askingPrice < 239000);
-        const needsUpgrade = needsMemoUpgrade || needsPriceUpgrade;
+        const needsUpgrade = needsVersionUpgrade || needsMemoUpgrade;
 
         if (enriched.length >= masterCount && !needsUpgrade) {
             setPartsCatalogCache(enriched);
@@ -93,14 +98,14 @@ export function initPartsCatalogCache(onUpdateCallback = null) {
             (async () => {
                 try {
                     const count = await PartsCatalogDAO.seedBatch(INITIAL_PARTS_CATALOG);
-                    console.log(`Auto-upgraded ${count} verified parts with wholesale corridor to Firestore`);
+                    console.log(`Auto-upgraded ${count} verified parts with highest memo rates to Firestore`);
                 } catch (err) {
                     console.warn('Auto-seed note:', err);
                 } finally {
                     isAutoSeeding = false;
                 }
             })();
-            // Immediately render full 134 verified parts with wholesale corridor in memory & UI
+            // Immediately render full 134 verified parts with highest memo rates in memory & UI
             setPartsCatalogCache(INITIAL_PARTS_CATALOG);
         } else if (enriched.length > 0) {
             setPartsCatalogCache(enriched);

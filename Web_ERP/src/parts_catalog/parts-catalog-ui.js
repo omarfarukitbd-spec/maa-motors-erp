@@ -287,9 +287,13 @@ function renderTableRows() {
                     <div class="text-[9px] text-slate-500 mt-0.5">${item.pcsPerUnit ? `${item.pcsPerUnit} পিছ/প্যাক` : ''}</div>
                 </td>
                 <td class="py-3 px-4 text-right">
-                    <div class="font-black text-emerald-400 text-xs sm:text-sm">৳ ${formatAmountWithComma(item.askingPrice || 0)}</div>
-                    <div class="text-[10px] text-red-400 font-bold">ফ্লোর: ৳ ${formatAmountWithComma(item.floorPrice || 0)}</div>
-                    ${item.singlePiecePrice ? `<div class="text-[9px] text-slate-400">ভাঙা ১ পিছ: ৳${formatAmountWithComma(item.singlePiecePrice)}</div>` : ''}
+                    <div class="font-black text-emerald-400 text-xs sm:text-sm" title="আস্কিং দর (ক্রেতার কাছে চাওয়ার রেট)">
+                        <span class="text-[10px] text-emerald-500/90 font-semibold mr-1">আস্কিং:</span>৳ ${formatAmountWithComma(item.askingPrice || 0)}
+                    </div>
+                    <div class="text-[10px] text-amber-400 font-bold mt-0.5" title="মেমোর সর্বোচ্চ রেট (মূল দর)">
+                        <span class="text-[9px] text-amber-500/80 font-normal mr-1">মেমো দর:</span>৳ ${formatAmountWithComma(item.floorPrice || 0)}
+                    </div>
+                    ${item.singlePiecePrice && item.singlePiecePrice !== item.askingPrice ? `<div class="text-[9px] text-slate-400">ভাঙা ১ পিছ: ৳${formatAmountWithComma(item.singlePiecePrice)}</div>` : ''}
                 </td>
                 <td class="py-3 px-3 text-center">
                     <div class="flex items-center justify-center gap-1.5">

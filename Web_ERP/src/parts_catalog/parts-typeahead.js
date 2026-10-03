@@ -67,7 +67,7 @@ export function handleInvoiceItemDescInput(rowIndex, inputEl) {
                 </div>
                 <div class="text-right shrink-0">
                     <div class="text-xs font-black text-emerald-400">৳ ${formatAmountWithComma(item.askingPrice || 0)}</div>
-                    <div class="text-[9px] font-bold text-red-400">ফ্লোর: ৳ ${formatAmountWithComma(item.floorPrice || 0)}</div>
+                    <div class="text-[9px] font-bold text-amber-400">মেমো দর: ৳ ${formatAmountWithComma(item.floorPrice || 0)}</div>
                     <div class="text-[9px] text-slate-400 font-bold">${item.defaultUnit || 'পিছ'}</div>
                 </div>
             </div>
@@ -144,7 +144,7 @@ export function selectTypeaheadPart(rowIndex, matchIndex) {
 
         hintEl.innerHTML = `
             <div class="flex flex-wrap items-center gap-2 text-[10px] bg-slate-900 border border-slate-700/80 px-2.5 py-1.5 rounded-lg mt-1 shadow-sm">
-                <span class="text-amber-400 font-bold"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>ফ্লোর দর: ৳${formatAmountWithComma(part.floorPrice || 0)}</span>
+                <span class="text-amber-400 font-bold"><i class="fa-solid fa-shield-halved text-[9px] mr-1"></i>মেমো দর: ৳${formatAmountWithComma(part.floorPrice || 0)}</span>
                 <span class="text-slate-600">•</span>
                 <span class="text-emerald-400 font-bold">আস্কিং: ৳${formatAmountWithComma(part.askingPrice || 0)}</span>
                 ${memoTrailHtml}

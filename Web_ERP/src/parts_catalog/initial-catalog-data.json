@@ -1,6 +1,7 @@
 [
   {
     "id": "PART-1001",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "৯ পিন CVT ইঞ্জিন",
     "memoOriginalName": "৯ পিন CVT ইঞ্জিন",
     "aliasesBn": [
@@ -53,6 +54,7 @@
   },
   {
     "id": "PART-1002",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio CVT ৯ পিন ইঞ্জিন",
     "memoOriginalName": "Axio CVT ৯ পিন ইঞ্জিন",
     "aliasesBn": [
@@ -120,6 +122,7 @@
   },
   {
     "id": "PART-1003",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio CVT ১২ পিন ইঞ্জিন",
     "memoOriginalName": "Axio CVT ১২ পিন ইঞ্জিন",
     "aliasesBn": [
@@ -171,6 +174,7 @@
   },
   {
     "id": "PART-1004",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio CVT ইঞ্জিন",
     "memoOriginalName": "Axio CVT ইঞ্জিন",
     "aliasesBn": [
@@ -223,6 +227,7 @@
   },
   {
     "id": "PART-1005",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio (CVT) 4x4 ইঞ্জিন",
     "memoOriginalName": "Axio (CVT) 4x4 ইঞ্জিন / Axio (4x4) ইঞ্জিন",
     "aliasesBn": [
@@ -289,6 +294,7 @@
   },
   {
     "id": "PART-1006",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "এলিয়নের ইঞ্জিন",
     "memoOriginalName": "এলিয়নের ইঞ্জিন",
     "aliasesBn": [
@@ -357,6 +363,7 @@
   },
   {
     "id": "PART-1007",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "2NZ Probox ইঞ্জিন",
     "memoOriginalName": "2NZ Probox ইঞ্জিন",
     "aliasesBn": [
@@ -409,6 +416,7 @@
   },
   {
     "id": "PART-1008",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "1NZ ২০০৫ ইঞ্জিন",
     "memoOriginalName": "1NZ ২০০৫ ইঞ্জিন",
     "aliasesBn": [
@@ -467,6 +475,7 @@
   },
   {
     "id": "PART-1009",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ২০০৩ ইঞ্জিন",
     "memoOriginalName": "NZE ২০০৩ ইঞ্জিন",
     "aliasesBn": [
@@ -525,6 +534,7 @@
   },
   {
     "id": "PART-1010",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "7K (EFI) ইঞ্জিন",
     "memoOriginalName": "7K (EFI) ইঞ্জিন",
     "aliasesBn": [
@@ -576,6 +586,7 @@
   },
   {
     "id": "PART-1011",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "৯ পিন ইঞ্জিন গিয়ার ছাড়া",
     "memoOriginalName": "৯ পিন ইঞ্জিন গিয়ার ছাড়া",
     "aliasesBn": [
@@ -636,6 +647,7 @@
   },
   {
     "id": "PART-1012",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "1NZ অটো বাটারফ্লাই",
     "memoOriginalName": "1NZ অটো বাটারফ্লাই",
     "aliasesBn": [
@@ -696,6 +708,7 @@
   },
   {
     "id": "PART-1013",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "VVTI কাভার",
     "memoOriginalName": "VVTI কাভার / NZE ২০০৫ VVTI কাভার",
     "aliasesBn": [
@@ -710,7 +723,7 @@
     "defaultUnit": "পিছ",
     "pcsPerUnit": 1,
     "askingPrice": 1600,
-    "floorPrice": 1200,
+    "floorPrice": 1400,
     "singlePiecePrice": 1600,
     "oldCoreDiscount": 0,
     "engineCC": "1500cc / 1800cc",
@@ -771,6 +784,7 @@
   },
   {
     "id": "PART-1014",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "মিনিফুল সেন্সর",
     "memoOriginalName": "মিনিফুল সেন্সর",
     "aliasesBn": [
@@ -821,6 +835,7 @@
   },
   {
     "id": "PART-1015",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "টেবিট পাইপ",
     "memoOriginalName": "টেবিট পাইপ",
     "aliasesBn": [
@@ -872,6 +887,7 @@
   },
   {
     "id": "PART-1016",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "নোহার কাটিং সেইফ ফ্লাম",
     "memoOriginalName": "নোহার কাটিং সেইফ ফ্লাম",
     "aliasesBn": [
@@ -923,6 +939,7 @@
   },
   {
     "id": "PART-1017",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "CVT (4x4) গিয়ার",
     "memoOriginalName": "CVT (4x4) গিয়ার",
     "aliasesBn": [
@@ -998,6 +1015,7 @@
   },
   {
     "id": "PART-1018",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "2ZR CVT গিয়ার",
     "memoOriginalName": "2ZR CVT গিয়ার / 2ZR গিয়ার",
     "aliasesBn": [
@@ -1067,6 +1085,7 @@
   },
   {
     "id": "PART-1019",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "5A গিয়ার",
     "memoOriginalName": "5A গিয়ার",
     "aliasesBn": [
@@ -1126,6 +1145,7 @@
   },
   {
     "id": "PART-1020",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "1NZ করোলা গিয়ার",
     "memoOriginalName": "1NZ করোলা গিয়ার",
     "aliasesBn": [
@@ -1177,6 +1197,7 @@
   },
   {
     "id": "PART-1021",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "1TR (TRH) গিয়ার",
     "memoOriginalName": "1TR (TRH) গিয়ার",
     "aliasesBn": [
@@ -1228,6 +1249,7 @@
   },
   {
     "id": "PART-1022",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "রাশের বুস্টার",
     "memoOriginalName": "রাশের বুস্টার",
     "aliasesBn": [
@@ -1242,7 +1264,7 @@
     "defaultUnit": "পিছ",
     "pcsPerUnit": 1,
     "askingPrice": 4300,
-    "floorPrice": 3800,
+    "floorPrice": 4000,
     "singlePiecePrice": 4300,
     "oldCoreDiscount": 0,
     "engineCC": "1500cc / 1800cc",
@@ -1286,6 +1308,7 @@
   },
   {
     "id": "PART-1023",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio বুস্টার",
     "memoOriginalName": "Axio বুস্টার",
     "aliasesBn": [
@@ -1353,6 +1376,7 @@
   },
   {
     "id": "PART-1024",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ বুস্টার",
     "memoOriginalName": "Axio ২০১৪ বুস্টার",
     "aliasesBn": [
@@ -1406,6 +1430,7 @@
   },
   {
     "id": "PART-1025",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE বুস্টার",
     "memoOriginalName": "NZE বুস্টার",
     "aliasesBn": [
@@ -1464,6 +1489,7 @@
   },
   {
     "id": "PART-1026",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Probox বুস্টার",
     "memoOriginalName": "Probox বুস্টার",
     "aliasesBn": [
@@ -1525,6 +1551,7 @@
   },
   {
     "id": "PART-1027",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Probox লতু বুস্টার",
     "memoOriginalName": "Probox লতু বুস্টার",
     "aliasesBn": [
@@ -1577,6 +1604,7 @@
   },
   {
     "id": "PART-1028",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "TRH বুস্টার",
     "memoOriginalName": "TRH বুস্টার",
     "aliasesBn": [
@@ -1591,7 +1619,7 @@
     "defaultUnit": "পিছ",
     "pcsPerUnit": 1,
     "askingPrice": 14300,
-    "floorPrice": 13000,
+    "floorPrice": 13500,
     "singlePiecePrice": 14300,
     "oldCoreDiscount": 1144,
     "engineCC": "1500cc / 1800cc",
@@ -1635,6 +1663,7 @@
   },
   {
     "id": "PART-1029",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "KR42 বুস্টার",
     "memoOriginalName": "KR42 বুস্টার",
     "aliasesBn": [
@@ -1686,6 +1715,7 @@
   },
   {
     "id": "PART-1030",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Voxy ২০১০ বুস্টার",
     "memoOriginalName": "Voxy ২০১০ বুস্টার",
     "aliasesBn": [
@@ -1737,6 +1767,7 @@
   },
   {
     "id": "PART-1031",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "নোহা ফ্রন্ট বুস্টার",
     "memoOriginalName": "নোহা ফ্রন্ট বুস্টার",
     "aliasesBn": [
@@ -1788,6 +1819,7 @@
   },
   {
     "id": "PART-1032",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "260 ডিক্রস",
     "memoOriginalName": "260 ডিক্রস",
     "aliasesBn": [
@@ -1840,6 +1872,7 @@
   },
   {
     "id": "PART-1033",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "এলিয়নের ডিক্রস",
     "memoOriginalName": "এলিয়নের ডিক্রস / এলিয়ন সামনের ডিক্রস",
     "aliasesBn": [
@@ -1900,6 +1933,7 @@
   },
   {
     "id": "PART-1034",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio বড় ডিক্রস",
     "memoOriginalName": "Axio বড় ডিক্রস",
     "aliasesBn": [
@@ -1950,6 +1984,7 @@
   },
   {
     "id": "PART-1035",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Voxy ২০১০ ডিক্রস",
     "memoOriginalName": "Voxy ২০১০ ডিক্রস",
     "aliasesBn": [
@@ -2001,6 +2036,7 @@
   },
   {
     "id": "PART-1036",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "এলিয়নের ড্রাম",
     "memoOriginalName": "এলিয়নের ড্রাম",
     "aliasesBn": [
@@ -2069,6 +2105,7 @@
   },
   {
     "id": "PART-1037",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ড্রাম",
     "memoOriginalName": "NZE ড্রাম",
     "aliasesBn": [
@@ -2120,6 +2157,7 @@
   },
   {
     "id": "PART-1038",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "TRH ড্রাম",
     "memoOriginalName": "TRH ড্রাম",
     "aliasesBn": [
@@ -2171,6 +2209,7 @@
   },
   {
     "id": "PART-1039",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE পিছনের হুইল সিলেন্ডার",
     "memoOriginalName": "NZE পিছনের হুইল সিলেন্ডার",
     "aliasesBn": [
@@ -2221,6 +2260,7 @@
   },
   {
     "id": "PART-1040",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Voxy ২০১০ হুইল সিলেন্ডার",
     "memoOriginalName": "Voxy ২০১০ হুইল সিলেন্ডার",
     "aliasesBn": [
@@ -2272,6 +2312,7 @@
   },
   {
     "id": "PART-1041",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "22VN হুইল সিলেন্ডার",
     "memoOriginalName": "22VN হুইল সিলেন্ডার",
     "aliasesBn": [
@@ -2326,6 +2367,7 @@
   },
   {
     "id": "PART-1042",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "22VM হুইল সিলেন্ডার",
     "memoOriginalName": "22VM হুইল সিলেন্ডার",
     "aliasesBn": [
@@ -2380,6 +2422,7 @@
   },
   {
     "id": "PART-1043",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE পিছনের ডাস্ট প্লেট",
     "memoOriginalName": "NZE পিছনের ডাস্ট প্লেট",
     "aliasesBn": [
@@ -2440,6 +2483,7 @@
   },
   {
     "id": "PART-1044",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "6H ABS",
     "memoOriginalName": "6H ABS",
     "aliasesBn": [
@@ -2507,6 +2551,7 @@
   },
   {
     "id": "PART-1045",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "FF ABS",
     "memoOriginalName": "FF ABS",
     "aliasesBn": [
@@ -2566,6 +2611,7 @@
   },
   {
     "id": "PART-1046",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "7C ABS",
     "memoOriginalName": "7C ABS",
     "aliasesBn": [
@@ -2618,6 +2664,7 @@
   },
   {
     "id": "PART-1047",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "9J ABS",
     "memoOriginalName": "9J ABS",
     "aliasesBn": [
@@ -2679,6 +2726,7 @@
   },
   {
     "id": "PART-1048",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio রেক",
     "memoOriginalName": "Axio রেক",
     "aliasesBn": [
@@ -2747,6 +2795,7 @@
   },
   {
     "id": "PART-1049",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio নিউ রেক খোলা",
     "memoOriginalName": "Axio নিউ রেক খোলা",
     "aliasesBn": [
@@ -2798,6 +2847,7 @@
   },
   {
     "id": "PART-1050",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ রেক",
     "memoOriginalName": "Axio ২০১৪ রেক",
     "aliasesBn": [
@@ -2812,7 +2862,7 @@
     "defaultUnit": "পিছ",
     "pcsPerUnit": 1,
     "askingPrice": 5800,
-    "floorPrice": 5000,
+    "floorPrice": 5200,
     "singlePiecePrice": 5800,
     "oldCoreDiscount": 464,
     "engineCC": "1500cc / 1800cc",
@@ -2876,6 +2926,7 @@
   },
   {
     "id": "PART-1051",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "260 নিউ রেক খোলা",
     "memoOriginalName": "260 নিউ রেক খোলা",
     "aliasesBn": [
@@ -2928,6 +2979,7 @@
   },
   {
     "id": "PART-1052",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "1TT রেক",
     "memoOriginalName": "1TT রেক",
     "aliasesBn": [
@@ -2980,6 +3032,7 @@
   },
   {
     "id": "PART-1053",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "C16 রেক স্টিকার ছাড়া",
     "memoOriginalName": "C16 রেক স্টিকার ছাড়া",
     "aliasesBn": [
@@ -3031,6 +3084,7 @@
   },
   {
     "id": "PART-1054",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "হোন্ডা ভেজেল নিউ রেক",
     "memoOriginalName": "হোন্ডা ভেজেল নিউ রেক",
     "aliasesBn": [
@@ -3080,6 +3134,7 @@
   },
   {
     "id": "PART-1055",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "হেরিয়ার ২০১২ রেক",
     "memoOriginalName": "হেরিয়ার ২০১২ রেক",
     "aliasesBn": [
@@ -3129,6 +3184,7 @@
   },
   {
     "id": "PART-1056",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "হাইলাক্স 2KD রেক ১৭ নং বল্টু",
     "memoOriginalName": "হাইলাক্স 2KD রেক ১৭ নং বল্টু",
     "aliasesBn": [
@@ -3179,6 +3235,7 @@
   },
   {
     "id": "PART-1057",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "আউটলেন্ডার ২০১০ রেক",
     "memoOriginalName": "আউটলেন্ডার ২০১০ রেক",
     "aliasesBn": [
@@ -3228,6 +3285,7 @@
   },
   {
     "id": "PART-1058",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "লেন্সার ৪২ নং রেক",
     "memoOriginalName": "লেন্সার ৪২ নং রেক",
     "aliasesBn": [
@@ -3287,6 +3345,7 @@
   },
   {
     "id": "PART-1059",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ১৭ নং লম্বা এন রেক",
     "memoOriginalName": "NZE ১৭ নং লম্বা এন রেক",
     "aliasesBn": [
@@ -3337,6 +3396,7 @@
   },
   {
     "id": "PART-1060",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "AE-100 রেক পাইপ ছাড়া",
     "memoOriginalName": "AE-100 রেক পাইপ ছাড়া",
     "aliasesBn": [
@@ -3388,6 +3448,7 @@
   },
   {
     "id": "PART-1061",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "স্টারলাইট রেক",
     "memoOriginalName": "স্টারলাইট রেক",
     "aliasesBn": [
@@ -3438,6 +3499,7 @@
   },
   {
     "id": "PART-1062",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "এলিয়নের পাওয়ার পাম্প",
     "memoOriginalName": "এলিয়নের পাওয়ার পাম্প",
     "aliasesBn": [
@@ -3490,6 +3552,7 @@
   },
   {
     "id": "PART-1063",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "এলিয়ন পাওয়ার টাংকি",
     "memoOriginalName": "এলিয়ন পাওয়ার টাংকি",
     "aliasesBn": [
@@ -3550,6 +3613,7 @@
   },
   {
     "id": "PART-1064",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE কাঁটা দিল্লি হাবস",
     "memoOriginalName": "NZE কাঁটা দিল্লি হাবস",
     "aliasesBn": [
@@ -3609,6 +3673,7 @@
   },
   {
     "id": "PART-1065",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE গোল দিল্লি হাবস",
     "memoOriginalName": "NZE গোল দিল্লি হাবস",
     "aliasesBn": [
@@ -3676,6 +3741,7 @@
   },
   {
     "id": "PART-1066",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ হাবস",
     "memoOriginalName": "Axio ২০১৪ হাবস",
     "aliasesBn": [
@@ -3737,6 +3803,7 @@
   },
   {
     "id": "PART-1067",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ (৫ বল্টু) হাবস",
     "memoOriginalName": "Axio ২০১৪ (৫ বল্টু) হাবস",
     "aliasesBn": [
@@ -3789,6 +3856,7 @@
   },
   {
     "id": "PART-1068",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "260 হাবস",
     "memoOriginalName": "260 হাবস",
     "aliasesBn": [
@@ -3849,6 +3917,7 @@
   },
   {
     "id": "PART-1069",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Voxy ২০১০ হাবস",
     "memoOriginalName": "Voxy ২০১০ হাবস / স্কয়ার হাবস",
     "aliasesBn": [
@@ -3924,6 +3993,7 @@
   },
   {
     "id": "PART-1070",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Voxy ২০০৩ হাবস",
     "memoOriginalName": "Voxy ২০০৩ হাবস",
     "aliasesBn": [
@@ -3975,6 +4045,7 @@
   },
   {
     "id": "PART-1071",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "IST ২০১৫ হাবস",
     "memoOriginalName": "IST ২০১৫ হাবস",
     "aliasesBn": [
@@ -4025,6 +4096,7 @@
   },
   {
     "id": "PART-1072",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "চিকন দাঁতের কলকি",
     "memoOriginalName": "চিকন দাঁতের কলকি",
     "aliasesBn": [
@@ -4074,6 +4146,7 @@
   },
   {
     "id": "PART-1073",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "100 কলকি",
     "memoOriginalName": "100 কলকি",
     "aliasesBn": [
@@ -4125,6 +4198,7 @@
   },
   {
     "id": "PART-1074",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ফুল জুয়েন্ট",
     "memoOriginalName": "NZE ফুল জুয়েন্ট",
     "aliasesBn": [
@@ -4175,6 +4249,7 @@
   },
   {
     "id": "PART-1075",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ CV জুয়েন্ট",
     "memoOriginalName": "Axio ২০১৪ CV জুয়েন্ট",
     "aliasesBn": [
@@ -4228,6 +4303,7 @@
   },
   {
     "id": "PART-1076",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Voxy ২০০৩ CV জুয়েন্ট",
     "memoOriginalName": "Voxy ২০০৩ CV জুয়েন্ট",
     "aliasesBn": [
@@ -4279,6 +4355,7 @@
   },
   {
     "id": "PART-1077",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "হেরিয়ার ২০১৫ CV জুয়েন্ট",
     "memoOriginalName": "হেরিয়ার ২০১৫ CV জুয়েন্ট",
     "aliasesBn": [
@@ -4327,6 +4404,7 @@
   },
   {
     "id": "PART-1078",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ১৮০০ cc CV জুয়েন্ট",
     "memoOriginalName": "NZE ১৮০০ cc CV জুয়েন্ট",
     "aliasesBn": [
@@ -4378,6 +4456,7 @@
   },
   {
     "id": "PART-1079",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE স্পাইডার",
     "memoOriginalName": "NZE স্পাইডার",
     "aliasesBn": [
@@ -4428,6 +4507,7 @@
   },
   {
     "id": "PART-1080",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio স্টাডিং ক্রস",
     "memoOriginalName": "Axio স্টাডিং ক্রস",
     "aliasesBn": [
@@ -4487,6 +4567,7 @@
   },
   {
     "id": "PART-1081",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE স্টাডিং ক্রস",
     "memoOriginalName": "NZE স্টাডিং ক্রস",
     "aliasesBn": [
@@ -4545,6 +4626,7 @@
   },
   {
     "id": "PART-1082",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "ক্লুজার স্টাডিং ক্রস",
     "memoOriginalName": "ক্লুজার স্টাডিং ক্রস",
     "aliasesBn": [
@@ -4595,6 +4677,7 @@
   },
   {
     "id": "PART-1083",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ইঞ্জিন মনটিন",
     "memoOriginalName": "Axio ইঞ্জিন মনটিন / Axio মনটিন",
     "aliasesBn": [
@@ -4662,6 +4745,7 @@
   },
   {
     "id": "PART-1084",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio (4x4) ইঞ্জিন মনটিন",
     "memoOriginalName": "Axio (4x4) ইঞ্জিন মনটিন",
     "aliasesBn": [
@@ -4711,6 +4795,7 @@
   },
   {
     "id": "PART-1085",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ইঞ্জিন মনটিন",
     "memoOriginalName": "NZE ইঞ্জিন মনটিন / NZE মনটিন",
     "aliasesBn": [
@@ -4770,6 +4855,7 @@
   },
   {
     "id": "PART-1086",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "260 ইঞ্জিন মনটিন",
     "memoOriginalName": "260 ইঞ্জিন মনটিন",
     "aliasesBn": [
@@ -4822,6 +4908,7 @@
   },
   {
     "id": "PART-1087",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "নোহা স্কয়ার ইঞ্জিন মনটিন",
     "memoOriginalName": "নোহা স্কয়ার ইঞ্জিন মনটিন",
     "aliasesBn": [
@@ -4873,6 +4960,7 @@
   },
   {
     "id": "PART-1088",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Probox ইঞ্জিন মাউন্টিং",
     "memoOriginalName": "Probox ইঞ্জিন মাউন্টিং",
     "aliasesBn": [
@@ -4926,6 +5014,7 @@
   },
   {
     "id": "PART-1089",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ মনটিন",
     "memoOriginalName": "Axio ২০১৪ মনটিন",
     "aliasesBn": [
@@ -4987,6 +5076,7 @@
   },
   {
     "id": "PART-1090",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ মেইন মনটিন",
     "memoOriginalName": "Axio ২০১৪ মেইন মনটিন",
     "aliasesBn": [
@@ -5001,7 +5091,7 @@
     "defaultUnit": "পিছ",
     "pcsPerUnit": 1,
     "askingPrice": 3000,
-    "floorPrice": 2500,
+    "floorPrice": 2700,
     "singlePiecePrice": 3000,
     "oldCoreDiscount": 0,
     "engineCC": "1500cc / 1800cc",
@@ -5048,6 +5138,7 @@
   },
   {
     "id": "PART-1091",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Voxy ২০১০ মেইন মনটিন",
     "memoOriginalName": "Voxy ২০১০ মেইন মনটিন",
     "aliasesBn": [
@@ -5099,6 +5190,7 @@
   },
   {
     "id": "PART-1092",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Vitz মেইন মনটিন",
     "memoOriginalName": "Vitz মেইন মনটিন",
     "aliasesBn": [
@@ -5150,6 +5242,7 @@
   },
   {
     "id": "PART-1093",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ টানা মনটিন",
     "memoOriginalName": "Axio ২০১৪ টানা মনটিন",
     "aliasesBn": [
@@ -5203,6 +5296,7 @@
   },
   {
     "id": "PART-1094",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio মনটিনের বুশ",
     "memoOriginalName": "Axio মনটিনের বুশ",
     "aliasesBn": [
@@ -5256,6 +5350,7 @@
   },
   {
     "id": "PART-1095",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE রেডিয়েটার মনটিন",
     "memoOriginalName": "NZE রেডিয়েটার মনটিন",
     "aliasesBn": [
@@ -5306,6 +5401,7 @@
   },
   {
     "id": "PART-1096",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE বারের বুশ",
     "memoOriginalName": "NZE বারের বুশ",
     "aliasesBn": [
@@ -5356,6 +5452,7 @@
   },
   {
     "id": "PART-1097",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "৪০ কয়েল",
     "memoOriginalName": "৪০ কয়েল",
     "aliasesBn": [
@@ -5409,6 +5506,7 @@
   },
   {
     "id": "PART-1098",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "৪৮ কয়েল",
     "memoOriginalName": "৪৮ কয়েল",
     "aliasesBn": [
@@ -5469,12 +5567,13 @@
   },
   {
     "id": "PART-1099",
-    "nameBn": "৪০",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
+    "nameBn": "৪০/৬৫ কয়েল",
     "memoOriginalName": "৪০/৬৫ কয়েল",
     "aliasesBn": [
       "৪০/৬৫ কয়েল",
       "৪০/৬৫ কম্বাইন্ড ইগনিশন প্লাগ কয়েল",
-      "৪০"
+      "৪০/৬৫ কয়েল"
     ],
     "nameEn": "Toyota Denso Ignition Coil Set 40/65",
     "oemPartNumber": "OEM N/A",
@@ -5483,7 +5582,7 @@
     "defaultUnit": "সেট (৪টি)",
     "pcsPerUnit": 1,
     "askingPrice": 11300,
-    "floorPrice": 10300,
+    "floorPrice": 10500,
     "singlePiecePrice": 5650,
     "oldCoreDiscount": 904,
     "engineCC": "1500cc / 1800cc",
@@ -5527,12 +5626,13 @@
   },
   {
     "id": "PART-1100",
-    "nameBn": "৪৮",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
+    "nameBn": "৪৮/৬০ কয়েল",
     "memoOriginalName": "৪৮/৬০ কয়েল",
     "aliasesBn": [
       "৪৮/৬০ কয়েল",
       "৪৮/৬০ ইগনিশন প্লাগ কয়েল সেট",
-      "৪৮"
+      "৪৮/৬০ কয়েল"
     ],
     "nameEn": "Toyota Denso Ignition Coil Set 48/60",
     "oemPartNumber": "OEM N/A",
@@ -5578,6 +5678,7 @@
   },
   {
     "id": "PART-1101",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "3ZR কয়েল",
     "memoOriginalName": "3ZR কয়েল",
     "aliasesBn": [
@@ -5631,6 +5732,7 @@
   },
   {
     "id": "PART-1102",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ২০০৫ ইনজেকটার",
     "memoOriginalName": "NZE ২০০৫ ইনজেকটার",
     "aliasesBn": [
@@ -5697,6 +5799,7 @@
   },
   {
     "id": "PART-1103",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ২০০৩ ইনজেকটার",
     "memoOriginalName": "NZE ২০০৩ ইনজেকটার",
     "aliasesBn": [
@@ -5763,6 +5866,7 @@
   },
   {
     "id": "PART-1104",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "১২ পিন ইনজেকটার",
     "memoOriginalName": "১২ পিন ইনজেকটার",
     "aliasesBn": [
@@ -5777,7 +5881,7 @@
     "defaultUnit": "সেট (৪টি)",
     "pcsPerUnit": 1,
     "askingPrice": 3200,
-    "floorPrice": 2800,
+    "floorPrice": 2900,
     "singlePiecePrice": 1600,
     "oldCoreDiscount": 0,
     "engineCC": "1500cc / 1800cc",
@@ -5823,6 +5927,7 @@
   },
   {
     "id": "PART-1105",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "2NR ইনজেকটার",
     "memoOriginalName": "2NR ইনজেকটার",
     "aliasesBn": [
@@ -5874,6 +5979,7 @@
   },
   {
     "id": "PART-1106",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "1NZ সেল",
     "memoOriginalName": "1NZ সেল",
     "aliasesBn": [
@@ -5934,6 +6040,7 @@
   },
   {
     "id": "PART-1107",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "1NZ ডায়নামা",
     "memoOriginalName": "1NZ ডায়নামা",
     "aliasesBn": [
@@ -6001,6 +6108,7 @@
   },
   {
     "id": "PART-1108",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "১২ পিন ডায়নামা",
     "memoOriginalName": "১২ পিন ডায়নামা",
     "aliasesBn": [
@@ -6053,6 +6161,7 @@
   },
   {
     "id": "PART-1109",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ ডায়নামা",
     "memoOriginalName": "Axio ২০১৪ ডায়নামা",
     "aliasesBn": [
@@ -6106,6 +6215,7 @@
   },
   {
     "id": "PART-1110",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "3ZR ডায়নামা",
     "memoOriginalName": "3ZR ডায়নামা",
     "aliasesBn": [
@@ -6157,6 +6267,7 @@
   },
   {
     "id": "PART-1111",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio তারওয়ালা মোটর",
     "memoOriginalName": "Axio তারওয়ালা মোটর / Axio ফ্যান মোটর",
     "aliasesBn": [
@@ -6171,7 +6282,7 @@
     "defaultUnit": "পিছ",
     "pcsPerUnit": 1,
     "askingPrice": 1900,
-    "floorPrice": 1500,
+    "floorPrice": 1700,
     "singlePiecePrice": 1900,
     "oldCoreDiscount": 0,
     "engineCC": "1500cc / 1800cc",
@@ -6224,6 +6335,7 @@
   },
   {
     "id": "PART-1112",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "L মোটর পাতাসহ",
     "memoOriginalName": "L মোটর পাতাসহ",
     "aliasesBn": [
@@ -6275,6 +6387,7 @@
   },
   {
     "id": "PART-1113",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "L মোটর",
     "memoOriginalName": "L মোটর",
     "aliasesBn": [
@@ -6326,6 +6439,7 @@
   },
   {
     "id": "PART-1114",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "TRH ফ্যান মোটর পাতাসহ",
     "memoOriginalName": "TRH ফ্যান মোটর পাতাসহ",
     "aliasesBn": [
@@ -6384,6 +6498,7 @@
   },
   {
     "id": "PART-1115",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "TRH ফ্যান মোটর",
     "memoOriginalName": "TRH ফ্যান মোটর",
     "aliasesBn": [
@@ -6434,6 +6549,7 @@
   },
   {
     "id": "PART-1116",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "হাইব্রিড মোটর (ফ্যান মোটর)",
     "memoOriginalName": "হাইব্রিড মোটর (ফ্যান মোটর)",
     "aliasesBn": [
@@ -6484,6 +6600,7 @@
   },
   {
     "id": "PART-1117",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Voxy তার ও পিন মোটর",
     "memoOriginalName": "Voxy তার ও পিন মোটর",
     "aliasesBn": [
@@ -6535,6 +6652,7 @@
   },
   {
     "id": "PART-1118",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "EGR তারওয়ালা",
     "memoOriginalName": "EGR তারওয়ালা",
     "aliasesBn": [
@@ -6586,6 +6704,7 @@
   },
   {
     "id": "PART-1119",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE এয়ারক্লিন বক্স",
     "memoOriginalName": "NZE এয়ারক্লিন বক্স",
     "aliasesBn": [
@@ -6636,6 +6755,7 @@
   },
   {
     "id": "PART-1120",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "থার্মোস্টার",
     "memoOriginalName": "থার্মোস্টার / থামোস্টার",
     "aliasesBn": [
@@ -6695,6 +6815,7 @@
   },
   {
     "id": "PART-1121",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "260 ওয়াটার জেকেট পাইপসহ",
     "memoOriginalName": "260 ওয়াটার জেকেট পাইপসহ",
     "aliasesBn": [
@@ -6747,6 +6868,7 @@
   },
   {
     "id": "PART-1122",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ওয়াটার জেকেট পাইপসহ",
     "memoOriginalName": "Axio ওয়াটার জেকেট পাইপসহ",
     "aliasesBn": [
@@ -6761,7 +6883,7 @@
     "defaultUnit": "পিছ",
     "pcsPerUnit": 1,
     "askingPrice": 1500,
-    "floorPrice": 1100,
+    "floorPrice": 1300,
     "singlePiecePrice": 1500,
     "oldCoreDiscount": 0,
     "engineCC": "1500cc / 1800cc",
@@ -6806,6 +6928,7 @@
   },
   {
     "id": "PART-1123",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ ওয়াটার জেকেট",
     "memoOriginalName": "Axio ২০১৪ ওয়াটার জেকেট",
     "aliasesBn": [
@@ -6859,6 +6982,7 @@
   },
   {
     "id": "PART-1124",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE উপরের হোস পাইপ",
     "memoOriginalName": "NZE উপরের হোস পাইপ",
     "aliasesBn": [
@@ -6917,6 +7041,7 @@
   },
   {
     "id": "PART-1125",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE হোস পাইপ",
     "memoOriginalName": "NZE হোস পাইপ",
     "aliasesBn": [
@@ -6967,6 +7092,7 @@
   },
   {
     "id": "PART-1126",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "চিকন গ্যাস পাইপ",
     "memoOriginalName": "চিকন গ্যাস পাইপ",
     "aliasesBn": [
@@ -7016,6 +7142,7 @@
   },
   {
     "id": "PART-1127",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Wish প্লেইন কাটিং",
     "memoOriginalName": "Wish প্লেইন কাটিং",
     "aliasesBn": [
@@ -7030,7 +7157,7 @@
     "defaultUnit": "সেট",
     "pcsPerUnit": 1,
     "askingPrice": 10800,
-    "floorPrice": 9300,
+    "floorPrice": 10000,
     "singlePiecePrice": 5400,
     "oldCoreDiscount": 864,
     "engineCC": "1500cc / 1800cc",
@@ -7090,6 +7217,7 @@
   },
   {
     "id": "PART-1128",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE মাইক কাটিং",
     "memoOriginalName": "NZE মাইক কাটিং",
     "aliasesBn": [
@@ -7148,6 +7276,7 @@
   },
   {
     "id": "PART-1129",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "260 সামনের সাসপেনশন",
     "memoOriginalName": "260 সামনের সাসপেনশন",
     "aliasesBn": [
@@ -7200,6 +7329,7 @@
   },
   {
     "id": "PART-1130",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "Axio ২০১৪ সামনের সাসপেনশন",
     "memoOriginalName": "Axio ২০১৪ সামনের সাসপেনশন",
     "aliasesBn": [
@@ -7253,6 +7383,7 @@
   },
   {
     "id": "PART-1131",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "নোহার স্কয়ার সামনের সাসপেনশন",
     "memoOriginalName": "নোহার স্কয়ার সামনের সাসপেনশন",
     "aliasesBn": [
@@ -7304,6 +7435,7 @@
   },
   {
     "id": "PART-1132",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "260 পিছনের বার",
     "memoOriginalName": "260 পিছনের বার",
     "aliasesBn": [
@@ -7356,6 +7488,7 @@
   },
   {
     "id": "PART-1133",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "নোহা স্কয়ার পিছনের বার কমপ্লিট",
     "memoOriginalName": "নোহা স্কয়ার পিছনের বার কমপ্লিট",
     "aliasesBn": [
@@ -7407,6 +7540,7 @@
   },
   {
     "id": "PART-1134",
+    "catalogVersion": "v2_wholesale_highest_rate_2026",
     "nameBn": "NZE ছোট বার",
     "memoOriginalName": "NZE ছোট বার",
     "aliasesBn": [

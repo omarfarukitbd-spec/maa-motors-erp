@@ -21,6 +21,31 @@ def parse_price(s):
         return res[0], res[0]
     return res[0], res[-1]
 
+def get_wholesale_buffer(base_rate):
+    """
+    Wholesale Asking Buffer Scale:
+    বড় ফিগারে ৩/৪ হাজার, মাঝারি ও ছোটতে সামঞ্জস্যপূর্ণ কম যাতে হোলসেল ক্লায়েন্টদের সাথে সহজেই ডিল ক্লোজ করা যায়।
+    """
+    if base_rate >= 100000:
+        return 4000
+    elif base_rate >= 50000:
+        return 2000
+    elif base_rate >= 20000:
+        return 1500
+    elif base_rate >= 10000:
+        return 800
+    elif base_rate >= 5000:
+        return 600
+    elif base_rate >= 2000:
+        return 300
+    elif base_rate >= 1000:
+        return 200
+    elif base_rate >= 500:
+        return 100
+    elif base_rate > 0:
+        return 50
+    return 0
+
 # Load old data for enrichment (part numbers, secret codes, etc.)
 old_map = {}
 try:
@@ -76,35 +101,9 @@ for line in lines:
 
             # clean memo name (strip markdown bold)
             clean_memo_name = re.sub(r'[*_]', '', raw_memo_name).strip()
-            # Primary name if multiple alternatives separated by '/'
-            primary_name = clean_memo_name.split('/')[0].strip()
-
+            # Primary name if multiple alternatives separated by ' / '
+            primary_name = re.split(r'\s+/\s+', clean_memo_name)[0].strip()
             min_val, max_val = parse_price(raw_price)
-            # The actual memo price is the true wholesale baseline (Floor)
-            floor = min_val if min_val > 0 else max_val
-
-            # Wholesale Asking Buffer (হোলসেলারদের বাস্তব নেগোসিয়েশন করিডোর: বড় ফিগারে ৩-৪ হাজার, ছোটতে সামঞ্জস্যপূর্ণ)
-            if max_val >= 100000:
-                asking = max_val + 4000
-            elif max_val >= 50000:
-                asking = max_val + 2000
-            elif max_val >= 20000:
-                asking = max_val + 1500
-            elif max_val >= 10000:
-                asking = max_val + 800
-            elif max_val >= 5000:
-                asking = max_val + 600
-            elif max_val >= 2000:
-                asking = max_val + 300
-            elif max_val >= 1000:
-                asking = max_val + 200
-            elif max_val >= 500:
-                asking = max_val + 100
-            elif max_val > 0:
-                asking = max_val + 50
-            else:
-                asking = 0
-                floor = 0
 
             # Determine Japanese OEM production year range and chassis codes
             v_lower = vehicles.lower()
@@ -260,8 +259,21 @@ for line in lines:
                     "memoImageUrl": f"/memos/{m_en}.webp"
                 })
 
+            # Calculate the highest memo rate among all memo vouchers for this item
+            memo_rates = [m['rate'] for m in memo_history if m.get('rate')]
+            if memo_rates:
+                highest_memo_rate = max(memo_rates)
+            else:
+                highest_memo_rate = max_val
+
+            # The HIGHEST memo rate is the true baseline floor price
+            floor = highest_memo_rate
+            buffer = get_wholesale_buffer(highest_memo_rate)
+            asking = highest_memo_rate + buffer if highest_memo_rate > 0 else 0
+
             entry = {
                 "id": part_id,
+                "catalogVersion": "v2_wholesale_highest_rate_2026",
                 "nameBn": primary_name,
                 "memoOriginalName": clean_memo_name,
                 "aliasesBn": [clean_memo_name, std_bn_name, primary_name],
