@@ -12,3 +12,5 @@ Memo Book Editor/temp_webp/
 Memo Book Editor/inspect_crops/
 Memo Book Editor/*.pdf
 
+__pycache__/
+*.pyc

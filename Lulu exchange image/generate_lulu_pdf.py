@@ -79,13 +79,19 @@ def main():
     print(f"Found {len(fed_files)} Federal Exchange images: {fed_files}")
     build_pdf_from_images(fed_files, "Federal_Exchange_A4_Print.pdf", folder, root_folder)
 
-    # 2. Lulu Exchange
+    # 2. Lulu Exchange (All 1 to 19)
     lulu_files = sorted([
         f for f in os.listdir(folder)
         if f.lower().startswith('lulu exchange') and f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
     ], key=get_num)
     print(f"Found {len(lulu_files)} Lulu Exchange images: {lulu_files}")
     build_pdf_from_images(lulu_files, "Lulu_Exchange_A4_Print.pdf", folder, root_folder)
+
+    # 2b. Lulu Exchange (New images: 15 to 19)
+    lulu_new_files = [f for f in lulu_files if get_num(f) >= 15]
+    if lulu_new_files:
+        print(f"Found {len(lulu_new_files)} new Lulu Exchange images: {lulu_new_files}")
+        build_pdf_from_images(lulu_new_files, "Lulu_Exchange_New_A4_Print.pdf", folder, root_folder)
 
     # 3. Remit Exchange
     remit_files = sorted([
