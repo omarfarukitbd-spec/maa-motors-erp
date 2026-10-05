@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>কন্টেইনার খরচ বিবরণী — মেসার্স মা মটরস্</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&family=Inter:wght@500;600;700;800&display=swap');
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 8mm 10mm;
+    font-family: 'Hind Siliguri', 'Inter', sans-serif;
+    background: #ffffff;
+    color: #1e293b;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    border-bottom: 2.5px solid #0f2c59;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .bismillah {
+    font-size: 11px;
+    font-style: italic;
+    color: #475569;
+    margin-bottom: 2px;
+  }
+  .company-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f2c59;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+  }
+  .company-title span.eng {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+  }
+  .tagline {
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 2px;
+  }
+  .address {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  /* Subheader Banner */
+  .banner-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+  }
+  .doc-title h2 {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f2c59;
+    text-transform: uppercase;
+  }
+  .doc-title p {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.5px;
+  }
+  .party-badge {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 11px;
+    text-align: right;
+  }
+  .party-badge .chk {
+    font-weight: 700;
+    color: #0f2c59;
+  }
+  .party-badge .party-name {
+    color: #475569;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* Meta Info Table */
+  .meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+  .meta-table td {
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+  }
+  .meta-table td.lbl {
+    background: #f1f5f9;
+    font-weight: 700;
+    color: #0f2c59;
+    width: 18%;
+  }
+  .meta-table td.val {
+    width: 32%;
+    color: #334155;
+    font-weight: 500;
+  }
+
+  /* Expense Table */
+  .expense-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .expense-table th {
+    background: #0f2c59;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 6px 8px;
+    border: 1px solid #0f2c59;
+    text-align: left;
+  }
+  .expense-table th.center { text-align: center; }
+  .expense-table th.right { text-align: right; }
+  .expense-table td {
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+    vertical-align: middle;
+  }
+  .expense-table td.sl {
+    text-align: center;
+    font-weight: 700;
+    color: #0f2c59;
+    width: 5%;
+  }
+  .expense-table td.particulars {
+    width: 59%;
+    color: #1e293b;
+    font-weight: 500;
+  }
+  .expense-table td.amt {
+    width: 18%;
+    text-align: right;
+    font-family: 'Inter', 'Hind Siliguri', sans-serif;
+    font-weight: 600;
+  }
+  .expense-table td.remarks {
+    width: 18%;
+    text-align: center;
+    color: #64748b;
+    font-size: 10px;
+  }
+  .expense-table tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  /* Calculation Rows */
+  .row-total td {
+    background: #e2e8f0 !important;
+    font-weight: 800;
+    color: #0f2c59;
+    border-top: 2px solid #0f2c59;
+  }
+  .row-adv td {
+    background: #f0fdf4 !important;
+    font-weight: 700;
+    color: #166534;
+  }
+  .row-net td {
+    background: #fef2f2 !important;
+    font-weight: 800;
+    color: #dc2626;
+    border-bottom: 2px solid #dc2626;
+    font-size: 11.5px;
+  }
+
+  /* Words */
+  .words-section {
+    font-size: 11px;
+    margin-bottom: 8px;
+    color: #334155;
+    padding: 4px 0;
+  }
+  .words-section strong {
+    color: #0f2c59;
+  }
+
+  /* Footer Signature */
+  .footer-signatures {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 6px;
+    border-top: 1px dashed #cbd5e1;
+  }
+  .sig-box {
+    padding: 0 10px;
+  }
+  .sig-line {
+    margin-bottom: 4px;
+    color: #94a3b8;
+  }
+  .sig-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #0f2c59;
+  }
+  .sig-sub {
+    font-size: 9.5px;
+    color: #64748b;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-container">
+
+  <!-- 1. Header -->
+  <div class="header">
+    <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ &nbsp;|&nbsp; বিসমিল্লাহির রাহমানির রাহিম</div>
+    <div class="company-title">
+      <span>মেসার্স মা মটরস্</span>
+      <span class="eng">M/S. MAA MOTOR'S</span>
+    </div>
+    <div class="tagline">আমদানিকারক ও পাইকারী বিক্রেতা — সকল প্রকার গাড়ির জাপানি নতুন ও রিকন্ডিশন্ড পার্টস</div>
+    <div class="address">রহমান টাওয়ার, দোকান নং-২২, ১ম রেল গেইট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম। &nbsp;|&nbsp; মোবাইল: ০১৮১৮-১৯৫৬৯০ &nbsp;|&nbsp; ই-মেইল: msmaamotorsllc@gmail.com</div>
+  </div>
+
+  <!-- 2. Subheader Banner -->
+  <div class="banner-grid">
+    <div class="doc-title">
+      <h2>কন্টেইনার চালান ও খালাস সংক্রান্ত খরচ বিবরণী</h2>
+      <p>CONTAINER SHIPMENT & CLEARANCE EXPENSE STATEMENT</p>
+    </div>
+    <div class="party-badge">
+      <div class="chk">কোটেশন [ &nbsp; ] &nbsp;&nbsp; চালান [ ✓ ]</div>
+      <div class="party-name">ডেলিভারি পার্টি: .......................................</div>
+    </div>
+  </div>
+
+  <!-- 3. Meta Table -->
+  <table class="meta-table">
+    <tr>
+      <td class="lbl">কন্টেইনার নং:</td>
+      <td class="val"></td>
+      <td class="lbl">কন্টেইনার সাইজ:</td>
+      <td class="val">২০ ফুট [ &nbsp; ] &nbsp;&nbsp; ৪০ ফুট [ ✓ ]</td>
+    </tr>
+    <tr>
+      <td class="lbl">এল/সি নং (L/C No):</td>
+      <td class="val"></td>
+      <td class="lbl">ইনভয়েস মূল্য (U$D):</td>
+      <td class="val">$ </td>
+    </tr>
+    <tr>
+      <td class="lbl">লোডিং তারিখ:</td>
+      <td class="val">...... / ...... / ২০......</td>
+      <td class="lbl">ডেলিভারি তারিখ:</td>
+      <td class="val">...... / ...... / ২০......</td>
+    </tr>
+    <tr>
+      <td class="lbl">কোম্পানী / শিপার:</td>
+      <td class="val"></td>
+      <td class="lbl">আগমন বন্দর / ডিপো:</td>
+      <td class="val">চট্টগ্রাম বন্দর [ &nbsp; ] &nbsp;&nbsp; কমলাপুর আইসিডি [ ✓ ]</td>
+    </tr>
+  </table>
+
+  <!-- 4. Expense Table -->
+  <table class="expense-table">
+    <thead>
+      <tr>
+        <th class="center" style="width: 5%;">ক্র.</th>
+        <th style="width: 59%;">খরচের খাত ও কাজের বিবরণ (Expense Particulars)</th>
+        <th class="right" style="width: 18%;">পরিমাণ (টাকা)</th>
+        <th class="center" style="width: 18%;">মন্তব্য / ভাউচার</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="sl">১</td>
+        <td class="particulars">UAE প্রাথমিক খরচ (বকশিশ, চা-নাস্তা, স্কেল / ওয়েব্রিজ ফি ও এডভান্স/AD সমন্বয়)</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">২</td>
+        <td class="particulars">UAE লোডিং, শিপিং লাইন চার্জ, L/C কমিশন ও বৈদেশিক ব্যাংক পেমেন্ট</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">৩</td>
+        <td class="particulars">ব্যাংক চার্জ ও মার্জিন (ইসলামী ব্যাংক L/C মার্জিন / আরিয়ান বা অন্যান্য ফি)</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">৪</td>
+        <td class="particulars">কাস্টমস ক্লিয়ারেন্স সার্টিফিকেট ফি (খালেক বা নাসির এজেন্ট)</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">৫</td>
+        <td class="particulars">পোর্ট ইয়ার্ড কন্টেইনার মুভমেন্ট / ঠেলা ও গেট পারমিশন চার্জ</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">৬</td>
+        <td class="particulars">কাস্টমস পরীক্ষণ (Customs Examination) ও ঢাকা যাতায়াত খরচ</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">৭</td>
+        <td class="particulars">গোডাউন যাতায়াত ও খালাস তদারকি চা-নাস্তা খরচ</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">৮</td>
+        <td class="particulars">লোকাল পরিবহন কাভার্ড ভ্যান ভাড়া, খালাস লেবার ও ক্রেন চার্জ</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">৯</td>
+        <td class="particulars">অস্থায়ী গোডাউন ভাড়া (আম্বিয়া আনিস + জাহেদ আনিস স্পেস বাবদ)</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">১০</td>
+        <td class="particulars">C&F কমিশন, বন্দর মাশুল (Port Bill), শিপিং বিল, ডক লেবার বিল ও হ্যান্ডলিং চার্জ</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">১১</td>
+        <td class="particulars">ঘাট খেয়া পারাপার ও চ্যানেল পরিবহন খরচ</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">১২</td>
+        <td class="particulars">বিবিধ আনুষঙ্গিক খরচ (অন্যান্য)</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+      <tr>
+        <td class="sl">১৩</td>
+        <td class="particulars">অতিরিক্ত খাত (প্রয়োজন অনুযায়ী কাস্টম এন্ট্রি)</td>
+        <td class="amt"></td>
+        <td class="remarks"></td>
+      </tr>
+
+      <!-- Summary Rows -->
+      <tr class="row-total">
+        <td colspan="2" style="text-align: right; padding-right: 14px;">প্রতি কন্টেইনার সর্বমোট খালাস খরচ (TOTAL EXPENSES):</td>
+        <td class="amt" style="color: #0f2c59;">= TK</td>
+        <td class="remarks" style="color: #0f2c59; font-weight: 700;">সর্বমোট ব্যয়</td>
+      </tr>
+      <tr class="row-adv">
+        <td colspan="2" style="text-align: right; padding-right: 14px;">বাদ: প্রাপ্ত নগদ / ব্যাংক অগ্রিম জমা (Less: Advance Received):</td>
+        <td class="amt" style="color: #166534;"></td>
+        <td class="remarks" style="color: #166534; font-weight: 700;">জমা / ক্রেডিট (+)</td>
+      </tr>
+      <tr class="row-net">
+        <td colspan="2" style="text-align: right; padding-right: 14px;">সর্বমোট নিট অবশিষ্ট বকেয়া / ব্যালেন্স (TOTAL NET BALANCE DUE):</td>
+        <td class="amt" style="color: #dc2626;">= TK</td>
+        <td class="remarks" style="color: #dc2626; font-weight: 800;">নিট বকেয়া (-)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 5. In Words -->
+  <div class="words-section">
+    <strong>কথায় (In Words):</strong> .................................................................................................................................................................................................................... টাকা মাত্র।
+  </div>
+
+  <!-- 6. Footer Signature -->
+  <div class="footer-signatures">
+    <div class="sig-box">
+      <div class="sig-line">...................................................</div>
+      <div class="sig-title">প্রস্তুতকারকের স্বাক্ষর</div>
+      <div class="sig-sub">(Prepared By)</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line">...................................................</div>
+      <div class="sig-title">হিসাবরক্ষক / যাচাইকারী</div>
+      <div class="sig-sub">(Verified & Checked By)</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line">...................................................</div>
+      <div class="sig-title">মেসার্স মা মটরস্</div>
+      <div class="sig-sub">মোঃ এমরান (আইডি-৯৯২৯)<br>স্বত্বাধিকারী / অনুমোদিত স্বাক্ষর</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
