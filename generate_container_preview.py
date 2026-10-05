@@ -28,7 +28,7 @@ def build_container_form():
     width: 210mm;
     height: 297mm;
     margin: 0;
-    padding: 8mm 10mm;
+    padding: 6mm 8mm;
     font-family: 'Inter', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
     background: #ffffff;
     color: #1e293b;
@@ -52,23 +52,23 @@ def build_container_form():
     background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
     color: #ffffff !important;
     border-radius: 12px;
-    padding: 12px 18px;
+    padding: 10px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 4px 12px rgba(2, 132, 199, 0.22);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }}
 
   .header-left {{
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
   }}
 
   .logo-box {{
-    width: 66px;
-    height: 66px;
+    width: 62px;
+    height: 62px;
     background: #ffffff !important;
     border-radius: 50%;
     display: flex;
@@ -76,7 +76,7 @@ def build_container_form():
     justify-content: center;
     overflow: hidden;
     box-shadow: 0 3px 8px rgba(0,0,0,0.18);
-    border: 2.5px solid #ffffff;
+    border: 2px solid #ffffff;
     flex-shrink: 0;
     padding: 1px;
   }}
@@ -90,7 +90,7 @@ def build_container_form():
   }}
 
   .shop-info h1 {{
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 900 !important;
     margin: 0;
     text-transform: uppercase;
@@ -100,7 +100,7 @@ def build_container_form():
   }}
 
   .shop-info .owner {{
-    font-size: 11px;
+    font-size: 10.5px;
     margin: 2px 0 1px 0;
     opacity: 0.95;
     font-weight: 700 !important;
@@ -108,7 +108,7 @@ def build_container_form():
   }}
 
   .shop-info .address {{
-    font-size: 10px;
+    font-size: 9.5px;
     margin: 1px 0 2px 0;
     opacity: 0.95;
     font-weight: 600 !important;
@@ -119,7 +119,7 @@ def build_container_form():
   }}
 
   .shop-info .phone {{
-    font-size: 10px;
+    font-size: 9.5px;
     margin: 0;
     font-weight: 800 !important;
     opacity: 0.95;
@@ -133,22 +133,22 @@ def build_container_form():
 
   .header-right .report-badge {{
     display: inline-block;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 900 !important;
     text-transform: uppercase;
     background: rgba(255, 255, 255, 0.20) !important;
     backdrop-filter: blur(8px);
     border: 1.5px solid rgba(255, 255, 255, 0.45);
-    padding: 6px 14px;
-    border-radius: 10px;
+    padding: 5px 12px;
+    border-radius: 8px;
     letter-spacing: 0.5px;
     color: #ffffff !important;
   }}
 
   .header-right .sub-title {{
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 700 !important;
-    margin-top: 4px;
+    margin-top: 3px;
     opacity: 0.95;
     text-align: right;
     color: #ffffff !important;
@@ -163,9 +163,9 @@ def build_container_form():
     background: #f8fafc;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
-    padding: 5px 12px;
-    margin-bottom: 8px;
-    font-size: 11px;
+    padding: 4px 10px;
+    margin-bottom: 6px;
+    font-size: 10.5px;
   }}
   .sub-bar .bismillah {{
     font-style: italic;
@@ -181,85 +181,77 @@ def build_container_form():
     color: #1e293b;
   }}
 
-  /* Meta Table (Now with dotted guidelines so there is NO blank empty space) */
+  /* Meta Table (1 লাইনে ৪টা করে ২ লাইনে ৮টি ফিল্ড) */
   .meta-table {{
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 8px;
-    font-size: 11px;
+    margin-bottom: 6px;
+    font-size: 10px;
   }}
   .meta-table td {{
     border: 1px solid #cbd5e1;
-    padding: 6px 10px;
+    padding: 3.5px 6px;
     vertical-align: middle;
   }}
   .meta-table td.lbl {{
     background: #f0f9ff;
     font-weight: 700;
     color: #0369a1;
-    width: 18%;
+    text-align: center;
+    width: 25%;
   }}
   .meta-table td.val {{
-    width: 32%;
-    color: #475569;
-    font-weight: 500;
+    width: 25%;
+    color: #1e293b;
+    font-weight: 600;
+    height: 22px;
   }}
-  .dot-line {{
-    color: #94a3b8;
-    letter-spacing: 1px;
+  .meta-table td.val.center {{
+    text-align: center;
   }}
 
-  /* Expense Table (Generous row heights to gracefully fill the whole A4 page) */
+  /* Expense Table (3 Columns) */
   .expense-table {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
-    margin-bottom: 6px;
+    font-size: 10px;
+    margin-bottom: 5px;
   }}
   .expense-table th {{
-    background: #0369a1;
-    color: #ffffff;
+    background: #e0f2fe;
+    color: #0369a1;
     font-weight: 700;
-    padding: 7px 10px;
+    padding: 5px 8px;
     border: 1px solid #0369a1;
     text-align: left;
-    font-size: 11px;
+    font-size: 10.5px;
   }}
   .expense-table th.center {{ text-align: center; }}
   .expense-table th.right {{ text-align: right; }}
   
   .expense-table td {{
     border: 1px solid #cbd5e1;
-    padding: 6.5px 10px;
+    padding: 4px 8px;
     vertical-align: middle;
-    height: 29px;
+    height: 24px;
   }}
   .expense-table td.sl {{
     text-align: center;
     font-weight: 700;
     color: #0369a1;
     width: 5%;
-    font-size: 11px;
   }}
   .expense-table td.particulars {{
-    width: 58%;
+    width: 77%;
     color: #1e293b;
     font-weight: 500;
     font-family: 'Hind Siliguri', sans-serif;
-    font-size: 11px;
   }}
   .expense-table td.amt {{
-    width: 19%;
+    width: 18%;
     text-align: right;
     font-family: 'Inter', 'Hind Siliguri', sans-serif;
     font-weight: 700;
-  }}
-  .expense-table td.remarks {{
-    width: 18%;
-    text-align: center;
-    color: #94a3b8;
-    font-size: 10.5px;
-    font-family: 'Hind Siliguri', sans-serif;
   }}
   .expense-table tr:nth-child(even) td {{
     background: #f8fafc;
@@ -271,29 +263,16 @@ def build_container_form():
     font-weight: 800;
     color: #0369a1;
     border-top: 2px solid #0369a1;
-    padding: 8px 10px;
-  }}
-  .row-adv td {{
-    background: #f0fdf4 !important;
-    font-weight: 700;
-    color: #166534;
-    padding: 7px 10px;
-  }}
-  .row-net td {{
-    background: #fef2f2 !important;
-    font-weight: 800;
-    color: #dc2626;
-    border-bottom: 2px solid #dc2626;
-    font-size: 11.5px;
-    padding: 8px 10px;
+    border-bottom: 2px solid #0369a1;
+    padding: 6px 8px;
   }}
 
   /* Words */
   .words-section {{
-    font-size: 11px;
-    margin: 6px 0 10px 0;
+    font-size: 10px;
+    margin: 4px 0 6px 0;
     color: #334155;
-    padding: 4px 6px;
+    padding: 3px 6px;
     background: #f8fafc;
     border-radius: 4px;
     border: 1px dashed #cbd5e1;
@@ -308,24 +287,24 @@ def build_container_form():
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     text-align: center;
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 6px;
+    padding-top: 6px;
     border-top: 1.5px solid #e2e8f0;
   }}
   .sig-box {{
-    padding: 0 10px;
+    padding: 0 8px;
   }}
   .sig-line {{
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     color: #94a3b8;
   }}
   .sig-title {{
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     color: #0369a1;
   }}
   .sig-sub {{
-    font-size: 9.5px;
+    font-size: 8.5px;
     color: #64748b;
   }}
 </style>
@@ -358,149 +337,143 @@ def build_container_form():
     <div class="sub-bar">
       <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ (বিসমিল্লাহির রাহমানির রাহিম)</div>
       <div class="chalan-chk">কোটেশন [ &nbsp; ] &nbsp;&nbsp; চালান [ ✓ ]</div>
-      <div class="party">ডেলিভারি পার্টি: <span class="dot-line">......................................................</span></div>
+      <div class="party">ডেলিভারি পার্টি: .................................................</div>
     </div>
 
-    <!-- 3. Meta Table with Dotted Guidelines -->
+    <!-- 3. Meta Table (১ম ছবিরগুলো ১ লাইনে ৪টি ফিল্ড) -->
     <table class="meta-table">
+      <!-- Line 1 Labels -->
       <tr>
         <td class="lbl">কন্টেইনার নং:</td>
-        <td class="val"><span class="dot-line">...............................................................</span></td>
-        <td class="lbl">কন্টেইনার সাইজ:</td>
-        <td class="val" style="color: #1e293b; font-weight: 600;">২০ ফুট [ &nbsp; ] &nbsp;&nbsp;&nbsp;&nbsp; ৪০ ফুট [ ✓ ]</td>
-      </tr>
-      <tr>
-        <td class="lbl">এল/সি নং (L/C No):</td>
-        <td class="val"><span class="dot-line">...............................................................</span></td>
+        <td class="lbl">কন্টেইনার সাইজ ফুট:</td>
+        <td class="lbl">L/C No:</td>
         <td class="lbl">ইনভয়েস মূল্য (U$D):</td>
-        <td class="val">$ <span class="dot-line">.........................................................</span></td>
       </tr>
+      <!-- Line 1 Values -->
+      <tr>
+        <td class="val"></td>
+        <td class="val"></td>
+        <td class="val"></td>
+        <td class="val">$ </td>
+      </tr>
+      <!-- Line 2 Labels -->
       <tr>
         <td class="lbl">লোডিং তারিখ:</td>
-        <td class="val" style="color: #1e293b; font-weight: 600;">...... / ...... / ২০......</td>
         <td class="lbl">ডেলিভারি তারিখ:</td>
-        <td class="val" style="color: #1e293b; font-weight: 600;">...... / ...... / ২০......</td>
-      </tr>
-      <tr>
-        <td class="lbl">কোম্পানী / শিপার:</td>
-        <td class="val"><span class="dot-line">...............................................................</span></td>
+        <td class="lbl">কোম্পানী:</td>
         <td class="lbl">আগমন বন্দর / ডিপো:</td>
-        <td class="val" style="color: #1e293b; font-weight: 600;">চট্টগ্রাম বন্দর [ &nbsp; ] &nbsp;&nbsp; কমলাপুর আইসিডি [ ✓ ]</td>
+      </tr>
+      <!-- Line 2 Values -->
+      <tr>
+        <td class="val center">......... /….... / ২০..........</td>
+        <td class="val center">.......... / …….... / ২০........</td>
+        <td class="val"></td>
+        <td class="val center">চট্টগ্রাম বন্দর [ &nbsp; ] &nbsp;&nbsp; কমলাপুর আইসিডি [ &nbsp; ]</td>
       </tr>
     </table>
 
-    <!-- 4. Expense Table -->
+    <!-- 4. Expense Table (3 Columns with Visible Title) -->
     <table class="expense-table">
       <thead>
         <tr>
           <th class="center" style="width: 5%;">ক্র.</th>
-          <th style="width: 58%;">খরচের খাত ও কাজের বিবরণ (Expense Particulars)</th>
-          <th class="right" style="width: 19%;">পরিমাণ (টাকা)</th>
-          <th class="center" style="width: 18%;">মন্তব্য / ভাউচার</th>
+          <th style="width: 77%;">খরচের খাত ও কাজের বিবরণ (Expense Particulars)</th>
+          <th class="right" style="width: 18%;">পরিমাণ (টাকা)</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td class="sl">১</td>
-          <td class="particulars">UAE প্রাথমিক খরচ (বকশিশ, চা-নাস্তা, স্কেল / ওয়েব্রিজ ফি ও এডভান্স/AD সমন্বয়)</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">UAE প্রাথমিক খরচ (বকশিশ, চা-নাস্তা, স্কেল / রুম ভাড়া/খাওয়া:  AED=</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">২</td>
-          <td class="particulars">UAE লোডিং, শিপিং লাইন চার্জ, L/C কমিশন ও বৈদেশিক ব্যাংক পেমেন্ট</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">UAE লোডিং, শিপিং লাইন চার্জ, L/C কমিশন/ ঠেলা ফোর্ট</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">৩</td>
-          <td class="particulars">ব্যাংক চার্জ ও মার্জিন (ইসলামী ব্যাংক L/C মার্জিন / আরিয়ান বা অন্যান্য ফি)</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">ইসলামী ব্যাংক L/C (আরিয়ান বা অন্যান্য)</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">৪</td>
-          <td class="particulars">কাস্টমস ক্লিয়ারেন্স সার্টিফিকেট ফি (খালেক বা নাসির এজেন্ট)</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">কাস্টমস ক্লিয়ারেন্স সার্টিফিকেট ফি </td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">৫</td>
-          <td class="particulars">পোর্ট ইয়ার্ড কন্টেইনার মুভমেন্ট / ঠেলা ও গেট পারমিশন চার্জ</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">কন্টেইনার ঠেলা ও গেট পারমিশন চার্জ</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">৬</td>
-          <td class="particulars">কাস্টমস পরীক্ষণ (Customs Examination) ও ঢাকা যাতায়াত খরচ</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">কাস্টমস পরীক্ষণ ও ঢাকা যাতায়াত খরচ</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">৭</td>
-          <td class="particulars">গোডাউন যাতায়াত ও খালাস তদারকি চা-নাস্তা খরচ</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">গোডাউন যাতায়াত ও চা-নাস্তা খরচ</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">৮</td>
-          <td class="particulars">লোকাল পরিবহন কাভার্ড ভ্যান ভাড়া, খালাস লেবার ও ক্রেন চার্জ</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">কাভার্ড ভ্যান ভাড়া, লেবার ও ক্রেন চার্জ</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">৯</td>
-          <td class="particulars">অস্থায়ী গোডাউন ভাড়া (আম্বিয়া আনিস + জাহেদ আনিস স্পেস বাবদ)</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">গোডাউন ভাড়া (জাবেদ আলি + জাহিদ আলি) বাবদ খরচ</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">১০</td>
-          <td class="particulars">C&F কমিশন, বন্দর মাশুল (Port Bill), শিপিং বিল, ডক লেবার বিল ও হ্যান্ডলিং চার্জ</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">C&F কমিশন / পোর্ট বিল / শিপিং বিল / লেবার বিল DK ও হ্যান্ডলিং চার্জ</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">১১</td>
-          <td class="particulars">ঘাট খেয়া পারাপার ও চ্যানেল পরিবহন খরচ</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars">ভ্যাট (VAT)</td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">১২</td>
-          <td class="particulars">বিবিধ আনুষঙ্গিক খরচ (অন্যান্য)</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars"></td>
+          <td class="amt"></td>
         </tr>
         <tr>
           <td class="sl">১৩</td>
-          <td class="particulars">অতিরিক্ত খাত (প্রয়োজন অনুযায়ী কাস্টম এন্ট্রি)</td>
-          <td class="amt"><span class="dot-line">..............................</span></td>
-          <td class="remarks"><span class="dot-line">......................</span></td>
+          <td class="particulars"></td>
+          <td class="amt"></td>
+        </tr>
+        <tr>
+          <td class="sl">১৪</td>
+          <td class="particulars"></td>
+          <td class="amt"></td>
+        </tr>
+        <tr>
+          <td class="sl">১৫</td>
+          <td class="particulars"></td>
+          <td class="amt"></td>
+        </tr>
+        <tr>
+          <td class="sl">১৬</td>
+          <td class="particulars"></td>
+          <td class="amt"></td>
         </tr>
 
-        <!-- Summary Rows -->
+        <!-- Summary Row -->
         <tr class="row-total">
           <td colspan="2" style="text-align: right; padding-right: 14px; font-weight: 800;">প্রতি কন্টেইনার সর্বমোট খালাস খরচ (TOTAL EXPENSES):</td>
           <td class="amt" style="color: #0369a1;">= TK &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-          <td class="remarks" style="color: #0369a1; font-weight: 700;">সর্বমোট ব্যয়</td>
-        </tr>
-        <tr class="row-adv">
-          <td colspan="2" style="text-align: right; padding-right: 14px; font-weight: 700;">বাদ: প্রাপ্ত নগদ / ব্যাংক অগ্রিম জমা (Less: Advance Received):</td>
-          <td class="amt" style="color: #166534;"><span class="dot-line">..............................</span></td>
-          <td class="remarks" style="color: #166534; font-weight: 700;">জমা / ক্রেডিট (+)</td>
-        </tr>
-        <tr class="row-net">
-          <td colspan="2" style="text-align: right; padding-right: 14px; font-weight: 800;">সর্বমোট নিট অবশিষ্ট বকেয়া / ব্যালেন্স (TOTAL NET BALANCE DUE):</td>
-          <td class="amt" style="color: #dc2626;">= TK &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-          <td class="remarks" style="color: #dc2626; font-weight: 800;">নিট বকেয়া (-)</td>
         </tr>
       </tbody>
     </table>
 
     <!-- 5. In Words -->
     <div class="words-section">
-      <strong>কথায় (In Words):</strong> <span class="dot-line">....................................................................................................................................................................................................................</span> টাকা মাত্র।
+      <strong>কথায় (In Words):</strong> .................................................................................................................................................................................................................... টাকা মাত্র।
     </div>
   </div>
 
