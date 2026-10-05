@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>কন্টেইনার খরচ বিবরণী — মেসার্স মা মটরস্</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&family=Inter:wght@500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&family=Inter:wght@500;600;700;800;900&display=swap');
 
   @page {
     size: A4 portrait;
@@ -21,8 +21,8 @@
     width: 210mm;
     height: 297mm;
     margin: 0;
-    padding: 8mm 10mm;
-    font-family: 'Hind Siliguri', 'Inter', sans-serif;
+    padding: 7mm 8mm;
+    font-family: 'Inter', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
     background: #ffffff;
     color: #1e293b;
     -webkit-print-color-adjust: exact;
@@ -37,152 +37,211 @@
     justify-content: space-between;
   }
 
-  /* Header */
-  .header {
-    text-align: center;
-    border-bottom: 2.5px solid #0f2c59;
-    padding-bottom: 6px;
+  /* Top Official App Header (Matching print-header.js Exactly) */
+  .official-header {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    border-radius: 14px;
+    padding: 12px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.22);
     margin-bottom: 8px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  .bismillah {
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-box {
+    width: 64px;
+    height: 64px;
+    background: #ffffff !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+    border: 2.5px solid #ffffff;
+    flex-shrink: 0;
+    padding: 1px;
+  }
+
+  .logo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 50%;
+    display: block;
+  }
+
+  .shop-info h1 {
+    font-size: 20px;
+    font-weight: 900 !important;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: -0.3px;
+    line-height: 1.1;
+    color: #ffffff !important;
+  }
+
+  .shop-info .owner {
     font-size: 11px;
+    margin: 2px 0 1px 0;
+    opacity: 0.95;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+  }
+
+  .shop-info .address {
+    font-size: 10px;
+    margin: 1px 0 2px 0;
+    opacity: 0.95;
+    font-weight: 600 !important;
+    line-height: 1.25;
+    color: #ffffff !important;
+    max-width: 440px;
+    font-family: 'Hind Siliguri', 'Inter', sans-serif !important;
+  }
+
+  .shop-info .phone {
+    font-size: 10px;
+    margin: 0;
+    font-weight: 800 !important;
+    opacity: 0.95;
+    color: #ffffff !important;
+  }
+
+  .header-right {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .header-right .report-badge {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.20) !important;
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(255, 255, 255, 0.45);
+    padding: 6px 14px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+    color: #ffffff !important;
+  }
+
+  .header-right .sub-title {
+    font-size: 10px;
+    font-weight: 700 !important;
+    margin-top: 4px;
+    opacity: 0.95;
+    text-align: right;
+    color: #ffffff !important;
+    font-family: 'Hind Siliguri', sans-serif !important;
+  }
+
+  /* Sub-bar: Quotation / Chalan & Delivery Party */
+  .sub-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 5px 12px;
+    margin-bottom: 7px;
+    font-size: 11px;
+  }
+  .sub-bar .bismillah {
     font-style: italic;
     color: #475569;
-    margin-bottom: 2px;
-  }
-  .company-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #0f2c59;
-    letter-spacing: 0.5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-  }
-  .company-title span.eng {
-    font-family: 'Inter', sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-  }
-  .tagline {
-    font-size: 12px;
     font-weight: 600;
-    color: #334155;
-    margin-top: 2px;
   }
-  .address {
-    font-size: 11px;
-    color: #64748b;
-    margin-top: 2px;
+  .sub-bar .chalan-chk {
+    font-weight: 700;
+    color: #0369a1;
+  }
+  .sub-bar .party {
+    font-weight: 700;
+    color: #1e293b;
   }
 
-  /* Subheader Banner */
-  .banner-grid {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    margin-bottom: 8px;
-    gap: 10px;
-  }
-  .doc-title h2 {
-    font-size: 15px;
-    font-weight: 800;
-    color: #0f2c59;
-    text-transform: uppercase;
-  }
-  .doc-title p {
-    font-family: 'Inter', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: #475569;
-    letter-spacing: 0.5px;
-  }
-  .party-badge {
-    background: #f8fafc;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 4px 12px;
-    font-size: 11px;
-    text-align: right;
-  }
-  .party-badge .chk {
-    font-weight: 700;
-    color: #0f2c59;
-  }
-  .party-badge .party-name {
-    color: #475569;
-    font-weight: 600;
-    margin-top: 2px;
-  }
-
-  /* Meta Info Table */
+  /* Meta Table */
   .meta-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 8px;
-    font-size: 11px;
+    margin-bottom: 7px;
+    font-size: 10.5px;
   }
   .meta-table td {
     border: 1px solid #cbd5e1;
     padding: 4px 8px;
   }
   .meta-table td.lbl {
-    background: #f1f5f9;
+    background: #f0f9ff;
     font-weight: 700;
-    color: #0f2c59;
+    color: #0369a1;
     width: 18%;
   }
   .meta-table td.val {
     width: 32%;
-    color: #334155;
-    font-weight: 500;
+    color: #1e293b;
+    font-weight: 600;
   }
 
   /* Expense Table */
   .expense-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
-    margin-bottom: 6px;
+    font-size: 10.5px;
+    margin-bottom: 5px;
   }
   .expense-table th {
-    background: #0f2c59;
+    background: #0369a1;
     color: #ffffff;
     font-weight: 700;
-    padding: 6px 8px;
-    border: 1px solid #0f2c59;
+    padding: 5px 8px;
+    border: 1px solid #0369a1;
     text-align: left;
   }
   .expense-table th.center { text-align: center; }
   .expense-table th.right { text-align: right; }
   .expense-table td {
     border: 1px solid #cbd5e1;
-    padding: 4px 8px;
+    padding: 3.5px 8px;
     vertical-align: middle;
   }
   .expense-table td.sl {
     text-align: center;
     font-weight: 700;
-    color: #0f2c59;
+    color: #0369a1;
     width: 5%;
   }
   .expense-table td.particulars {
     width: 59%;
     color: #1e293b;
     font-weight: 500;
+    font-family: 'Hind Siliguri', sans-serif;
   }
   .expense-table td.amt {
     width: 18%;
     text-align: right;
     font-family: 'Inter', 'Hind Siliguri', sans-serif;
-    font-weight: 600;
+    font-weight: 700;
   }
   .expense-table td.remarks {
     width: 18%;
     text-align: center;
     color: #64748b;
     font-size: 10px;
+    font-family: 'Hind Siliguri', sans-serif;
   }
   .expense-table tr:nth-child(even) td {
     background: #f8fafc;
@@ -190,10 +249,10 @@
 
   /* Calculation Rows */
   .row-total td {
-    background: #e2e8f0 !important;
+    background: #e0f2fe !important;
     font-weight: 800;
-    color: #0f2c59;
-    border-top: 2px solid #0f2c59;
+    color: #0369a1;
+    border-top: 2px solid #0369a1;
   }
   .row-adv td {
     background: #f0fdf4 !important;
@@ -205,18 +264,19 @@
     font-weight: 800;
     color: #dc2626;
     border-bottom: 2px solid #dc2626;
-    font-size: 11.5px;
+    font-size: 11px;
   }
 
   /* Words */
   .words-section {
-    font-size: 11px;
-    margin-bottom: 8px;
+    font-size: 10.5px;
+    margin-bottom: 6px;
     color: #334155;
-    padding: 4px 0;
+    padding: 2px 0;
+    font-family: 'Hind Siliguri', sans-serif;
   }
   .words-section strong {
-    color: #0f2c59;
+    color: #0369a1;
   }
 
   /* Footer Signature */
@@ -224,24 +284,24 @@
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     text-align: center;
-    margin-top: 10px;
+    margin-top: 6px;
     padding-top: 6px;
     border-top: 1px dashed #cbd5e1;
   }
   .sig-box {
-    padding: 0 10px;
+    padding: 0 8px;
   }
   .sig-line {
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     color: #94a3b8;
   }
   .sig-title {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
-    color: #0f2c59;
+    color: #0369a1;
   }
   .sig-sub {
-    font-size: 9.5px;
+    font-size: 9px;
     color: #64748b;
   }
 </style>
@@ -250,27 +310,30 @@
 
 <div class="page-container">
 
-  <!-- 1. Header -->
-  <div class="header">
-    <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ &nbsp;|&nbsp; বিসমিল্লাহির রাহমানির রাহিম</div>
-    <div class="company-title">
-      <span>মেসার্স মা মটরস্</span>
-      <span class="eng">M/S. MAA MOTOR'S</span>
+  <!-- 1. Official App Header -->
+  <div class="official-header">
+    <div class="header-left">
+      <div class="logo-box">
+        <img src="E:\maa-motors-erp\Web_ERP\public\shop-official-logo.jpg" alt="MAA MOTORS LOGO" />
+      </div>
+      <div class="shop-info">
+        <h1>M/S. MAA-MOTOR'S</h1>
+        <div class="owner">Proprietor: Mohammed Amran | প্রোঃ মোঃ মোহাম্মদ এমরান</div>
+        <div class="address">আমদানিকারক ও পাইকারী বিক্রেতা — দোকান নং-২২, রহমান টাওয়ার, ১ম রেল গেইট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম</div>
+        <div class="phone">Mobile: 01819-397669, 01815-707934, 01818-195690</div>
+      </div>
     </div>
-    <div class="tagline">আমদানিকারক ও পাইকারী বিক্রেতা — সকল প্রকার গাড়ির জাপানি নতুন ও রিকন্ডিশন্ড পার্টস</div>
-    <div class="address">রহমান টাওয়ার, দোকান নং-২২, ১ম রেল গেইট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম। &nbsp;|&nbsp; মোবাইল: ০১৮১৮-১৯৫৬৯০ &nbsp;|&nbsp; ই-মেইল: msmaamotorsllc@gmail.com</div>
+    <div class="header-right">
+      <div class="report-badge">CONTAINER REPORT</div>
+      <div class="sub-title">কন্টেইনার চালান ও খালাস খরচ বিবরণী</div>
+    </div>
   </div>
 
-  <!-- 2. Subheader Banner -->
-  <div class="banner-grid">
-    <div class="doc-title">
-      <h2>কন্টেইনার চালান ও খালাস সংক্রান্ত খরচ বিবরণী</h2>
-      <p>CONTAINER SHIPMENT & CLEARANCE EXPENSE STATEMENT</p>
-    </div>
-    <div class="party-badge">
-      <div class="chk">কোটেশন [ &nbsp; ] &nbsp;&nbsp; চালান [ ✓ ]</div>
-      <div class="party-name">ডেলিভারি পার্টি: .......................................</div>
-    </div>
+  <!-- 2. Sub-bar -->
+  <div class="sub-bar">
+    <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ (বিসমিল্লাহির রাহমানির রাহিম)</div>
+    <div class="chalan-chk">কোটেশন [ &nbsp; ] &nbsp;&nbsp; চালান [ ✓ ]</div>
+    <div class="party">ডেলিভারি পার্টি: .................................................</div>
   </div>
 
   <!-- 3. Meta Table -->
@@ -393,17 +456,17 @@
 
       <!-- Summary Rows -->
       <tr class="row-total">
-        <td colspan="2" style="text-align: right; padding-right: 14px;">প্রতি কন্টেইনার সর্বমোট খালাস খরচ (TOTAL EXPENSES):</td>
-        <td class="amt" style="color: #0f2c59;">= TK</td>
-        <td class="remarks" style="color: #0f2c59; font-weight: 700;">সর্বমোট ব্যয়</td>
+        <td colspan="2" style="text-align: right; padding-right: 14px; font-weight: 800;">প্রতি কন্টেইনার সর্বমোট খালাস খরচ (TOTAL EXPENSES):</td>
+        <td class="amt" style="color: #0369a1;">= TK</td>
+        <td class="remarks" style="color: #0369a1; font-weight: 700;">সর্বমোট ব্যয়</td>
       </tr>
       <tr class="row-adv">
-        <td colspan="2" style="text-align: right; padding-right: 14px;">বাদ: প্রাপ্ত নগদ / ব্যাংক অগ্রিম জমা (Less: Advance Received):</td>
+        <td colspan="2" style="text-align: right; padding-right: 14px; font-weight: 700;">বাদ: প্রাপ্ত নগদ / ব্যাংক অগ্রিম জমা (Less: Advance Received):</td>
         <td class="amt" style="color: #166534;"></td>
         <td class="remarks" style="color: #166534; font-weight: 700;">জমা / ক্রেডিট (+)</td>
       </tr>
       <tr class="row-net">
-        <td colspan="2" style="text-align: right; padding-right: 14px;">সর্বমোট নিট অবশিষ্ট বকেয়া / ব্যালেন্স (TOTAL NET BALANCE DUE):</td>
+        <td colspan="2" style="text-align: right; padding-right: 14px; font-weight: 800;">সর্বমোট নিট অবশিষ্ট বকেয়া / ব্যালেন্স (TOTAL NET BALANCE DUE):</td>
         <td class="amt" style="color: #dc2626;">= TK</td>
         <td class="remarks" style="color: #dc2626; font-weight: 800;">নিট বকেয়া (-)</td>
       </tr>
