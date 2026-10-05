@@ -2,11 +2,11 @@ import os
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
-def set_cell_margins(cell, top=80, bottom=80, left=120, right=120):
+def set_cell_margins(cell, top=100, bottom=100, left=140, right=140):
     """Set inner padding for table cells in dxa (1 pt = 20 dxa)"""
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = parse_xml(
@@ -72,11 +72,11 @@ def create_container_docx(output_path):
     section.right_margin = Inches(0.45)
     
     # Theme Colors
-    OCEAN_BLUE = RGBColor(2, 132, 199)   # #0284C7
     DEEP_BLUE = RGBColor(3, 105, 161)    # #0369A1
     WHITE = RGBColor(255, 255, 255)
     DARK_SLATE = RGBColor(30, 41, 59)    # #1E293B
-    MUTED_GRAY = RGBColor(71, 85, 105)   # #475569
+    MUTED_GRAY = RGBColor(100, 116, 139) # #64748B
+    DOT_GRAY = RGBColor(148, 163, 184)   # #94A3B8
     RED = RGBColor(220, 38, 38)          # #DC2626
     EMERALD = RGBColor(22, 101, 52)      # #166534
     
@@ -139,10 +139,10 @@ def create_container_docx(output_path):
     sub_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     sub_table.autofit = False
     
-    col_w_sub = [Inches(3.2), Inches(1.6), Inches(2.57)]
+    col_w_sub = [Inches(3.1), Inches(1.6), Inches(2.67)]
     for c_idx, cell in enumerate(sub_table.rows[0].cells):
         cell.width = col_w_sub[c_idx]
-        set_cell_margins(cell, top=40, bottom=40, left=80, right=80)
+        set_cell_margins(cell, top=50, bottom=50, left=80, right=80)
         set_cell_background(cell, "F8FAFC")
         set_cell_borders(cell, top="CBD5E1", bottom="CBD5E1", left="CBD5E1", right="CBD5E1", sz="4")
         
@@ -161,32 +161,33 @@ def create_container_docx(output_path):
     p_s2.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_s2.paragraph_format.space_before = Pt(0)
     p_s2.paragraph_format.space_after = Pt(0)
-    add_run(p_s2, "ডেলিভারি পার্টি: .......................................", size_pt=8.5, bold=True, color=DARK_SLATE)
+    add_run(p_s2, "ডেলিভারি পার্টি: ", size_pt=8.5, bold=True, color=DARK_SLATE)
+    add_run(p_s2, "............................................", size_pt=8.5, color=DOT_GRAY)
 
     p_sp2 = doc.add_paragraph()
     p_sp2.paragraph_format.space_before = Pt(0)
     p_sp2.paragraph_format.space_after = Pt(3)
 
     # ----------------------------------------------------
-    # 3. Meta Table (4 Columns)
+    # 3. Meta Table (4 Columns with filled dotted writing lines)
     # ----------------------------------------------------
     meta_table = doc.add_table(rows=4, cols=4)
     meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     meta_table.autofit = False
     
     meta_data = [
-        [("কন্টেইনার নং:", True), ("", False), ("কন্টেইনার সাইজ:", True), ("২০ ফুট [  ]   ৪০ ফুট [ ✓ ]", False)],
-        [("এল/সি নং (L/C No):", True), ("", False), ("ইনভয়েস মূল্য (U$D):", True), ("$ ", False)],
-        [("লোডিং তারিখ:", True), ("...... / ...... / ২০......", False), ("ডেলিভারি তারিখ:", True), ("...... / ...... / ২০......", False)],
-        [("কোম্পানী / শিপার:", True), ("", False), ("আগমন বন্দর / ডিপো:", True), ("চট্টগ্রাম বন্দর [  ]   কমলাপুর আইসিডি [ ✓ ]", False)]
+        [("কন্টেইনার নং:", True, DEEP_BLUE), ("...............................................................", False, DOT_GRAY), ("কন্টেইনার সাইজ:", True, DEEP_BLUE), ("২০ ফুট [  ]   ৪০ ফুট [ ✓ ]", False, DARK_SLATE)],
+        [("এল/সি নং (L/C No):", True, DEEP_BLUE), ("...............................................................", False, DOT_GRAY), ("ইনভয়েস মূল্য (U$D):", True, DEEP_BLUE), ("$ .........................................................", False, DOT_GRAY)],
+        [("লোডিং তারিখ:", True, DEEP_BLUE), ("...... / ...... / ২০......", False, DARK_SLATE), ("ডেলিভারি তারিখ:", True, DEEP_BLUE), ("...... / ...... / ২০......", False, DARK_SLATE)],
+        [("কোম্পানী / শিপার:", True, DEEP_BLUE), ("...............................................................", False, DOT_GRAY), ("আগমন বন্দর / ডিপো:", True, DEEP_BLUE), ("চট্টগ্রাম বন্দর [  ]   কমলাপুর আইসিডি [ ✓ ]", False, DARK_SLATE)]
     ]
     
-    col_widths_meta = [Inches(1.8), Inches(1.88), Inches(1.8), Inches(1.89)]
+    col_widths_meta = [Inches(1.75), Inches(1.93), Inches(1.75), Inches(1.94)]
     for r_idx, row in enumerate(meta_table.rows):
         for c_idx, cell in enumerate(row.cells):
             cell.width = col_widths_meta[c_idx]
-            text, is_label = meta_data[r_idx][c_idx]
-            set_cell_margins(cell, top=50, bottom=50, left=80, right=80)
+            text, is_label, font_color = meta_data[r_idx][c_idx]
+            set_cell_margins(cell, top=65, bottom=65, left=80, right=80)
             set_cell_borders(cell, top="CBD5E1", bottom="CBD5E1", left="CBD5E1", right="CBD5E1", sz="4")
             
             p = cell.paragraphs[0]
@@ -195,16 +196,16 @@ def create_container_docx(output_path):
             
             if is_label:
                 set_cell_background(cell, "F0F9FF")
-                add_run(p, text, size_pt=8, bold=True, color=DEEP_BLUE)
+                add_run(p, text, size_pt=8, bold=True, color=font_color)
             else:
-                add_run(p, text, size_pt=8, color=DARK_SLATE)
+                add_run(p, text, size_pt=8, bold=(not is_label and font_color == DARK_SLATE), color=font_color)
 
     p_sp3 = doc.add_paragraph()
     p_sp3.paragraph_format.space_before = Pt(0)
     p_sp3.paragraph_format.space_after = Pt(3)
 
     # ----------------------------------------------------
-    # 4. Expense Items Table
+    # 4. Expense Items Table (Generous padding & dotted lines)
     # ----------------------------------------------------
     expense_items = [
         ("১", "UAE প্রাথমিক খরচ (বকশিশ, চা-নাস্তা, স্কেল / ওয়েব্রিজ ফি ও এডভান্স/AD সমন্বয়)"),
@@ -233,7 +234,7 @@ def create_container_docx(output_path):
     for c_idx, h_text in enumerate(headers):
         cell = exp_table.cell(0, c_idx)
         cell.width = tbl_widths[c_idx]
-        set_cell_margins(cell, top=70, bottom=70, left=80, right=80)
+        set_cell_margins(cell, top=80, bottom=80, left=80, right=80)
         set_cell_background(cell, "0369A1")
         set_cell_borders(cell, top="0369A1", bottom="0369A1", left="0369A1", right="0369A1", sz="6")
         
@@ -252,7 +253,7 @@ def create_container_docx(output_path):
         # Col 0: SL
         cell_sl = row_cells[0]
         cell_sl.width = tbl_widths[0]
-        set_cell_margins(cell_sl, top=35, bottom=35, left=50, right=50)
+        set_cell_margins(cell_sl, top=55, bottom=55, left=50, right=50)
         set_cell_background(cell_sl, bg_hex)
         set_cell_borders(cell_sl, top="CBD5E1", bottom="CBD5E1", left="CBD5E1", right="CBD5E1", sz="4")
         p_sl = cell_sl.paragraphs[0]
@@ -264,7 +265,7 @@ def create_container_docx(output_path):
         # Col 1: Description
         cell_desc = row_cells[1]
         cell_desc.width = tbl_widths[1]
-        set_cell_margins(cell_desc, top=35, bottom=35, left=80, right=80)
+        set_cell_margins(cell_desc, top=55, bottom=55, left=80, right=80)
         set_cell_background(cell_desc, bg_hex)
         set_cell_borders(cell_desc, top="CBD5E1", bottom="CBD5E1", left="CBD5E1", right="CBD5E1", sz="4")
         p_desc = cell_desc.paragraphs[0]
@@ -272,29 +273,29 @@ def create_container_docx(output_path):
         p_desc.paragraph_format.space_after = Pt(0)
         add_run(p_desc, desc, size_pt=7.5, color=DARK_SLATE)
         
-        # Col 2: Amount
+        # Col 2: Amount (with dotted guide)
         cell_amt = row_cells[2]
         cell_amt.width = tbl_widths[2]
-        set_cell_margins(cell_amt, top=35, bottom=35, left=80, right=80)
+        set_cell_margins(cell_amt, top=55, bottom=55, left=80, right=80)
         set_cell_background(cell_amt, bg_hex)
         set_cell_borders(cell_amt, top="CBD5E1", bottom="CBD5E1", left="CBD5E1", right="CBD5E1", sz="4")
         p_amt = cell_amt.paragraphs[0]
         p_amt.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         p_amt.paragraph_format.space_before = Pt(0)
         p_amt.paragraph_format.space_after = Pt(0)
-        add_run(p_amt, "", size_pt=7.5, color=DARK_SLATE)
+        add_run(p_amt, "..............................", size_pt=7.5, color=DOT_GRAY)
         
-        # Col 3: Remarks
+        # Col 3: Remarks (with dotted guide)
         cell_rem = row_cells[3]
         cell_rem.width = tbl_widths[3]
-        set_cell_margins(cell_rem, top=35, bottom=35, left=50, right=50)
+        set_cell_margins(cell_rem, top=55, bottom=55, left=50, right=50)
         set_cell_background(cell_rem, bg_hex)
         set_cell_borders(cell_rem, top="CBD5E1", bottom="CBD5E1", left="CBD5E1", right="CBD5E1", sz="4")
         p_rem = cell_rem.paragraphs[0]
         p_rem.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p_rem.paragraph_format.space_before = Pt(0)
         p_rem.paragraph_format.space_after = Pt(0)
-        add_run(p_rem, "", size_pt=7.5, color=DARK_SLATE)
+        add_run(p_rem, "......................", size_pt=7.5, color=DOT_GRAY)
 
     # 4c. Calculation Rows
     curr_row = 1 + len(expense_items)
@@ -302,7 +303,7 @@ def create_container_docx(output_path):
     # Total
     r_total = exp_table.rows[curr_row].cells
     r_total[0].merge(r_total[1])
-    set_cell_margins(r_total[0], top=50, bottom=50, left=80, right=80)
+    set_cell_margins(r_total[0], top=65, bottom=65, left=80, right=80)
     set_cell_background(r_total[0], "E0F2FE")
     set_cell_borders(r_total[0], top="0369A1", bottom="94A3B8", left="CBD5E1", right="CBD5E1", sz="6")
     p_tot_lbl = r_total[0].paragraphs[0]
@@ -311,16 +312,16 @@ def create_container_docx(output_path):
     p_tot_lbl.paragraph_format.space_after = Pt(0)
     add_run(p_tot_lbl, "প্রতি কন্টেইনার সর্বমোট খালাস খরচ (TOTAL EXPENSES):", size_pt=8, bold=True, color=DEEP_BLUE)
     
-    set_cell_margins(r_total[2], top=50, bottom=50, left=80, right=80)
+    set_cell_margins(r_total[2], top=65, bottom=65, left=80, right=80)
     set_cell_background(r_total[2], "E0F2FE")
     set_cell_borders(r_total[2], top="0369A1", bottom="94A3B8", left="CBD5E1", right="CBD5E1", sz="6")
     p_tot_val = r_total[2].paragraphs[0]
     p_tot_val.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_tot_val.paragraph_format.space_before = Pt(0)
     p_tot_val.paragraph_format.space_after = Pt(0)
-    add_run(p_tot_val, "= TK", size_pt=8, bold=True, color=DEEP_BLUE)
+    add_run(p_tot_val, "= TK            ", size_pt=8, bold=True, color=DEEP_BLUE)
     
-    set_cell_margins(r_total[3], top=50, bottom=50, left=50, right=50)
+    set_cell_margins(r_total[3], top=65, bottom=65, left=50, right=50)
     set_cell_background(r_total[3], "E0F2FE")
     set_cell_borders(r_total[3], top="0369A1", bottom="94A3B8", left="CBD5E1", right="CBD5E1", sz="6")
     p_tot_rem = r_total[3].paragraphs[0]
@@ -331,7 +332,7 @@ def create_container_docx(output_path):
     curr_row += 1
     r_adv = exp_table.rows[curr_row].cells
     r_adv[0].merge(r_adv[1])
-    set_cell_margins(r_adv[0], top=50, bottom=50, left=80, right=80)
+    set_cell_margins(r_adv[0], top=60, bottom=60, left=80, right=80)
     set_cell_background(r_adv[0], "F0FDF4")
     set_cell_borders(r_adv[0], top="94A3B8", bottom="94A3B8", left="CBD5E1", right="CBD5E1", sz="4")
     p_adv_lbl = r_adv[0].paragraphs[0]
@@ -340,14 +341,14 @@ def create_container_docx(output_path):
     p_adv_lbl.paragraph_format.space_after = Pt(0)
     add_run(p_adv_lbl, "বাদ: প্রাপ্ত নগদ / ব্যাংক অগ্রিম জমা (Less: Advance Received):", size_pt=8, bold=True, color=EMERALD)
     
-    set_cell_margins(r_adv[2], top=50, bottom=50, left=80, right=80)
+    set_cell_margins(r_adv[2], top=60, bottom=60, left=80, right=80)
     set_cell_background(r_adv[2], "F0FDF4")
     set_cell_borders(r_adv[2], top="94A3B8", bottom="94A3B8", left="CBD5E1", right="CBD5E1", sz="4")
     p_adv_val = r_adv[2].paragraphs[0]
     p_adv_val.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    add_run(p_adv_val, "", size_pt=8, bold=True, color=EMERALD)
+    add_run(p_adv_val, "..............................", size_pt=7.5, color=DOT_GRAY)
     
-    set_cell_margins(r_adv[3], top=50, bottom=50, left=50, right=50)
+    set_cell_margins(r_adv[3], top=60, bottom=60, left=50, right=50)
     set_cell_background(r_adv[3], "F0FDF4")
     set_cell_borders(r_adv[3], top="94A3B8", bottom="94A3B8", left="CBD5E1", right="CBD5E1", sz="4")
     p_adv_rem = r_adv[3].paragraphs[0]
@@ -358,7 +359,7 @@ def create_container_docx(output_path):
     curr_row += 1
     r_net = exp_table.rows[curr_row].cells
     r_net[0].merge(r_net[1])
-    set_cell_margins(r_net[0], top=55, bottom=55, left=80, right=80)
+    set_cell_margins(r_net[0], top=65, bottom=65, left=80, right=80)
     set_cell_background(r_net[0], "FEF2F2")
     set_cell_borders(r_net[0], top="94A3B8", bottom="DC2626", left="CBD5E1", right="CBD5E1", sz="6")
     p_net_lbl = r_net[0].paragraphs[0]
@@ -367,14 +368,14 @@ def create_container_docx(output_path):
     p_net_lbl.paragraph_format.space_after = Pt(0)
     add_run(p_net_lbl, "সর্বমোট নিট অবশিষ্ট বকেয়া / ব্যালেন্স (TOTAL NET BALANCE DUE):", size_pt=8.5, bold=True, color=RED)
     
-    set_cell_margins(r_net[2], top=55, bottom=55, left=80, right=80)
+    set_cell_margins(r_net[2], top=65, bottom=65, left=80, right=80)
     set_cell_background(r_net[2], "FEF2F2")
     set_cell_borders(r_net[2], top="94A3B8", bottom="DC2626", left="CBD5E1", right="CBD5E1", sz="6")
     p_net_val = r_net[2].paragraphs[0]
     p_net_val.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    add_run(p_net_val, "= TK", size_pt=8.5, bold=True, color=RED)
+    add_run(p_net_val, "= TK            ", size_pt=8.5, bold=True, color=RED)
     
-    set_cell_margins(r_net[3], top=55, bottom=55, left=50, right=50)
+    set_cell_margins(r_net[3], top=65, bottom=65, left=50, right=50)
     set_cell_background(r_net[3], "FEF2F2")
     set_cell_borders(r_net[3], top="94A3B8", bottom="DC2626", left="CBD5E1", right="CBD5E1", sz="6")
     p_net_rem = r_net[3].paragraphs[0]
@@ -385,10 +386,10 @@ def create_container_docx(output_path):
     # 5. In Words
     # ----------------------------------------------------
     p_words = doc.add_paragraph()
-    p_words.paragraph_format.space_before = Pt(4)
+    p_words.paragraph_format.space_before = Pt(5)
     p_words.paragraph_format.space_after = Pt(8)
     add_run(p_words, "কথায় (In Words): ", size_pt=8, bold=True, color=DEEP_BLUE)
-    add_run(p_words, "................................................................................................................................................................... টাকা মাত্র।", size_pt=8, color=MUTED_GRAY)
+    add_run(p_words, "................................................................................................................................................................... টাকা মাত্র।", size_pt=8, color=DOT_GRAY)
 
     # ----------------------------------------------------
     # 6. Signatures
@@ -404,19 +405,19 @@ def create_container_docx(output_path):
         
     p_s1 = sig_table.rows[0].cells[0].paragraphs[0]
     p_s1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    add_run(p_s1, "...................................................\n", size_pt=8, color=MUTED_GRAY)
+    add_run(p_s1, "...................................................\n", size_pt=8, color=DOT_GRAY)
     add_run(p_s1, "প্রস্তুতকারকের স্বাক্ষর\n", size_pt=8, bold=True, color=DEEP_BLUE)
     add_run(p_s1, "(Prepared By)", size_pt=7, italic=True, color=MUTED_GRAY)
     
     p_s2 = sig_table.rows[0].cells[1].paragraphs[0]
     p_s2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    add_run(p_s2, "...................................................\n", size_pt=8, color=MUTED_GRAY)
+    add_run(p_s2, "...................................................\n", size_pt=8, color=DOT_GRAY)
     add_run(p_s2, "হিসাবরক্ষক / যাচাইকারী\n", size_pt=8, bold=True, color=DEEP_BLUE)
     add_run(p_s2, "(Verified & Checked By)", size_pt=7, italic=True, color=MUTED_GRAY)
     
     p_s3 = sig_table.rows[0].cells[2].paragraphs[0]
     p_s3.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    add_run(p_s3, "...................................................\n", size_pt=8, color=MUTED_GRAY)
+    add_run(p_s3, "...................................................\n", size_pt=8, color=DOT_GRAY)
     add_run(p_s3, "মেসার্স মা মটরস্\n", size_pt=8.5, bold=True, color=DEEP_BLUE)
     add_run(p_s3, "মোঃ এমরান (আইডি-৯৯২৯)\n", size_pt=7.5, bold=True, color=DARK_SLATE)
     add_run(p_s3, "স্বত্বাধিকারী / অনুমোদিত স্বাক্ষর", size_pt=7, italic=True, color=MUTED_GRAY)
