@@ -85,7 +85,7 @@ async function promptForGoogleClientId(currentId = '') {
     return null;
 }
 
-const DEFAULT_CLIENT_ID = '861017217926-5m6p7oqqpfnk8v2tjt6uppo3b7m11je.apps.googleusercontent.com';
+const DEFAULT_CLIENT_ID = '861017217926-5m6p7oqqpflnk8v2tjt6uppo3b7m11je.apps.googleusercontent.com';
 
 /**
  * Google People API দিয়ে সব কাস্টমার স্বয়ংক্রিয়ভাবে সিঙ্ক করার মূল কন্ট্রোলার
@@ -113,10 +113,9 @@ export async function startGooglePeopleSyncFlow() {
         console.warn('Settings load fallback:', e);
     }
 
-    let clientId = settings.googleOAuthClientId || DEFAULT_CLIENT_ID;
-    if (!clientId) {
-        clientId = await promptForGoogleClientId('');
-        if (!clientId) return;
+    let clientId = DEFAULT_CLIENT_ID;
+    if (settings.googleOAuthClientId && settings.googleOAuthClientId.includes('apps.googleusercontent.com')) {
+        clientId = settings.googleOAuthClientId;
     }
 
     // কাস্টমার ডাটা রেডি করা
@@ -300,15 +299,25 @@ async function executePeopleApiSync(accessToken, customers) {
 
             try {
                 if (matchedGoogleContact) {
-                    // আপডেট
-                    const updateUrl = `https://people.googleapis.com/v1/${matchedGoogleContact.resourceName}:updateContact?updatePersonFields=names,organizations,biographies,urls`;
+                    // বসের আগের সেভ করা নাম সংরক্ষণ নীতি:
+                    // যদি কন্টাক্টে বসের নিজস্ব নাম থাকে (কোনো [MM] ছাড়া), বসের নামটি অপরিবর্তিত রাখা হবে
+                    const existingName = matchedGoogleContact.names?.[0]?.displayName || matchedGoogleContact.names?.[0]?.givenName || '';
+                    const hasMMTag = existingName.includes('[MM]');
+
+                    const updateFields = ['organizations', 'biographies', 'urls'];
                     const updatePayload = {
                         etag: matchedGoogleContact.etag,
-                        names: [{ givenName: displayName }],
                         organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
                         urls: [{ value: liveUrl, type: 'Live Due Card' }],
                         biographies: [{ value: bioText }]
                     };
+
+                    if (hasMMTag || !existingName) {
+                        updateFields.push('names');
+                        updatePayload.names = [{ givenName: displayName }];
+                    }
+
+                    const updateUrl = `https://people.googleapis.com/v1/${matchedGoogleContact.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
 
                     const patchRes = await fetch(updateUrl, {
                         method: 'PATCH',
