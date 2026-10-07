@@ -85,6 +85,8 @@ async function promptForGoogleClientId(currentId = '') {
     return null;
 }
 
+const DEFAULT_CLIENT_ID = '861017217926-5m6p7oqqpfnk8v2tjt6uppo3b7m11je.apps.googleusercontent.com';
+
 /**
  * Google People API দিয়ে সব কাস্টমার স্বয়ংক্রিয়ভাবে সিঙ্ক করার মূল কন্ট্রোলার
  */
@@ -111,7 +113,7 @@ export async function startGooglePeopleSyncFlow() {
         console.warn('Settings load fallback:', e);
     }
 
-    let clientId = settings.googleOAuthClientId;
+    let clientId = settings.googleOAuthClientId || DEFAULT_CLIENT_ID;
     if (!clientId) {
         clientId = await promptForGoogleClientId('');
         if (!clientId) return;
