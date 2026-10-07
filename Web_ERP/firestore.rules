@@ -64,7 +64,8 @@ service cloud.firestore {
 
     // Customers Collection
     match /customers/{customerId} {
-      allow read: if isAuthenticated();
+      allow get: if true;
+      allow list: if isAuthenticated();
       allow create, update: if isAuthenticated() && (
         isAdmin() || 
         (!isBoss() && (

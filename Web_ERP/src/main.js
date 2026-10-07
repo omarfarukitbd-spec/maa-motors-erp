@@ -47,6 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
         })();
         return;
     }
+    if (urlParams.get('view') === 'boss-card' && urlParams.get('id')) {
+        (async () => {
+            const m = await import('./customer/boss-live-card.js');
+            m.renderBossLiveCard(urlParams.get('id'), urlParams.get('key'));
+        })();
+        return;
+    }
 
     // 1. Initialize Auth & Stealth Guard
     initAuthListener();

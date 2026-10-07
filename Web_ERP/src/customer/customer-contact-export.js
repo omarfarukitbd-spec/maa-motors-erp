@@ -2,70 +2,16 @@ import Swal from 'sweetalert2';
 import { CustomerDAO, ZoneDAO, SettingsDAO } from '../dao.js';
 import { formatAmountWithComma, showToast, promptSecurityPin } from '../utils.js';
 import { getCustomerCache, cachedZones } from './customer-state.js';
+import { generateBossToken } from './boss-card-token.js';
+import {
+    normalizeBengaliNumbers,
+    parsePhoneNumbers,
+    buildContactDisplayName,
+    escapeCsvCell
+} from './customer-contact-export-helpers.js';
 
-const BENGALI_DIGITS = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
-
-/**
- * বাংলা সংখ্যাকে ইংরেজি সংখ্যায় রূপান্তর করে
- */
-export function normalizeBengaliNumbers(str) {
-    if (!str) return '';
-    return String(str).replace(/[০-৯]/g, d => BENGALI_DIGITS[d] || d);
-}
-
-/**
- * র ফোন নম্বর থেকে একাধিক বৈধ বাংলাদেশি মোবাইল নম্বর আলাদা ও পরিষ্কার করে
- */
-export function parsePhoneNumbers(rawPhone) {
-    if (!rawPhone) return [];
-    const engStr = normalizeBengaliNumbers(rawPhone);
-    const parts = engStr.split(/[,/|;\n\r]|(?:\s+or\s+)|\s+বা\s+/i);
-    const validPhones = [];
-
-    parts.forEach(p => {
-        let clean = p.trim().replace(/[^\d+]/g, '');
-        if (!clean) return;
-
-        if (clean.startsWith('8801')) {
-            clean = '+' + clean;
-        } else if (clean.startsWith('01')) {
-            clean = '+88' + clean;
-        } else if (clean.startsWith('+8801')) {
-            // Already standard format
-        }
-
-        // বাংলাদেশি ১১-ডিজিট মোবাইল নম্বর ভ্যালিডেশন
-        const digitsOnly = clean.replace(/\D/g, '');
-        if ((digitsOnly.length === 11 && digitsOnly.startsWith('01')) || (digitsOnly.length === 13 && digitsOnly.startsWith('8801'))) {
-            if (!validPhones.includes(clean)) {
-                validPhones.push(clean);
-            }
-        }
-    });
-
-    return validPhones;
-}
-
-/**
- * কন্টাক্টের ডিসপ্লে নাম তৈরি করে
- */
-function buildContactDisplayName(customer, nameStyle = 'tag_zone') {
-    const rawName = customer.name?.trim() || 'গ্রাহক';
-    const acc = customer.accountNo ? `#${customer.accountNo}` : '';
-    const area = customer.address?.trim() ? customer.address.trim().split(',')[0].trim() : (customer.zone || '');
-
-    if (nameStyle === 'tag_zone') {
-        const suffix = area ? ` - ${area}` : '';
-        return `[MM] ${rawName}${suffix}`;
-    } else if (nameStyle === 'tag_acc') {
-        const suffix = acc ? ` (${acc})` : '';
-        return `[MM] ${rawName}${suffix}`;
-    } else if (nameStyle === 'clean_acc') {
-        const suffix = acc ? ` (${acc})` : '';
-        return `${rawName}${suffix}`;
-    }
-    return rawName;
-}
+// Re-export helpers for backwards compatibility
+export { normalizeBengaliNumbers, parsePhoneNumbers };
 
 /**
  * RFC 6350 / vCard 3.0 ফরম্যাট তৈরি করে
@@ -83,9 +29,12 @@ export function generateVCardContent(customers, options = {}) {
         const address = (c.address || '').replace(/[;\n]/g, ' ');
         const zone = (c.zone || '').replace(/[;\n]/g, ' ');
         const dueAmount = Number(c.totalDue) || 0;
-        const dueText = dueAmount > 0 ? `বকেয়া: ৳ ${formatAmountWithComma(dueAmount)}` : (dueAmount < 0 ? `অগ্রিম: ৳ ${formatAmountWithComma(Math.abs(dueAmount))}` : 'ব্যালেন্স: পরিশোধিত');
+        const dueText = dueAmount > 0 
+            ? `বকেয়া: ৳ ${formatAmountWithComma(dueAmount)}` 
+            : (dueAmount < 0 ? `অগ্রিম: ৳ ${formatAmountWithComma(Math.abs(dueAmount))}` : 'ব্যালেন্স: পরিশোধিত');
 
-        const liveUrl = `https://maa-motors-erp.web.app/?view=public-stmt&id=${c.id}`;
+        const token = generateBossToken(c.id);
+        const liveUrl = `https://maa-motors-erp.web.app/?view=boss-card&id=${c.id}&key=${token}`;
 
         lines.push('BEGIN:VCARD');
         lines.push('VERSION:3.0');
@@ -107,25 +56,13 @@ export function generateVCardContent(customers, options = {}) {
             lines.push(`ADR;TYPE=WORK;CHARSET=UTF-8:;;${address};${zone};;;Bangladesh`);
         }
 
-        const note = `অ্যাকাউন্ট: ${c.accountNo || '-'} | জোন: ${zone || '-'} | ঠিকানা: ${address || '-'} | ${dueText}\n\nলাইভ খতিয়ান ও রিয়েলটাইম বকেয়া দেখতে নিচের লিংকে ট্যাপ করুন:\n${liveUrl}`;
+        const note = `অ্যাকাউন্ট: ${c.accountNo || '-'} | জোন: ${zone || '-'} | ঠিকানা: ${address || '-'} | ${dueText}\n\nলাইভ বর্তমান বকেয়া ও কার্ড দেখতে নিচের লিংকে চাপ দিন:\n${liveUrl}`;
         lines.push(`NOTE;CHARSET=UTF-8:${note}`);
         lines.push('CATEGORIES;CHARSET=UTF-8:মা মোটরস কাস্টমার,Maa Motors Customers');
         lines.push('END:VCARD');
     });
 
     return lines.join('\r\n');
-}
-
-/**
- * CSV সেল এস্কেপিং
- */
-function escapeCsvCell(val) {
-    if (val === null || val === undefined) return '""';
-    const str = String(val);
-    if (/[",\n\r]/.test(str)) {
-        return `"${str.replace(/"/g, '""')}"`;
-    }
-    return `"${str}"`;
 }
 
 /**
@@ -166,9 +103,13 @@ export function generateGoogleContactsCSV(customers, options = {}) {
         const zone = c.zone?.trim() || '';
         const fullAddr = [address, zone].filter(Boolean).join(', ');
         const dueAmount = Number(c.totalDue) || 0;
-        const dueText = dueAmount > 0 ? `বকেয়া: ৳ ${formatAmountWithComma(dueAmount)}` : (dueAmount < 0 ? `অগ্রিম: ৳ ${formatAmountWithComma(Math.abs(dueAmount))}` : 'ব্যালেন্স: পরিশোধিত');
-        const liveUrl = `https://maa-motors-erp.web.app/?view=public-stmt&id=${c.id}`;
-        const note = `অ্যাকাউন্ট নং: ${c.accountNo || '-'} | জোন: ${zone || '-'} | ${dueText}\nলাইভ আপডেটেড খতিয়ান দেখতে নিচের ওয়েবসাইটে চাপ দিন।`;
+        const dueText = dueAmount > 0 
+            ? `বকেয়া: ৳ ${formatAmountWithComma(dueAmount)}` 
+            : (dueAmount < 0 ? `অগ্রিম: ৳ ${formatAmountWithComma(Math.abs(dueAmount))}` : 'ব্যালেন্স: পরিশোধিত');
+
+        const token = generateBossToken(c.id);
+        const liveUrl = `https://maa-motors-erp.web.app/?view=boss-card&id=${c.id}&key=${token}`;
+        const note = `অ্যাকাউন্ট নং: ${c.accountNo || '-'} | জোন: ${zone || '-'} | ${dueText}\nলাইভ বর্তমান বকেয়া দেখতে নিচের ওয়েবসাইটে চাপ দিন:\n${liveUrl}`;
 
         const row = [
             escapeCsvCell(displayName),
@@ -185,7 +126,7 @@ export function generateGoogleContactsCSV(customers, options = {}) {
             escapeCsvCell(fullAddr),
             escapeCsvCell(address),
             escapeCsvCell(zone),
-            escapeCsvCell('Live Statement'),
+            escapeCsvCell('Live Due Card'),
             escapeCsvCell(liveUrl),
             escapeCsvCell(note)
         ];
@@ -269,7 +210,7 @@ export async function openContactExportModal() {
                     </div>
                     <div>
                         <h4 class="text-white font-black text-sm">মোবাইল কন্টাক্ট ডিরেক্টরি এক্সপোর্ট</h4>
-                        <p class="text-[11px] text-slate-400">Google Contacts ও মোবাইল ফোনবুকে আলাদা লেবেলে কল করার জন্য</p>
+                        <p class="text-[11px] text-slate-400">Google Contacts ও বসের মোবাইলে লাইভ বকেয়া সহ সেভ করার জন্য</p>
                     </div>
                 </div>
                 <div class="text-right">
@@ -350,12 +291,12 @@ export async function openContactExportModal() {
             <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-[11px] space-y-1.5">
                 <div class="font-black text-amber-400 flex items-center gap-1.5">
                     <i class="fa-solid fa-lightbulb"></i>
-                    <span>Google Contacts অ্যাপে যেভাবে আলাদা গ্রুপ পাবেন:</span>
+                    <span>Google Contacts ও বসের মোবাইলে ব্যবহারের নিয়ম:</span>
                 </div>
                 <ol class="list-decimal list-inside text-slate-300 space-y-1 ml-1">
-                    <li>ডাউনলোড করা CSV ফাইলটি নিয়ে ব্রাউজারে <strong>contacts.google.com</strong>-এ যান।</li>
-                    <li>বাম পাশের মেনু থেকে <strong>Import</strong> বাটনে ক্লিক করে ফাইলটি আপলোড করুন।</li>
-                    <li>আপনার মোবাইলের <strong>Google Contacts</strong> অ্যাপ খুললে 'Labels' ট্যাবে <strong>"Maa Motors Customers"</strong> আলাদা গ্রুপ পেয়ে যাবেন!</li>
+                    <li>ডাউনলোড করা CSV ফাইলটি নিয়ে ব্রাউজারে <strong>contacts.google.com</strong>-এ গিয়ে <strong>Import</strong> করুন।</li>
+                    <li>বসের কন্টাক্ট থেকে যেকোনো কাস্টমারের লিংকে চাপ দিলেই স্বয়ংক্রিয়ভাবে লাইভ বকেয়া দেখা যাবে।</li>
+                    <li>কোনো পাসওয়ার্ড বা ইআরপি লগইনের প্রয়োজন নেই।</li>
                 </ol>
             </div>
         </div>
