@@ -193,14 +193,21 @@ export function generateGoogleContactsCSV(customers, options = {}) {
  */
 function downloadBlob(content, fileName, mimeType) {
     const blob = new Blob([content], { type: mimeType });
+    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(blob, fileName);
+        return;
+    }
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 2000);
 }
 
 /**
@@ -210,7 +217,9 @@ export async function openContactExportModal() {
     let customers = getCustomerCache();
     if (!customers || customers.length === 0) {
         try {
-            customers = await CustomerDAO.getAll('name', 'asc');
+            const snap = await CustomerDAO.collection.get();
+            customers = [];
+            snap.forEach(doc => customers.push({ id: doc.id, ...doc.data() }));
         } catch (e) {
             console.error('Error fetching customers for contact export:', e);
             customers = [];
@@ -341,7 +350,7 @@ export async function openContactExportModal() {
         </div>
     `;
 
-    const { isConfirmed } = await Swal.fire({
+    const result = await Swal.fire({
         title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-lg text-white"><i class="fa-solid fa-cloud-arrow-down text-indigo-400"></i><span>মোবাইল কন্টাক্ট ফাইল ডাউনলোড</span></div>',
         html: modalHtml,
         showCancelButton: true,
@@ -357,7 +366,7 @@ export async function openContactExportModal() {
             const fmt = document.querySelector('input[name="export-fmt"]:checked')?.value || 'google_csv';
             const nameStyle = document.getElementById('export-name-style')?.value || 'tag_zone';
             const zoneFilter = document.getElementById('export-zone-filter')?.value || '';
-            const labelName = document.getElementById('export-label-name')?.value.trim() || 'Maa Motors Customers';
+            const labelName = document.getElementById('export-label-name')?.value?.trim() || 'Maa Motors Customers';
             const skipNoPhone = document.getElementById('export-skip-no-phone')?.checked ?? true;
             const dueOnly = document.getElementById('export-due-only')?.checked ?? false;
 
@@ -365,60 +374,69 @@ export async function openContactExportModal() {
         }
     });
 
-    if (!isConfirmed) return;
+    if (!result.isConfirmed || !result.value) return;
 
-    const options = Swal.getPreConfirmValue();
-    if (!options) return;
+    const options = result.value;
 
-    // Filter customers
-    let filtered = [...customers];
-    if (options.zoneFilter) {
-        filtered = filtered.filter(c => c.zone === options.zoneFilter);
-    }
-    if (options.dueOnly) {
-        filtered = filtered.filter(c => (Number(c.totalDue) || 0) > 0);
-    }
-    if (options.skipNoPhone) {
-        filtered = filtered.filter(c => parsePhoneNumbers(c.phone).length > 0);
-    }
+    try {
+        // Filter customers
+        let filtered = [...customers];
+        if (options.zoneFilter) {
+            filtered = filtered.filter(c => c.zone === options.zoneFilter);
+        }
+        if (options.dueOnly) {
+            filtered = filtered.filter(c => (Number(c.totalDue) || 0) > 0);
+        }
+        if (options.skipNoPhone) {
+            filtered = filtered.filter(c => parsePhoneNumbers(c.phone).length > 0);
+        }
 
-    if (filtered.length === 0) {
-        return Swal.fire({
-            title: 'কোনো ম্যাচিং কন্টাক্ট পাওয়া যায়নি',
-            text: 'নির্বাচিত ফিল্টার অনুযায়ী কোনো কাস্টমার ডাটা পাওয়া যায়নি।',
-            icon: 'warning',
+        if (filtered.length === 0) {
+            return Swal.fire({
+                title: 'কোনো ম্যাচিং কন্টাক্ট পাওয়া যায়নি',
+                text: 'নির্বাচিত ফিল্টার অনুযায়ী কোনো কাস্টমার ডাটা পাওয়া যায়নি।',
+                icon: 'warning',
+                customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn' }
+            });
+        }
+
+        let shopName = "M/S. MAA-MOTOR'S";
+        try {
+            const settings = await SettingsDAO.getAppSettings();
+            if (settings && settings.shopName) shopName = settings.shopName;
+        } catch (e) {
+            console.warn('Fallback getting shopName:', e);
+        }
+
+        const dateStamp = new Date().toISOString().slice(0, 10);
+
+        if (options.fmt === 'vcf') {
+            const vcfText = generateVCardContent(filtered, {
+                nameStyle: options.nameStyle,
+                skipNoPhone: options.skipNoPhone,
+                shopName
+            });
+            const fileName = `Maa_Motors_Contacts_${dateStamp}.vcf`;
+            downloadBlob(vcfText, fileName, 'text/vcard;charset=utf-8;');
+            showToast(`${filtered.length} জন কাস্টমারের vCard ফাইল ডাউনলোড হয়েছে`, 'success');
+        } else {
+            const csvText = generateGoogleContactsCSV(filtered, {
+                nameStyle: options.nameStyle,
+                groupLabel: options.labelName,
+                skipNoPhone: options.skipNoPhone,
+                shopName
+            });
+            const fileName = `Maa_Motors_Google_Contacts_${dateStamp}.csv`;
+            downloadBlob(csvText, fileName, 'text/csv;charset=utf-8;');
+            showToast(`${filtered.length} জন কাস্টমারের Google CSV ফাইল ডাউনলোড হয়েছে`, 'success');
+        }
+    } catch (err) {
+        console.error('Error downloading contacts:', err);
+        Swal.fire({
+            title: 'ডাউনলোড এরর!',
+            text: 'ফাইল তৈরি করতে সমস্যা হয়েছে: ' + (err.message || ''),
+            icon: 'error',
             customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn' }
         });
-    }
-
-    let shopName = "M/S. MAA-MOTOR'S";
-    try {
-        const settings = await SettingsDAO.getAppSettings();
-        if (settings && settings.shopName) shopName = settings.shopName;
-    } catch (e) {
-        console.warn('Fallback getting shopName:', e);
-    }
-
-    const dateStamp = new Date().toISOString().slice(0, 10);
-
-    if (options.fmt === 'vcf') {
-        const vcfText = generateVCardContent(filtered, {
-            nameStyle: options.nameStyle,
-            skipNoPhone: options.skipNoPhone,
-            shopName
-        });
-        const fileName = `Maa_Motors_Contacts_${dateStamp}.vcf`;
-        downloadBlob(vcfText, fileName, 'text/vcard;charset=utf-8;');
-        showToast(`${filtered.length} জন কাস্টমারের vCard ফাইল ডাউনলোড হয়েছে`, 'success');
-    } else {
-        const csvText = generateGoogleContactsCSV(filtered, {
-            nameStyle: options.nameStyle,
-            groupLabel: options.labelName,
-            skipNoPhone: options.skipNoPhone,
-            shopName
-        });
-        const fileName = `Maa_Motors_Google_Contacts_${dateStamp}.csv`;
-        downloadBlob(csvText, fileName, 'text/csv;charset=utf-8;');
-        showToast(`${filtered.length} জন কাস্টমারের Google CSV ফাইল ডাউনলোড হয়েছে`, 'success');
     }
 }
