@@ -10,8 +10,9 @@ import { formatAmountWithComma } from '../utils.js';
 import { triggerBulkReminderFlow } from './customer-bulk-messaging.js';
 import { initCustomerHotkeys, showCustomerKeyboardGuide } from './customer-hotkeys.js';
 import { openContactExportModal } from './customer-contact-export.js';
+import { startGooglePeopleSyncFlow } from './google-people-sync.js';
 
-export { renderCustomers, initCustomerCache, getCustomerCache, quickAddCustomer, triggerBulkReminderFlow, initCustomerHotkeys, showCustomerKeyboardGuide, openContactExportModal };
+export { renderCustomers, initCustomerCache, getCustomerCache, quickAddCustomer, triggerBulkReminderFlow, initCustomerHotkeys, showCustomerKeyboardGuide, openContactExportModal, startGooglePeopleSyncFlow };
 
 export async function loadCustomers() {
     initCustomerCache();
@@ -53,6 +54,7 @@ window.resetAddCustomerForm = resetAddCustomerForm;
 window.loadAllZones = loadAllZones;
 window.triggerBulkReminderFlow = triggerBulkReminderFlow;
 window.openContactExportModal = openContactExportModal;
+window.startGooglePeopleSyncFlow = startGooglePeopleSyncFlow;
 import { populateAddressSuggestions } from '../utils/address-suggestions.js';
 
 window.toggleAddCustomerForm = () => {

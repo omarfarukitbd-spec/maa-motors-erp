@@ -219,6 +219,23 @@ export async function openContactExportModal() {
                 </div>
             </div>
 
+            <!-- Google People API Live Auto-Sync Quick Link -->
+            <div class="p-3 bg-gradient-to-r from-blue-950/60 to-indigo-950/60 border border-blue-500/40 rounded-2xl flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                        <i class="fa-brands fa-google text-red-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-white font-black text-xs">সরাসরি গুগল ক্লাউডে অটো-সিঙ্ক (No File Import)</h5>
+                        <p class="text-[10px] text-slate-300">ফাইল ডাউনলোড বা ইমপোর্ট ছাড়াই বসের মোবাইলে লাইভ বকেয়া পাঠান</p>
+                    </div>
+                </div>
+                <button type="button" onclick="Swal.close(); window.startGooglePeopleSyncFlow && window.startGooglePeopleSyncFlow();" class="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-md shadow-blue-600/30 active:scale-95 transition-all cursor-pointer">
+                    <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+                    <span>লাইভ সিঙ্ক</span>
+                </button>
+            </div>
+
             <!-- Format Selection -->
             <div>
                 <label class="block text-[11px] font-black text-indigo-400 uppercase tracking-wider mb-1.5 ml-1">১. ইমপোর্ট ফাইল ফরম্যাট নির্বাচন করুন</label>
