@@ -54,6 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
         })();
         return;
     }
+    const rawState = urlParams.get('state') || '';
+    if (urlParams.get('view') === 'boss-connect' || rawState.startsWith('boss-connect')) {
+        (async () => {
+            const m = await import('./customer/boss-google-connect.js');
+            m.renderBossGoogleConnect();
+        })();
+        return;
+    }
 
     // 1. Initialize Auth & Stealth Guard
     initAuthListener();

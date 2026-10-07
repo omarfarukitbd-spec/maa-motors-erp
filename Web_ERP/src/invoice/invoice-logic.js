@@ -4,6 +4,7 @@ import { TransactionDAO, CustomerDAO } from '../dao.js';
 import { parseAmount, formatAmountWithComma, formatAppDate, numberToBanglaWords, toDBDate, safeRound, promptSecurityPin } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { getCustomerCache } from '../customer/index.js';
+import { triggerSilentCustomerGoogleSync } from '../customer/google-contact-sync-service.js';
 import { renderInvoice, renderInvoiceItems, calcItemTotals, loadInvoiceCustomers, updateCashTenderUI } from './invoice-ui.js';
 
 /**
@@ -262,6 +263,7 @@ export async function saveAndPrintInvoice(layoutType) {
         if (cachedCust) cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) + (bill - paid));
 
         auditLog('CREATE', 'Invoice', txnRef.id, customerName, { bill, paid });
+        triggerSilentCustomerGoogleSync(customerId);
 
         const shareOnWhatsApp = () => {
             const formattedDue = formatAmountWithComma(Math.abs(currentDue));

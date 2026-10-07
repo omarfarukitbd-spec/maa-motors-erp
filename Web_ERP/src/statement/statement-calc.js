@@ -5,6 +5,7 @@ import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, getTodayLocal
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 import { reconcileSingleCustomerBalance } from '../admin/balance-recon-heal.js';
+import { triggerSilentCustomerGoogleSync } from '../customer/google-contact-sync-service.js';
 
 export { sendStmtReminderSMS, sendStmtReminderWhatsApp } from './statement-reminders.js';
 
@@ -283,6 +284,7 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
             batch.update(CustomerDAO.getRef(currentCustomerInfo.id), { totalDue: firebase.firestore.FieldValue.increment(safeRound(-formValues.amount)) });
             await batch.commit();
             auditLog('CREATE', 'Ledger', txnRef.id, currentCustomerInfo.name, { bill: 0, paid: formValues.amount, receivedType: formValues.type, receivedFrom: formValues.ref, source: 'Statement Quick Collect' });
+            triggerSilentCustomerGoogleSync(currentCustomerInfo.id);
             showToast('জমা সফলভাবে সেভ হয়েছে!', 'success');
             if (callbacks.loadStatementData) callbacks.loadStatementData();
         } catch (e) {

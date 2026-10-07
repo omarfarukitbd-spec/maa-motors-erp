@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones, cachedCustomers } from './customer-state.js';
 import { verifyDuplicateCustomer, attachLiveDuplicatePhoneListener } from './customer-duplicate-guard.js';
+import { triggerSilentCustomerGoogleSync } from './google-contact-sync-service.js';
 
 export async function editCustomer(id, name, phone, address, currentZone) {
     if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.editCustomers === false) {
@@ -192,6 +193,7 @@ export async function editCustomer(id, name, phone, address, currentZone) {
             }
 
             auditLog('UPDATE', 'Customers', id, f.n, { old: { name, phone, address, zone: currentZone, initialDue: currentInitialDue, openingDate: currentOpeningDate }, new: f });
+            triggerSilentCustomerGoogleSync(id);
             Swal.fire('সফল!', `কাস্টমার তথ্য ও একাউন্ট নম্বর (${f.accNo}) সফলভাবে আপডেট হয়েছে।`, 'success');
             if (window.loadCustomers) window.loadCustomers();
             if (window.loadCustomersForDropdown) window.loadCustomersForDropdown();

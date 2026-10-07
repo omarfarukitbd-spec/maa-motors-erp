@@ -7,6 +7,7 @@ import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 import { showTransactionConfirmModal } from './ledger-confirm-modal.js';
 import { handlePostDeleteSms } from './ledger-delete-sms.js';
+import { triggerSilentCustomerGoogleSync } from '../customer/google-contact-sync-service.js';
 
 export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs = {}) {
     const mainBtn = document.getElementById('save-txn-btn');
@@ -170,6 +171,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         const finalSmsDue = safeRound(preCommitDue + actualDelta);
         const savedTxnId = editedTxnId || txnRef?.id; // BUG-01 Fix: editedTxnId ব্যবহার করো (editingRef.id এখন null)
         await batch.commit();
+        triggerSilentCustomerGoogleSync(id);
         showToast('লেনদেন সফলভাবে সেভ হয়েছে!', 'success');
 
         // --- INSTANT POST-ACTIONS FROM CONFIRM MODAL ---
@@ -324,6 +326,7 @@ export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
         if (cachedCust) cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) + (p - b));
         
         auditLog('DELETE', 'Ledger', id, txnDoc.customerName || cid, { bill: b, paid: p, action: 'Soft Delete to Recycle Bin' });
+        triggerSilentCustomerGoogleSync(cid);
         showToast('ভাউচার রিসাইকেল বিনে মুভ করা হয়েছে!', 'info');
         Swal.close();
         if (callbacks.filterLedgerByCustomer) callbacks.filterLedgerByCustomer(cid);

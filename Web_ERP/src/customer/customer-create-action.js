@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones } from './customer-state.js';
 import { verifyDuplicateCustomer, attachLiveDuplicatePhoneListener } from './customer-duplicate-guard.js';
+import { triggerSilentCustomerGoogleSync } from './google-contact-sync-service.js';
 
 export function resetAddCustomerForm() {
     ['cust-name', 'cust-phone', 'cust-address', 'cust-initial-balance'].forEach(id => {
@@ -114,6 +115,7 @@ export async function saveNewCustomer() {
             });
         });
         auditLog('CREATE', 'Customers', customerId, n, { phone: p, zone: z, initialBalance });
+        triggerSilentCustomerGoogleSync(customerId);
 
         const successMessageHtml = `কাস্টমার <strong>${n}</strong> সফলভাবে ডাটাবেসে যোগ করা হয়েছে। জোন: ${z || 'N/A'}`;
         await Swal.fire({ title: 'সফল!', html: successMessageHtml, icon: 'success', timer: 1500, showConfirmButton: false, customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
