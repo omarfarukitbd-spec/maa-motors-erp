@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { CustomerDAO, ZoneDAO, SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, showToast } from '../utils.js';
+import { formatAmountWithComma, showToast, promptSecurityPin } from '../utils.js';
 import { getCustomerCache, cachedZones } from './customer-state.js';
 
 const BENGALI_DIGITS = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
@@ -214,6 +214,9 @@ function downloadBlob(content, fileName, mimeType) {
  * কন্টাক্ট এক্সপোর্ট ও গুগল সিঙ্ক মডাল ওপেন করে
  */
 export async function openContactExportModal() {
+    const isPinValid = await promptSecurityPin("মোবাইল কন্টাক্ট ডাটা এক্সপোর্ট");
+    if (!isPinValid) return;
+
     let customers = getCustomerCache();
     if (!customers || customers.length === 0) {
         try {
