@@ -85,12 +85,15 @@ export function generateVCardContent(customers, options = {}) {
         const dueAmount = Number(c.totalDue) || 0;
         const dueText = dueAmount > 0 ? `বকেয়া: ৳ ${formatAmountWithComma(dueAmount)}` : (dueAmount < 0 ? `অগ্রিম: ৳ ${formatAmountWithComma(Math.abs(dueAmount))}` : 'ব্যালেন্স: পরিশোধিত');
 
+        const liveUrl = `https://maa-motors-erp.web.app/?view=public-stmt&id=${c.id}`;
+
         lines.push('BEGIN:VCARD');
         lines.push('VERSION:3.0');
         lines.push(`FN;CHARSET=UTF-8:${displayName}`);
         lines.push(`N;CHARSET=UTF-8:${cleanName};;;;`);
         lines.push(`ORG;CHARSET=UTF-8:${shopName};Maa Motors ERP`);
-        lines.push(`TITLE;CHARSET=UTF-8:কাস্টমার [${c.accountNo || ''}]`);
+        lines.push(`TITLE;CHARSET=UTF-8:[Acc: ${c.accountNo || ''}] • ${dueText}`);
+        lines.push(`URL;TYPE=WORK;CHARSET=UTF-8:${liveUrl}`);
 
         phones.forEach((p, idx) => {
             if (idx === 0) {
@@ -104,7 +107,7 @@ export function generateVCardContent(customers, options = {}) {
             lines.push(`ADR;TYPE=WORK;CHARSET=UTF-8:;;${address};${zone};;;Bangladesh`);
         }
 
-        const note = `অ্যাকাউন্ট: ${c.accountNo || '-'} | জোন: ${zone || '-'} | ঠিকানা: ${address || '-'} | ${dueText}`;
+        const note = `অ্যাকাউন্ট: ${c.accountNo || '-'} | জোন: ${zone || '-'} | ঠিকানা: ${address || '-'} | ${dueText}\n\nলাইভ খতিয়ান ও রিয়েলটাইম বকেয়া দেখতে নিচের লিংকে ট্যাপ করুন:\n${liveUrl}`;
         lines.push(`NOTE;CHARSET=UTF-8:${note}`);
         lines.push('CATEGORIES;CHARSET=UTF-8:মা মোটরস কাস্টমার,Maa Motors Customers');
         lines.push('END:VCARD');
@@ -146,6 +149,8 @@ export function generateGoogleContactsCSV(customers, options = {}) {
         'Address 1 - Formatted',
         'Address 1 - Street',
         'Address 1 - City',
+        'Website 1 - Type',
+        'Website 1 - Value',
         'Notes'
     ];
 
@@ -162,7 +167,8 @@ export function generateGoogleContactsCSV(customers, options = {}) {
         const fullAddr = [address, zone].filter(Boolean).join(', ');
         const dueAmount = Number(c.totalDue) || 0;
         const dueText = dueAmount > 0 ? `বকেয়া: ৳ ${formatAmountWithComma(dueAmount)}` : (dueAmount < 0 ? `অগ্রিম: ৳ ${formatAmountWithComma(Math.abs(dueAmount))}` : 'ব্যালেন্স: পরিশোধিত');
-        const note = `অ্যাকাউন্ট নং: ${c.accountNo || '-'} | জোন: ${zone || '-'} | ${dueText}`;
+        const liveUrl = `https://maa-motors-erp.web.app/?view=public-stmt&id=${c.id}`;
+        const note = `অ্যাকাউন্ট নং: ${c.accountNo || '-'} | জোন: ${zone || '-'} | ${dueText}\nলাইভ আপডেটেড খতিয়ান দেখতে নিচের ওয়েবসাইটে চাপ দিন।`;
 
         const row = [
             escapeCsvCell(displayName),
@@ -174,11 +180,13 @@ export function generateGoogleContactsCSV(customers, options = {}) {
             escapeCsvCell(phones[1] ? 'Mobile' : ''),
             escapeCsvCell(phones[1] || ''),
             escapeCsvCell(shopName),
-            escapeCsvCell(`কাস্টমার [${c.accountNo || ''}]`),
+            escapeCsvCell(`[Acc: ${c.accountNo || ''}] • ${dueText}`),
             escapeCsvCell('Work'),
             escapeCsvCell(fullAddr),
             escapeCsvCell(address),
             escapeCsvCell(zone),
+            escapeCsvCell('Live Statement'),
+            escapeCsvCell(liveUrl),
             escapeCsvCell(note)
         ];
 
