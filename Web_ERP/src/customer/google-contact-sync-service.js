@@ -259,8 +259,13 @@ export async function executeFullGoogleContactsSync(onProgress) {
         let totalCreated = 0;
 
         // ২. প্রতিটি কানেক্টেড ডিভাইসের জন্য সিঙ্ক চালানো
-        for (const acc of activeTokens) {
-            if (onProgress) onProgress({ current: 0, total: customers.length, text: `ডিভাইস (${acc.label}): গুগল কন্টাক্ট ফেচ করা হচ্ছে...` });
+        for (let devIdx = 0; devIdx < activeTokens.length; devIdx++) {
+            const acc = activeTokens[devIdx];
+            const devPrefix = activeTokens.length > 1
+                ? `[ডিভাইস ${devIdx + 1}/${activeTokens.length} - ${acc.label}]: `
+                : `[${acc.label}]: `;
+
+            if (onProgress) onProgress({ current: 0, total: customers.length, text: `${devPrefix}গুগল কন্টাক্ট ফেচ করা হচ্ছে...` });
 
             const googleContacts = [];
             let nextPageToken = '';
@@ -294,7 +299,7 @@ export async function executeFullGoogleContactsSync(onProgress) {
                     onProgress({
                         current: i + 1,
                         total: customers.length,
-                        text: `${acc.label}: ${displayName}`
+                        text: `${devPrefix}${displayName}`
                     });
                 }
 
