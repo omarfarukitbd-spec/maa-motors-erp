@@ -24,9 +24,9 @@ export function buildGoogleAuthUrl(setupKey = '', label = 'বস') {
         client_id: DEFAULT_CLIENT_ID,
         redirect_uri: getGoogleRedirectUri(),
         response_type: 'code',
-        scope: 'https://www.googleapis.com/auth/contacts',
+        scope: 'https://www.googleapis.com/auth/contacts https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
         access_type: 'offline',
-        prompt: 'consent',
+        prompt: 'consent select_account',
         include_granted_scopes: 'true',
         state: stateParam
     };
@@ -135,8 +135,14 @@ export async function saveConnectedAccount({ label, email, refreshToken, setupKe
             }];
         }
 
-        // ইমেইল দিয়ে ম্যাচিং চেক
-        const existingIdx = accounts.findIndex(a => a.email && a.email.toLowerCase() === (email || '').toLowerCase());
+        // ইমেইল বা লেবেল দিয়ে স্মার্ট ম্যাচিং চেক
+        const isGenericEmail = !email || email === 'Google Contacts Connected' || email === 'Unknown Account';
+        const existingIdx = accounts.findIndex(a => {
+            if (!isGenericEmail && a.email && a.email !== 'Google Contacts Connected' && a.email !== 'Unknown Account') {
+                return a.email.toLowerCase() === email.toLowerCase();
+            }
+            return a.label && a.label === label;
+        });
         const accId = existingIdx >= 0 ? accounts[existingIdx].id : `acc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         const accountPayload = {
             id: accId,
@@ -290,6 +296,18 @@ export async function getSilentAccessToken() {
  */
 export async function fetchGoogleAccountEmail(accessToken) {
     if (!accessToken) return 'Unknown Account';
+    try {
+        const uiRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (uiRes.ok) {
+            const uiData = await uiRes.json();
+            if (uiData.email) return uiData.email;
+        }
+    } catch (e) {
+        console.warn('OAuth userinfo fetch warning:', e);
+    }
+
     try {
         const url = 'https://people.googleapis.com/v1/people/me?personFields=emailAddresses,names';
         const res = await fetch(url, {
