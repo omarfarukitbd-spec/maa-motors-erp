@@ -150,7 +150,7 @@ export async function saveConnectedAccount({ label, email, refreshToken, setupKe
             email: email || 'Connected Account',
             refreshToken: refreshToken || (existingIdx >= 0 ? accounts[existingIdx].refreshToken : null),
             connectedAt: new Date().toISOString(),
-            lastSyncAt: new Date().toISOString()
+            lastSyncAt: existingIdx >= 0 ? (accounts[existingIdx].lastSyncAt || null) : null
         };
 
         if (existingIdx >= 0) {
@@ -343,3 +343,36 @@ export async function getGoogleSyncConfig() {
         return null;
     }
 }
+
+/**
+ * নির্দিষ্ট কোনো অ্যাকাউন্টের সিঙ্ক টাইমস্ট্যাম্প আপডেট করে
+ */
+export async function updateAccountSyncTimestamp(accountId) {
+    if (!accountId) return;
+    try {
+        const snap = await db.collection('settings').doc('google_sync').get();
+        if (!snap.exists) return;
+        const config = snap.data();
+        let accounts = Array.isArray(config.accounts) ? [...config.accounts] : [];
+        const now = new Date().toISOString();
+        let updated = false;
+
+        accounts = accounts.map(a => {
+            if (a.id === accountId || (!a.id && accountId === 'primary_boss')) {
+                updated = true;
+                return { ...a, lastSyncAt: now };
+            }
+            return a;
+        });
+
+        if (updated) {
+            await db.collection('settings').doc('google_sync').set({
+                accounts: accounts,
+                lastSyncAt: now
+            }, { merge: true });
+        }
+    } catch (e) {
+        console.error('updateAccountSyncTimestamp Error:', e);
+    }
+}
+

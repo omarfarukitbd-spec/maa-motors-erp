@@ -4,7 +4,7 @@ import { getCustomerCache } from './customer-state.js';
 import { formatAmountWithComma, formatAppDate, showToast } from '../utils.js';
 import { generateBossToken } from './boss-card-token.js';
 import { parsePhoneNumbers, normalizeBengaliNumbers, buildContactDisplayName, updatePersonalContactNameWithDue } from './customer-contact-export-helpers.js';
-import { getAllSilentAccessTokens } from './google-auth-client.js';
+import { getAllSilentAccessTokens, updateAccountSyncTimestamp } from './google-auth-client.js';
 
 let isSyncingInBackground = false;
 
@@ -213,17 +213,24 @@ export function triggerSilentCustomerGoogleSync(customerId) {
 }
 
 /**
- * ফুল ডাটাবেজ ব্যাচ সিঙ্ক ইঞ্জিন (সকল ডিভাইসে একযোগে)
+ * ফুল ডাটাবেজ ব্যাচ সিঙ্ক ইঞ্জিন (সকল বা নির্দিষ্ট নির্বাচিত ডিভাইসে)
  */
-export async function executeFullGoogleContactsSync(onProgress) {
+export async function executeFullGoogleContactsSync(onProgress, targetAccountIds = null) {
     if (isSyncingInBackground) {
         showToast('ইতিমধ্যে একটি সিঙ্ক প্রসেস চলমান রয়েছে', 'warning');
         return { success: false, message: 'Already syncing' };
     }
 
-    const activeTokens = await getAllSilentAccessTokens();
+    let activeTokens = await getAllSilentAccessTokens();
     if (activeTokens.length === 0) {
         throw new Error('কোনো গুগল অ্যাকাউন্ট কানেক্টেড নেই। দয়া করে প্রথমে একটি অ্যাকাউন্ট কানেক্ট করুন।');
+    }
+
+    if (Array.isArray(targetAccountIds) && targetAccountIds.length > 0) {
+        activeTokens = activeTokens.filter(acc => targetAccountIds.includes(acc.id));
+        if (activeTokens.length === 0) {
+            throw new Error('নির্বাচিত অ্যাকাউন্টের কোনো সচল কানেকশন পাওয়া যায়নি।');
+        }
     }
 
     isSyncingInBackground = true;
@@ -365,6 +372,9 @@ export async function executeFullGoogleContactsSync(onProgress) {
 
                 if (i % 6 === 0) await new Promise(r => setTimeout(r, 60));
             }
+
+            // এই নির্দিষ্ট ডিভাইসের সিঙ্ক টাইমস্ট্যাম্প ফায়ারস্টোরে আপডেট
+            await updateAccountSyncTimestamp(acc.id);
         }
 
         await db.collection('settings').doc('google_sync').set({
@@ -372,7 +382,7 @@ export async function executeFullGoogleContactsSync(onProgress) {
             lastSyncStats: { updated: totalUpdated, created: totalCreated, total: customers.length }
         }, { merge: true });
 
-        return { success: true, updated: totalUpdated, created: totalCreated, total: customers.length };
+        return { success: true, updated: totalUpdated, created: totalCreated, total: customers.length, deviceCount: activeTokens.length };
     } finally {
         isSyncingInBackground = false;
     }
