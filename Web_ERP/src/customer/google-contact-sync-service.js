@@ -1,20 +1,62 @@
 import { db } from '../firebase-config.js';
-import { CustomerDAO } from '../dao.js';
+import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { getCustomerCache } from './customer-state.js';
-import { formatAmountWithComma, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, showToast } from '../utils.js';
 import { generateBossToken } from './boss-card-token.js';
-import { parsePhoneNumbers, normalizeBengaliNumbers, buildContactDisplayName } from './customer-contact-export-helpers.js';
-import { getSilentAccessToken } from './google-auth-client.js';
+import { parsePhoneNumbers, normalizeBengaliNumbers, buildContactDisplayName, updatePersonalContactNameWithDue } from './customer-contact-export-helpers.js';
+import { getAllSilentAccessTokens } from './google-auth-client.js';
 
 let isSyncingInBackground = false;
 
 /**
- * কাস্টমারের ডাটা থেকে গুগল কন্টাক্টের ফিল্ড ও ফরম্যাট প্রস্তুত করে
+ * কাস্টমারের লেনদেন থেকে সর্বশেষ জমা ও বাকির বয়স ক্যালকুলেট করে (Call Context Intelligence)
  */
-function buildContactFields(c) {
+export function calculateCallIntelligence(transactions = [], totalDue = 0) {
+    if (!transactions || transactions.length === 0) {
+        return {
+            lastPaymentText: 'কোনো জমা নেই',
+            dueAgingText: totalDue > 0 ? 'নতুন কাস্টমার' : 'পরিশোধিত'
+        };
+    }
+
+    // তারিখ অনুযায়ী ডিসেন্ডিং সর্ট
+    const sorted = [...transactions].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+    // সর্বশেষ জমা ফিল্টার
+    const payments = sorted.filter(t => Number(t.paid) > 0);
+    let lastPaymentText = 'কোনো জমা নেই';
+    if (payments.length > 0) {
+        const lp = payments[0];
+        const dateStr = lp.date ? formatAppDate(lp.date) : 'তারিখ নেই';
+        lastPaymentText = `৳ ${formatAmountWithComma(lp.paid)} (${dateStr})`;
+    }
+
+    // বাকির বয়স (Due Aging)
+    let dueAgingText = 'নিয়মিত';
+    if (totalDue > 0) {
+        const latestTxn = sorted[0];
+        if (latestTxn && latestTxn.date) {
+            const diffMs = Date.now() - new Date(latestTxn.date).getTime();
+            const days = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+            dueAgingText = `${days} দিন ধরে বকেয়া`;
+        }
+    } else if (totalDue < 0) {
+        dueAgingText = 'অগ্রিম জমা';
+    } else {
+        dueAgingText = 'পরিশোধিত';
+    }
+
+    return { lastPaymentText, dueAgingText };
+}
+
+/**
+ * কাস্টমারের ডাটা ও কল ইন্টেলিজেন্স থেকে কন্টাক্টের ফিল্ড ও ফরম্যাট প্রস্তুত করে
+ */
+function buildContactFields(c, intelligence = {}) {
     const phones = parsePhoneNumbers(c.phone);
-    const displayName = buildContactDisplayName(c, 'tag_zone');
     const totalDue = Number(c.totalDue) || 0;
+    const displayName = buildContactDisplayName(c, 'tag_zone', totalDue);
+    
     const dueText = totalDue > 0 
         ? `বকেয়া: ৳ ${formatAmountWithComma(totalDue)}` 
         : (totalDue < 0 ? `অগ্রিম: ৳ ${formatAmountWithComma(Math.abs(totalDue))}` : 'ব্যালেন্স: পরিশোধিত');
@@ -22,20 +64,42 @@ function buildContactFields(c) {
     const token = generateBossToken(c.id);
     const liveUrl = `https://maa-motors-erp.web.app/?view=boss-card&id=${c.id}&key=${token}`;
     const orgTitle = `[Acc: ${c.accountNo || ''}] • ${dueText}`;
-    const bioText = `অ্যাকাউন্ট: ${c.accountNo || '-'} | জোন: ${c.zone || '-'} | ${dueText}\nলাইভ বর্তমান বকেয়া: ${liveUrl}`;
+    
+    const lastPayStr = intelligence.lastPaymentText || 'কোনো জমা নেই';
+    const agingStr = intelligence.dueAgingText || (totalDue > 0 ? 'বকেয়া' : 'পরিশোধিত');
+
+    const bioText = `হিসাব নং: #${c.accountNo || '-'} | এলাকা: ${c.zone || '-'}\n` +
+                    `বর্তমান বকেয়া: ${dueText}\n` +
+                    `সর্বশেষ জমা: ${lastPayStr}\n` +
+                    `বাকির বয়স: ${agingStr}\n` +
+                    `----------------------------------\n` +
+                    `লাইভ খতিয়ান কার্ড: ${liveUrl}`;
 
     return { phones, displayName, totalDue, dueText, liveUrl, orgTitle, bioText };
 }
 
 /**
- * সিঙ্গেল কাস্টমারের ব্যালেন্স গুগল কন্টাক্টসে সাইলেন্টলি পুশ করে (নন-ব্লকিং)
+ * নির্দিষ্ট কাস্টমারের জন্য কল ইন্টেলিজেন্স ফেচ করে
+ */
+async function fetchSingleCustomerIntelligence(customerId, totalDue) {
+    try {
+        const txns = await TransactionDAO.getByCustomer(customerId);
+        return calculateCallIntelligence(txns, totalDue);
+    } catch (e) {
+        console.error('fetchSingleCustomerIntelligence non-fatal error:', e);
+        return calculateCallIntelligence([], totalDue);
+    }
+}
+
+/**
+ * সিঙ্গেল কাস্টমার সিঙ্ক — সকল কানেক্টেড ডিভাইসে (বস + ম্যানেজার) একযোগে পুশ করে
  */
 export async function syncSingleCustomerToGoogle(customerId) {
     if (!customerId) return;
 
     try {
-        const accessToken = await getSilentAccessToken();
-        if (!accessToken) return; // গুগল সিঙ্ক সচল না থাকলে কোনো এরর না দিয়ে রিটার্ন
+        const activeTokens = await getAllSilentAccessTokens();
+        if (activeTokens.length === 0) return; // কোনো সচল গুগল কানেকশন না থাকলে রিটার্ন
 
         // কাস্টমার ডাটা সংগ্রহ
         let cust = null;
@@ -49,86 +113,90 @@ export async function syncSingleCustomerToGoogle(customerId) {
         }
         if (!cust) return;
 
-        const { phones, displayName, dueText, liveUrl, orgTitle, bioText } = buildContactFields(cust);
+        const totalDue = Number(cust.totalDue) || 0;
+        const intelligence = await fetchSingleCustomerIntelligence(customerId, totalDue);
+        const { phones, displayName, liveUrl, orgTitle, bioText } = buildContactFields(cust, intelligence);
         if (phones.length === 0) return;
 
-        // ফোনের প্রথম কার্যকর নম্বর দিয়ে গুগলে সার্চ
         const primaryPhone = phones[0].replace(/\D/g, '').slice(-10);
-        let matchedContact = null;
 
-        if (primaryPhone) {
+        // সকল কানেক্টেড অ্যাকাউন্টে প্যারালাল পুশ
+        const syncPromises = activeTokens.map(async (acc) => {
             try {
-                const searchUrl = `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(primaryPhone)}&readMasks=names,phoneNumbers,organizations,biographies,urls,metadata`;
-                const searchRes = await fetch(searchUrl, {
-                    headers: { Authorization: `Bearer ${accessToken}` }
-                });
-                if (searchRes.ok) {
-                    const searchData = await searchRes.json();
-                    if (searchData.results && searchData.results.length > 0) {
-                        matchedContact = searchData.results[0].person;
+                let matchedContact = null;
+                if (primaryPhone) {
+                    const searchUrl = `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(primaryPhone)}&readMasks=names,phoneNumbers,organizations,biographies,urls,metadata`;
+                    const searchRes = await fetch(searchUrl, {
+                        headers: { Authorization: `Bearer ${acc.accessToken}` }
+                    });
+                    if (searchRes.ok) {
+                        const searchData = await searchRes.json();
+                        if (searchData.results && searchData.results.length > 0) {
+                            matchedContact = searchData.results[0].person;
+                        }
                     }
                 }
-            } catch (searchErr) {
-                console.error('Google searchContacts non-fatal error:', searchErr);
+
+                if (matchedContact) {
+                    const existingName = matchedContact.names?.[0]?.displayName || matchedContact.names?.[0]?.givenName || '';
+                    const hasMMTag = existingName.includes('[MM]');
+                    const updateFields = ['organizations', 'biographies', 'urls', 'names'];
+
+                    // নাম নির্ধারণ: যদি বসের ব্যক্তিগত নাম থাকে, তবে তার শেষে ব্র্যাকেটে ব্যালেন্স আপডেট
+                    const finalName = hasMMTag || !existingName
+                        ? displayName
+                        : updatePersonalContactNameWithDue(existingName, totalDue);
+
+                    const updatePayload = {
+                        etag: matchedContact.etag,
+                        names: [{ givenName: finalName }],
+                        organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
+                        urls: [{ value: liveUrl, type: 'Live Due Card' }],
+                        biographies: [{ value: bioText }]
+                    };
+
+                    const updateUrl = `https://people.googleapis.com/v1/${matchedContact.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
+                    await fetch(updateUrl, {
+                        method: 'PATCH',
+                        headers: {
+                            Authorization: `Bearer ${acc.accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updatePayload)
+                    });
+                } else {
+                    const createUrl = 'https://people.googleapis.com/v1/people:createContact';
+                    const createPayload = {
+                        names: [{ givenName: displayName }],
+                        phoneNumbers: phones.map(p => ({ value: p, type: 'Mobile' })),
+                        organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
+                        urls: [{ value: liveUrl, type: 'Live Due Card' }],
+                        biographies: [{ value: bioText }],
+                        addresses: [{ streetAddress: cust.address || '', city: cust.zone || '', type: 'Work' }]
+                    };
+
+                    await fetch(createUrl, {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${acc.accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(createPayload)
+                    });
+                }
+            } catch (singleAccErr) {
+                console.error(`Sync error for device (${acc.label}):`, singleAccErr);
             }
-        }
+        });
 
-        if (matchedContact) {
-            // বিদ্যমান কন্টাক্ট আপডেট (বসের ব্যক্তিগত নাম সংরক্ষণ নীতি)
-            const existingName = matchedContact.names?.[0]?.displayName || matchedContact.names?.[0]?.givenName || '';
-            const hasMMTag = existingName.includes('[MM]');
+        await Promise.allSettled(syncPromises);
 
-            const updateFields = ['organizations', 'biographies', 'urls'];
-            const updatePayload = {
-                etag: matchedContact.etag,
-                organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
-                urls: [{ value: liveUrl, type: 'Live Due Card' }],
-                biographies: [{ value: bioText }]
-            };
-
-            if (hasMMTag || !existingName) {
-                updateFields.push('names');
-                updatePayload.names = [{ givenName: displayName }];
-            }
-
-            const updateUrl = `https://people.googleapis.com/v1/${matchedContact.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
-            await fetch(updateUrl, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(updatePayload)
-            });
-        } else {
-            // নতুন কন্টাক্ট তৈরি
-            const createUrl = 'https://people.googleapis.com/v1/people:createContact';
-            const createPayload = {
-                names: [{ givenName: displayName }],
-                phoneNumbers: phones.map(p => ({ value: p, type: 'Mobile' })),
-                organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
-                urls: [{ value: liveUrl, type: 'Live Due Card' }],
-                biographies: [{ value: bioText }],
-                addresses: [{ streetAddress: cust.address || '', city: cust.zone || '', type: 'Work' }]
-            };
-
-            await fetch(createUrl, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(createPayload)
-            });
-        }
-
-        // লাস্ট সিঙ্ক টাইম আপডেট
         await db.collection('settings').doc('google_sync').set({
             lastSyncAt: new Date().toISOString()
         }, { merge: true });
 
     } catch (e) {
-        console.error('Silent Google Contact Sync Error:', e);
+        console.error('Silent Multi-Device Google Contact Sync Error:', e);
     }
 }
 
@@ -137,7 +205,6 @@ export async function syncSingleCustomerToGoogle(customerId) {
  */
 export function triggerSilentCustomerGoogleSync(customerId) {
     if (!customerId) return;
-    // মাইক্রোটাস্ক বা ব্যাকগ্রাউন্ড থ্রেডে এক্সিকিউট করে যাতে মূল ট্রানজেকশনে ১ মিলিসেকেন্ডও দেরি না হয়
     setTimeout(() => {
         syncSingleCustomerToGoogle(customerId).catch(err => {
             console.error('Background trigger error:', err);
@@ -146,7 +213,7 @@ export function triggerSilentCustomerGoogleSync(customerId) {
 }
 
 /**
- * ফুল ডাটাবেজ ব্যাচ সিঙ্ক ইঞ্জিন
+ * ফুল ডাটাবেজ ব্যাচ সিঙ্ক ইঞ্জিন (সকল ডিভাইসে একযোগে)
  */
 export async function executeFullGoogleContactsSync(onProgress) {
     if (isSyncingInBackground) {
@@ -154,9 +221,9 @@ export async function executeFullGoogleContactsSync(onProgress) {
         return { success: false, message: 'Already syncing' };
     }
 
-    const accessToken = await getSilentAccessToken();
-    if (!accessToken) {
-        throw new Error('গুগল অ্যাকাউন্ট কানেক্টেড নেই বা রিফ্রেশ টোকেন অনুপস্থিত।');
+    const activeTokens = await getAllSilentAccessTokens();
+    if (activeTokens.length === 0) {
+        throw new Error('কোনো গুগল অ্যাকাউন্ট কানেক্টেড নেই। দয়া করে প্রথমে একটি অ্যাকাউন্ট কানেক্ট করুন।');
     }
 
     isSyncingInBackground = true;
@@ -171,126 +238,136 @@ export async function executeFullGoogleContactsSync(onProgress) {
 
         if (customers.length === 0) {
             isSyncingInBackground = false;
-            return { success: true, updated: 0, created: 0 };
+            return { success: true, updated: 0, created: 0, total: 0 };
         }
 
-        if (onProgress) onProgress({ current: 0, total: customers.length, text: 'গুগল কন্টাক্ট ফেচ করা হচ্ছে...' });
+        if (onProgress) onProgress({ current: 0, total: customers.length, text: 'লেনদেন ডাটা ও কল ইন্টেলিজেন্স লোড হচ্ছে...' });
 
-        // ১. গুগলের কন্টাক্টগুলো ফেচ করা
-        const googleContacts = [];
-        let nextPageToken = '';
-        do {
-            const url = `https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers,organizations,biographies,urls,metadata&pageSize=1000${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
-            const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-            if (!res.ok) throw new Error('গুগল কন্টাক্ট তালিকা রিড করা যায়নি');
-            const data = await res.json();
-            if (data.connections) googleContacts.push(...data.connections);
-            nextPageToken = data.nextPageToken || '';
-        } while (nextPageToken);
+        // ১. একবারে সকল লেনদেন ফেচ করে মেমোরিতে গ্রুপ করা (০ N+1 কোয়েরি)
+        let txnsByCustomer = new Map();
+        try {
+            const allTxns = await TransactionDAO.getAll();
+            allTxns.forEach(t => {
+                if (!txnsByCustomer.has(t.customerId)) txnsByCustomer.set(t.customerId, []);
+                txnsByCustomer.get(t.customerId).push(t);
+            });
+        } catch (txnErr) {
+            console.warn('Transactions prefetch warning:', txnErr);
+        }
 
-        // ২. ফোন নম্বর ম্যাপ তৈরি
-        const phoneMap = new Map();
-        googleContacts.forEach(gc => {
-            if (gc.phoneNumbers) {
-                gc.phoneNumbers.forEach(pn => {
-                    const clean = normalizeBengaliNumbers(pn.value).replace(/\D/g, '');
-                    if (clean.length >= 10) {
-                        phoneMap.set(clean.slice(-10), gc);
-                    }
-                });
-            }
-        });
+        let totalUpdated = 0;
+        let totalCreated = 0;
 
-        let updated = 0;
-        let created = 0;
-        let failed = 0;
+        // ২. প্রতিটি কানেক্টেড ডিভাইসের জন্য সিঙ্ক চালানো
+        for (const acc of activeTokens) {
+            if (onProgress) onProgress({ current: 0, total: customers.length, text: `ডিভাইস (${acc.label}): গুগল কন্টাক্ট ফেচ করা হচ্ছে...` });
 
-        // ৩. লুপ চালিয়ে সিঙ্ক
-        for (let i = 0; i < customers.length; i++) {
-            const c = customers[i];
-            const { phones, displayName, dueText, liveUrl, orgTitle, bioText } = buildContactFields(c);
+            const googleContacts = [];
+            let nextPageToken = '';
+            do {
+                const url = `https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers,organizations,biographies,urls,metadata&pageSize=1000${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
+                const res = await fetch(url, { headers: { Authorization: `Bearer ${acc.accessToken}` } });
+                if (!res.ok) throw new Error(`ডিভাইস ${acc.label}-এর কন্টাক্ট তালিকা রিড করা যায়নি`);
+                const data = await res.json();
+                if (data.connections) googleContacts.push(...data.connections);
+                nextPageToken = data.nextPageToken || '';
+            } while (nextPageToken);
 
-            if (onProgress) {
-                onProgress({
-                    current: i + 1,
-                    total: customers.length,
-                    text: `সিঙ্ক হচ্ছে: ${c.name} (${dueText})`
-                });
-            }
-
-            let matched = null;
-            for (const p of phones) {
-                const digits = p.replace(/\D/g, '');
-                if (digits.length >= 10 && phoneMap.has(digits.slice(-10))) {
-                    matched = phoneMap.get(digits.slice(-10));
-                    break;
-                }
-            }
-
-            try {
-                if (matched) {
-                    const existingName = matched.names?.[0]?.displayName || matched.names?.[0]?.givenName || '';
-                    const hasMMTag = existingName.includes('[MM]');
-                    const updateFields = ['organizations', 'biographies', 'urls'];
-                    const payload = {
-                        etag: matched.etag,
-                        organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
-                        urls: [{ value: liveUrl, type: 'Live Due Card' }],
-                        biographies: [{ value: bioText }]
-                    };
-
-                    if (hasMMTag || !existingName) {
-                        updateFields.push('names');
-                        payload.names = [{ givenName: displayName }];
-                    }
-
-                    const updateUrl = `https://people.googleapis.com/v1/${matched.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
-                    const patchRes = await fetch(updateUrl, {
-                        method: 'PATCH',
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
+            const phoneMap = new Map();
+            googleContacts.forEach(gc => {
+                if (gc.phoneNumbers) {
+                    gc.phoneNumbers.forEach(pn => {
+                        const clean = normalizeBengaliNumbers(pn.value).replace(/\D/g, '');
+                        if (clean.length >= 10) phoneMap.set(clean.slice(-10), gc);
                     });
-                    if (patchRes.ok) updated++;
-                    else failed++;
-                } else if (phones.length > 0) {
-                    const createUrl = 'https://people.googleapis.com/v1/people:createContact';
-                    const createPayload = {
-                        names: [{ givenName: displayName }],
-                        phoneNumbers: phones.map(p => ({ value: p, type: 'Mobile' })),
-                        organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
-                        urls: [{ value: liveUrl, type: 'Live Due Card' }],
-                        biographies: [{ value: bioText }],
-                        addresses: [{ streetAddress: c.address || '', city: c.zone || '', type: 'Work' }]
-                    };
-                    const postRes = await fetch(createUrl, {
-                        method: 'POST',
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(createPayload)
-                    });
-                    if (postRes.ok) created++;
-                    else failed++;
                 }
-            } catch (itemErr) {
-                console.error('Error syncing contact:', c.name, itemErr);
-                failed++;
-            }
+            });
 
-            // রেট লিমিট বাফার
-            if (i % 5 === 0) await new Promise(r => setTimeout(r, 60));
+            for (let i = 0; i < customers.length; i++) {
+                const c = customers[i];
+                const totalDue = Number(c.totalDue) || 0;
+                const custTxns = txnsByCustomer.get(c.id) || [];
+                const intelligence = calculateCallIntelligence(custTxns, totalDue);
+                const { phones, displayName, liveUrl, orgTitle, bioText } = buildContactFields(c, intelligence);
+
+                if (onProgress) {
+                    onProgress({
+                        current: i + 1,
+                        total: customers.length,
+                        text: `${acc.label}: ${displayName}`
+                    });
+                }
+
+                let matched = null;
+                for (const p of phones) {
+                    const digits = p.replace(/\D/g, '');
+                    if (digits.length >= 10 && phoneMap.has(digits.slice(-10))) {
+                        matched = phoneMap.get(digits.slice(-10));
+                        break;
+                    }
+                }
+
+                try {
+                    if (matched) {
+                        const existingName = matched.names?.[0]?.displayName || matched.names?.[0]?.givenName || '';
+                        const hasMMTag = existingName.includes('[MM]');
+                        const finalName = hasMMTag || !existingName
+                            ? displayName
+                            : updatePersonalContactNameWithDue(existingName, totalDue);
+
+                        const updateFields = ['organizations', 'biographies', 'urls', 'names'];
+                        const payload = {
+                            etag: matched.etag,
+                            names: [{ givenName: finalName }],
+                            organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
+                            urls: [{ value: liveUrl, type: 'Live Due Card' }],
+                            biographies: [{ value: bioText }]
+                        };
+
+                        const updateUrl = `https://people.googleapis.com/v1/${matched.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
+                        const patchRes = await fetch(updateUrl, {
+                            method: 'PATCH',
+                            headers: {
+                                Authorization: `Bearer ${acc.accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        if (patchRes.ok) totalUpdated++;
+                    } else if (phones.length > 0) {
+                        const createUrl = 'https://people.googleapis.com/v1/people:createContact';
+                        const createPayload = {
+                            names: [{ givenName: displayName }],
+                            phoneNumbers: phones.map(p => ({ value: p, type: 'Mobile' })),
+                            organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
+                            urls: [{ value: liveUrl, type: 'Live Due Card' }],
+                            biographies: [{ value: bioText }],
+                            addresses: [{ streetAddress: c.address || '', city: c.zone || '', type: 'Work' }]
+                        };
+                        const postRes = await fetch(createUrl, {
+                            method: 'POST',
+                            headers: {
+                                Authorization: `Bearer ${acc.accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(createPayload)
+                        });
+                        if (postRes.ok) totalCreated++;
+                    }
+                } catch (singleSyncErr) {
+                    console.error('Error syncing contact for:', c.name, singleSyncErr);
+                }
+
+                if (i % 6 === 0) await new Promise(r => setTimeout(r, 60));
+            }
         }
 
         await db.collection('settings').doc('google_sync').set({
             lastSyncAt: new Date().toISOString(),
-            lastSyncStats: { updated, created, failed, total: customers.length }
+            lastSyncStats: { updated: totalUpdated, created: totalCreated, total: customers.length }
         }, { merge: true });
 
-        return { success: true, updated, created, failed, total: customers.length };
+        return { success: true, updated: totalUpdated, created: totalCreated, total: customers.length };
     } finally {
         isSyncingInBackground = false;
     }

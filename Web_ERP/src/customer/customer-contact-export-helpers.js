@@ -1,3 +1,5 @@
+import { formatAmountWithComma } from '../utils.js';
+
 const BENGALI_DIGITS = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
 
 /**
@@ -42,24 +44,51 @@ export function parsePhoneNumbers(rawPhone) {
 }
 
 /**
- * কন্টাক্টের ডিসপ্লে নাম তৈরি করে
+ * বকেয়া টাকার পরিমাণকে সুন্দর ব্র্যাকেট ফরম্যাটে সাজায়
+ * যেমন: [৳ ১৫,০০০], [পরিশোধিত], [অগ্রিম ৳ ৫,০০০]
  */
-export function buildContactDisplayName(customer, nameStyle = 'tag_zone') {
+export function buildDueTagText(totalDue) {
+    if (totalDue === null || totalDue === undefined) return '';
+    const num = Number(totalDue);
+    if (isNaN(num)) return '';
+    if (num > 0) return `[৳ ${formatAmountWithComma(num)}]`;
+    if (num < 0) return `[অগ্রিম ৳ ${formatAmountWithComma(Math.abs(num))}]`;
+    return '[পরিশোধিত]';
+}
+
+/**
+ * বসের নিজস্ব সেভ করা নামের শেষে ব্যালেন্স ব্র্যাকেট আপডেট করে
+ * যেমন: "জাবেদ ভাই মেকানিক [৳ ১০,০০০]" -> "জাবেদ ভাই মেকানিক [৳ ১৫,০০০]"
+ */
+export function updatePersonalContactNameWithDue(existingName, totalDue) {
+    if (!existingName) return '';
+    const dueTag = buildDueTagText(totalDue);
+    const cleanName = existingName.replace(/\s*\[(?:৳|পরিশোধিত|অগ্রিম).*?\]$/i, '').trim();
+    return dueTag ? `${cleanName} ${dueTag}` : cleanName;
+}
+
+/**
+ * কন্টাক্টের ডিসপ্লে নাম তৈরি করে
+ * যেমন: [MM] মো: জাবেদ - ভান্ডার মার্কেট [৳ ১৫,০০০]
+ */
+export function buildContactDisplayName(customer, nameStyle = 'tag_zone', totalDue = null) {
     const rawName = customer.name?.trim() || 'গ্রাহক';
     const acc = customer.accountNo ? `#${customer.accountNo}` : '';
     const area = customer.address?.trim() ? customer.address.trim().split(',')[0].trim() : (customer.zone || '');
+    const dueTag = buildDueTagText(totalDue);
+    const dueSuffix = dueTag ? ` ${dueTag}` : '';
 
     if (nameStyle === 'tag_zone') {
-        const suffix = area ? ` - ${area}` : '';
-        return `[MM] ${rawName}${suffix}`;
+        const areaSuffix = area ? ` - ${area}` : '';
+        return `[MM] ${rawName}${areaSuffix}${dueSuffix}`;
     } else if (nameStyle === 'tag_acc') {
-        const suffix = acc ? ` (${acc})` : '';
-        return `[MM] ${rawName}${suffix}`;
+        const accSuffix = acc ? ` (${acc})` : '';
+        return `[MM] ${rawName}${accSuffix}${dueSuffix}`;
     } else if (nameStyle === 'clean_acc') {
-        const suffix = acc ? ` (${acc})` : '';
-        return `${rawName}${suffix}`;
+        const accSuffix = acc ? ` (${acc})` : '';
+        return `${rawName}${accSuffix}${dueSuffix}`;
     }
-    return rawName;
+    return `${rawName}${dueSuffix}`;
 }
 
 /**

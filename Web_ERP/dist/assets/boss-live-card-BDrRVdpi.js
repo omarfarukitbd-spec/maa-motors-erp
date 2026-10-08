@@ -1,4 +1,4 @@
-import{p as e}from"./dao-BAvPFDr3.js";import{_ as t,g as n}from"./ui-helpers-ChDNPFdp.js";import"./customer-state-dZilZm7l.js";import{c as r,l as i,s as a}from"./index-BGBW-LM4.js";async function o(t,n){let r=document.getElementById(`login-screen`),a=document.getElementById(`app-container`);r&&(r.style.display=`none`),a&&a.classList.add(`hidden`);let o=document.getElementById(`boss-live-card-view`);if(o||(o=document.createElement(`div`),o.id=`boss-live-card-view`,o.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-4 sm:p-6 font-bn flex flex-col items-center justify-start min-h-screen`,document.body.appendChild(o)),!i(t,n)){o.innerHTML=`
+import{p as e}from"./dao-BAvPFDr3.js";import{_ as t,g as n}from"./ui-helpers-ChDNPFdp.js";import"./customer-state-dZilZm7l.js";import{c as r,l as i,u as a}from"./index--2r67Iuh.js";async function o(t,n){let r=document.getElementById(`login-screen`),i=document.getElementById(`app-container`);r&&(r.style.display=`none`),i&&i.classList.add(`hidden`);let o=document.getElementById(`boss-live-card-view`);if(o||(o=document.createElement(`div`),o.id=`boss-live-card-view`,o.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-4 sm:p-6 font-bn flex flex-col items-center justify-start min-h-screen`,document.body.appendChild(o)),!a(t,n)){o.innerHTML=`
             <div class="w-full max-w-md bg-slate-900 border border-red-500/30 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl mt-12 space-y-4">
                 <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400">
                     <i class="fa-solid fa-shield-halved text-3xl"></i>
@@ -38,7 +38,7 @@ import{p as e}from"./dao-BAvPFDr3.js";import{_ as t,g as n}from"./ui-helpers-ChD
                     <i class="fa-solid fa-arrows-rotate mr-1.5"></i> রিলোড করুন
                 </button>
             </div>
-        `}}function s(e,r,i,s){let c=Number(r.totalDue)||0,l=a(r.phone),u=new Date().toLocaleTimeString(`bn-BD`,{hour:`numeric`,minute:`2-digit`,hour12:!0}),d=new Date().toLocaleDateString(`bn-BD`,{day:`numeric`,month:`long`,year:`numeric`}),f=``;f=c>0?`
+        `}}function s(e,i,a,s){let c=Number(i.totalDue)||0,l=r(i.phone),u=new Date().toLocaleTimeString(`bn-BD`,{hour:`numeric`,minute:`2-digit`,hour12:!0}),d=new Date().toLocaleDateString(`bn-BD`,{day:`numeric`,month:`long`,year:`numeric`}),f=``;f=c>0?`
             <div class="p-5 rounded-2xl bg-red-950/40 border border-red-500/40 text-center relative overflow-hidden shadow-xl shadow-red-950/20">
                 <div class="flex items-center justify-center gap-1.5 text-red-300 text-xs font-black uppercase tracking-wider mb-1">
                     <i class="fa-solid fa-file-invoice-dollar text-sm"></i>
@@ -116,11 +116,11 @@ import{p as e}from"./dao-BAvPFDr3.js";import{_ as t,g as n}from"./ui-helpers-ChD
                 <div class="flex items-start justify-between gap-2">
                     <div>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">দোকানের নাম / গ্রাহক</span>
-                        <h2 class="text-base sm:text-lg font-black text-white leading-tight mt-0.5">${n(r.name||`নাম নেই`)}</h2>
+                        <h2 class="text-base sm:text-lg font-black text-white leading-tight mt-0.5">${n(i.name||`নাম নেই`)}</h2>
                     </div>
-                    ${r.accountNo?`
+                    ${i.accountNo?`
                         <div class="px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-black font-mono text-indigo-300">
-                            #${n(r.accountNo)}
+                            #${n(i.accountNo)}
                         </div>
                     `:``}
                 </div>
@@ -128,12 +128,12 @@ import{p as e}from"./dao-BAvPFDr3.js";import{_ as t,g as n}from"./ui-helpers-ChD
                 <div class="pt-2 border-t border-slate-800/80 space-y-1.5 text-xs">
                     <div class="flex items-center gap-2 text-slate-300">
                         <i class="fa-solid fa-location-dot text-slate-500 text-xs w-4 text-center"></i>
-                        <span>${n(r.address||`ঠিকানা দেওয়া নেই`)}</span>
+                        <span>${n(i.address||`ঠিকানা দেওয়া নেই`)}</span>
                     </div>
-                    ${r.zone?`
+                    ${i.zone?`
                         <div class="flex items-center gap-2 text-slate-400 text-[11px]">
                             <i class="fa-solid fa-map-pin text-slate-500 text-xs w-4 text-center"></i>
-                            <span>জোন: <strong class="text-slate-200">${n(r.zone)}</strong></span>
+                            <span>জোন: <strong class="text-slate-200">${n(i.zone)}</strong></span>
                         </div>
                     `:``}
                 </div>
@@ -169,4 +169,4 @@ import{p as e}from"./dao-BAvPFDr3.js";import{_ as t,g as n}from"./ui-helpers-ChD
                 <p>মেসার্স মা মোটরস্ ইআরপি সিস্টেম • ${d}</p>
             </div>
         </div>
-    `;let m=document.getElementById(`boss-refresh-btn`);m&&(m.onclick=()=>{o(i,s)})}export{r as generateBossToken,o as renderBossLiveCard,i as verifyBossToken};
+    `;let m=document.getElementById(`boss-refresh-btn`);m&&(m.onclick=()=>{o(a,s)})}export{i as generateBossToken,o as renderBossLiveCard,a as verifyBossToken};
