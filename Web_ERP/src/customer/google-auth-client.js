@@ -117,7 +117,7 @@ export async function getConnectedGoogleAccounts() {
 /**
  * নতুন অ্যাকাউন্ট যুক্ত বা বিদ্যমান অ্যাকাউন্ট আপডেট করে
  */
-export async function saveConnectedAccount({ label, email, refreshToken }) {
+export async function saveConnectedAccount({ label, email, refreshToken, setupKey = '' }) {
     try {
         const snap = await db.collection('settings').doc('google_sync').get();
         const existingData = snap.exists ? snap.data() : {};
@@ -153,13 +153,16 @@ export async function saveConnectedAccount({ label, email, refreshToken }) {
             accounts.push(accountPayload);
         }
 
+        const effectiveUsedKey = setupKey || existingData.setupKey || '';
+
         await db.collection('settings').doc('google_sync').set({
             isActive: true,
             accounts: accounts,
             accountEmail: accounts[0]?.email || email,
             refreshToken: accounts[0]?.refreshToken || refreshToken, // রুটে ব্যাকওয়ার্ড সাপোর্ট
             lastConnectedAt: new Date().toISOString(),
-            setupKey: 'USED'
+            setupKey: 'USED',
+            usedKey: effectiveUsedKey
         }, { merge: true });
 
         return accountPayload;

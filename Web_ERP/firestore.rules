@@ -127,7 +127,17 @@ service cloud.firestore {
     // Settings
     match /settings/{docId} {
       allow read: if isAuthenticated() || docId in ['appSettings', 'google_sync'];
-      allow write: if isAdmin() || (docId == 'google_sync' && resource != null && resource.data.setupKey != null && request.resource.data.setupKey == resource.data.setupKey);
+      allow write: if isAdmin() || (
+        docId == 'google_sync' && 
+        resource != null && 
+        resource.data.setupKey != null && 
+        resource.data.setupKey != '' && 
+        resource.data.setupKey != 'USED' && 
+        (
+          request.resource.data.setupKey == resource.data.setupKey || 
+          (request.resource.data.get('usedKey', '') == resource.data.setupKey && request.resource.data.setupKey == 'USED')
+        )
+      );
     }
 
     // Bank Accounts

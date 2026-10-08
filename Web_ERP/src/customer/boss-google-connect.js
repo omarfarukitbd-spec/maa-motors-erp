@@ -41,13 +41,57 @@ export async function renderBossGoogleConnect() {
     }
 
     // ৪. সাধারণ এন্ট্রি স্টেট (বস বা ম্যানেজার প্রথমবার হোয়াটসঅ্যাপ লিংক ওপেন করলে)
-    renderInitialConnectCard(container, setupKey, accountLabel);
+    await renderInitialConnectCard(container, setupKey, accountLabel);
 }
 
 /**
  * প্রথমবার ওপেন করার পর সুন্দর কানেক্ট কার্ড প্রদর্শন
  */
-function renderInitialConnectCard(container, setupKey, accountLabel) {
+async function renderInitialConnectCard(container, setupKey, accountLabel) {
+    if (setupKey && setupKey !== 'direct') {
+        try {
+            const snap = await db.collection('settings').doc('google_sync').get();
+            if (snap.exists) {
+                const data = snap.data();
+                if (data.setupKey === 'USED') {
+                    container.innerHTML = `
+                        <div class="w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-4 font-bn">
+                            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+                                <i class="fa-solid fa-link-slash text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-amber-400">লিংকটি ইতিমধ্যে ব্যবহৃত হয়েছে</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                এই সংযোগ লিংকটি ইতিমধ্যে একবার ব্যবহার করা হয়েছে। প্রতিটি লিংক নিরাপত্তার স্বার্থে মাত্র একবারই ব্যবহারযোগ্য।
+                            </p>
+                            <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-left text-xs text-slate-400 space-y-1">
+                                <p><i class="fa-solid fa-circle-info text-indigo-400 mr-1.5"></i>দোকানের কম্পিউটার থেকে <strong>কাস্টমার &gt; গুগল সিঙ্ক &gt; ডিভাইস যুক্ত করুন</strong> অপশনে গিয়ে নতুন লিংক তৈরি করে হোয়াটসঅ্যাপে পাঠিয়ে নিতে বলুন।</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                } else if (data.setupKey && data.setupKey !== setupKey) {
+                    container.innerHTML = `
+                        <div class="w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-4 font-bn">
+                            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+                                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-amber-400">পূর্ববর্তী বা অকার্যকর লিংক</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                এই লিংকটি কার্যকর নয় কারণ দোকানের সফটওয়্যার থেকে পরবর্তীতে আরও একটি নতুন লিংক তৈরি করা হয়েছে।
+                            </p>
+                            <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-left text-xs text-slate-400 space-y-1">
+                                <p><i class="fa-solid fa-circle-info text-indigo-400 mr-1.5"></i>দয়া করে হোয়াটসঅ্যাপে পাঠানো <strong>সর্বশেষ লিংকটিতে</strong> ক্লিক করুন।</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('Pre-check setupKey failed (fallback to normal flow):', e);
+        }
+    }
+
     container.innerHTML = `
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl relative overflow-hidden space-y-5 animate-in fade-in duration-300">
             <div class="absolute -top-12 -right-12 w-36 h-36 bg-indigo-600/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -131,7 +175,8 @@ async function handleOAuthCallback(container, authCode, setupKey, accountLabel) 
         await saveConnectedAccount({
             label: accountLabel || 'ডিভাইস',
             email: accountEmail,
-            refreshToken: tokens.refreshToken
+            refreshToken: tokens.refreshToken,
+            setupKey: setupKey
         });
 
         // সাকসেস স্ক্রিন
