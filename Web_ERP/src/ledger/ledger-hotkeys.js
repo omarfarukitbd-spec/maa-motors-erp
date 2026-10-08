@@ -108,7 +108,7 @@ function handleFormEnterAdvancement(e) {
     if (!form || !form.contains(target)) return;
 
     // Field step progression
-    if (target.id === 'ledger-date') {
+    if (target.id === 'ledger-date' || target._parentOriginalInput?.id === 'ledger-date' || target.id === 'ledger-date-alt') {
         e.preventDefault();
         document.getElementById('ledger-voucher')?.focus();
     } else if (target.id === 'ledger-voucher') {

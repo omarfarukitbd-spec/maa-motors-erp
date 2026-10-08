@@ -2,10 +2,123 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 /**
- * Global Flatpickr DD/MM/YYYY Enforcer (Restored Advanced Logic)
+ * Global Flatpickr DD/MM/YYYY Enforcer (World-Class Segment-Aware Architecture)
  */
 
 let _isInternalFlatpickrChange = false;
+
+function getFallbackParts(input) {
+    const today = new Date();
+    const defaultDay = String(today.getDate()).padStart(2, '0');
+    const defaultMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const defaultYear = String(today.getFullYear());
+
+    const origVal = (input && input.value) ? String(input.value).trim() : '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(origVal)) {
+        const [y, m, d] = origVal.split('-');
+        return { day: d, month: m, year: y };
+    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(origVal)) {
+        const [d, m, y] = origVal.split('/');
+        return { day: d, month: m, year: y };
+    }
+    return { day: defaultDay, month: defaultMonth, year: defaultYear };
+}
+
+function getMaxDaysInMonth(monthStr, yearStr) {
+    const m = parseInt(monthStr, 10);
+    const y = parseInt(yearStr, 10) || new Date().getFullYear();
+    if (isNaN(m) || m < 1 || m > 12) return 31;
+    return new Date(y, m, 0).getDate();
+}
+
+function parseDateSegments(rawStr, fallback) {
+    const trimmed = String(rawStr || '').trim();
+    let day = '';
+    let month = '';
+    let year = '';
+
+    if (trimmed.includes('/')) {
+        const parts = trimmed.split('/');
+        day = (parts[0] !== undefined ? parts[0] : '').replace(/\D/g, '');
+        month = (parts[1] !== undefined ? parts[1] : '').replace(/\D/g, '');
+        year = (parts[2] !== undefined ? parts[2] : '').replace(/\D/g, '');
+    } else {
+        const digits = trimmed.replace(/\D/g, '');
+        if (digits.length <= 2) {
+            day = digits;
+            month = fallback.month;
+            year = fallback.year;
+        } else if (digits.length <= 4) {
+            day = digits.slice(0, 2);
+            month = digits.slice(2);
+            year = fallback.year;
+        } else {
+            day = digits.slice(0, 2);
+            month = digits.slice(2, 4);
+            year = digits.slice(4, 8);
+        }
+    }
+
+    return {
+        day,
+        month: month || fallback.month,
+        year: year || fallback.year
+    };
+}
+
+export function normalizeAndSyncDate(altInput) {
+    if (!altInput) return;
+    const raw = altInput.value.trim();
+    const origInput = altInput._parentOriginalInput;
+
+    if (!raw) {
+        if (origInput) {
+            origInput.value = '';
+            if (origInput._flatpickr) origInput._flatpickr.clear();
+            origInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        return;
+    }
+
+    const fallback = getFallbackParts(origInput || altInput);
+    let { day, month, year } = parseDateSegments(raw, fallback);
+
+    if (!month) month = fallback.month;
+    if (!year) year = fallback.year;
+
+    if (year.length === 2) {
+        year = '20' + year;
+    } else if (year.length !== 4) {
+        year = fallback.year;
+    }
+
+    let mNum = parseInt(month, 10);
+    if (isNaN(mNum) || mNum < 1) mNum = 1;
+    if (mNum > 12) mNum = 12;
+    month = String(mNum).padStart(2, '0');
+
+    const maxDays = getMaxDaysInMonth(month, year);
+    let dNum = parseInt(day, 10);
+    if (isNaN(dNum) || dNum < 1) dNum = 1;
+    if (dNum > maxDays) dNum = maxDays;
+    day = String(dNum).padStart(2, '0');
+
+    const formatted = `${day}/${month}/${year}`;
+    if (altInput.value !== formatted) {
+        altInput.value = formatted;
+    }
+
+    const isoStr = `${year}-${month}-${day}`;
+    if (origInput) {
+        origInput.value = isoStr;
+        if (origInput._flatpickr) {
+            _isInternalFlatpickrChange = true;
+            origInput._flatpickr.setDate(isoStr, false);
+            _isInternalFlatpickrChange = false;
+        }
+        origInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
 
 function handleDateFocus(e) {
     const input = e.target;
@@ -41,7 +154,74 @@ function handleDateKeyDown(e) {
         return;
     }
 
-    if (['Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Control', 'Meta', 'Alt'].includes(key)) {
+    // Up/Down Arrow: Increment/Decrement active date segment
+    if ((key === 'ArrowUp' || key === 'ArrowDown') && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const pos = input.selectionStart;
+        const fallback = getFallbackParts(input._parentOriginalInput || input);
+        let { day, month, year } = parseDateSegments(input.value, fallback);
+        const delta = (key === 'ArrowUp') ? 1 : -1;
+
+        if (pos <= 2) {
+            const maxDays = getMaxDaysInMonth(month || fallback.month, year || fallback.year);
+            let d = (parseInt(day, 10) || parseInt(fallback.day, 10)) + delta;
+            if (d > maxDays) d = 1;
+            else if (d < 1) d = maxDays;
+            day = String(d).padStart(2, '0');
+            input.value = `${day}/${month || fallback.month}/${year || fallback.year}`;
+            normalizeAndSyncDate(input);
+            input.setSelectionRange(0, 2);
+        } else if (pos >= 3 && pos <= 5) {
+            let m = (parseInt(month, 10) || parseInt(fallback.month, 10)) + delta;
+            if (m > 12) m = 1;
+            else if (m < 1) m = 12;
+            month = String(m).padStart(2, '0');
+            input.value = `${day || fallback.day}/${month}/${year || fallback.year}`;
+            normalizeAndSyncDate(input);
+            input.setSelectionRange(3, 5);
+        } else if (pos >= 6) {
+            let y = (parseInt(year, 10) || parseInt(fallback.year, 10)) + delta;
+            year = String(y);
+            input.value = `${day || fallback.day}/${month || fallback.month}/${year}`;
+            normalizeAndSyncDate(input);
+            input.setSelectionRange(6, 10);
+        }
+        return;
+    }
+
+    // Left/Right Arrow: Navigate between segments
+    if (key === 'ArrowRight' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        const pos = input.selectionStart;
+        if (pos <= 2) {
+            e.preventDefault();
+            input.setSelectionRange(3, 5);
+            return;
+        } else if (pos <= 5) {
+            e.preventDefault();
+            input.setSelectionRange(6, 10);
+            return;
+        }
+    }
+
+    if (key === 'ArrowLeft' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        const pos = input.selectionStart;
+        if (pos >= 6) {
+            e.preventDefault();
+            input.setSelectionRange(3, 5);
+            return;
+        } else if (pos >= 3) {
+            e.preventDefault();
+            input.setSelectionRange(0, 2);
+            return;
+        }
+    }
+
+    if (key === 'Enter') {
+        normalizeAndSyncDate(input);
+        return;
+    }
+
+    if (['Tab', 'Home', 'End', 'Control', 'Meta', 'Alt'].includes(key)) {
         return;
     }
 
@@ -62,20 +242,45 @@ function handleDateAutoMask(e) {
     const input = e.target;
     if (e.inputType && e.inputType.includes('delete')) return;
 
-    let val = input.value;
+    const val = input.value;
     const cursor = input.selectionStart;
+    const fallback = getFallbackParts(input._parentOriginalInput || input);
 
-    let day = val.substring(0, 2).replace(/\D/g, '');
-    let month = val.substring(3, 5).replace(/\D/g, '');
-    let year = val.substring(6, 10).replace(/\D/g, '');
+    let day = '';
+    let month = '';
+    let year = '';
 
+    if (val.includes('/')) {
+        const parts = val.split('/');
+        day = (parts[0] !== undefined ? parts[0] : '').replace(/\D/g, '');
+        month = (parts[1] !== undefined ? parts[1] : '').replace(/\D/g, '');
+        year = (parts[2] !== undefined ? parts[2] : '').replace(/\D/g, '');
+    } else {
+        const digits = val.replace(/\D/g, '');
+        if (digits.length <= 2) {
+            day = digits;
+        } else if (digits.length <= 4) {
+            day = digits.slice(0, 2);
+            month = digits.slice(2);
+        } else {
+            day = digits.slice(0, 2);
+            month = digits.slice(2, 4);
+            year = digits.slice(4, 8);
+        }
+    }
+
+    // Preserve Month and Year if omitted while typing
+    if (!month && cursor <= 2) month = fallback.month;
+    if (!year && cursor <= 5) year = fallback.year;
+
+    // Clamp Day & Month
     if (day.length === 2 && !isNaN(parseInt(day, 10)) && parseInt(day, 10) > 31) day = '31';
     if (month.length === 2 && !isNaN(parseInt(month, 10)) && parseInt(month, 10) > 12) month = '12';
 
     let formatted = day;
-    if (val.length > 2 || cursor > 2) {
+    if (month || val.includes('/') || cursor > 2) {
         formatted += '/' + month;
-        if (val.length > 5 || cursor > 5) {
+        if (year || (val.split('/').length > 2) || cursor > 5) {
             formatted += '/' + year;
         }
     }
@@ -87,21 +292,38 @@ function handleDateAutoMask(e) {
         input.setSelectionRange(newPos, newPos);
     }
 
-    // Full Sync to original input
+    // Auto-advance selection if 2 digits of Day are typed
+    if (day.length === 2 && cursor === 2 && val.includes('/')) {
+        setTimeout(() => {
+            if (document.activeElement === input && input.selectionStart === 2) {
+                input.setSelectionRange(3, 5);
+            }
+        }, 10);
+    }
+
+    // Full Sync to original input when all segments complete
     if (day.length === 2 && month.length === 2 && year.length === 4) {
         const isoStr = `${year}-${month}-${day}`;
         if (!isNaN(new Date(isoStr).getTime()) && input._parentOriginalInput) {
             const origInput = input._parentOriginalInput;
             origInput.value = isoStr;
-            if (origInput._flatpickr) origInput._flatpickr.setDate(isoStr, false);
+            if (origInput._flatpickr) {
+                _isInternalFlatpickrChange = true;
+                origInput._flatpickr.setDate(isoStr, false);
+                _isInternalFlatpickrChange = false;
+            }
             origInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
     }
 }
 
+function handleDateBlur(e) {
+    normalizeAndSyncDate(e.target);
+}
+
 export function initDatePickers() {
     document.querySelectorAll('input.datepicker').forEach(input => {
-        if(input._flatpickr) {
+        if (input._flatpickr) {
             if (input.value) input._flatpickr.setDate(input.value, false);
             return;
         }
@@ -112,7 +334,7 @@ export function initDatePickers() {
             currentVal = `${y}-${m}-${d}`;
             input.value = currentVal;
         }
-        let swalContainer = input.closest('.swal2-container');
+        const swalContainer = input.closest('.swal2-container');
 
         const fp = flatpickr(input, {
             appendTo: swalContainer || undefined,
@@ -130,12 +352,14 @@ export function initDatePickers() {
                     altInput.classList.remove('datepicker');
                     altInput.placeholder = input.placeholder || 'DD/MM/YYYY';
                     altInput._parentOriginalInput = input;
+                    if (input.id) altInput.id = input.id + '-alt';
                     altInput.style.cursor = 'text';
 
                     altInput.addEventListener('focus', handleDateFocus);
                     altInput.addEventListener('click', handleDateClick);
                     altInput.addEventListener('input', handleDateAutoMask);
                     altInput.addEventListener('keydown', handleDateKeyDown);
+                    altInput.addEventListener('blur', handleDateBlur);
 
                     input.style.setProperty('display', 'none', 'important');
                     input.tabIndex = -1;
@@ -180,15 +404,19 @@ export function initDatePickers() {
                     `;
                     footer.querySelector('.fp-btn-today').onclick = () => {
                         const today = new Date().toISOString().split('T')[0];
-                        instance.setDate(today, true); instance.close();
+                        instance.setDate(today, true);
+                        instance.close();
                     };
                     footer.querySelector('.fp-btn-yesterday').onclick = () => {
-                        const y = new Date(); y.setDate(y.getDate() - 1);
+                        const y = new Date();
+                        y.setDate(y.getDate() - 1);
                         const yStr = y.toISOString().split('T')[0];
-                        instance.setDate(yStr, true); instance.close();
+                        instance.setDate(yStr, true);
+                        instance.close();
                     };
                     footer.querySelector('.fp-btn-clear').onclick = () => {
-                        instance.clear(); input.value = '';
+                        instance.clear();
+                        input.value = '';
                         input.dispatchEvent(new Event('change', { bubbles: true }));
                         instance.close();
                     };
