@@ -137,6 +137,7 @@ export async function openMemoEditModal(txnId, voucherNo) {
         }
 
         await batch.commit();
+        if (window.invalidateAgingActivityCache) window.invalidateAgingActivityCache();
         auditLog('UPDATE_MEMO', 'Transaction', txnId, custName, {
             old: { bill: oldBill, paid: oldPaid, voucherNo: oldVoucher },
             new: { bill: formValues.newBill, paid: formValues.newPaid, voucherNo: formValues.newVoucher }

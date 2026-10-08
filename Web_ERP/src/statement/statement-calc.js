@@ -281,8 +281,14 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
                 createdBy: window.AppState?.currentUserEmail || 'Unknown',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            batch.update(CustomerDAO.getRef(currentCustomerInfo.id), { totalDue: firebase.firestore.FieldValue.increment(safeRound(-formValues.amount)) });
+            batch.update(CustomerDAO.getRef(currentCustomerInfo.id), { 
+                totalDue: firebase.firestore.FieldValue.increment(safeRound(-formValues.amount)),
+                lastTxnDate: formValues.date,
+                lastPaymentDate: formValues.date,
+                lastPaymentAmount: safeRound(formValues.amount)
+            });
             await batch.commit();
+            if (window.invalidateAgingActivityCache) window.invalidateAgingActivityCache();
             auditLog('CREATE', 'Ledger', txnRef.id, currentCustomerInfo.name, { bill: 0, paid: formValues.amount, receivedType: formValues.type, receivedFrom: formValues.ref, source: 'Statement Quick Collect' });
             triggerSilentCustomerGoogleSync(currentCustomerInfo.id);
             showToast('জমা সফলভাবে সেভ হয়েছে!', 'success');

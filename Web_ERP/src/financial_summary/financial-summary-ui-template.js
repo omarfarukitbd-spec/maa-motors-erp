@@ -188,6 +188,9 @@ export function getFinancialSummaryTemplate() {
                                 <button onclick="window.fsFilterAgingBracket('tier90_plus')" class="aging-filter-btn px-2.5 py-1 text-[11px] font-bold rounded-lg text-rose-400 hover:bg-slate-900 cursor-pointer" data-tier="tier90_plus">৯০+ দিন (অচল)</button>
                                 <button onclick="window.fsFilterAgingBracket('tier61_90')" class="aging-filter-btn px-2.5 py-1 text-[11px] font-bold rounded-lg text-orange-400 hover:bg-slate-900 cursor-pointer" data-tier="tier61_90">৬১-৯০ দিন</button>
                                 <button onclick="window.fsFilterAgingBracket('tier31_60')" class="aging-filter-btn px-2.5 py-1 text-[11px] font-bold rounded-lg text-amber-400 hover:bg-slate-900 cursor-pointer" data-tier="tier31_60">৩১-৬০ দিন</button>
+                                <button onclick="window.fsRefreshAgingData()" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-emerald-400 transition-all cursor-pointer flex items-center gap-1.5" title="ক্যাশ জমা ও লেনদেন ডাটা রিফ্রেশ করুন">
+                                    <i class="fa-solid fa-arrows-rotate text-[10px]"></i> রিফ্রেশ
+                                </button>
                             </div>
                             <input type="text" oninput="window.fsFilterAgingRows(this.value)" placeholder="বকেয়া তালিকায় কাস্টমার, ফোন বা জোন খুঁজুন..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-emerald-500">
                         </div>

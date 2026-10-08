@@ -119,12 +119,18 @@ export function renderMethodsGrid(data) {
 /**
  * Render Aging Due & Defaulter Recovery Tab
  */
-export function renderAgingDueTab() {
-    const agingData = calculateAgingDueData();
+export async function renderAgingDueTab(forceRefresh = false) {
+    const tbody = document.getElementById('fs-aging-tbody');
+    const cardsGrid = document.getElementById('fs-aging-cards-grid');
+
+    if (tbody && (!window._currentAgingList || forceRefresh)) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-2 text-emerald-400"></i>লেনদেন ডাটাবেজ থেকে কাস্টমার জমার হিস্ট্রি লোড হচ্ছে...</td></tr>`;
+    }
+
+    const agingData = await calculateAgingDueData(forceRefresh);
     const { buckets } = agingData;
 
     // 1. Render Aging Header Cards
-    const cardsGrid = document.getElementById('fs-aging-cards-grid');
     if (cardsGrid) {
         cardsGrid.innerHTML = `
             <div class="bg-emerald-950/30 border border-emerald-500/20 p-3 sm:p-4 rounded-2xl">
@@ -212,6 +218,18 @@ export function renderAgingTableBody(list) {
         if (c.tier === 'tier90_plus') badgeColor = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
         else if (c.tier === 'tier61_90') badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/30';
         else if (c.tier === 'tier31_60') badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+        else if (c.inactiveDays === 0) badgeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+
+        const daysBadgeText = c.inactiveDays === 0 ? 'আজকে জমা' : `${c.inactiveDays} দিন অচল`;
+
+        let subtextHtml = '';
+        if (c.lastPaymentDate) {
+            subtextHtml = `<div class="text-[9.5px] text-slate-400 font-normal mt-0.5 whitespace-nowrap"><i class="fa-solid fa-hand-holding-dollar text-emerald-400 mr-1"></i>শেষ জমা: ৳ ${formatAmountWithComma(c.lastPaymentAmount)} • ${formatAppDate(c.lastPaymentDate)}</div>`;
+        } else if (c.lastTxnDate) {
+            subtextHtml = `<div class="text-[9.5px] text-slate-400 font-normal mt-0.5 whitespace-nowrap"><i class="fa-solid fa-file-invoice text-blue-400 mr-1"></i>চালান: ${formatAppDate(c.lastTxnDate)} (কোনো জমা নেই)</div>`;
+        } else {
+            subtextHtml = `<div class="text-[9.5px] text-slate-500 font-normal mt-0.5 whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left mr-1"></i>কোনো জমা নেই</div>`;
+        }
 
         return `
             <tr class="hover:bg-slate-800/40 transition-all fs-aging-row">
@@ -223,8 +241,9 @@ export function renderAgingTableBody(list) {
                 <td class="py-2.5 px-3 text-slate-300 whitespace-nowrap">${c.zone}</td>
                 <td class="py-2.5 px-3 text-center whitespace-nowrap">
                     <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${badgeColor}">
-                        ${c.inactiveDays} দিন অচল
+                        ${daysBadgeText}
                     </span>
+                    ${subtextHtml}
                 </td>
                 <td class="py-2.5 px-3 text-right font-black text-rose-400 font-mono whitespace-nowrap">৳ ${formatAmountWithComma(c.totalDue)}</td>
                 <td class="py-2.5 px-3 text-center whitespace-nowrap">

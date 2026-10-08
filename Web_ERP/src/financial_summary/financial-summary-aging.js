@@ -1,15 +1,119 @@
 import { getCustomerCache } from '../customer/index.js';
-import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, safeRound, showToast } from '../utils.js';
+import { TransactionDAO } from '../dao.js';
+import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, toDBDate, safeRound, showToast } from '../utils.js';
 import { sendSMS } from '../utils/messaging-service.js';
 
-/**
- * Calculate Aging Buckets for all Due Customers
- */
-export function calculateAgingDueData() {
-    try {
-        const customers = getCustomerCache() || [];
-        const today = new Date();
+let _customerActivityMap = null;
 
+/**
+ * Invalidate in-memory activity cache when new transactions occur
+ */
+export function invalidateAgingActivityCache() {
+    _customerActivityMap = null;
+}
+if (typeof window !== 'undefined') {
+    window.invalidateAgingActivityCache = invalidateAgingActivityCache;
+}
+
+/**
+ * Fetch and construct Customer Activity Map directly from Transactions Collection
+ * Maps each customerId -> { latestTxnDate, latestPaymentDate, latestPaymentAmount }
+ */
+export async function buildCustomerActivityMap(forceRefresh = false) {
+    if (_customerActivityMap && !forceRefresh) {
+        return _customerActivityMap;
+    }
+
+    const activityMap = {};
+
+    try {
+        const snap = await TransactionDAO.collection.get();
+        snap.forEach(doc => {
+            const t = doc.data();
+            const cid = t.customerId;
+            if (!cid) return;
+
+            const v = String(t.voucherNo || '').trim().toUpperCase();
+            const isOpening = (v === 'OPENING' || v === 'OPEN' || v === 'প্রারম্ভিক ব্যালেন্স' || v === 'প্রারম্ভিক জের');
+            if (isOpening) return;
+
+            let tDate = '';
+            if (typeof t.date === 'string' && t.date) {
+                tDate = toDBDate(t.date.trim());
+            } else if (t.createdAt) {
+                if (t.createdAt.toDate) tDate = t.createdAt.toDate().toISOString().split('T')[0];
+                else if (typeof t.createdAt === 'string') tDate = t.createdAt.split('T')[0];
+            }
+            if (!tDate) return;
+
+            const paid = Number(t.paid) || 0;
+            const bill = Number(t.bill) || 0;
+
+            if (!activityMap[cid]) {
+                activityMap[cid] = {
+                    latestTxnDate: '',
+                    latestPaymentDate: '',
+                    latestPaymentAmount: 0
+                };
+            }
+
+            const act = activityMap[cid];
+
+            // 1. Track latest overall transaction date (bill or payment)
+            if (!act.latestTxnDate || tDate > act.latestTxnDate) {
+                act.latestTxnDate = tDate;
+            }
+
+            // 2. Track latest cash / bank payment date & amount
+            if (paid > 0) {
+                if (!act.latestPaymentDate || tDate > act.latestPaymentDate) {
+                    act.latestPaymentDate = tDate;
+                    act.latestPaymentAmount = paid;
+                } else if (tDate === act.latestPaymentDate) {
+                    act.latestPaymentAmount = Math.max(act.latestPaymentAmount, paid);
+                }
+            }
+        });
+
+        _customerActivityMap = activityMap;
+    } catch (err) {
+        console.error('Failed to load transaction activity map:', err);
+        _customerActivityMap = _customerActivityMap || {};
+    }
+
+    return _customerActivityMap;
+}
+
+/**
+ * Calculate accurate calendar days elapsed between targetDate and today
+ */
+export function calculateElapsedDays(targetDateStr, todayStr) {
+    if (!targetDateStr) return 0;
+    try {
+        const cleanTarget = toDBDate(targetDateStr);
+        const [y1, m1, d1] = cleanTarget.split('-').map(Number);
+        const [y2, m2, d2] = todayStr.split('-').map(Number);
+        const utc1 = Date.UTC(y1, m1 - 1, d1);
+        const utc2 = Date.UTC(y2, m2 - 1, d2);
+        const diffMs = utc2 - utc1;
+        return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+    } catch (e) {
+        console.error('Error calculating elapsed days:', e);
+        return 0;
+    }
+}
+
+/**
+ * Calculate Aging Buckets for all Due Customers connected to Transaction & Payment History
+ */
+export async function calculateAgingDueData(forceRefresh = false) {
+    try {
+        const [customers, activityMap] = await Promise.all([
+            Promise.resolve(getCustomerCache() || []),
+            buildCustomerActivityMap(forceRefresh)
+        ]);
+
+        const todayStr = getTodayLocalDateString();
         const dueCustomers = customers.filter(c => (Number(c.totalDue) || 0) > 0);
 
         const buckets = {
@@ -25,22 +129,37 @@ export function calculateAgingDueData() {
             const due = Number(c.totalDue) || 0;
             grandTotalDue = safeRound(grandTotalDue + due);
 
-            // Safe parsing of last activity date
-            let dateStr = '2026-01-01';
-            if (typeof c.lastTxnDate === 'string' && c.lastTxnDate) {
-                dateStr = c.lastTxnDate;
+            const act = (activityMap && activityMap[c.id]) ? activityMap[c.id] : {};
+            const lastPaymentDate = act.latestPaymentDate || (typeof c.lastPaymentDate === 'string' && c.lastPaymentDate ? c.lastPaymentDate : null);
+            const lastPaymentAmount = act.latestPaymentAmount || (Number(c.lastPaymentAmount) || 0);
+            const lastTxnDate = act.latestTxnDate || (typeof c.lastTxnDate === 'string' && c.lastTxnDate ? c.lastTxnDate : null);
+
+            // Ground Truth Recency Law:
+            // Priority 1: Latest cash / bank payment date (যদি কাস্টমার কখনো ক্যাশ জমা দিয়ে থাকে)
+            // Priority 2: Latest transaction date (যদি কোনো জমা না থাকে কিন্তু বিল/চালান থাকে)
+            // Priority 3: Account opening date / creation date (শুধুমাত্র যদি কোনো ট্রানজ্যাকশন রেকর্ডই না থাকে)
+            let effectiveDate = '';
+            let dateSource = 'none';
+
+            if (lastPaymentDate) {
+                effectiveDate = lastPaymentDate;
+                dateSource = 'payment';
+            } else if (lastTxnDate) {
+                effectiveDate = lastTxnDate;
+                dateSource = 'txn';
             } else if (typeof c.openingDate === 'string' && c.openingDate) {
-                dateStr = c.openingDate;
-            } else if (c.updatedAt) {
-                if (typeof c.updatedAt === 'string') dateStr = c.updatedAt.split('T')[0];
-                else if (c.updatedAt.toDate) dateStr = c.updatedAt.toDate().toISOString().split('T')[0];
+                effectiveDate = c.openingDate;
+                dateSource = 'opening';
             } else if (c.createdAt) {
-                if (typeof c.createdAt === 'string') dateStr = c.createdAt.split('T')[0];
-                else if (c.createdAt.toDate) dateStr = c.createdAt.toDate().toISOString().split('T')[0];
+                if (typeof c.createdAt === 'string') effectiveDate = c.createdAt.split('T')[0];
+                else if (c.createdAt.toDate) effectiveDate = c.createdAt.toDate().toISOString().split('T')[0];
+                dateSource = 'created';
+            } else {
+                effectiveDate = todayStr;
+                dateSource = 'today';
             }
 
-            const lastDate = new Date(dateStr);
-            const diffDays = isNaN(lastDate.getTime()) ? 0 : Math.max(0, Math.floor((today - lastDate) / (1000 * 60 * 60 * 24)));
+            const diffDays = calculateElapsedDays(effectiveDate, todayStr);
 
             const record = {
                 id: c.id,
@@ -50,7 +169,11 @@ export function calculateAgingDueData() {
                 zone: c.zone || '-',
                 totalDue: due,
                 inactiveDays: diffDays,
-                lastDate: dateStr
+                effectiveDate,
+                lastPaymentDate,
+                lastPaymentAmount,
+                lastTxnDate,
+                dateSource
             };
 
             if (diffDays <= 30) {

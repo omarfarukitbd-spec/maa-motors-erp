@@ -256,8 +256,17 @@ export async function saveAndPrintInvoice(layoutType) {
         if (validItems.length > 0) txnData.items = validItems.map(it => ({ ...it }));
 
         batch.set(txnRef, txnData);
-        batch.update(CustomerDAO.getRef(customerId), { totalDue: firebase.firestore.FieldValue.increment(safeRound(bill - paid)) });
+        const custUpdates = { 
+            totalDue: firebase.firestore.FieldValue.increment(safeRound(bill - paid)),
+            lastTxnDate: date
+        };
+        if (safeRound(paid) > 0) {
+            custUpdates.lastPaymentDate = date;
+            custUpdates.lastPaymentAmount = safeRound(paid);
+        }
+        batch.update(CustomerDAO.getRef(customerId), custUpdates);
         await batch.commit();
+        if (window.invalidateAgingActivityCache) window.invalidateAgingActivityCache();
 
         const cachedCust = (getCustomerCache() || []).find(c => c.id === customerId);
         if (cachedCust) cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) + (bill - paid));

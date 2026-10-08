@@ -57,7 +57,7 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
             cachedSummaryData = await fetchFinancialSummaryData(sDate, eDate);
             updateDashboardViews(cachedSummaryData);
             try {
-                renderAgingDueTab();
+                await renderAgingDueTab();
             } catch (agingErr) {
                 console.warn('Aging tab render warning:', agingErr);
             }
@@ -173,7 +173,15 @@ export async function renderFinancialSummaryUI(container, initialParams = {}) {
                 const cEl = document.getElementById('fs-tab-content-closing');
                 if (cEl) cEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
+        } else if (tabName === 'aging') {
+            renderAgingDueTab();
         }
+    };
+
+    window.fsRefreshAgingData = async () => {
+        showToast('বকেয়া বয়সের লেনদেন ডাটা রিফ্রেশ করা হচ্ছে...', 'info', 'এজিং রিফ্রেশ');
+        await renderAgingDueTab(true);
+        showToast('বকেয়া বয়স হিসাব আপডেট হয়েছে!', 'success', 'এজিং রিফ্রেশ');
     };
 
     // Load initial data for Today

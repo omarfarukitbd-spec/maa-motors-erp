@@ -149,13 +149,17 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
             if (oldCid !== id) {
                 batch.update(TransactionDAO.getRef(editingRef.id), { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, currentDue: safeRound(preCommitDue + balanceDiff) });
                 batch.update(CustomerDAO.getRef(oldCid), { totalDue: firebase.firestore.FieldValue.increment(-oldDiff) });
-                batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
+                const custUpdates = { totalDue: firebase.firestore.FieldValue.increment(balanceDiff), lastTxnDate: date };
+                if (safeRound(p) > 0) { custUpdates.lastPaymentDate = date; custUpdates.lastPaymentAmount = safeRound(p); }
+                batch.update(CustomerDAO.getRef(id), custUpdates);
                 actualDelta = balanceDiff;
             } else {
                 const netIncrement = safeRound(balanceDiff - oldDiff);
                 actualDelta = netIncrement;
                 batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
-                batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(netIncrement) });
+                const custUpdates = { totalDue: firebase.firestore.FieldValue.increment(netIncrement), lastTxnDate: date };
+                if (safeRound(p) > 0) { custUpdates.lastPaymentDate = date; custUpdates.lastPaymentAmount = safeRound(p); }
+                batch.update(CustomerDAO.getRef(id), custUpdates);
             }
             auditLog('UPDATE', 'Ledger', editingRef.id, name, { oldBill: editingRef.oldBill, oldPaid: editingRef.oldPaid, newBill: b, newPaid: p, notes });
             editingRef.id = null;
@@ -164,13 +168,16 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         } else {
             txnRef = TransactionDAO.getRef();
             batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            batch.update(CustomerDAO.getRef(id), { totalDue: firebase.firestore.FieldValue.increment(balanceDiff) });
+            const custUpdates = { totalDue: firebase.firestore.FieldValue.increment(balanceDiff), lastTxnDate: date };
+            if (safeRound(p) > 0) { custUpdates.lastPaymentDate = date; custUpdates.lastPaymentAmount = safeRound(p); }
+            batch.update(CustomerDAO.getRef(id), custUpdates);
             auditLog('CREATE', 'Ledger', txnRef.id, name, { bill: b, paid: p, type: receivedType || 'Bill', notes });
         }
         
         const finalSmsDue = safeRound(preCommitDue + actualDelta);
         const savedTxnId = editedTxnId || txnRef?.id; // BUG-01 Fix: editedTxnId ব্যবহার করো (editingRef.id এখন null)
         await batch.commit();
+        if (window.invalidateAgingActivityCache) window.invalidateAgingActivityCache();
         triggerSilentCustomerGoogleSync(id);
         showToast('লেনদেন সফলভাবে সেভ হয়েছে!', 'success');
 
@@ -321,6 +328,7 @@ export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
         });
         batch.delete(TransactionDAO.getRef(id));
         await batch.commit();
+        if (window.invalidateAgingActivityCache) window.invalidateAgingActivityCache();
 
         const cachedCust = (getCustomerCache() || []).find(c => c.id === cid);
         if (cachedCust) cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) + (p - b));

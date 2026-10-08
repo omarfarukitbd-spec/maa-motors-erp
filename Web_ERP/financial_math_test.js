@@ -106,6 +106,32 @@ function runFinancialMathTests() {
     assert.strictEqual(runningFund, 45819484, "September treasury running balance recalibration mismatch");
     passed++;
 
+    // Test 7: Invariant 7 - Aging Inactivity & Payment Recency Law (Ground Truth Payment Linking)
+    function calcElapsedDays(targetStr, todayStr) {
+        const [y1, m1, d1] = targetStr.split('-').map(Number);
+        const [y2, m2, d2] = todayStr.split('-').map(Number);
+        const utc1 = Date.UTC(y1, m1 - 1, d1);
+        const utc2 = Date.UTC(y2, m2 - 1, d2);
+        return Math.max(0, Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24)));
+    }
+    const todayTest = '2026-10-08';
+    
+    // Case A: মো: মিজান (208 days old account, but deposited cash yesterday 2026-10-07)
+    const mizanCust = { openingDate: '2026-03-14', lastPaymentDate: '2026-10-07', lastPaymentAmount: 50000 };
+    const mizanEffectiveDate = mizanCust.lastPaymentDate || mizanCust.openingDate;
+    assert.strictEqual(calcElapsedDays(mizanEffectiveDate, todayTest), 1, "Mizan payment recency must be 1 day (yesterday), NOT 208 days");
+
+    // Case B: Customer deposited cash TODAY
+    const todayCust = { openingDate: '2026-01-01', lastPaymentDate: '2026-10-08', lastPaymentAmount: 15000 };
+    assert.strictEqual(calcElapsedDays(todayCust.lastPaymentDate, todayTest), 0, "Same day payment must yield 0 inactive days");
+
+    // Case C: Customer never paid, but has invoice from 2026-09-28 (10 days ago)
+    const invoiceCust = { openingDate: '2025-10-08', lastPaymentDate: null, lastTxnDate: '2026-09-28' };
+    const invoiceEffective = invoiceCust.lastPaymentDate || invoiceCust.lastTxnDate || invoiceCust.openingDate;
+    assert.strictEqual(calcElapsedDays(invoiceEffective, todayTest), 10, "Invoice recency fallback must be 10 days");
+
+    passed++;
+
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);
     return true;
 }

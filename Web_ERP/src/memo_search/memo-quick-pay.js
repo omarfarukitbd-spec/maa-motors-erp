@@ -157,12 +157,21 @@ export async function openMemoQuickPayModal(txnId, voucherNo, customerId, curren
 
         batch.set(txnRef, newTxnData);
         batch.update(CustomerDAO.getRef(targetCustId), {
-            totalDue: firebase.firestore.FieldValue.increment(safeRound(-formValues.amt))
+            totalDue: firebase.firestore.FieldValue.increment(safeRound(-formValues.amt)),
+            lastTxnDate: formValues.date,
+            lastPaymentDate: formValues.date,
+            lastPaymentAmount: safeRound(formValues.amt)
         });
 
         await batch.commit();
+        if (window.invalidateAgingActivityCache) window.invalidateAgingActivityCache();
         const cachedCust = (getCustomerCache() || []).find(c => c.id === targetCustId);
-        if (cachedCust) cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) - formValues.amt);
+        if (cachedCust) {
+            cachedCust.totalDue = safeRound((Number(cachedCust.totalDue) || 0) - formValues.amt);
+            cachedCust.lastTxnDate = formValues.date;
+            cachedCust.lastPaymentDate = formValues.date;
+            cachedCust.lastPaymentAmount = safeRound(formValues.amt);
+        }
 
         auditLog('QUICK_COLLECT', 'Transaction', txnRef.id, custName, { paid: formValues.amt, voucherNo: targetVoucher });
 
