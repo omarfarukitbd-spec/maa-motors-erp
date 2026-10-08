@@ -1,0 +1,184 @@
+{
+  "total_new_memos": 22,
+  "new_memo_folder": "E:\\maa-motors-erp\\Memo Book Editor\\New_Memos_WebP",
+  "master_memo_folder": "E:\\maa-motors-erp\\Memo Book Editor\\Converted_Memos_WebP",
+  "average_size_kb": 55.1,
+  "memos": [
+    {
+      "page": 79,
+      "memo_no": 146,
+      "filename": "146.webp",
+      "size_kb": 76.3,
+      "dimensions": "950x1137",
+      "category": "Recovered Missing Memo"
+    },
+    {
+      "page": 80,
+      "memo_no": 159,
+      "filename": "159.webp",
+      "size_kb": 97.7,
+      "dimensions": "950x1148",
+      "category": "Recovered Missing Memo"
+    },
+    {
+      "page": 81,
+      "memo_no": 181,
+      "filename": "181.webp",
+      "size_kb": 42.2,
+      "dimensions": "950x1145",
+      "category": "New Book Range"
+    },
+    {
+      "page": 82,
+      "memo_no": 182,
+      "filename": "182.webp",
+      "size_kb": 28.7,
+      "dimensions": "950x1150",
+      "category": "New Book Range"
+    },
+    {
+      "page": 83,
+      "memo_no": 183,
+      "filename": "183.webp",
+      "size_kb": 62.7,
+      "dimensions": "950x1161",
+      "category": "New Book Range"
+    },
+    {
+      "page": 84,
+      "memo_no": 184,
+      "filename": "184.webp",
+      "size_kb": 37.4,
+      "dimensions": "950x1150",
+      "category": "New Book Range"
+    },
+    {
+      "page": 85,
+      "memo_no": 185,
+      "filename": "185.webp",
+      "size_kb": 83.5,
+      "dimensions": "950x1156",
+      "category": "New Book Range"
+    },
+    {
+      "page": 86,
+      "memo_no": 186,
+      "filename": "186.webp",
+      "size_kb": 88.6,
+      "dimensions": "950x1158",
+      "category": "New Book Range"
+    },
+    {
+      "page": 87,
+      "memo_no": 187,
+      "filename": "187.webp",
+      "size_kb": 53.3,
+      "dimensions": "950x1156",
+      "category": "New Book Range"
+    },
+    {
+      "page": 88,
+      "memo_no": 188,
+      "filename": "188.webp",
+      "size_kb": 29.3,
+      "dimensions": "950x1142",
+      "category": "New Book Range"
+    },
+    {
+      "page": 89,
+      "memo_no": 189,
+      "filename": "189.webp",
+      "size_kb": 60.5,
+      "dimensions": "950x1144",
+      "category": "New Book Range"
+    },
+    {
+      "page": 90,
+      "memo_no": 190,
+      "filename": "190.webp",
+      "size_kb": 64.2,
+      "dimensions": "950x1159",
+      "category": "New Book Range"
+    },
+    {
+      "page": 91,
+      "memo_no": 191,
+      "filename": "191.webp",
+      "size_kb": 62.2,
+      "dimensions": "950x1148",
+      "category": "New Book Range"
+    },
+    {
+      "page": 92,
+      "memo_no": 192,
+      "filename": "192.webp",
+      "size_kb": 88.0,
+      "dimensions": "950x1166",
+      "category": "New Book Range"
+    },
+    {
+      "page": 93,
+      "memo_no": 193,
+      "filename": "193.webp",
+      "size_kb": 72.7,
+      "dimensions": "950x1169",
+      "category": "New Book Range"
+    },
+    {
+      "page": 94,
+      "memo_no": 194,
+      "filename": "194.webp",
+      "size_kb": 67.9,
+      "dimensions": "950x1168",
+      "category": "New Book Range"
+    },
+    {
+      "page": 95,
+      "memo_no": 195,
+      "filename": "195.webp",
+      "size_kb": 24.9,
+      "dimensions": "950x1161",
+      "category": "New Book Range"
+    },
+    {
+      "page": 96,
+      "memo_no": 196,
+      "filename": "196.webp",
+      "size_kb": 70.7,
+      "dimensions": "950x1171",
+      "category": "New Book Range"
+    },
+    {
+      "page": 97,
+      "memo_no": 197,
+      "filename": "197.webp",
+      "size_kb": 25.3,
+      "dimensions": "950x1161",
+      "category": "New Book Range"
+    },
+    {
+      "page": 98,
+      "memo_no": 198,
+      "filename": "198.webp",
+      "size_kb": 31.8,
+      "dimensions": "950x1186",
+      "category": "New Book Range"
+    },
+    {
+      "page": 99,
+      "memo_no": 199,
+      "filename": "199.webp",
+      "size_kb": 25.8,
+      "dimensions": "950x1180",
+      "category": "New Book Range"
+    },
+    {
+      "page": 100,
+      "memo_no": 200,
+      "filename": "200.webp",
+      "size_kb": 17.9,
+      "dimensions": "950x1196",
+      "category": "New Book Range"
+    }
+  ]
+}
