@@ -42,7 +42,9 @@ export function calculateTotalPhysicalAssets(cashInHand, marketAdvance, personal
     let holdingsTotal = 0;
     if (Array.isArray(personalHoldings)) {
         holdingsTotal = personalHoldings.reduce((sum, item) => {
-            return safeRound(sum + safeRound(parseAmount(item.amount)));
+            const amt = safeRound(parseAmount(item.amount));
+            const isPlus = item.op === '+';
+            return safeRound(isPlus ? sum - amt : sum + amt);
         }, 0);
     }
     

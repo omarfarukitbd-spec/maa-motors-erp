@@ -18,7 +18,7 @@ import {
 let currentAuditId = null;
 let auditHistory = [];
 let dynamicHoldings = [
-    { desc: 'আলতাফ জাবেদ', amount: 0 }
+    { desc: 'আলতাফ জাবেদ', amount: 0, op: '-' }
 ];
 
 const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
@@ -98,9 +98,16 @@ export function updateLiveWaterfall() {
     const sub2 = safeRound(sub1 - effExp);
     const sub3 = safeRound(sub2 - mAd - cHand);
 
-    let holdingsTotal = 0;
-    dynamicHoldings.forEach(h => { holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount))); });
-    const finalVariance = safeRound(sub3 - holdingsTotal);
+    let holdingsEffect = 0;
+    dynamicHoldings.forEach(h => {
+        const amt = safeRound(parseAmount(h.amount));
+        if (h.op === '+') {
+            holdingsEffect = safeRound(holdingsEffect + amt);
+        } else {
+            holdingsEffect = safeRound(holdingsEffect - amt);
+        }
+    });
+    const finalVariance = safeRound(sub3 + holdingsEffect);
 
     const setTxt = (id, val) => { 
         const el = document.getElementById(id); 
@@ -247,9 +254,17 @@ window.openDubaiMemoDetailsModal = function() {
 };
 
 window.addDubaiHoldingPreset = function(presetName) {
-    dynamicHoldings.push({ desc: presetName, amount: 0 });
+    dynamicHoldings.push({ desc: presetName, amount: 0, op: '-' });
     renderDynamicHoldings();
     updateLiveWaterfall();
+};
+
+window.toggleDubaiHoldingOp = function(idx) {
+    if (dynamicHoldings[idx]) {
+        dynamicHoldings[idx].op = dynamicHoldings[idx].op === '+' ? '-' : '+';
+        renderDynamicHoldings();
+        updateLiveWaterfall();
+    }
 };
 
 function clearNewWeekFields() {
@@ -326,7 +341,7 @@ async function onRollForwardClick(silent = false) {
         }
     }
 
-    dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0 }];
+    dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0, op: '-' }];
     renderDynamicHoldings();
     DubaiMemoModal.setMemos([]);
     updateLiveWaterfall();
@@ -368,12 +383,20 @@ function buildCurrentAuditObject() {
     const marketAd = getVal('val-market-ad');
     const cashInHand = getVal('val-cash-in-hand');
 
-    let holdingsTotal = 0;
-    dynamicHoldings.forEach(h => { holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount))); });
+    let holdingsEffect = 0;
+    dynamicHoldings.forEach(h => {
+        const amt = safeRound(parseAmount(h.amount));
+        if (h.op === '+') {
+            holdingsEffect = safeRound(holdingsEffect + amt);
+        } else {
+            holdingsEffect = safeRound(holdingsEffect - amt);
+        }
+    });
 
-    const totalPhysical = safeRound(marketAd + cashInHand + holdingsTotal);
     const theoreticalCash = safeRound(cumSent - cumPur - cumExp);
-    const finalVariance = safeRound(theoreticalCash - totalPhysical);
+    const sub3 = safeRound(theoreticalCash - marketAd - cashInHand);
+    const finalVariance = safeRound(sub3 + holdingsEffect);
+    const totalPhysical = safeRound(theoreticalCash - finalVariance);
 
     const mStart = getTxt('memo-range-start');
     const mEnd = getTxt('memo-range-end');
@@ -397,7 +420,12 @@ function buildCurrentAuditObject() {
         prevRemittance: prevRem, weeklyRemittanceTotal: runningSent, cumulativeRemittance: cumSent,
         prevPurchaseTotal: prevPur, weeklyPurchaseTotal: runningPur, cumulativePurchaseTotal: cumPur,
         prevExpenseTotal: prevExp, weeklyExpenseTotal: runningExp, cumulativeExpenseTotal: cumExp,
-        marketAdvance: marketAd, cashInHand: cashInHand, personalHoldings: [...dynamicHoldings],
+        marketAdvance: marketAd, cashInHand: cashInHand, personalHoldings: dynamicHoldings.map(h => ({
+            desc: h.desc || h.name || '',
+            name: h.name || h.desc || '',
+            amount: safeRound(parseAmount(h.amount)),
+            op: h.op === '+' ? '+' : '-'
+        })),
         totalPhysicalAssets: totalPhysical, calculatedCashBalance: theoreticalCash,
         varianceAmount: finalVariance, status: 'CLOSED'
     };
@@ -473,8 +501,13 @@ window.loadDubaiAuditHistory = async function(id) {
     ].forEach(([id, val]) => setInp(id, formatAmountWithComma(val || 0)));
 
     dynamicHoldings = Array.isArray(audit.personalHoldings) && audit.personalHoldings.length > 0 
-        ? [...audit.personalHoldings] 
-        : [{ desc: 'আলতাফ / জাবেদ', amount: 0 }];
+        ? audit.personalHoldings.map(h => ({
+            desc: h.desc || h.name || '',
+            name: h.name || h.desc || '',
+            amount: safeRound(parseAmount(h.amount)),
+            op: h.op === '+' ? '+' : '-'
+        }))
+        : [{ desc: 'আলতাফ / জাবেদ', amount: 0, op: '-' }];
     renderDynamicHoldings();
 
     DubaiMemoModal.setMemos(Array.isArray(memos) ? memos : []);

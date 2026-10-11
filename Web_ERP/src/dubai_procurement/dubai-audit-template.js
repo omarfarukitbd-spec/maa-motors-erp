@@ -3,7 +3,7 @@
  * Engineered for 100%, 110%, and 125% browser zoom without voids or deformed heights.
  */
 
-import { getTodayLocalDateString, formatAmountWithComma, parseAmount, safeRound } from '../utils.js';
+import { getTodayLocalDateString, formatAmountWithComma, parseAmount, safeRound, escapeHTML } from '../utils.js';
 
 export function getDubaiAuditMainTemplate() {
     return `
@@ -389,12 +389,20 @@ export function getDubaiAuditMainTemplate() {
 
 export function getDynamicHoldingRowHtml(h, idx) {
     const amt = safeRound(parseAmount(h.amount));
+    const isPlus = h.op === '+';
+    const textTheme = isPlus ? 'text-emerald-300 focus:border-emerald-400' : 'text-purple-300 focus:border-purple-400';
+    const amtTheme = isPlus ? 'text-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/30' : 'text-purple-300 focus:border-purple-500 focus:ring-purple-500/30';
+    const noteText = isPlus ? 'ব্যক্তিগত প্রাপ্তি / সমন্বয়' : 'ব্যক্তিগত হস্তান্তর / মেস';
+
     return `
         <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
             <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
-                <input type="text" value="${h.desc || ''}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-purple-300 text-sm sm:text-base font-bold focus:border-purple-400 outline-none flex-grow">
+                <input type="text" value="${escapeHTML(h.desc || h.name || '')}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 ${textTheme} text-sm sm:text-base font-bold outline-none flex-grow">
                 <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-purple-400 mr-0.5"></i> বিয়োগ</span>
+                    <button type="button" onclick="window.toggleDubaiHoldingOp(${idx})" class="px-2 py-0.5 rounded-lg ${isPlus ? 'bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400' : 'bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300'} text-xs font-black transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm" title="ক্লিক করে বিয়োগ বা যোগ পরিবর্তন করুন">
+                        <i class="fa-solid ${isPlus ? 'fa-plus text-[10px]' : 'fa-minus text-[10px]'}"></i>
+                        <span>${isPlus ? 'যোগ' : 'বিয়োগ'}</span>
+                    </button>
                     <button type="button" onclick="window.removeDubaiHoldingRow(${idx})" class="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer transition-colors" title="মুছে ফেলুন">
                         <i class="fa-solid fa-xmark text-xs"></i>
                     </button>
@@ -402,10 +410,10 @@ export function getDynamicHoldingRowHtml(h, idx) {
             </div>
             <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
                 <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
-                <input type="text" id="dubai-holding-amt-${idx}" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${idx}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextHoldingInput(${idx});}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-purple-300 font-mono text-right font-black focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 outline-none shadow-inner">
+                <input type="text" id="dubai-holding-amt-${idx}" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${idx}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextHoldingInput(${idx});}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base ${amtTheme} font-mono text-right font-black focus:ring-1 outline-none shadow-inner">
             </div>
             <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold">
-                ব্যক্তিগত হস্তান্তর / মেস
+                ${noteText}
             </div>
         </div>
     `;

@@ -76,7 +76,9 @@ function generateAuditPrintHtml(audit, memos, settings) {
     let holdingsTotal = 0;
     const holdingsList = Array.isArray(audit.personalHoldings) ? audit.personalHoldings : [];
     holdingsList.forEach(h => {
-        holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount)));
+        const amt = safeRound(parseAmount(h.amount));
+        const isPlus = h.op === '+';
+        holdingsTotal = safeRound(isPlus ? holdingsTotal - amt : holdingsTotal + amt);
     });
 
     const finalVariance = safeRound(parseAmount(audit.varianceAmount));
@@ -86,16 +88,20 @@ function generateAuditPrintHtml(audit, memos, settings) {
     let holdingsHtml = '';
     holdingsList.forEach(h => {
         const amt = safeRound(parseAmount(h.amount));
+        const isPlus = h.op === '+';
+        const signText = isPlus ? '(+) AED:' : '(-) AED:';
+        const signColor = isPlus ? '#059669' : '#6b21a8';
+        const noteText = isPlus ? 'ব্যক্তিগত প্রাপ্তি / সমন্বয়' : 'ব্যক্তিগত হস্তান্তর / মেস';
         holdingsHtml += `
             <tr class="print-row-no-break" style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
                 <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-weight: 700; color: #475569; font-size: 11px;">${escapeHTML(h.desc || h.name || 'ব্যক্তিগত হস্তান্তর')}</span>
-                        <span style="color: #64748b; font-size: 9.5px;">(-) AED: <b class="num-font" style="color: #6b21a8; font-size: 11.5px;">${formatAED(amt)}</b></span>
+                        <span style="color: #64748b; font-size: 9.5px;">${signText} <b class="num-font" style="color: ${signColor}; font-size: 11.5px;">${formatAED(amt)}</b></span>
                     </div>
                 </td>
                 <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
-                    ব্যক্তিগত হস্তান্তর / মেস
+                    ${noteText}
                 </td>
             </tr>
         `;

@@ -21,7 +21,9 @@ export function renderDubaiHistoryTable(tbodyId, audits = []) {
         let holdingsSum = 0;
         if (Array.isArray(a.personalHoldings)) {
             a.personalHoldings.forEach(h => {
-                holdingsSum = safeRound(holdingsSum + safeRound(parseAmount(h.amount)));
+                const amt = safeRound(parseAmount(h.amount));
+                const isPlus = h.op === '+';
+                holdingsSum = safeRound(isPlus ? holdingsSum - amt : holdingsSum + amt);
             });
         }
         html += `
