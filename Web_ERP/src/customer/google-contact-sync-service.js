@@ -374,19 +374,18 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
             console.warn('Transactions prefetch warning:', txnErr);
         }
 
-        let totalUpdated = 0;
-        let totalCreated = 0;
-        const syncedBatchDueUpdates = {};
+        // ২. টার্বো ব্যাচ ইঞ্জিন: সকল সংযুক্ত ডিভাইসে প্যারালাল (সমান্তরাল) সিঙ্ক
+        const executeTurboBatchForAccount = async (acc) => {
+            let updatedCount = 0;
+            let createdCount = 0;
+            const syncedDueMap = {};
+            const devPrefix = activeTokens.length > 1 ? `[${acc.label}]: ` : '';
 
-        // ২. প্রতিটি কানেক্টেড ডিভাইসের জন্য সিঙ্ক চালানো
-        for (let devIdx = 0; devIdx < activeTokens.length; devIdx++) {
-            const acc = activeTokens[devIdx];
-            const devPrefix = activeTokens.length > 1
-                ? `[ডিভাইস ${devIdx + 1}/${activeTokens.length} - ${acc.label}]: `
-                : `[${acc.label}]: `;
+            if (onProgress) {
+                onProgress({ current: 0, total: customersToSync.length, text: `${devPrefix}গুগল কন্টাক্ট তালিকা ফেচ করা হচ্ছে...` });
+            }
 
-            if (onProgress) onProgress({ current: 0, total: customersToSync.length, text: `${devPrefix}গুগল কন্টাক্ট ফেচ করা হচ্ছে...` });
-
+            // ক. গুগল কন্টাক্টস ফেচ
             const googleContacts = [];
             let nextPageToken = '';
             do {
@@ -398,6 +397,7 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                 nextPageToken = data.nextPageToken || '';
             } while (nextPageToken);
 
+            // খ. ফোন নম্বর দিয়ে দ্রুত O(1) লুকআপ ম্যাপ
             const phoneMap = new Map();
             googleContacts.forEach(gc => {
                 if (gc.phoneNumbers) {
@@ -408,20 +408,16 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                 }
             });
 
+            const toUpdate = [];
+            const toCreate = [];
+
+            // গ. কাস্টমারদের ক্যাটাগরাইজ করা
             for (let i = 0; i < customersToSync.length; i++) {
                 const c = customersToSync[i];
                 const totalDue = Number(c.totalDue) || 0;
                 const custTxns = txnsByCustomer.get(c.id) || [];
                 const intelligence = calculateCallIntelligence(custTxns, totalDue);
                 const { phones, displayName, liveUrl, orgTitle, bioText } = buildContactFields(c, intelligence);
-
-                if (onProgress) {
-                    onProgress({
-                        current: i + 1,
-                        total: customersToSync.length,
-                        text: `${devPrefix}${displayName}`
-                    });
-                }
 
                 let matched = null;
                 for (const p of phones) {
@@ -432,73 +428,215 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                     }
                 }
 
+                if (matched) {
+                    const existingName = matched.names?.[0]?.displayName || matched.names?.[0]?.givenName || '';
+                    const hasMMTag = existingName.includes('[MM]');
+                    const finalName = hasMMTag || !existingName
+                        ? displayName
+                        : updatePersonalContactNameWithDue(existingName, totalDue);
+
+                    toUpdate.push({
+                        resourceName: matched.resourceName,
+                        etag: matched.etag,
+                        finalName,
+                        orgTitle,
+                        liveUrl,
+                        bioText,
+                        customerId: c.id,
+                        totalDue
+                    });
+                } else if (phones.length > 0) {
+                    toCreate.push({
+                        displayName,
+                        phones,
+                        orgTitle,
+                        liveUrl,
+                        bioText,
+                        address: c.address || '',
+                        zone: c.zone || '',
+                        customerId: c.id,
+                        totalDue
+                    });
+                }
+            }
+
+            if (onProgress) {
+                onProgress({
+                    current: 0,
+                    total: customersToSync.length,
+                    text: `${devPrefix}টার্বো ব্যাচ মিউটেশন চলছে (${toUpdate.length} টি আপডেট, ${toCreate.length} টি নতুন)...`
+                });
+            }
+
+            // ঘ. টার্বো ব্যাচ আপডেট (১৫০ টি করে সুপার-ব্যাচ রিকোয়েস্টে)
+            const BATCH_SIZE = 150;
+            for (let i = 0; i < toUpdate.length; i += BATCH_SIZE) {
+                const chunk = toUpdate.slice(i, i + BATCH_SIZE);
+                const contactsMap = {};
+                chunk.forEach(item => {
+                    contactsMap[item.resourceName] = {
+                        etag: item.etag,
+                        names: [{ givenName: item.finalName }],
+                        organizations: [{ name: "M/S. MAA-MOTOR'S", title: item.orgTitle }],
+                        urls: [{ value: item.liveUrl, type: 'Live Due Card' }],
+                        biographies: [{ value: item.bioText }]
+                    };
+                });
+
+                const batchUrl = 'https://people.googleapis.com/v1/people:batchUpdateContacts';
+                const batchPayload = {
+                    contacts: contactsMap,
+                    updateMask: 'names,organizations,urls,biographies'
+                };
+
+                let isBatchSuccess = false;
                 try {
-                    if (matched) {
-                        const existingName = matched.names?.[0]?.displayName || matched.names?.[0]?.givenName || '';
-                        const hasMMTag = existingName.includes('[MM]');
-                        const finalName = hasMMTag || !existingName
-                            ? displayName
-                            : updatePersonalContactNameWithDue(existingName, totalDue);
+                    const batchRes = await fetchWithRetry(batchUrl, {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${acc.accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(batchPayload)
+                    });
 
-                        const updateFields = ['organizations', 'biographies', 'urls', 'names'];
-                        const payload = {
-                            etag: matched.etag,
-                            names: [{ givenName: finalName }],
-                            organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
-                            urls: [{ value: liveUrl, type: 'Live Due Card' }],
-                            biographies: [{ value: bioText }]
-                        };
-
-                        const updateUrl = `https://people.googleapis.com/v1/${matched.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
-                        const patchRes = await fetchWithRetry(updateUrl, {
-                            method: 'PATCH',
-                            headers: {
-                                Authorization: `Bearer ${acc.accessToken}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(payload)
-                        });
-                        if (patchRes.ok) {
-                            totalUpdated++;
-                            syncedBatchDueUpdates[c.id] = totalDue;
-                        }
-                    } else if (phones.length > 0) {
-                        const createUrl = 'https://people.googleapis.com/v1/people:createContact';
-                        const createPayload = {
-                            names: [{ givenName: displayName }],
-                            phoneNumbers: phones.map(p => ({ value: p, type: 'Mobile' })),
-                            organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
-                            urls: [{ value: liveUrl, type: 'Live Due Card' }],
-                            biographies: [{ value: bioText }],
-                            addresses: [{ streetAddress: c.address || '', city: c.zone || '', type: 'Work' }]
-                        };
-                        const postRes = await fetchWithRetry(createUrl, {
-                            method: 'POST',
-                            headers: {
-                                Authorization: `Bearer ${acc.accessToken}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(createPayload)
-                        });
-                        if (postRes.ok) {
-                            totalCreated++;
-                            syncedBatchDueUpdates[c.id] = totalDue;
-                        }
+                    if (batchRes.ok) {
+                        isBatchSuccess = true;
+                        updatedCount += chunk.length;
+                        chunk.forEach(item => { syncedDueMap[item.customerId] = item.totalDue; });
                     }
-                } catch (singleSyncErr) {
-                    console.error('Error syncing contact for:', c.name, singleSyncErr);
+                } catch (batchErr) {
+                    console.warn(`[${acc.label}] Batch update failed, falling back to parallel individual updates:`, batchErr);
                 }
 
-                if (i % 6 === 0) await new Promise(r => setTimeout(r, 60));
+                // সেফটি ফলব্যাক: যদি কোনো কারণে ব্যাচ এপিআই রিজেক্ট করে, প্যারালাল ইন্ডিভিজুয়াল আপডেট
+                if (!isBatchSuccess) {
+                    await Promise.all(chunk.map(async (item) => {
+                        try {
+                            const updateUrl = `https://people.googleapis.com/v1/${item.resourceName}:updateContact?updatePersonFields=names,organizations,urls,biographies`;
+                            const patchRes = await fetchWithRetry(updateUrl, {
+                                method: 'PATCH',
+                                headers: {
+                                    Authorization: `Bearer ${acc.accessToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    etag: item.etag,
+                                    names: [{ givenName: item.finalName }],
+                                    organizations: [{ name: "M/S. MAA-MOTOR'S", title: item.orgTitle }],
+                                    urls: [{ value: item.liveUrl, type: 'Live Due Card' }],
+                                    biographies: [{ value: item.bioText }]
+                                })
+                            });
+                            if (patchRes.ok) {
+                                updatedCount++;
+                                syncedDueMap[item.customerId] = item.totalDue;
+                            }
+                        } catch (singleErr) {
+                            console.error('Individual update fallback error:', singleErr);
+                        }
+                    }));
+                }
+
+                if (onProgress) {
+                    onProgress({
+                        current: Math.min(i + chunk.length, customersToSync.length),
+                        total: customersToSync.length,
+                        text: `${devPrefix}আপডেট সম্পন্ন (${Math.min(i + chunk.length, toUpdate.length)}/${toUpdate.length})`
+                    });
+                }
+            }
+
+            // ঙ. টার্বো ব্যাচ ক্রিয়েট (নতুন কন্টাক্ট তৈরির জন্য)
+            for (let i = 0; i < toCreate.length; i += BATCH_SIZE) {
+                const chunk = toCreate.slice(i, i + BATCH_SIZE);
+                const contactsList = chunk.map(item => ({
+                    contactPerson: {
+                        names: [{ givenName: item.displayName }],
+                        phoneNumbers: item.phones.map(p => ({ value: p, type: 'Mobile' })),
+                        organizations: [{ name: "M/S. MAA-MOTOR'S", title: item.orgTitle }],
+                        urls: [{ value: item.liveUrl, type: 'Live Due Card' }],
+                        biographies: [{ value: item.bioText }],
+                        addresses: [{ streetAddress: item.address, city: item.zone, type: 'Work' }]
+                    }
+                }));
+
+                const createBatchUrl = 'https://people.googleapis.com/v1/people:batchCreateContacts';
+                let isCreateBatchSuccess = false;
+                try {
+                    const createRes = await fetchWithRetry(createBatchUrl, {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${acc.accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ contacts: contactsList, readMask: 'names,phoneNumbers' })
+                    });
+
+                    if (createRes.ok) {
+                        isCreateBatchSuccess = true;
+                        createdCount += chunk.length;
+                        chunk.forEach(item => { syncedDueMap[item.customerId] = item.totalDue; });
+                    }
+                } catch (createBatchErr) {
+                    console.warn(`[${acc.label}] Batch create failed, falling back to parallel individual creates:`, createBatchErr);
+                }
+
+                // সেফটি ফলব্যাক: প্যারালাল ইন্ডিভিজুয়াল ক্রিয়েট
+                if (!isCreateBatchSuccess) {
+                    await Promise.all(chunk.map(async (item) => {
+                        try {
+                            const createUrl = 'https://people.googleapis.com/v1/people:createContact';
+                            const postRes = await fetchWithRetry(createUrl, {
+                                method: 'POST',
+                                headers: {
+                                    Authorization: `Bearer ${acc.accessToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    names: [{ givenName: item.displayName }],
+                                    phoneNumbers: item.phones.map(p => ({ value: p, type: 'Mobile' })),
+                                    organizations: [{ name: "M/S. MAA-MOTOR'S", title: item.orgTitle }],
+                                    urls: [{ value: item.liveUrl, type: 'Live Due Card' }],
+                                    biographies: [{ value: item.bioText }],
+                                    addresses: [{ streetAddress: item.address, city: item.zone, type: 'Work' }]
+                                })
+                            });
+                            if (postRes.ok) {
+                                createdCount++;
+                                syncedDueMap[item.customerId] = item.totalDue;
+                            }
+                        } catch (singleCreateErr) {
+                            console.error('Individual create fallback error:', singleCreateErr);
+                        }
+                    }));
+                }
             }
 
             // এই নির্দিষ্ট ডিভাইসের সিঙ্ক টাইমস্ট্যাম্প ফায়ারস্টোরে আপডেট
             await updateAccountSyncTimestamp(acc.id);
-        }
+
+            return { updatedCount, createdCount, syncedDueMap };
+        };
+
+        // মাল্টি-ডিভাইস একযোগে প্যারালাল এক্সিকিউশন
+        const deviceResults = await Promise.all(
+            activeTokens.map(acc => executeTurboBatchForAccount(acc))
+        );
+
+        let totalUpdated = 0;
+        let totalCreated = 0;
+        const mergedSyncedDueUpdates = {};
+
+        deviceResults.forEach(res => {
+            totalUpdated += res.updatedCount;
+            totalCreated += res.createdCount;
+            Object.assign(mergedSyncedDueUpdates, res.syncedDueMap);
+        });
 
         // ৩. সিঙ্ক হওয়া কাস্টমারদের বকেয়া স্টেট সংরক্ষণ
-        if (Object.keys(syncedBatchDueUpdates).length > 0) {
-            await updateSyncedDueForCustomers(syncedBatchDueUpdates);
+        if (Object.keys(mergedSyncedDueUpdates).length > 0) {
+            await updateSyncedDueForCustomers(mergedSyncedDueUpdates);
         }
 
         await db.collection('settings').doc('google_sync').set({
@@ -507,9 +645,18 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                 updated: totalUpdated,
                 created: totalCreated,
                 total: customersToSync.length,
-                deltaOnly: deltaOnly
+                deltaOnly: deltaOnly,
+                turboBatch: true
             }
         }, { merge: true });
+
+        if (onProgress) {
+            onProgress({
+                current: customersToSync.length,
+                total: customersToSync.length,
+                text: 'টার্বো ব্যাচ সিঙ্ক সফলভাবে সমাপ্ত হয়েছে!'
+            });
+        }
 
         return {
             success: true,
@@ -517,7 +664,8 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
             created: totalCreated,
             total: customersToSync.length,
             deviceCount: activeTokens.length,
-            deltaOnly: deltaOnly
+            deltaOnly: deltaOnly,
+            turboBatch: true
         };
     } finally {
         isSyncingInBackground = false;

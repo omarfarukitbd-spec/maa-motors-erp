@@ -416,7 +416,7 @@ async function handleRemoveAccount(accId) {
  */
 async function handleManualFullSync(targetAccountIds = null, deltaOnly = false) {
     const isSingle = Array.isArray(targetAccountIds) && targetAccountIds.length === 1;
-    const modeText = deltaOnly ? 'দ্রুত ডেল্টা সিঙ্ক' : 'সম্পূর্ণ সিঙ্ক';
+    const modeText = deltaOnly ? 'টার্বো ডেল্টা সিঙ্ক' : 'টার্বো সম্পূর্ণ সিঙ্ক';
     const titleText = isSingle ? `নির্বাচিত ডিভাইসে ${modeText} চলছে...` : `ডিভাইসসমূহে ${modeText} চলছে...`;
 
     Swal.fire({
@@ -463,7 +463,7 @@ async function handleManualFullSync(targetAccountIds = null, deltaOnly = false) 
                 <div class="text-left font-bn space-y-2.5 p-1 text-slate-200 text-xs">
                     <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
                         <span class="text-slate-400">সিঙ্ক মোড:</span>
-                        <span class="font-bold text-amber-300">${modeLabel}</span>
+                        <span class="font-bold text-amber-300">${modeLabel} <span class="ml-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20"><i class="fa-solid fa-bolt mr-0.5"></i>টার্বো ব্যাচ</span></span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-slate-400">সিঙ্ক সম্পন্ন ডিভাইস:</span>
