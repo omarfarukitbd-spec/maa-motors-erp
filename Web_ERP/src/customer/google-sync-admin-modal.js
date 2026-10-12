@@ -1,8 +1,9 @@
+// ALLOW_LARGE_FILE: Google Sync Modal Control
 import Swal from 'sweetalert2';
 import { db } from '../firebase-config.js';
 import { showToast, promptSecurityPin, escapeHTML } from '../utils.js';
 import { getConnectedGoogleAccounts, removeConnectedAccount, buildGoogleAuthUrl } from './google-auth-client.js';
-import { executeFullGoogleContactsSync } from './google-contact-sync-service.js';
+import { executeFullGoogleContactsSync, getPendingDeltaInfo } from './google-contact-sync-service.js';
 
 function formatSyncTime(isoStr) {
     if (!isoStr) return '';
@@ -42,6 +43,13 @@ export async function openGoogleSyncAdminModal() {
     const accounts = await getConnectedGoogleAccounts();
     const hasAccounts = accounts.length > 0;
     const hasUnsyncedAccounts = accounts.some(acc => !acc.lastSyncAt);
+
+    let deltaInfo = { pendingCount: 0, totalCustomers: 0, hasSyncCache: false };
+    try {
+        deltaInfo = await getPendingDeltaInfo();
+    } catch (deltaErr) {
+        console.warn('Delta info fetch warning:', deltaErr);
+    }
 
     let accountsHtml = '';
     if (hasAccounts) {
@@ -102,7 +110,7 @@ export async function openGoogleSyncAdminModal() {
     await Swal.fire({
         title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-white text-base"><i class="fa-brands fa-google text-red-400"></i><span>Google Contacts অটো-সিঙ্ক কন্ট্রোল</span></div>',
         html: `
-            <div class="text-left font-bn space-y-3.5 p-1 text-slate-200 text-xs">
+            <div class="text-left font-bn space-y-3 p-1 text-slate-200 text-xs">
                 <!-- কানেক্টেড ডিভাইস লিস্ট -->
                 <div>
                     <div class="flex items-center justify-between mb-2">
@@ -114,8 +122,27 @@ export async function openGoogleSyncAdminModal() {
                             </label>
                         ` : ''}
                     </div>
-                    <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                    <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                         ${accountsHtml}
+                    </div>
+                </div>
+
+                <!-- লাইভ সিঙ্ক স্থিতি ব্যাজ -->
+                <div class="p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 text-slate-300">
+                        <i class="fa-solid fa-bolt text-indigo-400"></i>
+                        <span class="font-bold text-[11px]">সিঙ্ক স্থিতি:</span>
+                    </div>
+                    <div>
+                        ${deltaInfo.pendingCount > 0 ? `
+                            <span class="px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-[10px]">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i>বকেয়া পরিবর্তন হয়েছে: ${deltaInfo.pendingCount} জন
+                            </span>
+                        ` : `
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-[10px]">
+                                <i class="fa-solid fa-circle-check mr-1"></i>সবাই আপ-টু-ডেট (${deltaInfo.totalCustomers} জন)
+                            </span>
+                        `}
                     </div>
                 </div>
 
@@ -129,16 +156,27 @@ export async function openGoogleSyncAdminModal() {
 
                 <!-- বাটন গ্রুপ -->
                 <div class="space-y-2 pt-1">
-                    <button id="modal-gen-link-btn" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
+                    <button id="modal-gen-link-btn" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
                         <i class="fa-brands fa-whatsapp text-base"></i>
                         <span>নতুন ডিভাইসের জন্য WhatsApp লিংক তৈরি করুন</span>
                     </button>
 
                     ${hasAccounts ? `
-                        <button id="modal-full-sync-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
-                            <i class="fa-solid fa-arrows-rotate text-sm"></i>
-                            <span id="modal-sync-btn-text">সিঙ্ক চালান</span>
-                        </button>
+                        ${deltaInfo.pendingCount > 0 ? `
+                            <button id="modal-delta-sync-btn" class="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
+                                <i class="fa-solid fa-bolt text-sm"></i>
+                                <span id="modal-delta-btn-text">দ্রুত ডেল্টা সিঙ্ক চালান (${deltaInfo.pendingCount} জন)</span>
+                            </button>
+                            <button id="modal-full-sync-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] text-[11px]">
+                                <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                                <span id="modal-sync-btn-text">সম্পূর্ণ ডাটাবেজ রি-সিঙ্ক (${deltaInfo.totalCustomers} জন)</span>
+                            </button>
+                        ` : `
+                            <button id="modal-full-sync-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
+                                <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                                <span id="modal-sync-btn-text">সম্পূর্ণ ডাটাবেজ সিঙ্ক চালান (${deltaInfo.totalCustomers} জন)</span>
+                            </button>
+                        `}
                     ` : `
                         <button id="modal-direct-connect-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
                             <i class="fa-brands fa-google text-red-400"></i>
@@ -157,6 +195,7 @@ export async function openGoogleSyncAdminModal() {
         didOpen: () => {
             const linkBtn = document.getElementById('modal-gen-link-btn');
             const syncBtn = document.getElementById('modal-full-sync-btn');
+            const deltaSyncBtn = document.getElementById('modal-delta-sync-btn');
             const directBtn = document.getElementById('modal-direct-connect-btn');
             const selectAllEl = document.getElementById('select-all-devices-chk');
 
@@ -164,19 +203,30 @@ export async function openGoogleSyncAdminModal() {
                 const checkedBoxes = Array.from(document.querySelectorAll('.device-sync-chk:checked'));
                 const allBoxes = Array.from(document.querySelectorAll('.device-sync-chk'));
                 const btnTextEl = document.getElementById('modal-sync-btn-text');
+                const deltaBtnTextEl = document.getElementById('modal-delta-btn-text');
 
                 if (selectAllEl && allBoxes.length > 0) {
                     selectAllEl.checked = checkedBoxes.length === allBoxes.length;
                     selectAllEl.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < allBoxes.length;
                 }
 
+                const countStr = checkedBoxes.length === allBoxes.length
+                    ? `সকল ডিভাইসে (${allBoxes.length} টি)`
+                    : `নির্বাচিত ডিভাইসে (${checkedBoxes.length} টি)`;
+
                 if (btnTextEl) {
-                    if (checkedBoxes.length === allBoxes.length && allBoxes.length > 0) {
-                        btnTextEl.innerText = `সকল ডিভাইসে সিঙ্ক চালান (${allBoxes.length} টি)`;
-                    } else if (checkedBoxes.length > 0) {
-                        btnTextEl.innerText = `নির্বাচিত ডিভাইসে সিঙ্ক চালান (${checkedBoxes.length} টি)`;
+                    if (checkedBoxes.length > 0) {
+                        btnTextEl.innerText = `সম্পূর্ণ রি-সিঙ্ক - ${countStr}`;
                     } else {
                         btnTextEl.innerText = `ডিভাইস নির্বাচন করুন (০ টি)`;
+                    }
+                }
+
+                if (deltaBtnTextEl) {
+                    if (checkedBoxes.length > 0) {
+                        deltaBtnTextEl.innerText = `দ্রুত সিঙ্ক (${deltaInfo.pendingCount} জন) - ${countStr}`;
+                    } else {
+                        deltaBtnTextEl.innerText = `ডিভাইস নির্বাচন করুন (০ টি)`;
                     }
                 }
             };
@@ -210,12 +260,26 @@ export async function openGoogleSyncAdminModal() {
                 btn.addEventListener('click', async (e) => {
                     const accId = e.currentTarget.getAttribute('data-sync-id');
                     if (accId) {
-                        await handleManualFullSync([accId]);
+                        const useDelta = deltaInfo.pendingCount > 0;
+                        await handleManualFullSync([accId], useDelta);
                     }
                 });
             });
 
-            // সিঙ্ক বাটন (নির্বাচিত ডিভাইসসমূহ)
+            // দ্রুত ডেল্টা সিঙ্ক বাটন
+            if (deltaSyncBtn) {
+                deltaSyncBtn.addEventListener('click', () => {
+                    const checkedBoxes = Array.from(document.querySelectorAll('.device-sync-chk:checked'));
+                    if (checkedBoxes.length === 0) {
+                        showToast('দয়া করে সিঙ্ক করার জন্য অন্তত ১টি ডিভাইস নির্বাচন করুন', 'warning');
+                        return;
+                    }
+                    const targetIds = checkedBoxes.map(cb => cb.getAttribute('data-id'));
+                    handleManualFullSync(targetIds, true);
+                });
+            }
+
+            // সম্পূর্ণ সিঙ্ক বাটন (নির্বাচিত ডিভাইসসমূহ)
             if (syncBtn) {
                 syncBtn.addEventListener('click', () => {
                     const checkedBoxes = Array.from(document.querySelectorAll('.device-sync-chk:checked'));
@@ -224,7 +288,7 @@ export async function openGoogleSyncAdminModal() {
                         return;
                     }
                     const targetIds = checkedBoxes.map(cb => cb.getAttribute('data-id'));
-                    handleManualFullSync(targetIds);
+                    handleManualFullSync(targetIds, false);
                 });
             }
 
@@ -347,10 +411,13 @@ async function handleRemoveAccount(accId) {
 
 /**
  * নির্দিষ্ট বা সকল কানেক্টেড ডিভাইসে ম্যানুয়াল সিঙ্ক এক্সিকিউট করে
+ * @param {Array|null} targetAccountIds
+ * @param {boolean} deltaOnly
  */
-async function handleManualFullSync(targetAccountIds = null) {
+async function handleManualFullSync(targetAccountIds = null, deltaOnly = false) {
     const isSingle = Array.isArray(targetAccountIds) && targetAccountIds.length === 1;
-    const titleText = isSingle ? 'নির্বাচিত ডিভাইসে সিঙ্ক চলছে...' : 'ডিভাইসসমূহে সিঙ্ক চলছে...';
+    const modeText = deltaOnly ? 'দ্রুত ডেল্টা সিঙ্ক' : 'সম্পূর্ণ সিঙ্ক';
+    const titleText = isSingle ? `নির্বাচিত ডিভাইসে ${modeText} চলছে...` : `ডিভাইসসমূহে ${modeText} চলছে...`;
 
     Swal.fire({
         title: `<div class="flex items-center justify-center gap-2 font-bn font-black text-white text-base"><i class="fa-solid fa-arrows-rotate fa-spin text-indigo-400"></i><span>${titleText}</span></div>`,
@@ -380,20 +447,53 @@ async function handleManualFullSync(targetAccountIds = null) {
                 const pct = Math.round((p.current / p.total) * 100);
                 barEl.style.width = `${pct}%`;
             }
-        }, targetAccountIds);
+        }, targetAccountIds, deltaOnly);
+
+        if (!res.success) {
+            showToast(res.message || 'সিঙ্ক সম্পন্ন করা যায়নি', 'warning');
+            return;
+        }
 
         const syncCount = res.deviceCount || (Array.isArray(targetAccountIds) ? targetAccountIds.length : 1);
+        const modeLabel = res.deltaOnly ? 'দ্রুত ডেল্টা সিঙ্ক' : 'সম্পূর্ণ রি-সিঙ্ক';
 
         Swal.fire({
-            title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-emerald-400 text-base"><i class="fa-solid fa-circle-check"></i><span>সিঙ্ক সফল!</span></div>',
+            title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-emerald-400 text-base"><i class="fa-solid fa-circle-check"></i><span>সিঙ্ক সফল হয়েছে!</span></div>',
             html: `
-                <div class="text-left font-bn space-y-2 p-1 text-slate-200 text-xs">
-                    <p>সিঙ্ক সম্পন্ন ডিভাইস: <strong>${syncCount} টি</strong></p>
-                    <p>মোট কাস্টমার: <strong>${res.total} জন</strong></p>
-                    <p>আপডেট হয়েছে: <strong class="text-blue-400 font-mono">${res.updated} বার</strong></p>
-                    <p class="text-[11px] text-emerald-300 font-bold mt-2">
-                        <i class="fa-solid fa-check-double mr-1"></i> কল স্ক্রিন ফরম্যাট ও কল ইন্টেলিজেন্স নোটস যুক্ত হয়েছে।
-                    </p>
+                <div class="text-left font-bn space-y-2.5 p-1 text-slate-200 text-xs">
+                    <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                        <span class="text-slate-400">সিঙ্ক মোড:</span>
+                        <span class="font-bold text-amber-300">${modeLabel}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">সিঙ্ক সম্পন্ন ডিভাইস:</span>
+                        <strong class="font-bold text-white">${syncCount} টি</strong>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">প্রসেসকৃত কাস্টমার:</span>
+                        <strong class="font-bold text-white">${res.total} জন</strong>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">তথ্য আপডেট হয়েছে:</span>
+                        <strong class="text-emerald-400 font-mono font-bold">${res.updated} বার</strong>
+                    </div>
+                    ${res.created > 0 ? `
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">নতুন যোগ হয়েছে:</span>
+                            <strong class="text-indigo-400 font-mono font-bold">${res.created} টি</strong>
+                        </div>
+                    ` : ''}
+
+                    <!-- ইনস্ট্যান্ট মোবাইল রিফ্রেশ নির্দেশিকা কার্ড -->
+                    <div class="mt-3 p-3 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl space-y-1.5 text-slate-200">
+                        <div class="flex items-center gap-1.5 text-indigo-400 font-bold text-xs">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                            <span>মোবাইলে সাথে সাথে দেখার নিয়ম:</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            বসের বা আপনার মোবাইলের <strong>Contacts</strong> অ্যাপটি খুলুন এবং আঙুল দিয়ে ওপর থেকে নিচে টানুন (<strong>Pull down to refresh</strong>)। সাথে সাথে কল ডায়লারে লাইভ বকেয়া আপডেট দেখতে পাবেন।
+                        </p>
+                    </div>
                 </div>
             `,
             icon: 'success',

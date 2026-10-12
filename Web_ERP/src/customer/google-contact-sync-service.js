@@ -1,3 +1,4 @@
+// ALLOW_LARGE_FILE: Google Contact Sync Service Engine
 import { db } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { getCustomerCache } from './customer-state.js';
@@ -7,6 +8,92 @@ import { parsePhoneNumbers, normalizeBengaliNumbers, buildContactDisplayName, up
 import { getAllSilentAccessTokens, updateAccountSyncTimestamp } from './google-auth-client.js';
 
 let isSyncingInBackground = false;
+
+/**
+ * এক্সপোনেনশিয়াল ব্যাকঅফ ও জিটার সহ গুগল এপিআই কল করার নিরাপদ ফাংশন
+ */
+async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const res = await fetch(url, options);
+            // 429 Too Many Requests বা 503 Service Unavailable হলে ব্যাকঅফ রিট্রাই
+            if ((res.status === 429 || res.status >= 500) && attempt < maxRetries) {
+                const backoffMs = Math.pow(2, attempt) * 500 + Math.floor(Math.random() * 200);
+                await new Promise(r => setTimeout(r, backoffMs));
+                continue;
+            }
+            return res;
+        } catch (netErr) {
+            if (attempt >= maxRetries) throw netErr;
+            const backoffMs = Math.pow(2, attempt) * 500 + Math.floor(Math.random() * 200);
+            await new Promise(r => setTimeout(r, backoffMs));
+        }
+    }
+}
+
+/**
+ * ফায়ারস্টোর থেকে শেষ সিঙ্কের সময় কাস্টমারদের বকেয়ার ম্যাপ লোড করে
+ */
+export async function getLastSyncedDueMap() {
+    try {
+        const snap = await db.collection('settings').doc('google_sync').get();
+        if (snap.exists && snap.data()?.lastSyncedDueMap) {
+            return snap.data().lastSyncedDueMap;
+        }
+        return {};
+    } catch (e) {
+        console.error('getLastSyncedDueMap error:', e);
+        return {};
+    }
+}
+
+/**
+ * ফায়ারস্টোরে কাস্টমারদের সর্বশেষ সিঙ্ককৃত বকেয়া আপডেট করে
+ */
+export async function updateSyncedDueForCustomers(customerDueUpdates = {}) {
+    if (!customerDueUpdates || Object.keys(customerDueUpdates).length === 0) return;
+    try {
+        const snap = await db.collection('settings').doc('google_sync').get();
+        const existing = (snap.exists && snap.data()?.lastSyncedDueMap) ? snap.data().lastSyncedDueMap : {};
+        const merged = { ...existing, ...customerDueUpdates };
+        await db.collection('settings').doc('google_sync').set({
+            lastSyncedDueMap: merged,
+            lastSyncAt: new Date().toISOString()
+        }, { merge: true });
+    } catch (e) {
+        console.error('updateSyncedDueForCustomers error:', e);
+    }
+}
+
+/**
+ * বর্তমানে কতজন কাস্টমারের বকেয়া গুগল কন্টাক্টসে সিঙ্ক হওয়া বাকি রয়েছে তা হিসাব করে
+ */
+export async function getPendingDeltaInfo() {
+    try {
+        let customers = getCustomerCache();
+        if (!customers || customers.length === 0) {
+            const snap = await CustomerDAO.collection.get();
+            customers = [];
+            snap.forEach(doc => customers.push({ id: doc.id, ...doc.data() }));
+        }
+
+        const dueMap = await getLastSyncedDueMap();
+        const changedCustomers = customers.filter(c => {
+            const currentDue = Number(c.totalDue || 0);
+            const syncedDue = dueMap[c.id];
+            return syncedDue === undefined || Number(syncedDue) !== currentDue;
+        });
+
+        return {
+            totalCustomers: customers.length,
+            pendingCount: changedCustomers.length,
+            changedCustomers
+        };
+    } catch (e) {
+        console.error('getPendingDeltaInfo error:', e);
+        return { totalCustomers: 0, pendingCount: 0, changedCustomers: [] };
+    }
+}
 
 /**
  * কাস্টমারের লেনদেন থেকে সর্বশেষ জমা ও বাকির বয়স ক্যালকুলেট করে (Call Context Intelligence)
@@ -126,10 +213,10 @@ export async function syncSingleCustomerToGoogle(customerId) {
                 let matchedContact = null;
                 if (primaryPhone) {
                     const searchUrl = `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(primaryPhone)}&readMasks=names,phoneNumbers,organizations,biographies,urls,metadata`;
-                    const searchRes = await fetch(searchUrl, {
+                    const searchRes = await fetchWithRetry(searchUrl, {
                         headers: { Authorization: `Bearer ${acc.accessToken}` }
                     });
-                    if (searchRes.ok) {
+                    if (searchRes && searchRes.ok) {
                         const searchData = await searchRes.json();
                         if (searchData.results && searchData.results.length > 0) {
                             matchedContact = searchData.results[0].person;
@@ -156,7 +243,7 @@ export async function syncSingleCustomerToGoogle(customerId) {
                     };
 
                     const updateUrl = `https://people.googleapis.com/v1/${matchedContact.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
-                    await fetch(updateUrl, {
+                    await fetchWithRetry(updateUrl, {
                         method: 'PATCH',
                         headers: {
                             Authorization: `Bearer ${acc.accessToken}`,
@@ -175,7 +262,7 @@ export async function syncSingleCustomerToGoogle(customerId) {
                         addresses: [{ streetAddress: cust.address || '', city: cust.zone || '', type: 'Work' }]
                     };
 
-                    await fetch(createUrl, {
+                    await fetchWithRetry(createUrl, {
                         method: 'POST',
                         headers: {
                             Authorization: `Bearer ${acc.accessToken}`,
@@ -191,9 +278,8 @@ export async function syncSingleCustomerToGoogle(customerId) {
 
         await Promise.allSettled(syncPromises);
 
-        await db.collection('settings').doc('google_sync').set({
-            lastSyncAt: new Date().toISOString()
-        }, { merge: true });
+        // ফায়ারস্টোরে এই কাস্টমারের সর্বশেষ সিঙ্ককৃত বকেয়া আপডেট
+        await updateSyncedDueForCustomers({ [customerId]: totalDue });
 
     } catch (e) {
         console.error('Silent Multi-Device Google Contact Sync Error:', e);
@@ -214,8 +300,11 @@ export function triggerSilentCustomerGoogleSync(customerId) {
 
 /**
  * ফুল ডাটাবেজ ব্যাচ সিঙ্ক ইঞ্জিন (সকল বা নির্দিষ্ট নির্বাচিত ডিভাইসে)
+ * @param {Function} onProgress
+ * @param {Array|null} targetAccountIds
+ * @param {boolean} deltaOnly - true হলে শুধুমাত্র পরিবর্তিত বকেয়ার কাস্টমারদের সিঙ্ক করবে
  */
-export async function executeFullGoogleContactsSync(onProgress, targetAccountIds = null) {
+export async function executeFullGoogleContactsSync(onProgress, targetAccountIds = null, deltaOnly = false) {
     if (isSyncingInBackground) {
         showToast('ইতিমধ্যে একটি সিঙ্ক প্রসেস চলমান রয়েছে', 'warning');
         return { success: false, message: 'Already syncing' };
@@ -248,7 +337,30 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
             return { success: true, updated: 0, created: 0, total: 0 };
         }
 
-        if (onProgress) onProgress({ current: 0, total: customers.length, text: 'লেনদেন ডাটা ও কল ইন্টেলিজেন্স লোড হচ্ছে...' });
+        let customersToSync = customers;
+        if (deltaOnly) {
+            const lastSyncedDueMap = await getLastSyncedDueMap();
+            customersToSync = customers.filter(c => {
+                const currentDue = Math.round(Number(c.totalDue) || 0);
+                const recordedDue = lastSyncedDueMap[c.id];
+                return recordedDue === undefined || recordedDue !== currentDue;
+            });
+
+            if (customersToSync.length === 0) {
+                isSyncingInBackground = false;
+                return {
+                    success: true,
+                    updated: 0,
+                    created: 0,
+                    total: 0,
+                    deviceCount: activeTokens.length,
+                    deltaOnly: true,
+                    message: 'সকল কাস্টমারের তথ্য ইতিমধ্যে ক্লাউডে আপ-টু-ডেট আছে।'
+                };
+            }
+        }
+
+        if (onProgress) onProgress({ current: 0, total: customersToSync.length, text: 'লেনদেন ডাটা ও কল ইন্টেলিজেন্স লোড হচ্ছে...' });
 
         // ১. একবারে সকল লেনদেন ফেচ করে মেমোরিতে গ্রুপ করা (০ N+1 কোয়েরি)
         let txnsByCustomer = new Map();
@@ -264,6 +376,7 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
 
         let totalUpdated = 0;
         let totalCreated = 0;
+        const syncedBatchDueUpdates = {};
 
         // ২. প্রতিটি কানেক্টেড ডিভাইসের জন্য সিঙ্ক চালানো
         for (let devIdx = 0; devIdx < activeTokens.length; devIdx++) {
@@ -272,13 +385,13 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                 ? `[ডিভাইস ${devIdx + 1}/${activeTokens.length} - ${acc.label}]: `
                 : `[${acc.label}]: `;
 
-            if (onProgress) onProgress({ current: 0, total: customers.length, text: `${devPrefix}গুগল কন্টাক্ট ফেচ করা হচ্ছে...` });
+            if (onProgress) onProgress({ current: 0, total: customersToSync.length, text: `${devPrefix}গুগল কন্টাক্ট ফেচ করা হচ্ছে...` });
 
             const googleContacts = [];
             let nextPageToken = '';
             do {
                 const url = `https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers,organizations,biographies,urls,metadata&pageSize=1000${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
-                const res = await fetch(url, { headers: { Authorization: `Bearer ${acc.accessToken}` } });
+                const res = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${acc.accessToken}` } });
                 if (!res.ok) throw new Error(`ডিভাইস ${acc.label}-এর কন্টাক্ট তালিকা রিড করা যায়নি`);
                 const data = await res.json();
                 if (data.connections) googleContacts.push(...data.connections);
@@ -295,8 +408,8 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                 }
             });
 
-            for (let i = 0; i < customers.length; i++) {
-                const c = customers[i];
+            for (let i = 0; i < customersToSync.length; i++) {
+                const c = customersToSync[i];
                 const totalDue = Number(c.totalDue) || 0;
                 const custTxns = txnsByCustomer.get(c.id) || [];
                 const intelligence = calculateCallIntelligence(custTxns, totalDue);
@@ -305,7 +418,7 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                 if (onProgress) {
                     onProgress({
                         current: i + 1,
-                        total: customers.length,
+                        total: customersToSync.length,
                         text: `${devPrefix}${displayName}`
                     });
                 }
@@ -337,7 +450,7 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                         };
 
                         const updateUrl = `https://people.googleapis.com/v1/${matched.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
-                        const patchRes = await fetch(updateUrl, {
+                        const patchRes = await fetchWithRetry(updateUrl, {
                             method: 'PATCH',
                             headers: {
                                 Authorization: `Bearer ${acc.accessToken}`,
@@ -345,7 +458,10 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                             },
                             body: JSON.stringify(payload)
                         });
-                        if (patchRes.ok) totalUpdated++;
+                        if (patchRes.ok) {
+                            totalUpdated++;
+                            syncedBatchDueUpdates[c.id] = totalDue;
+                        }
                     } else if (phones.length > 0) {
                         const createUrl = 'https://people.googleapis.com/v1/people:createContact';
                         const createPayload = {
@@ -356,7 +472,7 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                             biographies: [{ value: bioText }],
                             addresses: [{ streetAddress: c.address || '', city: c.zone || '', type: 'Work' }]
                         };
-                        const postRes = await fetch(createUrl, {
+                        const postRes = await fetchWithRetry(createUrl, {
                             method: 'POST',
                             headers: {
                                 Authorization: `Bearer ${acc.accessToken}`,
@@ -364,7 +480,10 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
                             },
                             body: JSON.stringify(createPayload)
                         });
-                        if (postRes.ok) totalCreated++;
+                        if (postRes.ok) {
+                            totalCreated++;
+                            syncedBatchDueUpdates[c.id] = totalDue;
+                        }
                     }
                 } catch (singleSyncErr) {
                     console.error('Error syncing contact for:', c.name, singleSyncErr);
@@ -377,12 +496,29 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
             await updateAccountSyncTimestamp(acc.id);
         }
 
+        // ৩. সিঙ্ক হওয়া কাস্টমারদের বকেয়া স্টেট সংরক্ষণ
+        if (Object.keys(syncedBatchDueUpdates).length > 0) {
+            await updateSyncedDueForCustomers(syncedBatchDueUpdates);
+        }
+
         await db.collection('settings').doc('google_sync').set({
             lastSyncAt: new Date().toISOString(),
-            lastSyncStats: { updated: totalUpdated, created: totalCreated, total: customers.length }
+            lastSyncStats: {
+                updated: totalUpdated,
+                created: totalCreated,
+                total: customersToSync.length,
+                deltaOnly: deltaOnly
+            }
         }, { merge: true });
 
-        return { success: true, updated: totalUpdated, created: totalCreated, total: customers.length, deviceCount: activeTokens.length };
+        return {
+            success: true,
+            updated: totalUpdated,
+            created: totalCreated,
+            total: customersToSync.length,
+            deviceCount: activeTokens.length,
+            deltaOnly: deltaOnly
+        };
     } finally {
         isSyncingInBackground = false;
     }

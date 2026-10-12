@@ -12,6 +12,24 @@ export function normalizeBengaliNumbers(str) {
 
 /**
  * র ফোন নম্বর থেকে একাধিক বৈধ বাংলাদেশি মোবাইল নম্বর আলাদা ও পরিষ্কার করে
+/**
+ * ডামি বা অস্তিত্বহীন বাংলাদেশি মোবাইল নম্বর শনাক্ত করে (যেমন: ০১৭০০০০০০০০)
+ */
+export function isDummyPhoneNumber(digitsOnly) {
+    if (!digitsOnly || digitsOnly.length < 11) return true;
+    const standard11 = digitsOnly.slice(-11);
+    if (!standard11.startsWith('01')) return true;
+    const operator = standard11.slice(0, 3);
+    const validOps = ['013', '014', '015', '016', '017', '018', '019'];
+    if (!validOps.includes(operator)) return true;
+    const remaining = standard11.slice(3);
+    // যদি বাকি ৮টি সংখ্যা একই ডিজিট হয় (যেমন: 00000000, 11111111)
+    if (/^(.)\1{7}$/.test(remaining)) return true;
+    return false;
+}
+
+/**
+ * কাস্টমারের ফোন নম্বর থেকে একাধিক বৈধ বাংলাদেশি মোবাইল নম্বর আলাদা ও পরিষ্কার করে
  */
 export function parsePhoneNumbers(rawPhone) {
     if (!rawPhone) return [];
@@ -31,10 +49,10 @@ export function parsePhoneNumbers(rawPhone) {
             // Already standard format
         }
 
-        // বাংলাদেশি ১১-ডিজিট মোবাইল নম্বর ভ্যালিডেশন
+        // বাংলাদেশি ১১-ডিজিট মোবাইল নম্বর ভ্যালিডেশন ও ডামি ফিল্টার
         const digitsOnly = clean.replace(/\D/g, '');
         if ((digitsOnly.length === 11 && digitsOnly.startsWith('01')) || (digitsOnly.length === 13 && digitsOnly.startsWith('8801'))) {
-            if (!validPhones.includes(clean)) {
+            if (!isDummyPhoneNumber(digitsOnly) && !validPhones.includes(clean)) {
                 validPhones.push(clean);
             }
         }
