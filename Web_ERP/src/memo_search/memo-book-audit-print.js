@@ -80,10 +80,17 @@ export async function printMemoBookAuditReport(summary, memos) {
             </div>
         `;
     }
-    if (summary.duplicateNumbers && summary.duplicateNumbers.length > 0) {
+    if (summary.exactDuplicates && summary.exactDuplicates.length > 0) {
         gapAlertHtml += `
             <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 5px; padding: 3px 6px; margin-bottom: 4px; font-size: 8.5px; color: #b45309; font-family: 'Hind Siliguri', sans-serif; font-weight: 700;">
-                [সতর্কতা] ${summary.duplicateNumbers.length}টি মেমো নম্বরে একাধিক (ডুপ্লিকেট) এন্ট্রি রয়েছে: <strong>#${summary.duplicateNumbers.map(d => `${d.number} (${d.count}টি)`).join(', #')}</strong>
+                [সতর্কতা] ${summary.exactDuplicates.length}টি মেমো নম্বরে সম্ভাব্য ডাবল এন্ট্রি রয়েছে: <strong>#${summary.exactDuplicates.map(d => `${d.number} (${d.count}টি)`).join(', #')}</strong>
+            </div>
+        `;
+    }
+    if (summary.splitMemos && summary.splitMemos.length > 0) {
+        gapAlertHtml += `
+            <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 5px; padding: 3px 6px; margin-bottom: 4px; font-size: 8.5px; color: #166534; font-family: 'Hind Siliguri', sans-serif; font-weight: 700;">
+                [তথ্য] ${summary.splitMemos.length}টি মেমো নম্বরে একাধিক তারিখের বৈধ সেলস বা লেস সমন্বয় রয়েছে: <strong>#${summary.splitMemos.map(d => `${d.number} (${d.count}টি)`).join(', #')}</strong>
             </div>
         `;
     }
@@ -114,7 +121,14 @@ export async function printMemoBookAuditReport(summary, memos) {
         const actualLess = isLess ? paid : 0;
         const netRowDue = safeRound(bill - (actualPaid + actualLess));
         const cleanCustName = String(m.customerName || 'গ্রাহক').replace(/^\[.*?\]\s*/, '').trim();
-        const isDuplicate = summary.voucherCounts && summary.voucherCounts[m.voucherNum] > 1;
+        const isExactDup = summary.exactDuplicates?.some(d => d.number === m.voucherNum);
+        const isSplit = summary.splitMemos?.some(s => s.number === m.voucherNum);
+
+        let pBadge = '';
+        if (isLess) pBadge = '<span style="font-size:7px; color:#9333ea; font-weight:bold;">(Less)</span>';
+        else if (isExactDup) pBadge = '<span style="font-size:7px; color:#d97706; font-weight:bold;">(Dup?)</span>';
+        else if (isSplit) pBadge = '<span style="font-size:7px; color:#0284c7; font-weight:bold;">(Part)</span>';
+
         const bgStyle = idx % 2 === 1 ? 'background: #f8fafc;' : 'background: #ffffff;';
 
         return `
@@ -122,7 +136,7 @@ export async function printMemoBookAuditReport(summary, memos) {
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', sans-serif;">${idx + 1}</td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 9px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">
                     #${m.voucherNum || m.voucherNo}
-                    ${isDuplicate ? '<span style="font-size:7px; color:#d97706; font-weight:bold;">(Dup)</span>' : ''}
+                    ${pBadge}
                 </td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', sans-serif; white-space: nowrap;"><div style="font-weight: 700;">${formatAppDate(m.date)}</div><div style="font-size: 7.5px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600;">${getDayOfWeekBangla(m.date)}</div></td>
                 <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a;">
@@ -133,7 +147,7 @@ export async function printMemoBookAuditReport(summary, memos) {
                 <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9.5px; font-weight: 900; color: #dc2626; font-family: 'Inter', sans-serif; white-space: nowrap;">${bill > 0 ? '৳ ' + formatAmountWithComma(bill) : '-'}</td>
                 <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9.5px; font-weight: 900; color: #16a34a; font-family: 'Inter', sans-serif; white-space: nowrap;">${actualPaid > 0 ? '৳ ' + formatAmountWithComma(actualPaid) : '-'}</td>
                 <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9.5px; font-weight: 900; color: #9333ea; font-family: 'Inter', sans-serif; white-space: nowrap;">${actualLess > 0 ? '৳ ' + formatAmountWithComma(actualLess) : '-'}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8px; font-family: 'Hind Siliguri', sans-serif; color: #475569; white-space: nowrap;">${escapeHTML(m.receivedType || (m.bill > 0 ? 'বাকিতে' : 'জমা'))}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8px; font-family: 'Hind Siliguri', sans-serif; color: #475569; white-space: nowrap;">${escapeHTML(isLess ? 'ছাড় (Less)' : (m.receivedType || (m.bill > 0 ? 'বাকিতে' : 'জমা')))}</td>
                 <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9px; font-weight: 800; font-family: 'Inter', sans-serif; color: ${netRowDue > 0 ? '#dc2626' : '#16a34a'}; white-space: nowrap;">${netRowDue > 0 ? '৳ ' + formatAmountWithComma(netRowDue) : 'পরিশোধিত'}</td>
             </tr>
         `;

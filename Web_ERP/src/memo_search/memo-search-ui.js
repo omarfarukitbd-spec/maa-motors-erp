@@ -2,7 +2,7 @@ import { searchMemosByNumber, getRecentMemos, getAdjacentMemos, getCustomerLifet
 import { renderMemoCardHTML } from './memo-card-ui.js';
 import { startMemoVoiceSearch } from './memo-voice-search.js';
 import { renderMemoBookAuditUI } from './memo-book-audit-ui.js';
-import { escapeHTML, formatAppDate } from '../utils.js';
+import { escapeHTML, formatAppDate, formatAmountWithComma } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 
 let _searchDebounceTimer;
@@ -181,7 +181,33 @@ export async function executeMemoSearch(query) {
 
         if (list.length > 1 && multipleArea) {
             multipleArea.classList.remove('hidden');
-            multipleArea.innerHTML = `<div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-2.5 mb-3 font-bn"><div class="text-[10px] font-black text-cyan-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i> <span>একাধিক মেমো পাওয়া গেছে (${list.length}টি):</span></div><div class="flex flex-wrap gap-1.5">${list.map((m, idx) => `<button onclick="window.selectSpecificMemoMatch(${idx})" class="memo-match-btn px-2.5 py-1 rounded-xl ${idx === 0 ? 'bg-cyan-600 text-white font-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer" data-idx="${idx}"><span class="font-mono font-bold">#${escapeHTML(m.voucherNo || m.id.slice(-6).toUpperCase())}</span><span>•</span><span class="font-bold truncate max-w-[130px]">${escapeHTML(String(m.customerName || 'গ্রাহক').replace(/^\[.*?\]\s*/, '').trim())}</span><span class="text-[10px] text-slate-400 font-mono">(${formatAppDate(m.date)})</span></button>`).join('')}</div></div>`;
+            multipleArea.innerHTML = `
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-2.5 mb-3 font-bn">
+                    <div class="text-[10px] font-black text-cyan-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i> <span>এই নম্বরে একাধিক এন্ট্রি / পার্ট সেল ও লেস সমন্বয় (${list.length}টি):</span></span>
+                        <span class="text-[9px] text-slate-400">যেকোনো একটিতে ক্লিক করে বিস্তারিত দেখুন</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        ${list.map((m, idx) => {
+                            const isLess = m.receivedType === 'Less' || (Number(m.paid) > 0 && Number(m.bill) === 0);
+                            const amtBadge = isLess 
+                                ? `<span class="text-[10px] text-purple-300 font-mono font-black bg-purple-500/20 px-1.5 py-0.2 rounded">ছাড় -৳${formatAmountWithComma(m.paid)}</span>`
+                                : (Number(m.bill) > 0 ? `<span class="text-[10px] text-red-300 font-mono font-black bg-red-500/20 px-1.5 py-0.2 rounded">বিল ৳${formatAmountWithComma(m.bill)}</span>` : '');
+                            return `
+                                <button onclick="window.selectSpecificMemoMatch(${idx})" 
+                                    class="memo-match-btn px-2.5 py-1 rounded-xl ${idx === 0 ? 'bg-cyan-600 text-white font-black shadow-md' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'} text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer" 
+                                    data-idx="${idx}">
+                                    <span class="font-mono font-bold">#${escapeHTML(m.voucherNo || m.refMemoNo || m.id.slice(-6).toUpperCase())}</span>
+                                    <span>•</span>
+                                    <span class="font-bold truncate max-w-[120px]">${escapeHTML(String(m.customerName || 'গ্রাহক').replace(/^\[.*?\]\s*/, '').trim())}</span>
+                                    ${amtBadge}
+                                    <span class="text-[10px] text-slate-400 font-mono">(${formatAppDate(m.date)})</span>
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
             window._currentMemoSearchResults = list;
         } else if (multipleArea) {
             multipleArea.classList.add('hidden');

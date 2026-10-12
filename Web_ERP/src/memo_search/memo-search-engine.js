@@ -1,6 +1,7 @@
 import { TransactionDAO, CustomerDAO } from '../dao.js';
 import { safeRound, toDBDate } from '../utils.js';
 import { getCustomerCache } from '../customer/customer-state.js';
+import { extractVoucherNumber } from './memo-book-audit-calc.js';
 
 /**
  * Normalize memo/voucher query string
@@ -21,26 +22,44 @@ export async function searchMemosByNumber(rawQuery) {
     if (!cleanQ || cleanQ.length < 1) return [];
 
     try {
-        const exactSnap = await TransactionDAO.collection.where('voucherNo', '==', cleanQ).get();
         const results = [];
-        exactSnap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        const seenIds = new Set();
 
-        if (results.length === 0 && cleanQ.toLowerCase() !== cleanQ.toUpperCase()) {
+        const addDocs = (snap) => {
+            snap.forEach(doc => {
+                if (!seenIds.has(doc.id)) {
+                    seenIds.add(doc.id);
+                    results.push({ id: doc.id, ...doc.data() });
+                }
+            });
+        };
+
+        // 1. Exact match on raw and cleaned query
+        const exactSnap = await TransactionDAO.collection.where('voucherNo', '==', cleanQ).get();
+        addDocs(exactSnap);
+
+        // 2. Exact match with '#' prefix (e.g. '#146')
+        const hashSnap = await TransactionDAO.collection.where('voucherNo', '==', '#' + cleanQ).get();
+        addDocs(hashSnap);
+
+        // 3. Match by refMemoNo (e.g. delayed Less linked to #146)
+        const refSnap = await TransactionDAO.collection.where('refMemoNo', '==', cleanQ).get();
+        addDocs(refSnap);
+
+        // 4. Upper case match if different
+        if (cleanQ.toLowerCase() !== cleanQ.toUpperCase()) {
             const upperSnap = await TransactionDAO.collection.where('voucherNo', '==', cleanQ.toUpperCase()).get();
-            upperSnap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+            addDocs(upperSnap);
         }
 
+        // 5. Prefix range search if still empty and length >= 2
         if (results.length === 0 && cleanQ.length >= 2) {
             const rangeSnap = await TransactionDAO.collection
                 .where('voucherNo', '>=', cleanQ)
                 .where('voucherNo', '<=', cleanQ + '\uf8ff')
                 .limit(10)
                 .get();
-            rangeSnap.forEach(doc => {
-                if (!results.some(r => r.id === doc.id)) {
-                    results.push({ id: doc.id, ...doc.data() });
-                }
-            });
+            addDocs(rangeSnap);
         }
 
         const enriched = await Promise.all(results.map(async (txn) => {
@@ -82,6 +101,27 @@ export async function enrichMemoData(txn) {
     const prevDue = txn.prevDue !== undefined ? Number(txn.prevDue) : safeRound(Number(customer.totalDue || 0) - (bill - paid));
     const currentDue = txn.currentDue !== undefined ? Number(txn.currentDue) : safeRound(prevDue + (bill - paid));
 
+    // Fetch any later-date Less or Sales Return entries linked to this memo
+    let linkedLessList = [];
+    let totalLinkedLess = 0;
+    const vNum = extractVoucherNumber(txn.voucherNo || txn.refMemoNo);
+    if (vNum !== null) {
+        try {
+            const lessSnap = await TransactionDAO.collection
+                .where('refMemoNo', '==', String(vNum))
+                .get();
+            lessSnap.forEach(doc => {
+                const d = doc.data();
+                if (doc.id !== txn.id && (d.receivedType === 'Less' || Number(d.paid) > 0)) {
+                    linkedLessList.push({ id: doc.id, ...d });
+                    totalLinkedLess = safeRound(totalLinkedLess + (Number(d.paid) || 0));
+                }
+            });
+        } catch (e) {
+            console.warn("Error fetching linked less entries:", e);
+        }
+    }
+
     return {
         ...txn,
         customerName: txn.customerName || customer.name || 'Unknown Customer',
@@ -92,7 +132,10 @@ export async function enrichMemoData(txn) {
         customerTotalDue: customer.totalDue || 0,
         customerInitialDue: customer.initialDue || 0,
         computedPrevDue: safeRound(prevDue),
-        computedCurrentDue: safeRound(currentDue)
+        computedCurrentDue: safeRound(currentDue),
+        linkedLessList,
+        totalLinkedLess: safeRound(totalLinkedLess),
+        netAdjustedBill: safeRound(bill - totalLinkedLess)
     };
 }
 

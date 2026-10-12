@@ -33,6 +33,20 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         }
     }
 
+    let refMemoNo = '';
+    if (receivedType === 'Less') {
+        const refMemoEl = document.getElementById('ledger-ref-memo');
+        if (refMemoEl && refMemoEl.value.trim()) {
+            const m = refMemoEl.value.trim().match(/\d+/);
+            refMemoNo = m ? m[0] : refMemoEl.value.trim();
+        }
+        if (!refMemoNo && v) {
+            const m = v.match(/\d+/);
+            if (m) refMemoNo = m[0];
+        }
+    }
+    const finalVoucherNo = v || (refMemoNo ? '#' + refMemoNo : '');
+
     // --- DUPLICATE & MULTIPLE ENTRY SHIELD ---
     let dateTxns = [];
     try {
@@ -109,7 +123,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
     const confirmResult = await showTransactionConfirmModal({
         customer: preCommitCust || { name, id },
         date,
-        voucherNo: v,
+        voucherNo: finalVoucherNo,
         bill: b,
         paid: p,
         receivedType,
@@ -129,7 +143,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         if (window._stagedLedgerMemo?.blob) {
             try {
                 const { uploadMemoToR2 } = await import('../utils/r2-memo-uploader.js');
-                const uploadRes = await uploadMemoToR2(window._stagedLedgerMemo.blob, v, id);
+                const uploadRes = await uploadMemoToR2(window._stagedLedgerMemo.blob, finalVoucherNo, id);
                 if (uploadRes?.success && uploadRes?.url) {
                     memoPhotoUrl = uploadRes.url;
                 }
@@ -147,7 +161,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
             const oldDiff = safeRound((editingRef.oldBill || 0) - (editingRef.oldPaid || 0));
             const oldCid = editingRef.oldCid || id;
             if (oldCid !== id) {
-                batch.update(TransactionDAO.getRef(editingRef.id), { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, currentDue: safeRound(preCommitDue + balanceDiff) });
+                batch.update(TransactionDAO.getRef(editingRef.id), { customerId: id, customerName: name, date, voucherNo: finalVoucherNo, refMemoNo: refMemoNo || null, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, currentDue: safeRound(preCommitDue + balanceDiff) });
                 batch.update(CustomerDAO.getRef(oldCid), { totalDue: firebase.firestore.FieldValue.increment(-oldDiff) });
                 const custUpdates = { totalDue: firebase.firestore.FieldValue.increment(balanceDiff), lastTxnDate: date };
                 if (safeRound(p) > 0) { custUpdates.lastPaymentDate = date; custUpdates.lastPaymentAmount = safeRound(p); }
@@ -156,7 +170,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
             } else {
                 const netIncrement = safeRound(balanceDiff - oldDiff);
                 actualDelta = netIncrement;
-                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
+                batch.update(TransactionDAO.getRef(editingRef.id), { date, voucherNo: finalVoucherNo, refMemoNo: refMemoNo || null, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, currentDue: firebase.firestore.FieldValue.increment(netIncrement) });
                 const custUpdates = { totalDue: firebase.firestore.FieldValue.increment(netIncrement), lastTxnDate: date };
                 if (safeRound(p) > 0) { custUpdates.lastPaymentDate = date; custUpdates.lastPaymentAmount = safeRound(p); }
                 batch.update(CustomerDAO.getRef(id), custUpdates);
@@ -167,7 +181,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
             editingRef.oldMemoPhotoUrl = null;
         } else {
             txnRef = TransactionDAO.getRef();
-            batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: v, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            batch.set(txnRef, { customerId: id, customerName: name, date, voucherNo: finalVoucherNo, refMemoNo: refMemoNo || null, bill: safeRound(b), paid: safeRound(p), receivedType, receivedFrom, notes, memoPhotoUrl: memoPhotoUrl || null, memoSource: memoPhotoUrl ? 'offline_scan' : null, prevDue: safeRound(preCommitDue), currentDue: safeRound(preCommitDue + balanceDiff), createdBy: AppState?.currentUserEmail || 'Unknown', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             const custUpdates = { totalDue: firebase.firestore.FieldValue.increment(balanceDiff), lastTxnDate: date };
             if (safeRound(p) > 0) { custUpdates.lastPaymentDate = date; custUpdates.lastPaymentAmount = safeRound(p); }
             batch.update(CustomerDAO.getRef(id), custUpdates);
@@ -231,6 +245,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
         resetLiveWords('ledger-bill-words'); resetLiveWords('ledger-paid-words');
         const vEl = document.getElementById('ledger-voucher'); if (vEl) vEl.value = '';
         const rfEl = document.getElementById('ledger-received-from'); if (rfEl) rfEl.value = '';
+        const refMemoEl = document.getElementById('ledger-ref-memo'); if (refMemoEl) refMemoEl.value = '';
         const notesEl = document.getElementById('ledger-notes'); if (notesEl) notesEl.value = '';
         window._stagedLedgerMemo = null;
         const stagedChip = document.getElementById('ledger-staged-memo-chip');

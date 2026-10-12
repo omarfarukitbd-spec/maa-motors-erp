@@ -32,7 +32,10 @@ export async function fetchMemosByRange(startNo, endNo) {
 
         allTxns.forEach(txn => {
             const vNum = extractVoucherNumber(txn.voucherNo);
-            if (vNum !== null && vNum >= min && vNum <= max) {
+            const refNum = txn.refMemoNo ? extractVoucherNumber(txn.refMemoNo) : null;
+            const targetVNum = vNum !== null ? vNum : refNum;
+
+            if (targetVNum !== null && targetVNum >= min && targetVNum <= max) {
                 let cust = allCustomers.find(c => c.id === txn.customerId);
                 if (!cust && txn.customerName) {
                     const cleanName = String(txn.customerName).replace(/^\[.*?\]\s*/, '').trim();
@@ -41,7 +44,8 @@ export async function fetchMemosByRange(startNo, endNo) {
 
                 matchedMemos.push({
                     ...txn,
-                    voucherNum: vNum,
+                    voucherNum: targetVNum,
+                    refMemoNum: refNum,
                     customerName: txn.customerName || cust?.name || 'গ্রাহক',
                     customerPhone: cust?.phone || txn.customerPhone || '',
                     customerAddress: cust?.address || txn.customerAddress || '',
@@ -65,29 +69,59 @@ export async function fetchMemosByRange(startNo, endNo) {
 }
 
 /**
- * Calculate comprehensive book audit metrics, gap detection, and financial aggregation
+ * Calculate comprehensive book audit metrics, gap detection, split sales and financial aggregation
  */
 export function calculateBookAuditSummary(memos = [], startNo, endNo) {
     const min = Math.min(startNo, endNo);
     const max = Math.max(startNo, endNo);
     const totalExpected = (max - min) + 1;
 
-    // Track present voucher numbers and duplicates
+    // Track present voucher numbers and groups
     const voucherCounts = {};
+    const voucherTxnsMap = {};
     memos.forEach(m => {
         const v = m.voucherNum;
         voucherCounts[v] = (voucherCounts[v] || 0) + 1;
+        if (!voucherTxnsMap[v]) voucherTxnsMap[v] = [];
+        voucherTxnsMap[v].push(m);
     });
 
     const presentNumbers = new Set(Object.keys(voucherCounts).map(Number));
     const missingNumbers = [];
-    const duplicateNumbers = [];
+    const exactDuplicates = [];
+    const splitMemos = [];
 
     for (let i = min; i <= max; i++) {
         if (!presentNumbers.has(i)) {
             missingNumbers.push(i);
         } else if (voucherCounts[i] > 1) {
-            duplicateNumbers.push({ number: i, count: voucherCounts[i] });
+            const group = voucherTxnsMap[i] || [];
+            // Check if there is an exact duplicate (same date, same customer, same bill, same paid)
+            let isExactDup = false;
+            for (let a = 0; a < group.length; a++) {
+                for (let b = a + 1; b < group.length; b++) {
+                    const t1 = group[a], t2 = group[b];
+                    if (t1.date === t2.date && 
+                        (t1.customerId === t2.customerId || t1.customerName === t2.customerName) &&
+                        Number(t1.bill || 0) === Number(t2.bill || 0) &&
+                        Number(t1.paid || 0) === Number(t2.paid || 0)) {
+                        isExactDup = true;
+                        break;
+                    }
+                }
+                if (isExactDup) break;
+            }
+
+            if (isExactDup) {
+                exactDuplicates.push({ number: i, count: voucherCounts[i] });
+            } else {
+                splitMemos.push({
+                    number: i,
+                    count: voucherCounts[i],
+                    dates: [...new Set(group.map(g => g.date))],
+                    hasLess: group.some(g => String(g.receivedType || '').toLowerCase() === 'less')
+                });
+            }
         }
     }
 
@@ -133,8 +167,11 @@ export function calculateBookAuditSummary(memos = [], startNo, endNo) {
         totalFound: memos.length,
         uniqueFound: presentNumbers.size,
         missingNumbers,
-        duplicateNumbers,
+        exactDuplicates,
+        duplicateNumbers: exactDuplicates, // backward compatibility
+        splitMemos,
         voucherCounts,
+        voucherTxnsMap,
         totalBill: safeRound(totalBill),
         totalPaid: safeRound(totalPaid),
         totalLess: safeRound(totalLess),

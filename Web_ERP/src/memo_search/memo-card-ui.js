@@ -1,9 +1,10 @@
-import { escapeHTML, formatAmountWithComma, formatAppDate, numberToBanglaWords } from '../utils.js';
+import { escapeHTML, formatAmountWithComma, formatAppDate, numberToBanglaWords, safeRound } from '../utils.js';
 import { renderInCardLedgerHistory } from './memo-history-table.js';
 import { renderMemoItemsTable, renderCustomerAllMemosBar } from './memo-items-table.js';
 import './memo-actions-bridge.js';
 import './memo-ledger-drawer.js';
 import './memo-quick-pay.js';
+import './memo-quick-less.js';
 import './memo-edit.js';
 
 /**
@@ -23,7 +24,11 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
     let watermarkColor = '#dc2626';
     let statusBadge = '';
 
-    if (bill > 0 && paid >= bill) {
+    if (txn.receivedType === 'Less' || (paid > 0 && bill === 0 && txn.refMemoNo)) {
+        watermarkText = 'LESS';
+        watermarkColor = '#a855f7';
+        statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-black bg-purple-500/10 text-purple-400 border border-purple-500/20"><i class="fa-solid fa-tags mr-1"></i>ছাড় / মাল ফেরত (LESS)</span>';
+    } else if (bill > 0 && paid >= bill) {
         watermarkText = 'PAID';
         watermarkColor = '#059669';
         statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><i class="fa-solid fa-circle-check mr-1"></i>পরিশোধিত (PAID)</span>';
@@ -102,6 +107,18 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                     </div>
                 </div>
 
+                ${(txn.refMemoNo && (txn.receivedType === 'Less' || (paid > 0 && bill === 0))) ? `
+                    <div class="relative z-10 p-2.5 mb-3 rounded-xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-between text-xs font-bn text-purple-200">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-link text-purple-400"></i>
+                            <span>এই এন্ট্রিটি মূল মেমো <strong>#${escapeHTML(txn.refMemoNo)}</strong> এর বিপরীতে ছাড় / মাল ফেরত সমন্বয়।</span>
+                        </div>
+                        <button onclick="window.searchMemoDirectly('${escapeHTML(txn.refMemoNo)}')" class="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> মূল মেমো দেখুন
+                        </button>
+                    </div>
+                ` : ''}
+
                 <!-- 2-Column Split Hero Grid (Above the Fold) -->
                 <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
                     <!-- Left Column: Customer Profile & Action Hub (lg:col-span-7) -->
@@ -166,6 +183,9 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                                     <i class="fa-solid fa-hand-holding-dollar text-xs"></i><span>জমা নিন</span>
                                 </button>
                             ` : ''}
+                            <button onclick="window.openMemoQuickLessModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', '${escapeHTML(cleanCustName)}', ${bill})" class="h-8 px-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-purple-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="মেমোর বিপরীতে পরবর্তী ছাড় বা মাল ফেরত এন্ট্রি দিন">
+                                <i class="fa-solid fa-tags text-xs text-purple-400"></i><span>লেস/ফেরত</span>
+                            </button>
                             <button onclick="window.openCustomerLedgerDrawer('${txn.customerId}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerAccountNo || '')}')" class="h-8 px-2 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-purple-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="কাস্টমারের সম্পূর্ণ খতিয়ান">
                                 <i class="fa-solid fa-book"></i><span>খতিয়ান</span>
                             </button>
@@ -215,6 +235,16 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                                 <span>আজকের জমা (Credit):${paymentMethodHtml}</span>
                                 <span class="font-mono font-black">- ৳ ${formatAmountWithComma(paid)}</span>
                             </div>
+                            ${txn.totalLinkedLess > 0 ? `
+                                <div class="flex justify-between items-center text-purple-400 font-bold px-1 pt-1 border-t border-slate-800">
+                                    <span class="flex items-center gap-1"><i class="fa-solid fa-tags text-[10px]"></i>পরবর্তী ছাড় (Less):</span>
+                                    <span class="font-mono font-black">- ৳ ${formatAmountWithComma(txn.totalLinkedLess)}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-cyan-300 font-bold px-1">
+                                    <span>নিট বিক্রয়মূল্য:</span>
+                                    <span class="font-mono font-black">৳ ${formatAmountWithComma(safeRound(bill - txn.totalLinkedLess))}</span>
+                                </div>
+                            ` : ''}
                         </div>
 
                         <!-- Words Pill (if any) -->
@@ -230,6 +260,43 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
 
             <!-- Customer All Memos Navigator Bar -->
             ${renderCustomerAllMemosBar(txn.voucherNo, lifetimeStats)}
+
+            <!-- Linked Later-Date Less / Return Adjustments List -->
+            ${(txn.linkedLessList && txn.linkedLessList.length > 0) ? `
+                <div class="bg-purple-950/20 border border-purple-500/30 rounded-2xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between border-b border-purple-500/20 pb-2">
+                        <div class="text-xs font-black uppercase text-purple-300 tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-tags text-purple-400"></i>
+                            <span>এই মেমোর বিপরীতে পরবর্তী সমন্বিত ছাড় / মাল ফেরত (${txn.linkedLessList.length}টি)</span>
+                        </div>
+                        <span class="text-xs font-mono font-black text-purple-300 bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 rounded-lg">
+                            মোট ছাড়: -৳ ${formatAmountWithComma(txn.totalLinkedLess)}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        ${txn.linkedLessList.map(item => `
+                            <div class="flex items-center justify-between p-2.5 bg-slate-950/70 border border-purple-500/20 rounded-xl">
+                                <div class="space-y-0.5">
+                                    <div class="flex items-center gap-1.5 text-purple-300 font-bold">
+                                        <i class="fa-regular fa-calendar text-[10px]"></i>
+                                        <span>${formatAppDate(item.date)}</span>
+                                        ${item.voucherNo ? `<span class="text-[10px] text-slate-500 font-mono">(${escapeHTML(item.voucherNo)})</span>` : ''}
+                                    </div>
+                                    <div class="text-[11px] text-slate-300 font-medium truncate max-w-[180px]" title="${escapeHTML(item.receivedFrom || item.notes || '')}">
+                                        ${escapeHTML(item.receivedFrom || item.notes || 'ছাড় / মাল ফেরত')}
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs font-mono font-black text-purple-400">
+                                        - ৳ ${formatAmountWithComma(item.paid)}
+                                    </div>
+                                    <div class="text-[9px] text-slate-400">খতিয়ানে বাদ গেছে</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
 
             <!-- Below-The-Fold Secondary Sections (Scrollable) -->
             ${renderMemoItemsTable(txn)}

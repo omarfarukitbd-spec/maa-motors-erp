@@ -3,6 +3,7 @@ export { searchMemosByNumber, getRecentMemos, getAdjacentMemos, getCustomerLifet
 export { renderMemoCardHTML } from './memo-card-ui.js';
 export { openCustomerLedgerDrawer } from './memo-ledger-drawer.js';
 export { openMemoQuickPayModal } from './memo-quick-pay.js';
+export { openMemoQuickLessModal } from './memo-quick-less.js';
 export { openMemoEditModal } from './memo-edit.js';
 export { printMemoReceipt, shareMemoOnWhatsApp, sendMemoDueSMS } from './memo-actions-bridge.js';
 export { renderMemoBookAuditUI } from './memo-book-audit-ui.js';

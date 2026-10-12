@@ -123,14 +123,26 @@ function renderAuditResultsContent(container, summary, memos) {
             </div>
         `;
     }
-    if (summary.duplicateNumbers && summary.duplicateNumbers.length > 0) {
+    if (summary.exactDuplicates && summary.exactDuplicates.length > 0) {
         alertBannersHtml += `
             <div class="bg-amber-950/40 border border-amber-800/80 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-amber-200">
                 <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-sm shrink-0"><i class="fa-solid fa-clone"></i></div>
                 <div class="space-y-1">
-                    <div class="font-black text-amber-400 text-sm">সতর্কতা: ${summary.duplicateNumbers.length}টি মেমো নম্বরে একাধিক (ডুপ্লিকেট) এন্ট্রি রয়েছে!</div>
-                    <div class="text-slate-300">একই মেমো নম্বরে একাধিক ট্রানজেকশন পাওয়া গেছে:</div>
-                    <div class="flex flex-wrap gap-1.5 pt-1">${summary.duplicateNumbers.map(d => `<span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 font-mono font-black border border-amber-500/30">#${d.number} (${d.count}টি)</span>`).join('')}</div>
+                    <div class="font-black text-amber-400 text-sm">সতর্কতা: ${summary.exactDuplicates.length}টি মেমোতে সম্ভাব্য ডাবল এন্ট্রি রয়েছে!</div>
+                    <div class="text-slate-300">একই তারিখে একই কাস্টমারের অভিন্ন এন্ট্রি পাওয়া গেছে:</div>
+                    <div class="flex flex-wrap gap-1.5 pt-1">${summary.exactDuplicates.map(d => `<span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 font-mono font-black border border-amber-500/30">#${d.number} (${d.count}টি)</span>`).join('')}</div>
+                </div>
+            </div>
+        `;
+    }
+    if (summary.splitMemos && summary.splitMemos.length > 0) {
+        alertBannersHtml += `
+            <div class="bg-cyan-950/30 border border-cyan-800/60 rounded-2xl p-3 flex items-start gap-3 text-xs text-cyan-200">
+                <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-sm shrink-0"><i class="fa-solid fa-layer-group"></i></div>
+                <div class="space-y-1">
+                    <div class="font-black text-cyan-300 text-sm">তথ্য: ${summary.splitMemos.length}টি মেমো নম্বরে একাধিক তারিখের বৈধ সেলস বা লেস সমন্বয় রয়েছে</div>
+                    <div class="text-slate-300">একই মেমো স্লিপে ভিন্ন ভিন্ন তারিখে বিক্রয় বা পরবর্তীতে লেস দেওয়ার কারণে একাধিক এন্ট্রি পাওয়া গেছে:</div>
+                    <div class="flex flex-wrap gap-1.5 pt-1">${summary.splitMemos.map(d => `<span class="px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-mono font-black border border-cyan-500/30">#${d.number} (${d.count}টি${d.hasLess ? ' • লেস সহ' : ''})</span>`).join('')}</div>
                 </div>
             </div>
         `;
@@ -154,12 +166,24 @@ function renderAuditResultsContent(container, summary, memos) {
         const actualLess = isLess ? paid : 0;
         const netRowDue = safeRound(bill - (actualPaid + actualLess));
         const cleanCustName = String(m.customerName || 'গ্রাহক').replace(/^\[.*?\]\s*/, '').trim();
-        const isDuplicate = summary.voucherCounts && summary.voucherCounts[m.voucherNum] > 1;
+
+        const vCount = summary.voucherCounts?.[m.voucherNum] || 1;
+        const isExactDup = summary.exactDuplicates?.some(d => d.number === m.voucherNum);
+        const isSplit = summary.splitMemos?.some(s => s.number === m.voucherNum);
+
+        let badgeHtml = '';
+        if (isLess) {
+            badgeHtml = ' <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[9px] font-bold border border-purple-500/30 ml-0.5" title="মেমোর বিপরীতে ছাড়">লেস সমন্বয়</span>';
+        } else if (isExactDup) {
+            badgeHtml = ' <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30 ml-0.5" title="একই তারিখ ও অংকের ডাবল এন্ট্রি">ডাবল এন্ট্রি?</span>';
+        } else if (isSplit) {
+            badgeHtml = ` <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[9px] font-bold border border-cyan-500/30 ml-0.5" title="ভিন্ন তারিখে মোট ${vCount}টি এন্ট্রি">পার্ট সেল (${vCount}টি)</span>`;
+        }
 
         rowsHtml += `
             <tr class="hover:bg-white/[0.02] border-b border-slate-800/60 transition-colors">
                 <td class="py-2.5 px-3 text-xs text-center text-slate-500 font-mono">${idx + 1}</td>
-                <td class="py-2.5 px-3 text-xs text-center font-mono font-black text-cyan-400">#${m.voucherNum || m.voucherNo}${isDuplicate ? ' <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30 ml-0.5">ডুপ্লিকেট</span>' : ''}</td>
+                <td class="py-2.5 px-3 text-xs text-center font-mono font-black text-cyan-400">#${m.voucherNum || m.voucherNo}${badgeHtml}</td>
                 <td class="py-2.5 px-3 text-xs text-center text-slate-300 font-mono"><div class="font-bold">${formatAppDate(m.date)}</div><div class="text-[10px] text-slate-400 font-medium font-sans">${getDayOfWeekBangla(m.date)}</div></td>
                 <td class="py-2.5 px-3 text-xs">
                     <div class="font-black text-white">${escapeHTML(cleanCustName)}</div>
@@ -172,7 +196,7 @@ function renderAuditResultsContent(container, summary, memos) {
                 <td class="py-2.5 px-3 text-xs text-right font-mono font-black text-emerald-400">${actualPaid > 0 ? '৳' + formatAmountWithComma(actualPaid) : '-'}</td>
                 <td class="py-2.5 px-3 text-xs text-right font-mono font-black text-purple-400">${actualLess > 0 ? '৳' + formatAmountWithComma(actualLess) : '-'}</td>
                 <td class="py-2.5 px-3 text-xs text-center text-slate-400 text-[11px]">
-                    <span class="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-slate-300 font-bold">${escapeHTML(m.receivedType || (m.bill > 0 ? 'বাকিতে' : 'জমা'))}</span>
+                    <span class="px-2 py-0.5 rounded-md ${isLess ? 'bg-purple-950/80 border border-purple-800/80 text-purple-300' : 'bg-slate-950 border border-slate-800 text-slate-300'} font-bold">${escapeHTML(isLess ? 'ছাড় / লেস' : (m.receivedType || (m.bill > 0 ? 'বাকিতে' : 'জমা')))}</span>
                 </td>
                 <td class="py-2.5 px-3 text-xs text-right font-mono font-black ${netRowDue > 0 ? 'text-red-400' : 'text-emerald-400'}">
                     ${netRowDue > 0 ? '৳' + formatAmountWithComma(netRowDue) : '<span class="text-[10px] text-emerald-400">পরিশোধিত</span>'}
@@ -187,10 +211,16 @@ function renderAuditResultsContent(container, summary, memos) {
         `;
     });
 
-    const hasDups = summary.duplicateNumbers && summary.duplicateNumbers.length > 0;
-    const memoCardHtml = hasDups
-        ? `<div class="text-base font-black font-mono text-cyan-400">${summary.uniqueFound} / ${summary.totalExpected} টি</div><div class="text-[10px] text-amber-400 font-bold">(${summary.totalFound}টি এন্ট্রি, ${summary.duplicateNumbers.length}টি ডুপ্লিকেট)</div>`
-        : `<div class="text-base font-black font-mono text-cyan-400">${summary.totalFound} / ${summary.totalExpected} টি</div><div class="text-[10px] text-emerald-400 font-bold">১০০% সম্পূর্ণ</div>`;
+    let memoSubInfo = '';
+    if (summary.exactDuplicates && summary.exactDuplicates.length > 0) {
+        memoSubInfo = `<div class="text-[10px] text-amber-400 font-bold">(${summary.totalFound}টি এন্ট্রি, ${summary.exactDuplicates.length}টি ডাবল এন্ট্রি)</div>`;
+    } else if (summary.splitMemos && summary.splitMemos.length > 0) {
+        memoSubInfo = `<div class="text-[10px] text-cyan-300 font-bold">(${summary.totalFound}টি এন্ট্রি, ${summary.splitMemos.length}টি মেমোতে পার্ট সেল)</div>`;
+    } else {
+        memoSubInfo = `<div class="text-[10px] text-emerald-400 font-bold">১০০% সম্পূর্ণ (${summary.totalFound}টি এন্ট্রি)</div>`;
+    }
+
+    const memoCardHtml = `<div class="text-base font-black font-mono text-cyan-400">${summary.uniqueFound} / ${summary.totalExpected} টি</div>${memoSubInfo}`;
 
     container.innerHTML = `
         <div class="space-y-3.5 animate-fade-in font-bn">

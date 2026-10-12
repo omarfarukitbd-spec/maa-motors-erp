@@ -245,7 +245,7 @@ if (typeof window !== 'undefined') {
         if (btn) { btn.innerText = 'এন্ট্রি সেভ করুন'; btn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20'; }
         document.getElementById('cancel-edit-txn-btn')?.classList.add('hidden');
         if (showFeedback) {
-            ['ledger-bill', 'ledger-paid', 'ledger-voucher', 'ledger-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            ['ledger-bill', 'ledger-paid', 'ledger-voucher', 'ledger-notes', 'ledger-ref-memo'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             updateLedgerLiveText(); showToast('এডিট বাতিল করা হয়েছে', 'info');
         }
     };
@@ -319,8 +319,13 @@ if (typeof window !== 'undefined') {
                 lbl.innerText = 'কার মাধ্যমে জমা (Cash Receiver)';
                 wrapper.innerHTML = `<select id="ledger-received-from" class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1 cursor-pointer">${window.cachedCashHtml || '<option value="">-- ক্যাশ রিসিভার নির্বাচন করুন --</option>'}</select><button type="button" onclick="window.quickEditCashCollector && window.quickEditCashCollector()" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="এডিট"><i class="fa-solid fa-pen text-xs"></i></button><button type="button" onclick="window.quickAddCashCollector && window.quickAddCashCollector()" class="w-9 h-9 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer" title="নতুন"><i class="fa-solid fa-plus text-xs"></i></button>`;
             } else {
-                lbl.innerText = 'ছাড়ের কারণ (Reason)';
-                wrapper.innerHTML = `<input type="text" id="ledger-received-from" placeholder="যেমন: সম্মানিতে ছাড়..." class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1">`;
+                lbl.innerHTML = `<span class="text-purple-400 font-bold">মূল মেমো নং ও ছাড়ের বিবরণ</span> <span class="text-[9px] text-purple-300/80 font-normal">(অফলাইন মেমো রেফারেন্স)</span>`;
+                wrapper.innerHTML = `
+                    <div class="flex gap-1.5 w-full items-center">
+                        <input type="text" id="ledger-ref-memo" placeholder="মেমো নং (যেমন: 146)" class="w-28 bg-slate-950/90 border border-purple-500/50 rounded-xl h-9 px-2 text-xs font-mono font-black text-cyan-400 outline-none focus:border-purple-400 shrink-0 shadow-inner" title="কোন মূল মেমো থেকে লেস কাটা হচ্ছে">
+                        <input type="text" id="ledger-received-from" placeholder="ছাড়/মাল ফেরতের বিবরণ..." class="m3-field py-1 text-xs bg-slate-950/80 h-9 flex-1">
+                    </div>
+                `;
             }
         }
     };
