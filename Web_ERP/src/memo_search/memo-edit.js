@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { TransactionDAO, CustomerDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, promptSecurityPin, toDBDate, safeRound } from '../utils.js';
+import { parseAmount, formatAmountWithComma, promptSecurityPin, toDBDate, safeRound, escapeHTML } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 import { auditLog } from '../audit.js';
 import { getCustomerCache } from '../customer/index.js';
@@ -32,6 +32,7 @@ export async function openMemoEditModal(txnId, voucherNo) {
         const oldBill = Number(txn.bill) || 0;
         const oldPaid = Number(txn.paid) || 0;
         const oldVoucher = txn.voucherNo || '';
+        const oldRefMemo = txn.refMemoNo || '';
         const oldDate = txn.date || '';
         const oldNotes = txn.notes || '';
         const custName = txn.customerName || 'Customer';
@@ -69,6 +70,17 @@ export async function openMemoEditModal(txnId, voucherNo) {
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
+                            <label class="block text-purple-300 font-bold mb-1">মূল মেমো রেফারেন্স (#):</label>
+                            <input type="text" id="edit-memo-ref-no" value="${escapeHTML(oldRefMemo)}" placeholder="যেমন: 146" class="w-full bg-slate-950 border border-purple-500/50 rounded-xl px-3 py-2 text-xs font-mono font-bold text-cyan-400 outline-none focus:border-purple-400 shadow-inner" title="কোন মূল মেমো থেকে এই ছাড় কাটা হয়েছে">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">লেনদেনের ধরণ:</label>
+                            <input type="text" readonly disabled value="${escapeHTML(txn.receivedType || (oldBill > 0 ? 'Bill' : 'Cash'))}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-400 cursor-not-allowed">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
                             <label class="block text-red-400 font-bold mb-1">বিল (Debit):</label>
                             <input type="text" id="edit-memo-bill" value="${oldBill}" oninput="window.handleNumberInput(this)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-black text-red-400 outline-none focus:border-red-500">
                         </div>
@@ -94,12 +106,14 @@ export async function openMemoEditModal(txnId, voucherNo) {
             },
             preConfirm: () => {
                 const newVoucher = document.getElementById('edit-memo-voucher')?.value?.trim() || oldVoucher;
+                const newRefMemoRaw = document.getElementById('edit-memo-ref-no')?.value?.trim() || '';
+                const newRefMemo = newRefMemoRaw ? (newRefMemoRaw.match(/\d+/)?.[0] || newRefMemoRaw) : '';
                 const newDate = toDBDate(document.getElementById('edit-memo-date')?.value || oldDate);
                 const newBill = parseAmount(document.getElementById('edit-memo-bill')?.value || '0');
                 const newPaid = parseAmount(document.getElementById('edit-memo-paid')?.value || '0');
                 const newNotes = document.getElementById('edit-memo-notes')?.value || '';
 
-                return { newVoucher, newDate, newBill, newPaid, newNotes };
+                return { newVoucher, newRefMemo, newDate, newBill, newPaid, newNotes };
             }
         });
 
@@ -117,6 +131,7 @@ export async function openMemoEditModal(txnId, voucherNo) {
 
         batch.update(txnRef, {
             voucherNo: formValues.newVoucher,
+            refMemoNo: formValues.newRefMemo || null,
             date: formValues.newDate,
             bill: formValues.newBill,
             paid: formValues.newPaid,

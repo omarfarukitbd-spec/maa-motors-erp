@@ -107,16 +107,34 @@ export async function enrichMemoData(txn) {
     const vNum = extractVoucherNumber(txn.voucherNo || txn.refMemoNo);
     if (vNum !== null) {
         try {
-            const lessSnap = await TransactionDAO.collection
-                .where('refMemoNo', '==', String(vNum))
-                .get();
-            lessSnap.forEach(doc => {
+            const seenLessIds = new Set();
+            const processDoc = (doc) => {
+                if (doc.id === txn.id || seenLessIds.has(doc.id)) return;
                 const d = doc.data();
-                if (doc.id !== txn.id && (d.receivedType === 'Less' || Number(d.paid) > 0)) {
+                const isLess = d.receivedType === 'Less' || (Number(d.paid) > 0 && Number(d.bill) === 0 && (d.refMemoNo || /less|ছাড়|discount/i.test(d.receivedFrom || '') || /less|ছাড়|discount/i.test(d.voucherNo || '')));
+                if (isLess) {
+                    seenLessIds.add(doc.id);
                     linkedLessList.push({ id: doc.id, ...d });
                     totalLinkedLess = safeRound(totalLinkedLess + (Number(d.paid) || 0));
                 }
-            });
+            };
+
+            // 1. Direct match on refMemoNo (e.g. '146')
+            const lessSnap = await TransactionDAO.collection
+                .where('refMemoNo', '==', String(vNum))
+                .get();
+            lessSnap.forEach(processDoc);
+
+            // 2. Backward compatibility: match old Less records where voucherNo was '#146' or '146'
+            const vSnap1 = await TransactionDAO.collection
+                .where('voucherNo', '==', '#' + vNum)
+                .get();
+            vSnap1.forEach(processDoc);
+
+            const vSnap2 = await TransactionDAO.collection
+                .where('voucherNo', '==', String(vNum))
+                .get();
+            vSnap2.forEach(processDoc);
         } catch (e) {
             console.warn("Error fetching linked less entries:", e);
         }

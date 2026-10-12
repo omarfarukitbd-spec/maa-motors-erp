@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
 
 import { renderLedger as renderLedgerUI } from './ledger/ledger-ui.js';
 import { renderRows as renderRowsUI, updateLedgerLiveText as updateLiveTextUI } from './ledger/ledger-render-rows.js';
-import { saveTransaction as saveTransactionAction, editTransaction as editTransactionAction, deleteTransaction as deleteTransactionAction } from './ledger/ledger-actions.js';
+import { saveTransaction as saveTransactionAction, editTransaction as editTransactionAction, deleteTransaction as deleteTransactionAction, promptLinkMemoToLess } from './ledger/ledger-actions.js';
 import { sendTxnSMS as sendTxnSMSAction, sendTxnWhatsApp as sendTxnWhatsAppAction, choosePrintType as choosePrintTypeAction, executePrint as executePrintAction } from './ledger/ledger-messaging.js';
 import { initLedgerHotkeys } from './ledger/ledger-hotkeys.js';
 
@@ -160,8 +160,8 @@ export async function sendTxnWhatsApp(id, name, date, v, bill, paid, due, custId
     return sendTxnWhatsAppAction(id, name, date, v, bill, paid, due, custId, stateRefs);
 }
 
-export async function editTransaction(id, cid, date, v, b, p, rt, rf, notes = '') {
-    return editTransactionAction(id, cid, date, v, b, p, rt, rf, editingRef, notes);
+export async function editTransaction(id, cid, date, v, b, p, rt, rf, notes = '', memoPhotoUrl = null, refMemoNo = '') {
+    return editTransactionAction(id, cid, date, v, b, p, rt, rf, editingRef, notes, memoPhotoUrl, refMemoNo);
 }
 
 export async function deleteTransaction(id, cid, b, p) {
@@ -290,7 +290,7 @@ if (typeof window !== 'undefined') {
     Object.assign(window, {
         loadRecentTransactions, saveTransaction, sendTxnSMS, sendTxnWhatsApp, updateLedgerLiveText,
         filterLedgerByCustomer, editTransaction, deleteTransaction, executePrint, choosePrintType,
-        filterLedgerCustomerSearch, selectLedgerCustomer, clearLedgerCustomerSearch
+        filterLedgerCustomerSearch, selectLedgerCustomer, clearLedgerCustomerSearch, promptLinkMemoToLess
     });
     window.changeLedgerPage = async (dir) => { 
         const prevPage = currentPage; if (dir === 'next') currentPage++; else currentPage--; 

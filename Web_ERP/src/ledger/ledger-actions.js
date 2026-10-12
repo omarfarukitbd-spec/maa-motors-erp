@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, formatSmsCounterText, buildSmsMessage, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, formatSmsCounterText, buildSmsMessage, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords, escapeHTML } from '../utils.js';
 import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
@@ -258,7 +258,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
     finally { if (mainBtn) { mainBtn.disabled = false; mainBtn.innerText = 'এন্ট্রি সেভ করুন'; mainBtn.className = 'm3-btn-primary rounded-xl h-10 px-8 text-xs font-bold shadow-md shadow-blue-600/20'; } }
 }
 
-export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}, notes = '', memoPhotoUrl = null) {
+export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}, notes = '', memoPhotoUrl = null, refMemoNo = '') {
     if (!(await promptSecurityPin("খতিয়ান এডিট (Authorization)"))) return;
     editingRef.id = id; editingRef.oldCid = cid; editingRef.oldBill = b; editingRef.oldPaid = p; editingRef.oldMemoPhotoUrl = memoPhotoUrl || null;
     window._ledgerEditingRef = editingRef;
@@ -300,6 +300,15 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
 
     if (window.setReceivedType) window.setReceivedType(rt);
     if (document.getElementById('ledger-received-from')) document.getElementById('ledger-received-from').value = rf;
+    const refMemoEl = document.getElementById('ledger-ref-memo');
+    if (refMemoEl) {
+        let targetRef = refMemoNo || '';
+        if (!targetRef && v) {
+            const m = String(v).match(/\d+/);
+            if (m) targetRef = m[0];
+        }
+        refMemoEl.value = targetRef;
+    }
     if (window.updateLedgerLiveText) window.updateLedgerLiveText();
     if (window.toggleReceivedSection) window.toggleReceivedSection();
     
@@ -359,3 +368,68 @@ export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
         Swal.fire('ত্রুটি', 'ভাউচার ডিলিট করা সম্ভব হয়নি।', 'error');
     }
 }
+
+/**
+ * Prompt to link or update reference memo number for a Less/Return transaction directly from ledger
+ */
+export async function promptLinkMemoToLess(txnId, customerName = '', currentMemoNo = '') {
+    if (!txnId) return;
+    const cleanCurrent = String(currentMemoNo || '').replace(/^[#\s]+/, '').match(/\d+/)?.[0] || '';
+
+    const { value: memoNo } = await Swal.fire({
+        title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-lg text-white"><i class="fa-solid fa-link text-purple-400"></i><span>লেস এন্ট্রিতে মূল মেমো যুক্ত করুন</span></div>',
+        html: `
+            <div class="text-left font-bn p-2 space-y-2.5 text-xs">
+                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
+                    <span class="text-[10px] text-slate-500 font-bold block">কাস্টমার</span>
+                    <strong class="text-white text-sm">${escapeHTML(customerName || 'গ্রাহক')}</strong>
+                </div>
+                <div>
+                    <label class="block text-purple-300 font-bold mb-1">কোন মূল মেমো থেকে এই ছাড়/ফেরত কাটা হয়েছে?</label>
+                    <input type="text" id="swal-link-memo-no" value="${escapeHTML(cleanCurrent)}" placeholder="মেমো নম্বর লিখুন (যেমন: 146)..." class="w-full bg-slate-950 border border-purple-500/60 rounded-xl px-3 py-2 text-sm font-mono font-black text-cyan-400 outline-none focus:border-purple-400 shadow-inner">
+                </div>
+                <div class="p-2.5 rounded-xl bg-purple-950/20 border border-purple-500/20 text-[11px] text-purple-200/90 leading-relaxed">
+                    <i class="fa-solid fa-circle-info text-purple-400 mr-1"></i>
+                    এই মেমো নম্বরটি যুক্ত করলে মেমো সার্চ ও রেঞ্জ অডিটে স্বয়ংক্রিয়ভাবে ছাড় হিসেবে প্রদর্শিত ও সমন্বিত হবে। মূল মেমোর আসল বিল অপরিবর্তিত থাকবে।
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i>সংরক্ষণ করুন',
+        cancelButtonText: 'বাতিল',
+        customClass: {
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-purple-500/30 shadow-2xl font-bn',
+            confirmButton: 'm3-btn-primary !bg-purple-600 hover:!bg-purple-500 !px-6 !py-2.5 !rounded-xl font-bold',
+            cancelButton: 'm3-btn-tonal !bg-slate-800 !text-slate-300 !px-4 !py-2.5 !rounded-xl font-bold'
+        },
+        preConfirm: () => {
+            const val = document.getElementById('swal-link-memo-no')?.value?.trim() || '';
+            const m = val.match(/\d+/);
+            if (!m) {
+                Swal.showValidationMessage('সঠিক মেমো নম্বর লিখুন (যেমন: 146)!');
+                return false;
+            }
+            return m[0];
+        }
+    });
+
+    if (!memoNo) return;
+
+    try {
+        const txnRef = TransactionDAO.getRef(txnId);
+        const vNo = '#' + memoNo;
+        await txnRef.update({
+            refMemoNo: String(memoNo),
+            voucherNo: vNo,
+            receivedType: 'Less',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(`মেমো #${memoNo} সফলভাবে যুক্ত করা হয়েছে!`, 'success');
+        if (typeof window.loadRecentTransactions === 'function') {
+            window.loadRecentTransactions(null, document.getElementById('ledger-customer-select')?.value);
+        }
+    } catch (e) {
+        handleError(e, 'মেমো নম্বর যুক্ত করতে ব্যর্থ');
+    }
+}
+

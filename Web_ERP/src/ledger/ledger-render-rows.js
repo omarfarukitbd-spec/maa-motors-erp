@@ -135,6 +135,8 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
         const sRf = (d.receivedFrom || '').replace(/'/g, "\\'");
         const sRt = (d.receivedType || '').replace(/'/g, "\\'");
         const sNotes = String(d.notes || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
+        const sRefMemo = String(d.refMemoNo || '').replace(/'/g, "\\'");
+        const isLessTxn = d.receivedType === 'Less' || (p > 0 && b === 0 && (d.receivedType === 'Less' || /less|ছাড়|discount/i.test(d.receivedFrom || '') || /less|ছাড়|discount/i.test(d.voucherNo || '')));
 
         let entryTime = '';
         let fullEntryDateTime = '';
@@ -171,6 +173,9 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
             <td class="text-right text-emerald-400 font-black text-sm align-top py-2.5 font-mono">৳${formatAmountWithComma(p)}</td>
             <td class="text-right text-white font-black text-base bg-white/[0.02] border-l border-slate-800/50 align-top py-2.5 font-mono">৳${formatAmountWithComma(Math.abs(balanceVal))}<div class="text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'} font-sans">${balanceVal > 0 ? 'Due' : 'Adv'}</div></td>
             <td class="text-center sticky-action-col align-top py-2.5"><div class="flex items-center justify-center gap-1.5">
+                ${isLessTxn ? `
+                    <button class="m3-btn-icon !bg-purple-950/60 hover:!bg-purple-600 border border-purple-500/40 text-purple-300 hover:text-white" onclick="window.promptLinkMemoToLess('${sId}', '${cleanCustName}', '${sRefMemo || d.voucherNo || ''}')" title="${d.refMemoNo ? 'লিংকড মেমো #' + d.refMemoNo + ' পরিবর্তন করুন' : 'মূল মেমো নম্বর যুক্ত করুন'}"><i class="fa-solid fa-link text-xs"></i></button>
+                ` : ''}
                 ${d.memoPhotoUrl ? `
                     <button class="m3-btn-icon" onclick="window.viewMemoPhoto('${sId}')" title="স্ক্যান মেমোর ছবি দেখুন"><i class="fa-solid fa-file-invoice text-amber-400"></i></button>
                 ` : `
@@ -178,7 +183,7 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
                 `}
                 <button data-perm="sendLedgerWhatsApp" class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
                 <button data-perm="sendLedgerSMS" class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-cyan-400"></i></button>
-                <button data-perm="editLedger" class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}', '${sNotes}', '${d.memoPhotoUrl || ''}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
+                <button data-perm="editLedger" class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}', '${sNotes}', '${d.memoPhotoUrl || ''}', '${sRefMemo}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
                 <button data-perm="deleteLedger" class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>
                 <button data-perm="printLedgerReceipt" class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
             </div></td>
@@ -189,13 +194,16 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
                 <div>
                     <div class="mobile-card-title">${cleanCustName}</div>
                     ${custAddress ? `<div class="text-[10px] text-slate-400 font-normal flex items-center gap-1 mt-0.5"><i class="fa-solid fa-location-dot text-[9px] text-slate-500"></i><span>${custAddress}</span></div>` : ''}
-                    <div class="mobile-card-sub text-cyan-400 font-mono font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo + ' • ' : ''}${d.memoPhotoUrl ? `<span class="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 mr-1 cursor-pointer" onclick="window.viewMemoPhoto('${sId}')"><i class="fa-solid fa-file-invoice text-[8px]"></i><span>মেমো</span></span>` : ''}${formatAppDate(d.date)} (${getDayOfWeekBangla(d.date)})${entryTime ? ` <span title="আসল এন্ট্রির সময়: ${fullEntryDateTime}" class="cursor-help font-sans">(${entryTime})</span>` : ''} ${typeBadge}</div>
+                    <div class="mobile-card-sub text-cyan-400 font-mono font-bold mt-0.5">${d.voucherNo ? '#' + d.voucherNo + ' • ' : ''}${d.refMemoNo ? `<span class="text-purple-300 font-mono">মেমো #${d.refMemoNo} • </span>` : ''}${d.memoPhotoUrl ? `<span class="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 mr-1 cursor-pointer" onclick="window.viewMemoPhoto('${sId}')"><i class="fa-solid fa-file-invoice text-[8px]"></i><span>মেমো</span></span>` : ''}${formatAppDate(d.date)} (${getDayOfWeekBangla(d.date)})${entryTime ? ` <span title="আসল এন্ট্রির সময়: ${fullEntryDateTime}" class="cursor-help font-sans">(${entryTime})</span>` : ''} ${typeBadge}</div>
                 </div>
                 <div class="text-right"><div class="text-white font-black text-base">৳ ${formatAmountWithComma(Math.abs(balanceVal))}</div><span class="inline-block text-[9px] uppercase font-bold ${balanceVal > 0 ? 'text-red-400' : 'text-emerald-400'}">${balanceVal > 0 ? 'Due' : 'Adv'}</span></div>
             </div>
             <div class="mobile-card-row"><span class="mobile-card-label">বিল (Debit):</span><span class="mobile-card-value text-red-400 font-bold">৳ ${formatAmountWithComma(b)}</span></div>
             <div class="mobile-card-row"><span class="mobile-card-label">জমা (Credit):</span><span class="mobile-card-value text-emerald-400 font-bold">৳ ${formatAmountWithComma(p)}</span></div>
             <div class="mobile-card-actions">
+                ${isLessTxn ? `
+                    <button class="m3-btn-icon !bg-purple-950/60 hover:!bg-purple-600 border border-purple-500/40 text-purple-300 hover:text-white" onclick="window.promptLinkMemoToLess('${sId}', '${cleanCustName}', '${sRefMemo || d.voucherNo || ''}')" title="${d.refMemoNo ? 'লিংকড মেমো #' + d.refMemoNo + ' পরিবর্তন' : 'মূল মেমো নম্বর যুক্ত করুন'}"><i class="fa-solid fa-link text-xs"></i></button>
+                ` : ''}
                 ${d.memoPhotoUrl ? `
                     <button class="m3-btn-icon" onclick="window.viewMemoPhoto('${sId}')" title="স্ক্যান মেমোর ছবি দেখুন"><i class="fa-solid fa-file-invoice text-amber-400"></i></button>
                 ` : `
@@ -203,7 +211,7 @@ export function renderRows(transactions, container, stateRefs = {}, startBalance
                 `}
                 <button data-perm="sendLedgerWhatsApp" class="m3-btn-icon" onclick="window.sendTxnWhatsApp('${sId}')" title="WhatsApp বার্তা পাঠান"><i class="fa-brands fa-whatsapp text-emerald-400"></i></button>
                 <button data-perm="sendLedgerSMS" class="m3-btn-icon" onclick="window.sendTxnSMS('${sId}')" title="ট্রানজেকশন SMS পাঠান"><i class="fa-solid fa-comment-sms text-blue-400"></i></button>
-                <button data-perm="editLedger" class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}', '${sNotes}', '${d.memoPhotoUrl || ''}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
+                <button data-perm="editLedger" class="m3-btn-icon" onclick="window.editTransaction('${sId}', '${sCustId}', '${d.date}', '${d.voucherNo || ''}', ${b}, ${p}, '${sRt}', '${sRf}', '${sNotes}', '${d.memoPhotoUrl || ''}', '${sRefMemo}')" title="এডিট"><i class="fa-solid fa-pen-to-square text-amber-400"></i></button>
                 <button data-perm="deleteLedger" class="m3-btn-icon" onclick="window.deleteTransaction('${sId}', '${sCustId}', ${b}, ${p})" title="ডিলেট"><i class="fa-solid fa-trash-can text-red-400"></i></button>
                 <button data-perm="printLedgerReceipt" class="m3-btn-icon" onclick="window.choosePrintType('${sId}')" title="প্রিন্ট"><i class="fa-solid fa-print text-emerald-400"></i></button>
             </div>
