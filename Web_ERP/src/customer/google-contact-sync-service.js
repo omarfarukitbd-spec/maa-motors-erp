@@ -4,7 +4,7 @@ import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { getCustomerCache } from './customer-state.js';
 import { formatAmountWithComma, formatAppDate, showToast, toDBDate } from '../utils.js';
 import { generateBossToken } from './boss-card-token.js';
-import { parsePhoneNumbers, normalizeBengaliNumbers, buildContactDisplayName, updatePersonalContactNameWithDue } from './customer-contact-export-helpers.js';
+import { parsePhoneNumbers, normalizeBengaliNumbers, buildContactDisplayName, updatePersonalContactNameWithDue, isDummyPhoneNumber } from './customer-contact-export-helpers.js';
 import { getAllSilentAccessTokens, updateAccountSyncTimestamp } from './google-auth-client.js';
 import { generateCustomerBadgeBase64, generateCustomerBadgeDataUrl } from './contact-badge-canvas.js';
 
@@ -955,6 +955,230 @@ export async function executeFullGoogleContactsSync(onProgress, targetAccountIds
             deltaOnly: deltaOnly,
             turboBatch: true
         };
+    } finally {
+        isSyncingInBackground = false;
+    }
+}
+
+/**
+ * সকল কাস্টমারের জন্য এক ক্লিকে ডায়নামিক কলার আইডি ফটো ব্যাজ বাল্ক সিঙ্ক ইঞ্জিন
+ * কনকারেন্সি পুল (Concurrency Pool) ও স্মার্ট পেসিং (Pacing Delay) দ্বারা নিয়ন্ত্রিত
+ * @param {Function} onProgress - ({ current, total, percent, currentName, updatedCount, failedCount, text })
+ * @param {Array|null} targetAccountIds - অপশনাল নির্দিষ্ট অ্যাকাউন্ট
+ * @returns {Promise<Object>}
+ */
+export async function executeBulkPhotoBadgeSync(onProgress, targetAccountIds = null) {
+    if (isSyncingInBackground) {
+        showToast('ইতিমধ্যে একটি সিঙ্ক প্রসেস চলমান রয়েছে', 'warning');
+        return { success: false, message: 'Already syncing' };
+    }
+
+    let activeTokens = await getAllSilentAccessTokens();
+    if (activeTokens.length === 0) {
+        throw new Error('কোনো সচল গুগল অ্যাকাউন্ট পাওয়া যায়নি।');
+    }
+
+    if (Array.isArray(targetAccountIds) && targetAccountIds.length > 0) {
+        activeTokens = activeTokens.filter(acc => targetAccountIds.includes(acc.id));
+        if (activeTokens.length === 0) {
+            throw new Error('নির্বাচিত অ্যাকাউন্টের কোনো সচল কানেকশন পাওয়া যায়নি।');
+        }
+    }
+
+    isSyncingInBackground = true;
+
+    try {
+        let customers = getCustomerCache();
+        if (!customers || customers.length === 0) {
+            const snap = await CustomerDAO.collection.get();
+            customers = [];
+            snap.forEach(doc => customers.push({ id: doc.id, ...doc.data() }));
+        }
+
+        // শুধুমাত্র বৈধ ফোন নম্বরধারী কাস্টমারদের বাছাই
+        const validCustomers = customers.filter(c => {
+            const phones = parsePhoneNumbers(c.phone);
+            return phones.length > 0 && phones.some(p => {
+                const digits = p.replace(/\D/g, '');
+                return digits.length >= 10 && !isDummyPhoneNumber(digits);
+            });
+        });
+
+        if (validCustomers.length === 0) {
+            return { success: true, total: 0, updatedCount: 0, failedCount: 0 };
+        }
+
+        if (onProgress) {
+            onProgress({
+                current: 0,
+                total: validCustomers.length,
+                percent: 0,
+                currentName: '',
+                updatedCount: 0,
+                failedCount: 0,
+                text: 'লেনদেন ডাটা ও কন্টাক্ট ম্যাপ প্রস্তুত করা হচ্ছে...'
+            });
+        }
+
+        // লেনদেন ডাটা একবারে ফেচ (০ N+1 কুয়েরি)
+        let txnsByCustomer = new Map();
+        try {
+            const allTxns = await TransactionDAO.getAll();
+            allTxns.forEach(t => {
+                if (!txnsByCustomer.has(t.customerId)) txnsByCustomer.set(t.customerId, []);
+                txnsByCustomer.get(t.customerId).push(t);
+            });
+        } catch (txnErr) {
+            console.warn('Transactions prefetch warning:', txnErr);
+        }
+
+        let totalPhotoUpdated = 0;
+        let totalPhotoFailed = 0;
+
+        for (const acc of activeTokens) {
+            if (onProgress) {
+                onProgress({
+                    current: 0,
+                    total: validCustomers.length,
+                    percent: 0,
+                    text: `ডিভাইস [${acc.label}]-এর কন্টাক্ট তালিকা লোড হচ্ছে...`
+                });
+            }
+
+            // গুগল কন্টাক্ট তালিকা ফেচ করে ইন-মেমোরি ফোন ম্যাপ তৈরি
+            const googleContacts = [];
+            let nextPageToken = '';
+            do {
+                const url = `https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers,photos&pageSize=1000${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
+                const res = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${acc.accessToken}` } });
+                if (!res.ok) break;
+                const data = await res.json();
+                if (data.connections) googleContacts.push(...data.connections);
+                nextPageToken = data.nextPageToken || '';
+            } while (nextPageToken);
+
+            const phoneMap = new Map();
+            googleContacts.forEach(gc => {
+                if (gc.phoneNumbers) {
+                    gc.phoneNumbers.forEach(pn => {
+                        const clean = normalizeBengaliNumbers(pn.value).replace(/\D/g, '');
+                        if (clean.length >= 10) {
+                            phoneMap.set(clean.slice(-10), gc);
+                        }
+                    });
+                }
+            });
+
+            // আপলোড টাস্ক প্রস্তুত
+            const tasks = [];
+            for (const cust of validCustomers) {
+                const phones = parsePhoneNumbers(cust.phone);
+                let matched = null;
+                for (const p of phones) {
+                    const digits = p.replace(/\D/g, '');
+                    if (digits.length >= 10 && phoneMap.has(digits.slice(-10))) {
+                        matched = phoneMap.get(digits.slice(-10));
+                        break;
+                    }
+                }
+                tasks.push({
+                    customer: cust,
+                    resourceName: matched ? matched.resourceName : null,
+                    phones
+                });
+            }
+
+            if (tasks.length === 0) continue;
+
+            // ৩ জনের প্যারালাল ব্যাচে কনকারেন্সি পুল ও পেসিং এক্সিকিউশন
+            const BATCH_SIZE = 3;
+            const PACING_DELAY_MS = 200;
+
+            for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+                const batch = tasks.slice(i, i + BATCH_SIZE);
+
+                const batchPromises = batch.map(async (task) => {
+                    try {
+                        let resName = task.resourceName;
+                        if (!resName) {
+                            // যদি কন্টাক্টটি গুগলে আগে থেকে না থাকে, তবে তৈরি করে রিসোর্স নেম নেওয়া
+                            const createUrl = 'https://people.googleapis.com/v1/people:createContact';
+                            const createPayload = {
+                                names: [{ givenName: task.customer.name }],
+                                phoneNumbers: task.phones.map(p => ({ value: p, type: 'Mobile' })),
+                                organizations: [{ name: "M/S. MAA-MOTOR'S", title: `কাস্টমার #${task.customer.accountNo || ''}` }]
+                            };
+                            const createRes = await fetchWithRetry(createUrl, {
+                                method: 'POST',
+                                headers: {
+                                    Authorization: `Bearer ${acc.accessToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(createPayload)
+                            });
+                            if (createRes && createRes.ok) {
+                                const createdData = await createRes.json();
+                                resName = createdData?.resourceName;
+                            }
+                        }
+
+                        if (resName) {
+                            const totalDue = Number(task.customer.totalDue) || 0;
+                            const custTxns = txnsByCustomer.get(task.customer.id) || [];
+                            const intelligence = calculateCallIntelligence(custTxns, totalDue);
+                            const badgeBase64 = generateCustomerBadgeBase64(task.customer, intelligence);
+
+                            if (badgeBase64) {
+                                const success = await uploadContactPhotoToGoogle(resName, badgeBase64, acc.accessToken);
+                                if (success) {
+                                    totalPhotoUpdated++;
+                                } else {
+                                    totalPhotoFailed++;
+                                }
+                            } else {
+                                totalPhotoFailed++;
+                            }
+                        } else {
+                            totalPhotoFailed++;
+                        }
+                    } catch (pErr) {
+                        console.error('Batch photo upload error for:', task.customer.name, pErr);
+                        totalPhotoFailed++;
+                    }
+                });
+
+                await Promise.all(batchPromises);
+
+                const processedCount = Math.min(tasks.length, i + batch.length);
+                const percent = Math.round((processedCount / tasks.length) * 100);
+                const currentName = batch[batch.length - 1]?.customer?.name || '';
+
+                if (onProgress) {
+                    onProgress({
+                        current: processedCount,
+                        total: tasks.length,
+                        percent,
+                        currentName,
+                        updatedCount: totalPhotoUpdated,
+                        failedCount: totalPhotoFailed,
+                        text: `ফটো আপলোড হচ্ছে: ${processedCount} / ${tasks.length} জন (${percent}%)`
+                    });
+                }
+
+                // গুগল রেট লিমিট সেফটি বিরতি
+                if (i + BATCH_SIZE < tasks.length) {
+                    await new Promise(r => setTimeout(r, PACING_DELAY_MS));
+                }
+            }
+        }
+
+        return {
+            success: true,
+            total: validCustomers.length,
+            updatedCount: totalPhotoUpdated,
+            failedCount: totalPhotoFailed
+        };
+
     } finally {
         isSyncingInBackground = false;
     }

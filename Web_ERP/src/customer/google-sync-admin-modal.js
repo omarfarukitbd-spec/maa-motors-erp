@@ -5,7 +5,7 @@ import { CustomerDAO } from '../dao.js';
 import { getCustomerCache } from './customer-state.js';
 import { showToast, promptSecurityPin, escapeHTML, formatAmountWithComma } from '../utils.js';
 import { getConnectedGoogleAccounts, removeConnectedAccount, buildGoogleAuthUrl } from './google-auth-client.js';
-import { executeFullGoogleContactsSync, getPendingDeltaInfo, trialPushCustomerPhotoBadge, fetchSingleCustomerIntelligence } from './google-contact-sync-service.js';
+import { executeFullGoogleContactsSync, getPendingDeltaInfo, trialPushCustomerPhotoBadge, fetchSingleCustomerIntelligence, executeBulkPhotoBadgeSync } from './google-contact-sync-service.js';
 import { generateCustomerBadgeDataUrl } from './contact-badge-canvas.js';
 
 function formatSyncTime(isoStr) {
@@ -230,6 +230,10 @@ export async function openGoogleSyncAdminModal() {
                                 <span id="modal-sync-btn-text">সম্পূর্ণ ডাটাবেজ সিঙ্ক চালান (${deltaInfo.totalCustomers} জন)</span>
                             </button>
                         `}
+                        <button id="modal-bulk-photo-sync-btn" class="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-indigo-950/50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
+                            <i class="fa-solid fa-id-badge text-yellow-300 text-sm"></i>
+                            <span id="modal-photo-sync-btn-text">সকল কাস্টমারের ফটো ব্যাজ সিঙ্ক করুন</span>
+                        </button>
                     ` : `
                         <button id="modal-direct-connect-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
                             <i class="fa-brands fa-google text-red-400"></i>
@@ -257,6 +261,7 @@ export async function openGoogleSyncAdminModal() {
                 const allBoxes = Array.from(document.querySelectorAll('.device-sync-chk'));
                 const btnTextEl = document.getElementById('modal-sync-btn-text');
                 const deltaBtnTextEl = document.getElementById('modal-delta-btn-text');
+                const photoBtnTextEl = document.getElementById('modal-photo-sync-btn-text');
 
                 if (selectAllEl && allBoxes.length > 0) {
                     selectAllEl.checked = checkedBoxes.length === allBoxes.length;
@@ -280,6 +285,14 @@ export async function openGoogleSyncAdminModal() {
                         deltaBtnTextEl.innerText = `দ্রুত সিঙ্ক (${deltaInfo.pendingCount} জন) - ${countStr}`;
                     } else {
                         deltaBtnTextEl.innerText = `ডিভাইস নির্বাচন করুন (০ টি)`;
+                    }
+                }
+
+                if (photoBtnTextEl) {
+                    if (checkedBoxes.length > 0) {
+                        photoBtnTextEl.innerText = `সকল ফটো ব্যাজ সিঙ্ক - ${countStr}`;
+                    } else {
+                        photoBtnTextEl.innerText = `ডিভাইস নির্বাচন করুন (০ টি)`;
                     }
                 }
             };
@@ -342,6 +355,20 @@ export async function openGoogleSyncAdminModal() {
                     }
                     const targetIds = checkedBoxes.map(cb => cb.getAttribute('data-id'));
                     handleManualFullSync(targetIds, false);
+                });
+            }
+
+            // বাল্ক ফটো ব্যাজ সিঙ্ক বাটন (নির্বাচিত ডিভাইসসমূহ)
+            const bulkPhotoBtn = document.getElementById('modal-bulk-photo-sync-btn');
+            if (bulkPhotoBtn) {
+                bulkPhotoBtn.addEventListener('click', () => {
+                    const checkedBoxes = Array.from(document.querySelectorAll('.device-sync-chk:checked'));
+                    if (checkedBoxes.length === 0) {
+                        showToast('দয়া করে সিঙ্ক করার জন্য অন্তত ১টি ডিভাইস নির্বাচন করুন', 'warning');
+                        return;
+                    }
+                    const targetIds = checkedBoxes.map(cb => cb.getAttribute('data-id'));
+                    handleBulkPhotoSync(targetIds);
                 });
             }
 
@@ -696,6 +723,143 @@ async function handleManualFullSync(targetAccountIds = null, deltaOnly = false) 
             text: e.message || 'গুগল কন্টাক্ট সিঙ্ক করা যায়নি।',
             icon: 'error',
             customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn' }
+        });
+    }
+}
+
+/**
+ * সকল কাস্টমারের ডায়নামিক কলার আইডি ফটো ব্যাজ বাল্ক সিঙ্ক হ্যান্ডলার
+ * @param {Array|null} targetAccountIds
+ */
+async function handleBulkPhotoSync(targetAccountIds = null) {
+    const isSingle = Array.isArray(targetAccountIds) && targetAccountIds.length === 1;
+    const targetText = isSingle ? 'নির্বাচিত ডিভাইসে' : 'সকল নির্বাচিত ডিভাইসে';
+
+    const confirmRes = await Swal.fire({
+        title: `<div class="flex items-center justify-center gap-2 font-bn font-black text-white text-base">
+            <i class="fa-solid fa-id-badge text-yellow-400"></i>
+            <span>সকল কাস্টমারের ফটো ব্যাজ সিঙ্ক</span>
+        </div>`,
+        html: `
+            <div class="font-bn text-left text-xs space-y-3 text-slate-300 p-1">
+                <p class="leading-relaxed">
+                    ডাটাবেজের সকল কাস্টমারের জন্য স্বয়ংক্রিয়ভাবে <strong class="text-white">এইচডি কলার আইডি ফটো ব্যাজ</strong> (বকেয়া, সর্বশেষ পেমেন্ট দিন ও এলাকা) তৈরি করে ${targetText} গুগলে আপলোড করা হবে।
+                </p>
+                <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800 space-y-1 text-[11px]">
+                    <p class="text-indigo-300 font-bold"><i class="fa-solid fa-bolt mr-1"></i>স্মার্ট কনকারেন্সি পুল ও পেসিং:</p>
+                    <p class="text-slate-400">গুগল এপিআই সেফটি বজায় রেখে ৩ জনের গ্রুপে ব্যাকগ্রাউন্ডে নিরাপদ গতিতে আপলোড হবে।</p>
+                </div>
+                <p class="text-amber-400 text-[11px] font-bold">
+                    <i class="fa-solid fa-circle-question mr-1"></i>
+                    আপনি কি এখনই বাল্ক ফটো ব্যাজ সিঙ্ক শুরু করতে চান?
+                </p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-play mr-1.5"></i> হ্যাঁ, ফটো ব্যাজ সিঙ্ক শুরু করুন',
+        cancelButtonText: 'বাতিল',
+        customClass: {
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm',
+            confirmButton: '!bg-gradient-to-r !from-purple-600 !to-indigo-600 hover:!from-purple-500 hover:!to-indigo-500 !text-white !font-bold !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer',
+            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer'
+        }
+    });
+
+    if (!confirmRes.isConfirmed) return;
+
+    Swal.fire({
+        title: `<div class="flex items-center justify-center gap-2 font-bn font-black text-white text-base">
+            <i class="fa-solid fa-id-badge animate-pulse text-yellow-400"></i>
+            <span>ফটো ব্যাজ সিঙ্ক হচ্ছে...</span>
+        </div>`,
+        html: `
+            <div class="text-center font-bn space-y-3 p-2 text-slate-300">
+                <p id="bulk-photo-msg" class="text-xs font-bold text-slate-200">ডাটা ও কন্টাক্ট ম্যাপ প্রস্তুত হচ্ছে...</p>
+                <div class="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-800 p-0.5">
+                    <div id="bulk-photo-bar" class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-300" style="width: 2%"></div>
+                </div>
+                <div class="flex justify-between items-center text-xs text-slate-400 px-1 font-mono">
+                    <span id="bulk-photo-count">০ / ০ জন</span>
+                    <span id="bulk-photo-pct" class="font-bold text-indigo-400">০%</span>
+                </div>
+                <div class="p-2 bg-slate-900/90 rounded-xl border border-slate-800 text-[11px] text-slate-300 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user text-indigo-400 text-xs"></i>
+                    <span id="bulk-photo-current-name" class="truncate font-semibold">অপেক্ষা করুন...</span>
+                </div>
+                <p class="text-[10px] text-amber-400/90 font-bold">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    উইন্ডো বন্ধ করবেন না, ব্যাকগ্রাউন্ডে নিরাপদে ব্যাজ আপলোড হচ্ছে
+                </p>
+            </div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm' }
+    });
+
+    const msgEl = document.getElementById('bulk-photo-msg');
+    const barEl = document.getElementById('bulk-photo-bar');
+    const countEl = document.getElementById('bulk-photo-count');
+    const pctEl = document.getElementById('bulk-photo-pct');
+    const nameEl = document.getElementById('bulk-photo-current-name');
+
+    try {
+        const res = await executeBulkPhotoBadgeSync((p) => {
+            if (msgEl && p.text) msgEl.innerText = p.text;
+            if (countEl) countEl.innerText = `${p.current} / ${p.total} জন`;
+            if (pctEl) pctEl.innerText = `${p.percent}%`;
+            if (barEl) barEl.style.width = `${Math.max(2, p.percent)}%`;
+            if (nameEl && p.currentName) nameEl.innerText = `বর্তমান: ${p.currentName}`;
+        }, targetAccountIds);
+
+        if (!res.success) {
+            showToast(res.message || 'ফটো ব্যাজ সিঙ্ক সম্পন্ন করা যায়নি', 'warning');
+            return;
+        }
+
+        await Swal.fire({
+            title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-emerald-400 text-base"><i class="fa-solid fa-circle-check"></i><span>ফটো ব্যাজ সিঙ্ক সফল হয়েছে!</span></div>',
+            html: `
+                <div class="text-left font-bn space-y-2.5 p-1 text-slate-200 text-xs">
+                    <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">মোট প্রসেসকৃত কাস্টমার:</span>
+                            <strong class="font-bold text-white">${res.total} জন</strong>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">সফল ফটো ব্যাজ আপলোড:</span>
+                            <strong class="text-emerald-400 font-mono font-bold">${res.updatedCount} টি</strong>
+                        </div>
+                        ${res.failedCount > 0 ? `
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">ব্যর্থ / মিসিং:</span>
+                            <strong class="text-amber-400 font-mono font-bold">${res.failedCount} টি</strong>
+                        </div>` : ''}
+                    </div>
+
+                    <!-- ইনস্ট্যান্ট মোবাইল রিফ্রেশ নির্দেশিকা কার্ড -->
+                    <div class="p-3 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl space-y-1.5 text-slate-200">
+                        <div class="flex items-center gap-1.5 text-indigo-400 font-bold text-xs">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                            <span>মোবাইলে ব্যাজ দেখার নিয়ম:</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            বসের বা আপনার ফোনের <strong>Contacts</strong> অ্যাপটি খুলুন এবং আঙুল দিয়ে ওপর থেকে নিচে টানুন (<strong>Pull down to refresh</strong>)। যেকোনো কাস্টমারের নামের ওপর ট্যাপ করলেই তার বড় কলার আইডি ফটো কার্ড দেখতে পাবেন!
+                        </p>
+                    </div>
+                </div>
+            `,
+            icon: 'success',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm' }
+        });
+    } catch (e) {
+        console.error('Bulk Photo Sync Error:', e);
+        Swal.fire({
+            title: '<div class="font-bn font-black text-red-400 text-base">ফটো সিঙ্ক এরর</div>',
+            text: e.message || 'গুগল কন্টাক্ট ফটো ব্যাজ সিঙ্ক করা যায়নি।',
+            icon: 'error',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm' }
         });
     }
 }
