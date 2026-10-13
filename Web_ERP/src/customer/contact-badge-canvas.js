@@ -147,7 +147,7 @@ export function renderCustomerBadgeCanvas(customer = {}, intelligence = {}) {
     // পেমেন্ট তথ্য বক্স
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-    const infoBoxW = 340;
+    const infoBoxW = 360;
     const infoBoxH = dateText ? 76 : 50;
     ctx.beginPath();
     ctx.roundRect(256 - infoBoxW / 2, 310, infoBoxW, infoBoxH, 16);
@@ -156,7 +156,11 @@ export function renderCustomerBadgeCanvas(customer = {}, intelligence = {}) {
     ctx.stroke();
 
     ctx.fillStyle = '#FEF08A'; // yellow-200 (হাইলাইট)
-    ctx.font = 'bold 17px "Hind Siliguri", "Segoe UI", Roboto, sans-serif';
+    if (recencyText.length > 25) {
+        ctx.font = 'bold 15px "Hind Siliguri", "Segoe UI", Roboto, sans-serif';
+    } else {
+        ctx.font = 'bold 17px "Hind Siliguri", "Segoe UI", Roboto, sans-serif';
+    }
     ctx.fillText(recencyText, 256, 342);
 
     if (dateText) {

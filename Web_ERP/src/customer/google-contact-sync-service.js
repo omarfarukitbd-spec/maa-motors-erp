@@ -2,7 +2,7 @@
 import { db } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
 import { getCustomerCache } from './customer-state.js';
-import { formatAmountWithComma, formatAppDate, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, showToast, toDBDate } from '../utils.js';
 import { generateBossToken } from './boss-card-token.js';
 import { parsePhoneNumbers, normalizeBengaliNumbers, buildContactDisplayName, updatePersonalContactNameWithDue } from './customer-contact-export-helpers.js';
 import { getAllSilentAccessTokens, updateAccountSyncTimestamp } from './google-auth-client.js';
@@ -109,8 +109,12 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
         };
     }
 
-    // তারিখ অনুযায়ী ডিসেন্ডিং সর্ট
-    const sorted = [...transactions].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    // তারিখ অনুযায়ী ডিসেন্ডিং সর্ট (toDBDate দিয়ে নিরাপদ সর্টিং)
+    const sorted = [...transactions].sort((a, b) => {
+        const da = toDBDate(a.date || '');
+        const db = toDBDate(b.date || '');
+        return db.localeCompare(da);
+    });
 
     // সর্বশেষ জমা ফিল্টার
     const payments = sorted.filter(t => Number(t.paid) > 0);
@@ -126,21 +130,28 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
         lastPaymentDateText = dateStr;
 
         if (lp.date) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const payDate = new Date(lp.date);
-            payDate.setHours(0, 0, 0, 0);
-            const diffTime = today.getTime() - payDate.getTime();
-            const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+            try {
+                const isoDateStr = toDBDate(lp.date);
+                const [y, m, d] = isoDateStr.split('-').map(Number);
+                const payDate = new Date(y, m - 1, d);
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const diffTime = today.getTime() - payDate.getTime();
+                const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
 
-            if (diffDays === 0) {
-                lastPaymentRecencyText = `শেষ জমা: আজকেই (৳ ${paidAmtStr})`;
-            } else if (diffDays === 1) {
-                lastPaymentRecencyText = `শেষ জমা: গতকাল (৳ ${paidAmtStr})`;
-            } else {
-                const bnDays = String(diffDays).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
-                lastPaymentRecencyText = `শেষ জমা: ${bnDays} দিন আগে (৳ ${paidAmtStr})`;
+                if (diffDays === 0) {
+                    lastPaymentRecencyText = `শেষ জমা: আজকেই (৳ ${paidAmtStr})`;
+                } else if (diffDays === 1) {
+                    lastPaymentRecencyText = `শেষ জমা: গতকাল (৳ ${paidAmtStr})`;
+                } else {
+                    const bnDays = String(diffDays).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+                    lastPaymentRecencyText = `শেষ জমা: ${bnDays} দিন আগে (৳ ${paidAmtStr})`;
+                }
+            } catch (dErr) {
+                console.error('Recency date calc error:', dErr);
+                lastPaymentRecencyText = `শেষ জমা: ৳ ${paidAmtStr}`;
             }
+        } else {
             lastPaymentRecencyText = `শেষ জমা: ৳ ${paidAmtStr}`;
         }
     }
@@ -150,9 +161,20 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
     if (totalDue > 0) {
         const latestTxn = sorted[0];
         if (latestTxn && latestTxn.date) {
-            const diffMs = Date.now() - new Date(latestTxn.date).getTime();
-            const days = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-            dueAgingText = `${days} দিন ধরে বকেয়া`;
+            try {
+                const isoDateStr = toDBDate(latestTxn.date);
+                const [y, m, d] = isoDateStr.split('-').map(Number);
+                const txnDate = new Date(y, m - 1, d);
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const diffMs = today.getTime() - txnDate.getTime();
+                const days = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+                const bnDays = String(days).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+                dueAgingText = `${bnDays} দিন ধরে বকেয়া`;
+            } catch (err) {
+                console.error('Due aging calc error:', err);
+                dueAgingText = 'বকেয়া আছে';
+            }
         }
     } else if (totalDue < 0) {
         dueAgingText = 'অগ্রিম জমা';
