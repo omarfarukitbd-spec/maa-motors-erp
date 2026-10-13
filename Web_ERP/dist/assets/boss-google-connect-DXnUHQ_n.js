@@ -1,4 +1,4 @@
-import{p as e}from"./dao-BAvPFDr3.js";import{g as t}from"./ui-helpers-ChDNPFdp.js";import"./customer-state-dZilZm7l.js";import{a as n,i as r,o as i,s as a}from"./index-SolVWDRa.js";async function o(){let e=document.getElementById(`login-screen`),t=document.getElementById(`app-container`);e&&(e.style.display=`none`),t&&t.classList.add(`hidden`);let n=document.getElementById(`boss-google-connect-view`);n||(n=document.createElement(`div`),n.id=`boss-google-connect-view`,n.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-4 sm:p-6 font-bn flex flex-col items-center justify-center min-h-screen text-slate-100`,document.body.appendChild(n));let r=new URLSearchParams(window.location.search),i=r.get(`code`),a=r.get(`error`),o=(r.get(`state`)||``).split(`|`),u=r.get(`key`)||(o.length>1?o[1]:``),d=r.get(`label`)||(o.length>2?decodeURIComponent(o[2]):`ডিভাইস (বস)`);if(i){await c(n,i,u,d);return}if(a){l(n,`গুগল অনুমোদন বাতিল করা হয়েছে বা অনুমতি পাওয়া যায়নি। পুনরায় চেষ্টা করুন।`);return}await s(n,u,d)}async function s(n,i,a){if(i&&i!==`direct`)try{let t=await e.collection(`settings`).doc(`google_sync`).get();if(t.exists){let e=t.data();if(e.setupKey===`USED`){n.innerHTML=`
+import{p as e}from"./dao-BAvPFDr3.js";import{g as t}from"./ui-helpers-ChDNPFdp.js";import"./customer-state-dZilZm7l.js";import{n,r,s as i,t as a}from"./google-auth-client-B9yPtDl2.js";async function o(){let e=document.getElementById(`login-screen`),t=document.getElementById(`app-container`);e&&(e.style.display=`none`),t&&t.classList.add(`hidden`);let n=document.getElementById(`boss-google-connect-view`);n||(n=document.createElement(`div`),n.id=`boss-google-connect-view`,n.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-4 sm:p-6 font-bn flex flex-col items-center justify-center min-h-screen text-slate-100`,document.body.appendChild(n));let r=new URLSearchParams(window.location.search),i=r.get(`code`),a=r.get(`error`),o=(r.get(`state`)||``).split(`|`),u=r.get(`key`)||(o.length>1?o[1]:``),d=r.get(`label`)||(o.length>2?decodeURIComponent(o[2]):`ডিভাইস (বস)`);if(i){await c(n,i,u,d);return}if(a){l(n,`গুগল অনুমোদন বাতিল করা হয়েছে বা অনুমতি পাওয়া যায়নি। পুনরায় চেষ্টা করুন।`);return}await s(n,u,d)}async function s(n,r,i){if(r&&r!==`direct`)try{let t=await e.collection(`settings`).doc(`google_sync`).get();if(t.exists){let e=t.data();if(e.setupKey===`USED`){n.innerHTML=`
                         <div class="w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-4 font-bn">
                             <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
                                 <i class="fa-solid fa-link-slash text-2xl"></i>
@@ -11,7 +11,7 @@ import{p as e}from"./dao-BAvPFDr3.js";import{g as t}from"./ui-helpers-ChDNPFdp.j
                                 <p><i class="fa-solid fa-circle-info text-indigo-400 mr-1.5"></i>দোকানের কম্পিউটার থেকে <strong>কাস্টমার &gt; গুগল সিঙ্ক &gt; ডিভাইস যুক্ত করুন</strong> অপশনে গিয়ে নতুন লিংক তৈরি করে হোয়াটসঅ্যাপে পাঠিয়ে নিতে বলুন।</p>
                             </div>
                         </div>
-                    `;return}if(e.setupKey&&e.setupKey!==i){n.innerHTML=`
+                    `;return}if(e.setupKey&&e.setupKey!==r){n.innerHTML=`
                         <div class="w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-4 font-bn">
                             <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
                                 <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
@@ -36,7 +36,7 @@ import{p as e}from"./dao-BAvPFDr3.js";import{g as t}from"./ui-helpers-ChDNPFdp.j
                 <span class="text-[11px] font-bold tracking-widest uppercase text-indigo-400 block mb-1">M/S. MAA MOTORS</span>
                 <h2 class="text-xl sm:text-2xl font-black text-white">গুগল কন্টাক্ট ক্লাউড অটো-সিঙ্ক</h2>
                 <div class="inline-block mt-1.5 px-3 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold">
-                    <i class="fa-solid fa-mobile-screen mr-1"></i> ${t(a)}
+                    <i class="fa-solid fa-mobile-screen mr-1"></i> ${t(i)}
                 </div>
                 <p class="text-xs text-slate-400 mt-2 leading-relaxed">
                     দোকানের কাস্টমারদের লাইভ বর্তমান বকেয়া আপনার মোবাইলের গুগল কন্টাক্টস ও কল ডায়লারে স্বয়ংক্রিয়ভাবে পেতে মাত্র <strong>১ বার</strong> গুগল অ্যাকাউন্ট কানেক্ট করুন।
@@ -66,7 +66,7 @@ import{p as e}from"./dao-BAvPFDr3.js";import{g as t}from"./ui-helpers-ChDNPFdp.j
                 <span class="block text-[11px] text-slate-500 mt-2.5 font-mono">নিরাপদ ব্যাংক-গ্রেড ওআথ ২.০ এনক্রিপশন</span>
             </div>
         </div>
-    `;let o=document.getElementById(`boss-connect-google-btn`);o&&o.addEventListener(`click`,()=>{o.disabled=!0,o.innerHTML=`<i class="fa-solid fa-circle-notch fa-spin text-sm"></i> <span>গুগল সার্ভারে সংযুক্ত হচ্ছে...</span>`;let e=r(i,a);window.location.href=e})}async function c(e,r,o,s){e.innerHTML=`
+    `;let o=document.getElementById(`boss-connect-google-btn`);o&&o.addEventListener(`click`,()=>{o.disabled=!0,o.innerHTML=`<i class="fa-solid fa-circle-notch fa-spin text-sm"></i> <span>গুগল সার্ভারে সংযুক্ত হচ্ছে...</span>`;let e=a(r,i);window.location.href=e})}async function c(e,a,o,s){e.innerHTML=`
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center text-white shadow-2xl space-y-4">
             <div class="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400">
                 <i class="fa-solid fa-arrows-rotate fa-spin text-2xl"></i>
@@ -76,7 +76,7 @@ import{p as e}from"./dao-BAvPFDr3.js";import{g as t}from"./ui-helpers-ChDNPFdp.j
                 আপনার গুগল অ্যাকাউন্টের অনুমতি যাচাই করে আজীবনের জন্য ব্যাকগ্রাউন্ড সিঙ্ক চালু করা হচ্ছে। অনুগ্রহ করে অপেক্ষা করুন...
             </p>
         </div>
-    `;try{let c=await n(r);if(!c.refreshToken&&!c.accessToken)throw Error(`গুগল থেকে রিফ্রেশ টোকেন পাওয়া যায়নি। নিশ্চিত করুন আপনি Consent স্ক্রিনে Allow দিয়েছেন।`);let l=await i(c.accessToken);await a({label:s||`ডিভাইস`,email:l,refreshToken:c.refreshToken,setupKey:o}),e.innerHTML=`
+    `;try{let c=await n(a);if(!c.refreshToken&&!c.accessToken)throw Error(`গুগল থেকে রিফ্রেশ টোকেন পাওয়া যায়নি। নিশ্চিত করুন আপনি Consent স্ক্রিনে Allow দিয়েছেন।`);let l=await r(c.accessToken);await i({label:s||`ডিভাইস`,email:l,refreshToken:c.refreshToken,setupKey:o}),e.innerHTML=`
             <div class="w-full max-w-md bg-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-5 animate-in zoom-in-95 duration-300">
                 <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
                     <i class="fa-solid fa-circle-check text-4xl"></i>

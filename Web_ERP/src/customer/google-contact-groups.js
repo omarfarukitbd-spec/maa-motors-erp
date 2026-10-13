@@ -381,6 +381,8 @@ export async function executeSmartLabelSync(onProgress, targetAccountIds = null)
             });
         }
 
+        localStorage.setItem('mm_last_smart_label_sync_date', new Date().toISOString().slice(0, 10));
+
         return {
             success: true,
             stats,
@@ -389,5 +391,32 @@ export async function executeSmartLabelSync(onProgress, targetAccountIds = null)
 
     } finally {
         isGroupSyncing = false;
+    }
+}
+
+/**
+ * প্রতিদিন প্রথমবার অ্যাপ খোলার পর ব্যাকগ্রাউন্ডে সাইলেন্ট অটো-সিঙ্ক এক্সিকিউট করে
+ */
+export async function initDailyAutoLabelSync() {
+    try {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const lastSync = localStorage.getItem('mm_last_smart_label_sync_date');
+        if (lastSync === todayStr) {
+            return;
+        }
+
+        setTimeout(async () => {
+            try {
+                const res = await executeSmartLabelSync(null);
+                if (res && res.success) {
+                    localStorage.setItem('mm_last_smart_label_sync_date', todayStr);
+                    console.log('[Auto Sync] দৈনিক স্মার্ট লেবেল সফলভাবে আপডেট হয়েছে:', res.stats);
+                }
+            } catch (err) {
+                console.warn('Daily auto label sync background notice:', err);
+            }
+        }, 5000);
+    } catch (e) {
+        console.warn('initDailyAutoLabelSync error:', e);
     }
 }

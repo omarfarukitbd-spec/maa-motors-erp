@@ -131,6 +131,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 7. Initialize Calculator Keyboard
     initCalculatorKeyboard();
     initDraggableCalculator();
+
+    // 8. Daily Silent Google Contacts Smart Label Sync
+    (async () => {
+        try {
+            const groupsModule = await import('./customer/google-contact-groups.js');
+            await groupsModule.initDailyAutoLabelSync();
+        } catch (syncErr) {
+            console.error('Daily smart label auto sync error:', syncErr);
+        }
+    })();
 });
 
 // Re-export for sub-modules
