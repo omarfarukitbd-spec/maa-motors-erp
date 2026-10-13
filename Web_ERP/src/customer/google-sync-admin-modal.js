@@ -1,9 +1,12 @@
 // ALLOW_LARGE_FILE: Google Sync Modal Control
 import Swal from 'sweetalert2';
 import { db } from '../firebase-config.js';
-import { showToast, promptSecurityPin, escapeHTML } from '../utils.js';
+import { CustomerDAO } from '../dao.js';
+import { getCustomerCache } from './customer-state.js';
+import { showToast, promptSecurityPin, escapeHTML, formatAmountWithComma } from '../utils.js';
 import { getConnectedGoogleAccounts, removeConnectedAccount, buildGoogleAuthUrl } from './google-auth-client.js';
-import { executeFullGoogleContactsSync, getPendingDeltaInfo } from './google-contact-sync-service.js';
+import { executeFullGoogleContactsSync, getPendingDeltaInfo, trialPushCustomerPhotoBadge, fetchSingleCustomerIntelligence } from './google-contact-sync-service.js';
+import { generateCustomerBadgeDataUrl } from './contact-badge-canvas.js';
 
 function formatSyncTime(isoStr) {
     if (!isoStr) return '';
@@ -50,6 +53,25 @@ export async function openGoogleSyncAdminModal() {
     } catch (deltaErr) {
         console.warn('Delta info fetch warning:', deltaErr);
     }
+
+    let customers = getCustomerCache();
+    if (!customers || customers.length === 0) {
+        try {
+            const snap = await CustomerDAO.collection.get();
+            customers = [];
+            snap.forEach(doc => customers.push({ id: doc.id, ...doc.data() }));
+        } catch (cErr) {
+            console.error('Customer fetch error:', cErr);
+            customers = [];
+        }
+    }
+
+    const sortedCustomers = [...customers].sort((a, b) => (Number(b.totalDue) || 0) - (Number(a.totalDue) || 0));
+    const customerOptionsHtml = sortedCustomers.slice(0, 80).map(c => {
+        const due = Number(c.totalDue) || 0;
+        const dueStr = due > 0 ? `[৳ ${formatAmountWithComma(due)} বাকি]` : (due < 0 ? `[৳ ${formatAmountWithComma(Math.abs(due))} জমা]` : `[পরিশোধিত]`);
+        return `<option value="${escapeHTML(c.id)}">${escapeHTML(c.name)} - ${escapeHTML(c.zone || '')} ${dueStr}</option>`;
+    }).join('');
 
     let accountsHtml = '';
     if (hasAccounts) {
@@ -148,10 +170,41 @@ export async function openGoogleSyncAdminModal() {
 
                 <!-- কল স্ক্রিন ও ফিচারের সুবিধা -->
                 <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-[11px] space-y-1 text-slate-300">
-                    <span class="font-bold text-amber-400 block"><i class="fa-solid fa-phone-volume mr-1"></i> নতুন কল স্ক্রিন সুবিধা:</span>
+                    <span class="font-bold text-amber-400 block"><i class="fa-solid fa-phone-volume mr-1"></i> লাইভ কলার আইডি সুবিধা:</span>
                     <p>• কল স্ক্রিনে বড় করে দেখা যাবে: <code>[MM] নাম - এলাকা [৳ ১৫,০০০]</code></p>
-                    <p>• কন্টাক্ট নোটে থাকবে: সর্বশেষ জমার তারিখ/পরিমাণ ও বাকির বয়স।</p>
-                    <p>• বস ও ম্যানেজার উভয়ের ফোনেই একযোগে অটো-আপডেট হবে।</p>
+                    <p>• ডায়ালারে থাকবে: <span class="text-emerald-400 font-bold">শেষ জমা: ২০ দিন আগে</span> (তারিখ ও জমার অংক)।</p>
+                    <p>• কলার ফটো ব্যাজ: বকেয়া থাকলে লাল, পরিশোধিত হলে সবুজ ব্যালেন্স ব্যাজ।</p>
+                </div>
+
+                <!-- স্যাম্পল ফটো ব্যাজ ও ট্রায়াল টেস্ট সেকশন -->
+                <div class="p-3 bg-indigo-950/40 rounded-2xl border border-indigo-500/30 text-[11px] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-indigo-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-id-badge text-xs text-indigo-400"></i>
+                            <span>স্যাম্পল কলার আইডি ও ফটো ব্যাজ ট্রায়াল</span>
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[9px] font-bold">
+                            Pilot Test
+                        </span>
+                    </div>
+                    <p class="text-slate-300 text-[10px]">
+                        ১ জন কাস্টমার বেছে নিয়ে ডায়ালার কার্ড প্রিভিউ দেখুন এবং সরাসরি আপনার ফোনে ট্রায়াল পুশ পাঠান:
+                    </p>
+                    <div class="space-y-1.5">
+                        <select id="modal-trial-cust-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-indigo-500">
+                            ${customerOptionsHtml}
+                        </select>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="modal-trial-preview-btn" class="flex-1 py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold flex items-center justify-center gap-1.5 cursor-pointer text-xs transition-colors">
+                                <i class="fa-solid fa-eye text-indigo-400"></i>
+                                <span>প্রিভিউ দেখুন</span>
+                            </button>
+                            <button type="button" id="modal-trial-push-btn" class="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-md transition-all active:scale-[0.98]">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>ফোনে টেস্ট পুশ</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- বাটন গ্রুপ -->
@@ -299,6 +352,143 @@ export async function openGoogleSyncAdminModal() {
                     if (accId) await handleRemoveAccount(accId);
                 });
             });
+
+            // ট্রায়াল প্রিভিউ ও পুশ হ্যান্ডলার
+            const trialSelect = document.getElementById('modal-trial-cust-select');
+            const trialPreviewBtn = document.getElementById('modal-trial-preview-btn');
+            const trialPushBtn = document.getElementById('modal-trial-push-btn');
+
+            const executeTrialPush = async (custId, custName) => {
+                Swal.fire({
+                    title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-white text-base"><i class="fa-solid fa-circle-notch fa-spin text-emerald-400"></i><span>ফোনে টেস্ট পুশ পাঠানো হচ্ছে...</span></div>',
+                    html: `<p class="text-xs text-slate-400 font-bn mt-2">${escapeHTML(custName)}-এর ফটো ব্যাজ ও ব্যালেন্স গুগলে আপলোড হচ্ছে...</p>`,
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn' }
+                });
+
+                try {
+                    const result = await trialPushCustomerPhotoBadge(custId);
+                    const hasPhoto = result.deviceResults.some(r => r.photoUpdated);
+                    const deviceNames = result.deviceResults.map(r => r.accountLabel).join(', ');
+
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '<div class="font-bn font-black text-emerald-400 text-lg">টেস্ট পুশ সফল হয়েছে!</div>',
+                        html: `
+                            <div class="font-bn text-left text-xs space-y-2.5 text-slate-300 p-1">
+                                <p class="text-white font-bold">
+                                    <i class="fa-solid fa-circle-check text-emerald-400 mr-1.5"></i>
+                                    ${escapeHTML(custName)}-এর কলার আইডি আপনার ফোনে পুশ সম্পন্ন হয়েছে।
+                                </p>
+                                <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                                    <p>• সিঙ্ককৃত ডিভাইস: <span class="font-bold text-white">${escapeHTML(deviceNames || 'ডিভাইস')}</span></p>
+                                    <p>• ফটো ব্যাজ স্ট্যাটাস: <span class="font-bold ${hasPhoto ? 'text-emerald-400' : 'text-amber-400'}">${hasPhoto ? 'আপলোড সফল' : 'পেন্ডিং / ব্যাকগ্রাউন্ড'}</span></p>
+                                </div>
+                                <div class="p-2.5 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-[11px] text-emerald-300">
+                                    <i class="fa-solid fa-mobile-screen mr-1 text-emerald-400"></i>
+                                    <strong>মোবাইলে চেক করুন:</strong> আপনার ফোন বা গুগল কন্টাক্টস অ্যাপ ওপেন করে ${escapeHTML(custName)}-এর প্রোফাইলটি রিফ্রেশ করুন এবং কলার আইডি কার্ডটি দেখুন!
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: 'ঠিক আছে',
+                        customClass: {
+                            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm',
+                            confirmButton: '!bg-indigo-600 hover:!bg-indigo-500 !text-white !font-bold !rounded-xl !px-5 !py-2.5 !text-xs cursor-pointer'
+                        }
+                    });
+                } catch (err) {
+                    console.error('Trial push error:', err);
+                    Swal.fire({
+                        icon: 'error',
+                        title: '<div class="font-bn font-black text-red-400 text-base">টেস্ট পুশ ব্যর্থ হয়েছে</div>',
+                        text: err.message || 'অজানা ত্রুটি ঘটেছে',
+                        customClass: {
+                            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm',
+                            confirmButton: '!bg-slate-800 !text-white !rounded-xl !px-4 !py-2 !text-xs'
+                        }
+                    });
+                }
+            };
+
+            if (trialPreviewBtn && trialSelect) {
+                trialPreviewBtn.addEventListener('click', async () => {
+                    const custId = trialSelect.value;
+                    if (!custId) {
+                        showToast('দয়া করে একজন কাস্টমার নির্বাচন করুন', 'warning');
+                        return;
+                    }
+                    const cust = customers.find(c => c.id === custId);
+                    if (!cust) return;
+
+                    Swal.fire({
+                        title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-white text-base"><i class="fa-solid fa-circle-notch fa-spin text-indigo-400"></i><span>প্রিভিউ তৈরি হচ্ছে...</span></div>',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn' }
+                    });
+
+                    const totalDue = Number(cust.totalDue) || 0;
+                    const intelligence = await fetchSingleCustomerIntelligence(custId, totalDue);
+                    const dataUrl = generateCustomerBadgeDataUrl(cust, intelligence);
+
+                    const previewModalRes = await Swal.fire({
+                        title: `<div class="font-bn font-black text-white text-base flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-id-badge text-indigo-400"></i>
+                            <span>${escapeHTML(cust.name)} - কলার আইডি প্রিভিউ</span>
+                        </div>`,
+                        html: `
+                            <div class="space-y-3 text-center font-bn p-1">
+                                <p class="text-xs text-slate-300">গুগল ও শাওমি ডায়ালারে ফোন আসার সময় কলার স্ক্রিনে যেমন দেখাবে:</p>
+                                <div class="relative inline-block my-2">
+                                    <img src="${dataUrl}" class="w-56 h-56 rounded-full border-4 border-indigo-500/50 shadow-2xl mx-auto block object-cover" alt="Caller Badge">
+                                    <span class="absolute bottom-1 right-2 bg-slate-950/90 text-[10px] text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
+                                        Circular Crop
+                                    </span>
+                                </div>
+                                <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800 text-left text-xs space-y-1">
+                                    <div class="flex justify-between text-slate-300">
+                                        <span>হিসাব নং:</span>
+                                        <span class="font-bold text-white">#${escapeHTML(cust.accountNo || '-')}</span>
+                                    </div>
+                                    <div class="flex justify-between text-slate-300">
+                                        <span>বর্তমান অবস্থা:</span>
+                                        <span class="font-bold ${totalDue > 0 ? 'text-red-400' : 'text-emerald-400'}">${totalDue > 0 ? `বকেয়া ৳ ${formatAmountWithComma(totalDue)}` : 'পরিশোধিত'}</span>
+                                    </div>
+                                    <div class="flex justify-between text-slate-300">
+                                        <span>পেমেন্ট রিকারেন্সি:</span>
+                                        <span class="font-bold text-amber-300">${escapeHTML(intelligence.lastPaymentRecencyText || 'কোনো জমা নেই')}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> এই কাস্টমারকে ফোনে টেস্ট পুশ করুন',
+                        showCancelButton: true,
+                        cancelButtonText: 'বন্ধ করুন',
+                        customClass: {
+                            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm',
+                            confirmButton: '!bg-emerald-600 hover:!bg-emerald-500 !text-white !font-bold !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer',
+                            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer'
+                        }
+                    });
+
+                    if (previewModalRes.isConfirmed) {
+                        await executeTrialPush(custId, cust.name);
+                    }
+                });
+            }
+
+            if (trialPushBtn && trialSelect) {
+                trialPushBtn.addEventListener('click', async () => {
+                    const custId = trialSelect.value;
+                    if (!custId) {
+                        showToast('দয়া করে একজন কাস্টমার নির্বাচন করুন', 'warning');
+                        return;
+                    }
+                    const cust = customers.find(c => c.id === custId);
+                    await executeTrialPush(custId, cust?.name || 'কাস্টমার');
+                });
+            }
         }
     });
 }

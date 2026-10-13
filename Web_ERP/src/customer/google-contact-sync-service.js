@@ -6,6 +6,7 @@ import { formatAmountWithComma, formatAppDate, showToast } from '../utils.js';
 import { generateBossToken } from './boss-card-token.js';
 import { parsePhoneNumbers, normalizeBengaliNumbers, buildContactDisplayName, updatePersonalContactNameWithDue } from './customer-contact-export-helpers.js';
 import { getAllSilentAccessTokens, updateAccountSyncTimestamp } from './google-auth-client.js';
+import { generateCustomerBadgeBase64, generateCustomerBadgeDataUrl } from './contact-badge-canvas.js';
 
 let isSyncingInBackground = false;
 
@@ -96,13 +97,15 @@ export async function getPendingDeltaInfo() {
 }
 
 /**
- * কাস্টমারের লেনদেন থেকে সর্বশেষ জমা ও বাকির বয়স ক্যালকুলেট করে (Call Context Intelligence)
+ * কাস্টমারের লেনদেন থেকে সর্বশেষ জমা ও দিন পার্থক্য ক্যালকুলেট করে (Call Context Intelligence)
  */
 export function calculateCallIntelligence(transactions = [], totalDue = 0) {
     if (!transactions || transactions.length === 0) {
         return {
             lastPaymentText: 'কোনো জমা নেই',
-            dueAgingText: totalDue > 0 ? 'নতুন কাস্টমার' : 'পরিশোধিত'
+            dueAgingText: totalDue > 0 ? 'নতুন কাস্টমার' : 'পরিশোধিত',
+            lastPaymentRecencyText: 'পূর্বে কোনো জমা নেই',
+            lastPaymentDateText: ''
         };
     }
 
@@ -112,10 +115,34 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
     // সর্বশেষ জমা ফিল্টার
     const payments = sorted.filter(t => Number(t.paid) > 0);
     let lastPaymentText = 'কোনো জমা নেই';
+    let lastPaymentRecencyText = 'পূর্বে কোনো জমা নেই';
+    let lastPaymentDateText = '';
+
     if (payments.length > 0) {
         const lp = payments[0];
         const dateStr = lp.date ? formatAppDate(lp.date) : 'তারিখ নেই';
-        lastPaymentText = `৳ ${formatAmountWithComma(lp.paid)} (${dateStr})`;
+        const paidAmtStr = formatAmountWithComma(lp.paid);
+        lastPaymentText = `৳ ${paidAmtStr} (${dateStr})`;
+        lastPaymentDateText = dateStr;
+
+        if (lp.date) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const payDate = new Date(lp.date);
+            payDate.setHours(0, 0, 0, 0);
+            const diffTime = today.getTime() - payDate.getTime();
+            const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+
+            if (diffDays === 0) {
+                lastPaymentRecencyText = `শেষ জমা: আজকেই (৳ ${paidAmtStr})`;
+            } else if (diffDays === 1) {
+                lastPaymentRecencyText = `শেষ জমা: গতকাল (৳ ${paidAmtStr})`;
+            } else {
+                const bnDays = String(diffDays).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+                lastPaymentRecencyText = `শেষ জমা: ${bnDays} দিন আগে (৳ ${paidAmtStr})`;
+            }
+            lastPaymentRecencyText = `শেষ জমা: ৳ ${paidAmtStr}`;
+        }
     }
 
     // বাকির বয়স (Due Aging)
@@ -133,7 +160,7 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
         dueAgingText = 'পরিশোধিত';
     }
 
-    return { lastPaymentText, dueAgingText };
+    return { lastPaymentText, dueAgingText, lastPaymentRecencyText, lastPaymentDateText };
 }
 
 /**
@@ -152,13 +179,12 @@ function buildContactFields(c, intelligence = {}) {
     const liveUrl = `https://maa-motors-erp.web.app/?view=boss-card&id=${c.id}&key=${token}`;
     const orgTitle = `[Acc: ${c.accountNo || ''}] • ${dueText}`;
     
-    const lastPayStr = intelligence.lastPaymentText || 'কোনো জমা নেই';
-    const agingStr = intelligence.dueAgingText || (totalDue > 0 ? 'বকেয়া' : 'পরিশোধিত');
+    const recencyStr = intelligence.lastPaymentRecencyText || 'কোনো জমা নেই';
 
     const bioText = `হিসাব নং: #${c.accountNo || '-'} | এলাকা: ${c.zone || '-'}\n` +
                     `বর্তমান বকেয়া: ${dueText}\n` +
-                    `সর্বশেষ জমা: ${lastPayStr}\n` +
-                    `বাকির বয়স: ${agingStr}\n` +
+                    `${recencyStr}\n` +
+                    (intelligence.lastPaymentDateText ? `জমার তারিখ: ${intelligence.lastPaymentDateText}\n` : '') +
                     `----------------------------------\n` +
                     `লাইভ খতিয়ান কার্ড: ${liveUrl}`;
 
@@ -168,7 +194,7 @@ function buildContactFields(c, intelligence = {}) {
 /**
  * নির্দিষ্ট কাস্টমারের জন্য কল ইন্টেলিজেন্স ফেচ করে
  */
-async function fetchSingleCustomerIntelligence(customerId, totalDue) {
+export async function fetchSingleCustomerIntelligence(customerId, totalDue) {
     try {
         const txns = await TransactionDAO.getByCustomer(customerId);
         return calculateCallIntelligence(txns, totalDue);
@@ -179,9 +205,38 @@ async function fetchSingleCustomerIntelligence(customerId, totalDue) {
 }
 
 /**
- * সিঙ্গেল কাস্টমার সিঙ্ক — সকল কানেক্টেড ডিভাইসে (বস + ম্যানেজার) একযোগে পুশ করে
+ * গুগল পিপল এপিআই দিয়ে কন্টাক্টের ফটো আপডেট করে
+ * @param {string} resourceName - যেমন: 'people/c123456789'
+ * @param {string} photoBytesBase64 - Base64 encoded JPEG (without header)
+ * @param {string} accessToken
  */
-export async function syncSingleCustomerToGoogle(customerId) {
+export async function uploadContactPhotoToGoogle(resourceName, photoBytesBase64, accessToken) {
+    if (!resourceName || !photoBytesBase64 || !accessToken) return false;
+    try {
+        const photoUrl = `https://people.googleapis.com/v1/${resourceName}:updateContactPhoto`;
+        const res = await fetchWithRetry(photoUrl, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                photoBytes: photoBytesBase64
+            })
+        });
+        return res && res.ok;
+    } catch (err) {
+        console.error(`Photo upload error for ${resourceName}:`, err);
+        return false;
+    }
+}
+
+/**
+ * সিঙ্গেল কাস্টমার সিঙ্ক — সকল কানেক্টেড ডিভাইসে (বস + ম্যানেজার) একযোগে পুশ করে
+ * @param {string} customerId
+ * @param {Object} options - { uploadBadge: true }
+ */
+export async function syncSingleCustomerToGoogle(customerId, options = { uploadBadge: true }) {
     if (!customerId) return;
 
     try {
@@ -224,7 +279,10 @@ export async function syncSingleCustomerToGoogle(customerId) {
                     }
                 }
 
+                let targetResourceName = null;
+
                 if (matchedContact) {
+                    targetResourceName = matchedContact.resourceName;
                     const existingName = matchedContact.names?.[0]?.displayName || matchedContact.names?.[0]?.givenName || '';
                     const hasMMTag = existingName.includes('[MM]');
                     const updateFields = ['organizations', 'biographies', 'urls', 'names'];
@@ -242,7 +300,7 @@ export async function syncSingleCustomerToGoogle(customerId) {
                         biographies: [{ value: bioText }]
                     };
 
-                    const updateUrl = `https://people.googleapis.com/v1/${matchedContact.resourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
+                    const updateUrl = `https://people.googleapis.com/v1/${targetResourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
                     await fetchWithRetry(updateUrl, {
                         method: 'PATCH',
                         headers: {
@@ -262,7 +320,7 @@ export async function syncSingleCustomerToGoogle(customerId) {
                         addresses: [{ streetAddress: cust.address || '', city: cust.zone || '', type: 'Work' }]
                     };
 
-                    await fetchWithRetry(createUrl, {
+                    const createRes = await fetchWithRetry(createUrl, {
                         method: 'POST',
                         headers: {
                             Authorization: `Bearer ${acc.accessToken}`,
@@ -270,6 +328,22 @@ export async function syncSingleCustomerToGoogle(customerId) {
                         },
                         body: JSON.stringify(createPayload)
                     });
+                    if (createRes && createRes.ok) {
+                        const createdData = await createRes.json();
+                        targetResourceName = createdData?.resourceName;
+                    }
+                }
+
+                // যদি অপশনে ফটো আপলোড এনাবল থাকে
+                if (targetResourceName && options.uploadBadge) {
+                    try {
+                        const badgeBase64 = generateCustomerBadgeBase64(cust, intelligence);
+                        if (badgeBase64) {
+                            await uploadContactPhotoToGoogle(targetResourceName, badgeBase64, acc.accessToken);
+                        }
+                    } catch (photoErr) {
+                        console.warn(`Badge photo upload skipped for ${cust.name}:`, photoErr);
+                    }
                 }
             } catch (singleAccErr) {
                 console.error(`Sync error for device (${acc.label}):`, singleAccErr);
@@ -284,6 +358,145 @@ export async function syncSingleCustomerToGoogle(customerId) {
     } catch (e) {
         console.error('Silent Multi-Device Google Contact Sync Error:', e);
     }
+}
+
+/**
+ * নির্দিষ্ট কাস্টমারের জন্য কলার আইডি ফটো ব্যাজ ট্রায়াল পুশ করে (স্যাম্পল টেস্টিং)
+ * @param {string} customerId
+ * @param {string|null} targetAccountId - অপশনাল নির্দিষ্ট অ্যাকাউন্ট
+ * @returns {Promise<Object>}
+ */
+export async function trialPushCustomerPhotoBadge(customerId, targetAccountId = null) {
+    if (!customerId) throw new Error('কাস্টমার নির্বাচন করা হয়নি');
+
+    let cust = null;
+    const cache = getCustomerCache();
+    if (cache && cache.length > 0) {
+        cust = cache.find(c => c.id === customerId);
+    }
+    if (!cust) {
+        const snap = await CustomerDAO.get(customerId);
+        if (snap.exists) cust = { id: snap.id, ...snap.data() };
+    }
+    if (!cust) throw new Error('কাস্টমার ডাটা পাওয়া যায়নি');
+
+    const totalDue = Number(cust.totalDue) || 0;
+    const intelligence = await fetchSingleCustomerIntelligence(customerId, totalDue);
+    const badgeDataUrl = generateCustomerBadgeDataUrl(cust, intelligence);
+    const badgeBase64 = generateCustomerBadgeBase64(cust, intelligence);
+
+    let activeTokens = await getAllSilentAccessTokens();
+    if (targetAccountId) {
+        activeTokens = activeTokens.filter(acc => acc.id === targetAccountId);
+    }
+    if (activeTokens.length === 0) {
+        throw new Error('কোনো সচল গুগল অ্যাকাউন্ট পাওয়া যায়নি');
+    }
+
+    const { phones, displayName, liveUrl, orgTitle, bioText } = buildContactFields(cust, intelligence);
+    if (phones.length === 0) {
+        throw new Error('এই কাস্টমারের কোনো মোবাইল নম্বর নেই');
+    }
+
+    const primaryPhone = phones[0].replace(/\D/g, '').slice(-10);
+    const results = [];
+
+    for (const acc of activeTokens) {
+        try {
+            let matchedContact = null;
+            if (primaryPhone) {
+                const searchUrl = `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(primaryPhone)}&readMasks=names,phoneNumbers,organizations,biographies,urls,metadata`;
+                const searchRes = await fetchWithRetry(searchUrl, {
+                    headers: { Authorization: `Bearer ${acc.accessToken}` }
+                });
+                if (searchRes && searchRes.ok) {
+                    const searchData = await searchRes.json();
+                    if (searchData.results && searchData.results.length > 0) {
+                        matchedContact = searchData.results[0].person;
+                    }
+                }
+            }
+
+            let targetResourceName = null;
+
+            if (matchedContact) {
+                targetResourceName = matchedContact.resourceName;
+                const existingName = matchedContact.names?.[0]?.displayName || matchedContact.names?.[0]?.givenName || '';
+                const hasMMTag = existingName.includes('[MM]');
+                const updateFields = ['organizations', 'biographies', 'urls', 'names'];
+
+                const finalName = hasMMTag || !existingName
+                    ? displayName
+                    : updatePersonalContactNameWithDue(existingName, totalDue);
+
+                const updatePayload = {
+                    etag: matchedContact.etag,
+                    names: [{ givenName: finalName }],
+                    organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
+                    urls: [{ value: liveUrl, type: 'Live Due Card' }],
+                    biographies: [{ value: bioText }]
+                };
+
+                const updateUrl = `https://people.googleapis.com/v1/${targetResourceName}:updateContact?updatePersonFields=${updateFields.join(',')}`;
+                await fetchWithRetry(updateUrl, {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: `Bearer ${acc.accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatePayload)
+                });
+            } else {
+                const createUrl = 'https://people.googleapis.com/v1/people:createContact';
+                const createPayload = {
+                    names: [{ givenName: displayName }],
+                    phoneNumbers: phones.map(p => ({ value: p, type: 'Mobile' })),
+                    organizations: [{ name: "M/S. MAA-MOTOR'S", title: orgTitle }],
+                    urls: [{ value: liveUrl, type: 'Live Due Card' }],
+                    biographies: [{ value: bioText }],
+                    addresses: [{ streetAddress: cust.address || '', city: cust.zone || '', type: 'Work' }]
+                };
+
+                const createRes = await fetchWithRetry(createUrl, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${acc.accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(createPayload)
+                });
+                if (createRes && createRes.ok) {
+                    const createdData = await createRes.json();
+                    targetResourceName = createdData?.resourceName;
+                }
+            }
+
+            let photoSuccess = false;
+            if (targetResourceName && badgeBase64) {
+                photoSuccess = await uploadContactPhotoToGoogle(targetResourceName, badgeBase64, acc.accessToken);
+            }
+
+            results.push({
+                accountLabel: acc.label || 'ডিভাইস',
+                resourceName: targetResourceName,
+                photoUpdated: photoSuccess
+            });
+        } catch (accErr) {
+            console.error(`Trial push error for ${acc.label}:`, accErr);
+            results.push({
+                accountLabel: acc.label || 'ডিভাইস',
+                error: accErr.message
+            });
+        }
+    }
+
+    return {
+        success: true,
+        customer: cust,
+        intelligence,
+        previewUrl: badgeDataUrl,
+        deviceResults: results
+    };
 }
 
 /**
