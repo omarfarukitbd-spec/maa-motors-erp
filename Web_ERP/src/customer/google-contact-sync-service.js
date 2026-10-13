@@ -105,7 +105,9 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
             lastPaymentText: 'কোনো জমা নেই',
             dueAgingText: totalDue > 0 ? 'নতুন কাস্টমার' : 'পরিশোধিত',
             lastPaymentRecencyText: 'পূর্বে কোনো জমা নেই',
-            lastPaymentDateText: ''
+            lastPaymentDateText: '',
+            lastPaymentDaysText: '',
+            lastPaidAmtStr: ''
         };
     }
 
@@ -121,6 +123,8 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
     let lastPaymentText = 'কোনো জমা নেই';
     let lastPaymentRecencyText = 'পূর্বে কোনো জমা নেই';
     let lastPaymentDateText = '';
+    let lastPaymentDaysText = '';
+    let lastPaidAmtStr = '';
 
     if (payments.length > 0) {
         const lp = payments[0];
@@ -128,6 +132,7 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
         const paidAmtStr = formatAmountWithComma(lp.paid);
         lastPaymentText = `৳ ${paidAmtStr} (${dateStr})`;
         lastPaymentDateText = dateStr;
+        lastPaidAmtStr = paidAmtStr;
 
         if (lp.date) {
             try {
@@ -140,11 +145,14 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
                 const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
 
                 if (diffDays === 0) {
+                    lastPaymentDaysText = 'আজকেই';
                     lastPaymentRecencyText = `শেষ জমা: আজকেই (৳ ${paidAmtStr})`;
                 } else if (diffDays === 1) {
+                    lastPaymentDaysText = 'গতকাল';
                     lastPaymentRecencyText = `শেষ জমা: গতকাল (৳ ${paidAmtStr})`;
                 } else {
                     const bnDays = String(diffDays).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+                    lastPaymentDaysText = `${bnDays} দিন আগে`;
                     lastPaymentRecencyText = `শেষ জমা: ${bnDays} দিন আগে (৳ ${paidAmtStr})`;
                 }
             } catch (dErr) {
@@ -182,7 +190,7 @@ export function calculateCallIntelligence(transactions = [], totalDue = 0) {
         dueAgingText = 'পরিশোধিত';
     }
 
-    return { lastPaymentText, dueAgingText, lastPaymentRecencyText, lastPaymentDateText };
+    return { lastPaymentText, dueAgingText, lastPaymentRecencyText, lastPaymentDateText, lastPaymentDaysText, lastPaidAmtStr };
 }
 
 /**
