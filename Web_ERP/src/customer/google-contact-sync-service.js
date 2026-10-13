@@ -227,6 +227,71 @@ export async function fetchSingleCustomerIntelligence(customerId, totalDue) {
 }
 
 /**
+/**
+ * গুগল কন্টাক্টসে ফোন নম্বর বা নাম দিয়ে বিদ্যমান কন্টাক্ট খুঁজে বের করে
+ * @param {string} accessToken
+ * @param {string} primaryPhone
+ * @param {string} custName
+ * @returns {Promise<Object|null>}
+ */
+async function findMatchingGoogleContact(accessToken, primaryPhone, custName) {
+    if (!accessToken) return null;
+
+    // ১. প্রথমে +৮৮০ ফরম্যাটে ফোন নম্বর দিয়ে সার্চ
+    if (primaryPhone) {
+        const searchPhone = `+880${primaryPhone}`;
+        const searchUrl = `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(searchPhone)}&readMask=names,phoneNumbers,organizations,biographies,urls,metadata`;
+        try {
+            const res = await fetchWithRetry(searchUrl, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    for (const r of data.results) {
+                        const pNums = r.person?.phoneNumbers || [];
+                        const matches = pNums.some(pn => pn.value.replace(/\D/g, '').slice(-10) === primaryPhone);
+                        if (matches) return r.person;
+                    }
+                    return data.results[0].person;
+                }
+            }
+        } catch (sErr) {
+            console.warn('Phone search error:', sErr);
+        }
+    }
+
+    // ২. যদি ফোন দিয়ে না পাওয়া যায়, কাস্টমারের নাম দিয়ে ব্যাকআপ সার্চ
+    if (custName && custName.trim()) {
+        const cleanName = custName.replace(/^(মেসার্স|মো:|মোঃ|মা|এম\/এস)\s*/gi, '').trim();
+        const searchName = cleanName.length >= 3 ? cleanName : custName.trim();
+        const nameUrl = `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(searchName)}&readMask=names,phoneNumbers,organizations,biographies,urls,metadata`;
+        try {
+            const res = await fetchWithRetry(nameUrl, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    if (primaryPhone) {
+                        for (const r of data.results) {
+                            const pNums = r.person?.phoneNumbers || [];
+                            const matches = pNums.some(pn => pn.value.replace(/\D/g, '').slice(-10) === primaryPhone);
+                            if (matches) return r.person;
+                        }
+                    }
+                    return data.results[0].person;
+                }
+            }
+        } catch (nErr) {
+            console.warn('Name search error:', nErr);
+        }
+    }
+
+    return null;
+}
+
+/**
  * গুগল পিপল এপিআই দিয়ে কন্টাক্টের ফটো আপডেট করে
  * @param {string} resourceName - যেমন: 'people/c123456789'
  * @param {string} photoBytesBase64 - Base64 encoded JPEG (without header)
@@ -237,16 +302,21 @@ export async function uploadContactPhotoToGoogle(resourceName, photoBytesBase64,
     try {
         const photoUrl = `https://people.googleapis.com/v1/${resourceName}:updateContactPhoto`;
         const res = await fetchWithRetry(photoUrl, {
-            method: 'POST',
+            method: 'PATCH',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                photoBytes: photoBytesBase64
+                photoBytes: photoBytesBase64,
+                personFields: 'photos'
             })
         });
-        return res && res.ok;
+        if (!res || !res.ok) {
+            console.error(`Photo upload error for ${resourceName}: status ${res?.status}`);
+            return false;
+        }
+        return true;
     } catch (err) {
         console.error(`Photo upload error for ${resourceName}:`, err);
         return false;
@@ -287,19 +357,7 @@ export async function syncSingleCustomerToGoogle(customerId, options = { uploadB
         // সকল কানেক্টেড অ্যাকাউন্টে প্যারালাল পুশ
         const syncPromises = activeTokens.map(async (acc) => {
             try {
-                let matchedContact = null;
-                if (primaryPhone) {
-                    const searchUrl = `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(primaryPhone)}&readMasks=names,phoneNumbers,organizations,biographies,urls,metadata`;
-                    const searchRes = await fetchWithRetry(searchUrl, {
-                        headers: { Authorization: `Bearer ${acc.accessToken}` }
-                    });
-                    if (searchRes && searchRes.ok) {
-                        const searchData = await searchRes.json();
-                        if (searchData.results && searchData.results.length > 0) {
-                            matchedContact = searchData.results[0].person;
-                        }
-                    }
-                }
+                const matchedContact = await findMatchingGoogleContact(acc.accessToken, primaryPhone, cust.name);
 
                 let targetResourceName = null;
 
@@ -425,20 +483,7 @@ export async function trialPushCustomerPhotoBadge(customerId, targetAccountId = 
 
     for (const acc of activeTokens) {
         try {
-            let matchedContact = null;
-            if (primaryPhone) {
-                const searchUrl = `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(primaryPhone)}&readMasks=names,phoneNumbers,organizations,biographies,urls,metadata`;
-                const searchRes = await fetchWithRetry(searchUrl, {
-                    headers: { Authorization: `Bearer ${acc.accessToken}` }
-                });
-                if (searchRes && searchRes.ok) {
-                    const searchData = await searchRes.json();
-                    if (searchData.results && searchData.results.length > 0) {
-                        matchedContact = searchData.results[0].person;
-                    }
-                }
-            }
-
+            const matchedContact = await findMatchingGoogleContact(acc.accessToken, primaryPhone, cust.name);
             let targetResourceName = null;
 
             if (matchedContact) {
