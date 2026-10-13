@@ -24,17 +24,19 @@ import {
 
 export const SMART_LABEL_NAMES = {
     MASTER: "M/S. MAA-MOTOR'S",
+    REGULAR: "MAA MOTORS - নিয়মিত পেমেন্ট",
     LATE_15: "MAA MOTORS - ১৫+ দিন বকেয়া",
     LATE_30: "MAA MOTORS - ৩০+ দিন বকেয়া",
-    HIGH_RISK: "MAA MOTORS - হাই রিস্ক বকেয়া"
+    HIGH_RISK: "MAA MOTORS - হাই রিস্ক বকেয়া",
+    CLEARED: "MAA MOTORS - পরিশোধিত"
 };
 
 let isGroupSyncing = false;
 
 /**
- * গুগলে ৪টি স্মার্ট লেবেল বিদ্যমান থাকা নিশ্চিত করে এবং তাদের resourceName রিটার্ন করে
+ * গুগলে স্মার্ট লেবেলগুলো বিদ্যমান থাকা নিশ্চিত করে এবং তাদের resourceName রিটার্ন করে
  * @param {string} accessToken
- * @returns {Promise<Object>} { MASTER, LATE_15, LATE_30, HIGH_RISK } resourceNames
+ * @returns {Promise<Object>} { MASTER, REGULAR, LATE_15, LATE_30, HIGH_RISK, CLEARED } resourceNames
  */
 export async function ensureGoogleContactGroups(accessToken) {
     if (!accessToken) throw new Error('অ্যাক্সেস টোকেন প্রয়োজন');
@@ -53,6 +55,23 @@ export async function ensureGoogleContactGroups(accessToken) {
     (gData.contactGroups || []).forEach(g => {
         if (g.name) existingMap.set(g.name, g.resourceName);
     });
+
+    // অপ্রয়োজনীয় পুরোনো বা খালি লেবেল (যেমন Maa Motors Customers) স্বয়ংক্রিয়ভাবে মুছে ফেলা
+    const oldDeprecateNames = ['Maa Motors Customers'];
+    for (const oldName of oldDeprecateNames) {
+        if (existingMap.has(oldName)) {
+            const oldResName = existingMap.get(oldName);
+            try {
+                await fetchWithRetry(`https://people.googleapis.com/v1/${oldResName}?deleteContacts=false`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+                existingMap.delete(oldName);
+            } catch (delErr) {
+                console.error('Old group delete error:', delErr);
+            }
+        }
+    }
 
     const result = {};
 
@@ -201,9 +220,11 @@ export async function executeSmartLabelSync(onProgress, targetAccountIds = null)
 
         const stats = {
             master: 0,
+            regular: 0,
             late15: 0,
             late30: 0,
-            highRisk: 0
+            highRisk: 0,
+            cleared: 0
         };
 
         const TODAY = new Date();
@@ -243,9 +264,11 @@ export async function executeSmartLabelSync(onProgress, targetAccountIds = null)
 
             // ২. কাস্টমারদের ক্যাটাগরাইজেশন
             const masterList = [];
+            const regularList = [];
             const late15List = [];
             const late30List = [];
             const highRiskList = [];
+            const clearedList = [];
 
             for (const cust of validCustomers) {
                 const phones = parsePhoneNumbers(cust.phone);
@@ -263,9 +286,12 @@ export async function executeSmartLabelSync(onProgress, targetAccountIds = null)
                 masterList.push(matchedResourceName);
 
                 const totalDue = Number(cust.totalDue) || 0;
-                if (totalDue > 0) {
+                if (totalDue <= 0) {
+                    // কোনো বকেয়া নেই (পরিশোধিত)
+                    clearedList.push(matchedResourceName);
+                } else {
                     const custTxns = txnsByCustomer.get(cust.id) || [];
-                    const intelligence = calculateCallIntelligence(custTxns, totalDue);
+                    calculateCallIntelligence(custTxns, totalDue);
 
                     // দিন পার্থক্য হিসাব
                     let diffDays = null;
@@ -291,6 +317,9 @@ export async function executeSmartLabelSync(onProgress, targetAccountIds = null)
                         late30List.push(matchedResourceName);
                     } else if (diffDays >= 15) {
                         late15List.push(matchedResourceName);
+                    } else {
+                        // ০ থেকে ১৪ দিন: প্রতি সপ্তাহে বা নিয়মিত পেমেন্ট দেওয়া নির্ভরযোগ্য কাস্টমার
+                        regularList.push(matchedResourceName);
                     }
                 }
             }
@@ -298,19 +327,21 @@ export async function executeSmartLabelSync(onProgress, targetAccountIds = null)
             if (onProgress) {
                 onProgress({
                     percent: 50,
-                    text: `ডিভাইস [${acc.label}]-এ ৪টি স্মার্ট লেবেল তৈরি/যাচাই করা হচ্ছে...`
+                    text: `ডিভাইস [${acc.label}]-এ ৬টি স্মার্ট লেবেল তৈরি/যাচাই করা হচ্ছে...`
                 });
             }
 
-            // ৩. ৪টি স্মার্ট লেবেল নিশ্চিত করা
+            // ৩. ৬টি স্মার্ট লেবেল নিশ্চিত করা
             const groupMap = await ensureGoogleContactGroups(acc.accessToken);
 
             // ৪. প্রতিটি লেবেলের মেম্বারশিপ আপডেট করা
             const groupTasks = [
                 { key: 'MASTER', name: SMART_LABEL_NAMES.MASTER, targetList: masterList },
+                { key: 'REGULAR', name: SMART_LABEL_NAMES.REGULAR, targetList: regularList },
                 { key: 'LATE_15', name: SMART_LABEL_NAMES.LATE_15, targetList: late15List },
                 { key: 'LATE_30', name: SMART_LABEL_NAMES.LATE_30, targetList: late30List },
-                { key: 'HIGH_RISK', name: SMART_LABEL_NAMES.HIGH_RISK, targetList: highRiskList }
+                { key: 'HIGH_RISK', name: SMART_LABEL_NAMES.HIGH_RISK, targetList: highRiskList },
+                { key: 'CLEARED', name: SMART_LABEL_NAMES.CLEARED, targetList: clearedList }
             ];
 
             let step = 0;
@@ -329,16 +360,18 @@ export async function executeSmartLabelSync(onProgress, targetAccountIds = null)
 
                 const currentMembers = await getGroupMemberResourceNames(gResName, acc.accessToken);
                 const toAdd = task.targetList.filter(r => !currentMembers.includes(r));
-                // মাস্টার গ্রুপ থেকে মেম্বার রিমুভ করব না, কিন্তু এজিং গ্রুপে (১৫+, ৩০+, হাই রিস্ক) আগের অনুপযুক্ত মেম্বার রিমুভ করব
+                // মাস্টার গ্রুপ থেকে মেম্বার রিমুভ করব না, কিন্তু ডায়নামিক গ্রুপে (নিয়মিত, ১৫+, ৩০+, হাই রিস্ক, পরিশোধিত) আগের অনুপযুক্ত মেম্বার রিমুভ করব
                 const toRemove = task.key === 'MASTER' ? [] : currentMembers.filter(r => !task.targetList.includes(r));
 
                 await modifyGroupMembers(gResName, toAdd, toRemove, acc.accessToken);
             }
 
             stats.master = masterList.length;
+            stats.regular = regularList.length;
             stats.late15 = late15List.length;
             stats.late30 = late30List.length;
             stats.highRisk = highRiskList.length;
+            stats.cleared = clearedList.length;
         }
 
         if (onProgress) {

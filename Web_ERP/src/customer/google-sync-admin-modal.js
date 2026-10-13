@@ -893,7 +893,7 @@ async function handleBulkPhotoSync(targetAccountIds = null) {
 }
 
 /**
- * সকল কানেক্টেড ডিভাইসে ৪টি স্মার্ট লেবেল সিঙ্ক হ্যান্ডলার
+ * সকল কানেক্টেড ডিভাইসে ৬টি স্মার্ট লেবেল সিঙ্ক হ্যান্ডলার
  * @param {Array|null} targetAccountIds
  */
 async function handleSmartLabelSync(targetAccountIds = null) {
@@ -908,12 +908,20 @@ async function handleSmartLabelSync(targetAccountIds = null) {
         html: `
             <div class="font-bn text-left text-xs space-y-3 text-slate-300 p-1">
                 <p class="leading-relaxed">
-                    আপনার গুগল কন্টাক্টসে স্বয়ংক্রিয়ভাবে <strong class="text-white">৪টি স্মার্ট লেবেল</strong> তৈরি করে কাস্টমারদের বকেয়ার বয়স অনুযায়ী ক্যাটাগরাইজ করা হবে:
+                    আপনার গুগল কন্টাক্টসে স্বয়ংক্রিয়ভাবে <strong class="text-white">৬টি স্মার্ট লেবেল</strong> তৈরি করে কাস্টমারদের বকেয়ার বয়স ও পেমেন্ট রিকারেন্সি অনুযায়ী সাজানো হবে:
                 </p>
                 <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800 space-y-1.5 text-[11px]">
                     <div class="flex items-center gap-1.5 text-indigo-300 font-bold">
-                        <i class="fa-solid fa-tag text-xs text-indigo-400"></i>
+                        <i class="fa-solid fa-folder text-xs text-indigo-400"></i>
                         <span>M/S. MAA-MOTOR'S (সকল কাস্টমার)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-emerald-300 font-bold">
+                        <i class="fa-solid fa-circle-check text-xs text-emerald-400"></i>
+                        <span>MAA MOTORS - নিয়মিত পেমেন্ট (১-১৪ দিন)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-teal-300 font-bold">
+                        <i class="fa-solid fa-award text-xs text-teal-400"></i>
+                        <span>MAA MOTORS - পরিশোধিত (জিরো বকেয়া)</span>
                     </div>
                     <div class="flex items-center gap-1.5 text-amber-300 font-bold">
                         <i class="fa-solid fa-tag text-xs text-amber-400"></i>
@@ -924,7 +932,7 @@ async function handleSmartLabelSync(targetAccountIds = null) {
                         <span>MAA MOTORS - ৩০+ দিন বকেয়া</span>
                     </div>
                     <div class="flex items-center gap-1.5 text-red-400 font-bold">
-                        <i class="fa-solid fa-tag text-xs text-red-400"></i>
+                        <i class="fa-solid fa-triangle-exclamation text-xs text-red-400"></i>
                         <span>MAA MOTORS - হাই রিস্ক বকেয়া (৬০+ দিন)</span>
                     </div>
                 </div>
@@ -1000,7 +1008,15 @@ async function handleSmartLabelSync(targetAccountIds = null) {
                     <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1.5">
                         <div class="flex items-center justify-between pb-1 border-b border-slate-800">
                             <span class="text-indigo-400 font-bold"><i class="fa-solid fa-folder mr-1"></i>M/S. MAA-MOTOR'S:</span>
-                            <strong class="font-bold text-white">${s.master || 0} জন</strong>
+                            <strong class="font-bold text-white font-mono">${s.master || 0} জন</strong>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>নিয়মিত পেমেন্ট (১-১৪ দিন):</span>
+                            <strong class="text-emerald-300 font-mono font-bold">${s.regular || 0} জন</strong>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-teal-400 font-bold"><i class="fa-solid fa-award mr-1"></i>পরিশোধিত (জিরো বকেয়া):</span>
+                            <strong class="text-teal-300 font-mono font-bold">${s.cleared || 0} জন</strong>
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-amber-400 font-bold"><i class="fa-solid fa-tag mr-1"></i>১৫+ দিন বকেয়া:</span>
@@ -1023,7 +1039,7 @@ async function handleSmartLabelSync(targetAccountIds = null) {
                             <span>মোবাইলে লেবেল দেখার নিয়ম:</span>
                         </div>
                         <p class="text-[11px] text-slate-300 leading-relaxed">
-                            বসের বা আপনার ফোনের <strong>Contacts</strong> অ্যাপটি খুলুন এবং বাম পাশের মেনু বা <strong>Labels (লেবেল)</strong> অপশনে যান। সেখানে এই ৪টি লেবেল দেখতে পাবেন এবং যেকোনো লেবেলে চাপ দিলেই আলাদাভাবে সেই কাস্টমারদের পেয়ে যাবেন!
+                            বসের বা আপনার ফোনের <strong>Contacts</strong> অ্যাপটি খুলুন এবং বাম পাশের মেনু বা <strong>Labels (লেবেল)</strong> অপশনে যান। সেখানে এই ৬টি লেবেল দেখতে পাবেন এবং যেকোনো লেবেলে চাপ দিলেই আলাদাভাবে সেই ক্যাটাগরির কাস্টমারদের পেয়ে যাবেন!
                         </p>
                     </div>
                 </div>
