@@ -13,7 +13,7 @@ let isSyncingInBackground = false;
 /**
  * এক্সপোনেনশিয়াল ব্যাকঅফ ও জিটার সহ গুগল এপিআই কল করার নিরাপদ ফাংশন
  */
-async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+export async function fetchWithRetry(url, options = {}, maxRetries = 3) {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             const res = await fetch(url, options);

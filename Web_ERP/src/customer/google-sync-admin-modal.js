@@ -7,6 +7,7 @@ import { showToast, promptSecurityPin, escapeHTML, formatAmountWithComma } from 
 import { getConnectedGoogleAccounts, removeConnectedAccount, buildGoogleAuthUrl } from './google-auth-client.js';
 import { executeFullGoogleContactsSync, getPendingDeltaInfo, trialPushCustomerPhotoBadge, fetchSingleCustomerIntelligence, executeBulkPhotoBadgeSync } from './google-contact-sync-service.js';
 import { generateCustomerBadgeDataUrl } from './contact-badge-canvas.js';
+import { executeSmartLabelSync } from './google-contact-groups.js';
 
 function formatSyncTime(isoStr) {
     if (!isoStr) return '';
@@ -234,6 +235,10 @@ export async function openGoogleSyncAdminModal() {
                             <i class="fa-solid fa-id-badge text-yellow-300 text-sm"></i>
                             <span id="modal-photo-sync-btn-text">সকল কাস্টমারের ফটো ব্যাজ সিঙ্ক করুন</span>
                         </button>
+                        <button id="modal-smart-label-sync-btn" class="w-full bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-amber-950/40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
+                            <i class="fa-solid fa-tags text-yellow-200 text-sm"></i>
+                            <span id="modal-label-btn-text">স্মার্ট কন্টাক্ট লেবেল সিঙ্ক করুন</span>
+                        </button>
                     ` : `
                         <button id="modal-direct-connect-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
                             <i class="fa-brands fa-google text-red-400"></i>
@@ -262,6 +267,7 @@ export async function openGoogleSyncAdminModal() {
                 const btnTextEl = document.getElementById('modal-sync-btn-text');
                 const deltaBtnTextEl = document.getElementById('modal-delta-btn-text');
                 const photoBtnTextEl = document.getElementById('modal-photo-sync-btn-text');
+                const labelBtnTextEl = document.getElementById('modal-label-btn-text');
 
                 if (selectAllEl && allBoxes.length > 0) {
                     selectAllEl.checked = checkedBoxes.length === allBoxes.length;
@@ -293,6 +299,14 @@ export async function openGoogleSyncAdminModal() {
                         photoBtnTextEl.innerText = `সকল ফটো ব্যাজ সিঙ্ক - ${countStr}`;
                     } else {
                         photoBtnTextEl.innerText = `ডিভাইস নির্বাচন করুন (০ টি)`;
+                    }
+                }
+
+                if (labelBtnTextEl) {
+                    if (checkedBoxes.length > 0) {
+                        labelBtnTextEl.innerText = `স্মার্ট লেবেল সিঙ্ক - ${countStr}`;
+                    } else {
+                        labelBtnTextEl.innerText = `ডিভাইস নির্বাচন করুন (০ টি)`;
                     }
                 }
             };
@@ -369,6 +383,20 @@ export async function openGoogleSyncAdminModal() {
                     }
                     const targetIds = checkedBoxes.map(cb => cb.getAttribute('data-id'));
                     handleBulkPhotoSync(targetIds);
+                });
+            }
+
+            // স্মার্ট কন্টাক্ট লেবেল সিঙ্ক বাটন (নির্বাচিত ডিভাইসসমূহ)
+            const smartLabelBtn = document.getElementById('modal-smart-label-sync-btn');
+            if (smartLabelBtn) {
+                smartLabelBtn.addEventListener('click', () => {
+                    const checkedBoxes = Array.from(document.querySelectorAll('.device-sync-chk:checked'));
+                    if (checkedBoxes.length === 0) {
+                        showToast('দয়া করে সিঙ্ক করার জন্য অন্তত ১টি ডিভাইস নির্বাচন করুন', 'warning');
+                        return;
+                    }
+                    const targetIds = checkedBoxes.map(cb => cb.getAttribute('data-id'));
+                    handleSmartLabelSync(targetIds);
                 });
             }
 
@@ -858,6 +886,156 @@ async function handleBulkPhotoSync(targetAccountIds = null) {
         Swal.fire({
             title: '<div class="font-bn font-black text-red-400 text-base">ফটো সিঙ্ক এরর</div>',
             text: e.message || 'গুগল কন্টাক্ট ফটো ব্যাজ সিঙ্ক করা যায়নি।',
+            icon: 'error',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm' }
+        });
+    }
+}
+
+/**
+ * সকল কানেক্টেড ডিভাইসে ৪টি স্মার্ট লেবেল সিঙ্ক হ্যান্ডলার
+ * @param {Array|null} targetAccountIds
+ */
+async function handleSmartLabelSync(targetAccountIds = null) {
+    const isSingle = Array.isArray(targetAccountIds) && targetAccountIds.length === 1;
+    const targetText = isSingle ? 'নির্বাচিত ডিভাইসে' : 'সকল নির্বাচিত ডিভাইসে';
+
+    const confirmRes = await Swal.fire({
+        title: `<div class="flex items-center justify-center gap-2 font-bn font-black text-white text-base">
+            <i class="fa-solid fa-tags text-amber-300"></i>
+            <span>স্মার্ট কন্টাক্ট লেবেল সিঙ্ক</span>
+        </div>`,
+        html: `
+            <div class="font-bn text-left text-xs space-y-3 text-slate-300 p-1">
+                <p class="leading-relaxed">
+                    আপনার গুগল কন্টাক্টসে স্বয়ংক্রিয়ভাবে <strong class="text-white">৪টি স্মার্ট লেবেল</strong> তৈরি করে কাস্টমারদের বকেয়ার বয়স অনুযায়ী ক্যাটাগরাইজ করা হবে:
+                </p>
+                <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800 space-y-1.5 text-[11px]">
+                    <div class="flex items-center gap-1.5 text-indigo-300 font-bold">
+                        <i class="fa-solid fa-tag text-xs text-indigo-400"></i>
+                        <span>M/S. MAA-MOTOR'S (সকল কাস্টমার)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-amber-300 font-bold">
+                        <i class="fa-solid fa-tag text-xs text-amber-400"></i>
+                        <span>MAA MOTORS - ১৫+ দিন বকেয়া</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-orange-300 font-bold">
+                        <i class="fa-solid fa-tag text-xs text-orange-400"></i>
+                        <span>MAA MOTORS - ৩০+ দিন বকেয়া</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-red-400 font-bold">
+                        <i class="fa-solid fa-tag text-xs text-red-400"></i>
+                        <span>MAA MOTORS - হাই রিস্ক বকেয়া (৬০+ দিন)</span>
+                    </div>
+                </div>
+                <p class="text-emerald-400 text-[11px] font-bold">
+                    <i class="fa-solid fa-circle-question mr-1"></i>
+                    আপনি কি এখনই ${targetText} লেবেল সিঙ্ক শুরু করতে চান?
+                </p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-play mr-1.5"></i> হ্যাঁ, লেবেল সিঙ্ক শুরু করুন',
+        cancelButtonText: 'বাতিল',
+        customClass: {
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm',
+            confirmButton: '!bg-gradient-to-r !from-amber-600 !to-orange-600 hover:!from-amber-500 hover:!to-orange-500 !text-white !font-bold !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer',
+            cancelButton: '!bg-slate-800 hover:!bg-slate-700 !text-slate-300 !font-bold !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer'
+        }
+    });
+
+    if (!confirmRes.isConfirmed) return;
+
+    Swal.fire({
+        title: `<div class="flex items-center justify-center gap-2 font-bn font-black text-white text-base">
+            <i class="fa-solid fa-tags animate-pulse text-amber-300"></i>
+            <span>স্মার্ট লেবেল সিঙ্ক হচ্ছে...</span>
+        </div>`,
+        html: `
+            <div class="text-center font-bn space-y-3 p-2 text-slate-300">
+                <p id="label-sync-msg" class="text-xs font-bold text-slate-200">কাস্টমার ডাটা ও লেবেল প্রস্তুত হচ্ছে...</p>
+                <div class="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-800 p-0.5">
+                    <div id="label-sync-bar" class="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-300" style="width: 10%"></div>
+                </div>
+                <div class="flex justify-between items-center text-xs text-slate-400 px-1 font-mono">
+                    <span id="label-sync-status">প্রক্রিয়াধীন...</span>
+                    <span id="label-sync-pct" class="font-bold text-amber-400">১০%</span>
+                </div>
+                <p class="text-[10px] text-amber-400/90 font-bold">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    উইন্ডো বন্ধ করবেন না, ব্যাকগ্রাউন্ডে নিরাপদ গতিতে লেবেল আপডেট হচ্ছে
+                </p>
+            </div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm' }
+    });
+
+    const msgEl = document.getElementById('label-sync-msg');
+    const barEl = document.getElementById('label-sync-bar');
+    const pctEl = document.getElementById('label-sync-pct');
+    const statusEl = document.getElementById('label-sync-status');
+
+    try {
+        const res = await executeSmartLabelSync((p) => {
+            if (msgEl && p.text) msgEl.innerText = p.text;
+            if (pctEl && p.percent) pctEl.innerText = `${p.percent}%`;
+            if (barEl && p.percent) barEl.style.width = `${Math.max(5, p.percent)}%`;
+            if (statusEl) statusEl.innerText = p.percent === 100 ? 'সম্পন্ন' : 'সিঙ্ক চলছে...';
+        }, targetAccountIds);
+
+        if (!res.success) {
+            showToast(res.message || 'লেবেল সিঙ্ক সম্পন্ন করা যায়নি', 'warning');
+            return;
+        }
+
+        const s = res.stats || {};
+
+        await Swal.fire({
+            title: '<div class="flex items-center justify-center gap-2 font-bn font-black text-emerald-400 text-base"><i class="fa-solid fa-circle-check"></i><span>স্মার্ট লেবেল সিঙ্ক সফল হয়েছে!</span></div>',
+            html: `
+                <div class="text-left font-bn space-y-2.5 p-1 text-slate-200 text-xs">
+                    <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1.5">
+                        <div class="flex items-center justify-between pb-1 border-b border-slate-800">
+                            <span class="text-indigo-400 font-bold"><i class="fa-solid fa-folder mr-1"></i>M/S. MAA-MOTOR'S:</span>
+                            <strong class="font-bold text-white">${s.master || 0} জন</strong>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-amber-400 font-bold"><i class="fa-solid fa-tag mr-1"></i>১৫+ দিন বকেয়া:</span>
+                            <strong class="text-amber-300 font-mono font-bold">${s.late15 || 0} জন</strong>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-orange-400 font-bold"><i class="fa-solid fa-tag mr-1"></i>৩০+ দিন বকেয়া:</span>
+                            <strong class="text-orange-300 font-mono font-bold">${s.late30 || 0} জন</strong>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-red-400 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>হাই রিস্ক বকেয়া (৬০+ দিন):</span>
+                            <strong class="text-red-400 font-mono font-bold">${s.highRisk || 0} জন</strong>
+                        </div>
+                    </div>
+
+                    <!-- ইনস্ট্যান্ট মোবাইল রিফ্রেশ নির্দেশিকা কার্ড -->
+                    <div class="p-3 bg-amber-950/40 border border-amber-500/30 rounded-2xl space-y-1.5 text-slate-200">
+                        <div class="flex items-center gap-1.5 text-amber-400 font-bold text-xs">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                            <span>মোবাইলে লেবেল দেখার নিয়ম:</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            বসের বা আপনার ফোনের <strong>Contacts</strong> অ্যাপটি খুলুন এবং বাম পাশের মেনু বা <strong>Labels (লেবেল)</strong> অপশনে যান। সেখানে এই ৪টি লেবেল দেখতে পাবেন এবং যেকোনো লেবেলে চাপ দিলেই আলাদাভাবে সেই কাস্টমারদের পেয়ে যাবেন!
+                        </p>
+                    </div>
+                </div>
+            `,
+            icon: 'success',
+            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm' }
+        });
+    } catch (e) {
+        console.error('Smart Label Sync Error:', e);
+        Swal.fire({
+            title: '<div class="font-bn font-black text-red-400 text-base">লেবেল সিঙ্ক এরর</div>',
+            text: e.message || 'গুগল কন্টাক্ট স্মার্ট লেবেল সিঙ্ক করা যায়নি।',
             icon: 'error',
             customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn max-w-sm' }
         });
