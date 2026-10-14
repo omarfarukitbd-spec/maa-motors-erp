@@ -23,6 +23,24 @@ export function getBengaliWords(amount) {
 }
 
 /**
+ * Format missing memo voucher numbers for UI badges and print reports
+ * @param {Array<number>} missingList
+ * @param {boolean} isPrint
+ * @returns {string}
+ */
+export function formatMissingMemos(missingList = [], isPrint = false) {
+    if (!Array.isArray(missingList) || missingList.length === 0) {
+        return isPrint ? 'সম্পূর্ণ' : 'নেই (১০০%)';
+    }
+    const count = missingList.length;
+    if (count <= 3) {
+        return `${count}টি (#${missingList.join(', #')})`;
+    }
+    const sample = missingList.slice(0, 3).join(', #');
+    return `${count}টি (#${sample}...)`;
+}
+
+/**
  * Calculate master totals across all books obeying financial invariants
  * @param {Array<Object>} books
  */
@@ -35,22 +53,34 @@ export function calculateMasterTotals(books = []) {
     // Sort books by bookSerial ascending
     const sorted = [...books].sort((a, b) => (Number(a.bookSerial) || 0) - (Number(b.bookSerial) || 0));
 
-    let runningCumulative = 0;
+    let runningCumulativeNet = 0;
+    let runningCumulativeMemos = 0;
+
     const enrichedBooks = sorted.map((b) => {
         const gross = Number(b.grossSales) || 0;
         const less = Number(b.totalLess) || 0;
         const net = safeRound(gross - less);
-        runningCumulative = safeRound(runningCumulative + net);
+        runningCumulativeNet = safeRound(runningCumulativeNet + net);
+
+        const bookMemos = Number(b.totalMemos || b.usedMemosCount || 0);
+        runningCumulativeMemos += bookMemos;
 
         totalGross = safeRound(totalGross + gross);
         totalLess = safeRound(totalLess + less);
         totalNet = safeRound(totalNet + net);
-        totalMemosCount += Number(b.totalMemos || 0);
+        totalMemosCount += bookMemos;
+
+        const missing = Array.isArray(b.missingMemos) ? b.missingMemos : [];
 
         return {
             ...b,
+            bookMemos,
             calculatedNetSales: net,
-            calculatedCumulative: runningCumulative
+            calculatedCumulative: runningCumulativeNet,
+            calculatedCumulativeMemos: runningCumulativeMemos,
+            missingMemosList: missing,
+            missingMemoDisplay: formatMissingMemos(missing, false),
+            missingMemoPrintDisplay: formatMissingMemos(missing, true)
         };
     });
 
@@ -61,7 +91,8 @@ export function calculateMasterTotals(books = []) {
         totalNet,
         totalBooksCount: sorted.length,
         totalMemosCount,
-        grandCumulative: runningCumulative,
+        grandCumulative: runningCumulativeNet,
+        grandCumulativeMemos: runningCumulativeMemos,
         netInWords: getBengaliWords(totalNet)
     };
 }

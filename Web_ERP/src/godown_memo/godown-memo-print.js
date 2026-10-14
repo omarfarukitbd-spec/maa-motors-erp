@@ -1,10 +1,11 @@
 import { formatAmountWithComma, formatAppDate, escapeHTML } from '../utils.js';
-import { printViaIframe } from '../utils/smart-print-engine.js';
+import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { calculateMasterTotals, formatExactBengaliCurrency } from './godown-memo-calc.js';
 import { SettingsDAO } from '../dao.js';
 
 /**
  * Print Ultra-High-Definition Master Godown Memo Register on exact 1 A4 Portrait Page
+ * Matching the app's signature print header, detailed memo metrics, and missing memo audit
  * @param {Array<Object>} books
  */
 export async function printGodownMemoRegisterA4Portrait(books = []) {
@@ -18,222 +19,185 @@ export async function printGodownMemoRegisterA4Portrait(books = []) {
     }
 
     const totals = calculateMasterTotals(books);
-    const shopName = escapeHTML(settings.shopName || "মেসার্স মা মোটরস");
-    const shopAddress = escapeHTML(settings.shopAddress || "দোকান নং ২২, রহমান টাওয়ার, ১ম রেল গেইট, মুরাদপুর, চট্টগ্রাম");
-    const shopPhone = escapeHTML(settings.shopPhone || "০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪");
+    const shopName = escapeHTML(settings.shopName || "M/S. MAA-MOTOR'S");
+    const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");
+    const shopAddress = escapeHTML(settings.shopAddress || "Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road");
+    const shopPhone = escapeHTML(settings.shopPhone || "01819-397669, 01815-707934");
+    const shopLogo = settings.shopLogo || "/shop-official-logo.jpg";
+    const reportDate = formatAppDate(new Date().toISOString().split('T')[0]);
 
-    const rowsHtml = totals.books.map((b, idx) => {
+    // 1. App-Standard Signature Master Header Banner (Gradient Blue + Round Logo)
+    const page1HeaderHtml = `
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 10px; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2); margin-bottom: 6px; font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 46px; height: 46px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #ffffff; flex-shrink: 0; padding: 1px;">
+                    <img src="${shopLogo}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />
+                </div>
+                <div>
+                    <h1 style="font-size: 16px; font-weight: 900 !important; margin: 0; text-transform: uppercase; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', sans-serif !important;">${shopName}</h1>
+                    <p style="font-size: 8.5px; margin: 1px 0; font-weight: 700 !important; color: #e0f2fe !important;">Proprietor: ${shopOwner} • Mobile: ${shopPhone}</p>
+                    <p style="font-size: 8px; margin: 0; opacity: 0.95; font-weight: 600 !important; color: #f0f9ff !important; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif !important;">${shopAddress}</p>
+                </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+                <div style="display: inline-block; font-size: 11px; font-weight: 900 !important; text-transform: uppercase; background: rgba(255, 255, 255, 0.2) !important; border: 1px solid rgba(255, 255, 255, 0.4); padding: 3px 10px; border-radius: 6px; letter-spacing: 0.5px; color: #ffffff !important; font-family: 'Hind Siliguri', sans-serif !important;">গোডাউন মেমো বিক্রয় মাস্টার রেজিস্টার</div>
+                <div style="font-size: 8.5px; font-weight: 700 !important; margin-top: 2px; color: #e0f2fe !important; font-family: 'Hind Siliguri', sans-serif !important;">
+                    নথি নং: <strong>০০০০১</strong> • ২/১১/২০২৫ হতে বর্তমান হিসাব
+                </div>
+            </div>
+        </div>
+
+        <!-- 5-KPI Master Summary Matrix -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 5px; font-family: 'Hind Siliguri', sans-serif;">
+            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 5px; padding: 3px 5px; text-align: center;">
+                <div style="font-size: 7.5px; font-weight: 700; color: #0369a1;">মোট মেমো বই</div>
+                <div style="font-size: 10px; font-weight: 900; color: #0284c7; font-family: 'Inter', sans-serif;">${totals.totalBooksCount} টি বই</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 5px; padding: 3px 5px; text-align: center;">
+                <div style="font-size: 7.5px; font-weight: 700; color: #334155;">মোট মেমো সংখ্যা</div>
+                <div style="font-size: 10px; font-weight: 900; color: #0f172a; font-family: 'Inter', sans-serif;">${totals.totalMemosCount} টি মেমো</div>
+            </div>
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 5px; padding: 3px 5px; text-align: center;">
+                <div style="font-size: 7.5px; font-weight: 700; color: #b91c1c;">মোট বিক্রয় (Gross)</div>
+                <div style="font-size: 9.5px; font-weight: 900; color: #dc2626; font-family: 'Inter', sans-serif;">${formatExactBengaliCurrency(totals.totalGross)}</div>
+            </div>
+            <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 5px; padding: 3px 5px; text-align: center;">
+                <div style="font-size: 7.5px; font-weight: 700; color: #7e22ce;">মোট লেস (Less)</div>
+                <div style="font-size: 9.5px; font-weight: 900; color: #9333ea; font-family: 'Inter', sans-serif;">${formatExactBengaliCurrency(totals.totalLess)}</div>
+            </div>
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 5px; padding: 3px 5px; text-align: center;">
+                <div style="font-size: 7.5px; font-weight: 700; color: #15803d;">মোট নিট বিক্রয় (Net)</div>
+                <div style="font-size: 9.5px; font-weight: 900; color: #16a34a; font-family: 'Inter', sans-serif;">${formatExactBengaliCurrency(totals.totalNet)}</div>
+            </div>
+        </div>
+    `;
+
+    // 2. Compact Repeat Header for Pages 2+
+    const repeatHeaderHtml = `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px 8px; margin-bottom: 4px; font-family: 'Hind Siliguri', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+            <div style="font-size: 9px; font-weight: 800; color: #0f172a;">${shopName} • গোডাউন মেমো মাস্টার রেজিস্টার (নথি: ০০০০১)</div>
+            <div style="font-size: 8.5px; font-weight: 700; color: #64748b;">রিপোর্ট তারিখ: ${reportDate}</div>
+        </div>
+    `;
+
+    // 3. Table Column Header HTML with Exact Columns Requested
+    const tableColHeaderHtml = `
+        <thead>
+            <tr style="background: #0f172a; color: #ffffff;">
+                <th style="border: 1px solid #0f172a; padding: 4px 2px; text-align: center; font-size: 8px; font-weight: 900; width: 22px;">ক্র:</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 2px; text-align: center; font-size: 8.5px; font-weight: 900; width: 55px;">মেমো বই নং</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 2px; text-align: center; font-size: 8px; font-weight: 900; width: 90px;">তারিখ রেঞ্জ</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 2px; text-align: center; font-size: 8px; font-weight: 900; width: 44px;">মেমো সংখ্যা</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 2px; text-align: center; font-size: 8px; font-weight: 900; width: 48px;">ক্রমপুঞ্জিত</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 2px; text-align: center; font-size: 8px; font-weight: 900; width: 45px;">মিসিং</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 3px; text-align: right; font-size: 8px; font-weight: 900; width: 68px; color: #fca5a5;">মোট বিক্রয়</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 3px; text-align: right; font-size: 8px; font-weight: 900; width: 44px; color: #d8b4fe;">লেস</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 3px; text-align: right; font-size: 8px; font-weight: 900; width: 68px; color: #86efac;">নিট বিক্রয়</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 3px; text-align: right; font-size: 8px; font-weight: 900; width: 72px; color: #e2e8f0;">ক্রমপুঞ্জিত মোট</th>
+                <th style="border: 1px solid #0f172a; padding: 4px 2px; text-align: center; font-size: 8px; font-weight: 900; width: 75px;">সাক্ষর ও সিল</th>
+            </tr>
+        </thead>
+    `;
+
+    // 4. Data Rows Array
+    const rowsArray = totals.books.map((b, idx) => {
         const gross = Number(b.grossSales) || 0;
         const less = Number(b.totalLess) || 0;
         const net = Number(b.calculatedNetSales || b.netSales) || 0;
         const cum = Number(b.calculatedCumulative || b.cumulativeNetSales) || 0;
         const sDate = b.startDate ? formatAppDate(b.startDate) : '';
         const eDate = b.endDate ? formatAppDate(b.endDate) : '';
-        const dateStr = sDate && eDate ? `${sDate} হইতে ${eDate}` : (eDate || sDate || '-');
+        const dateStr = sDate && eDate ? `${sDate} হতে ${eDate}` : (eDate || sDate || '-');
         const officerName = escapeHTML(b.inChargeName || 'মোঃ এমরান');
         const officerId = escapeHTML(b.inChargeId || '১৯২৫');
         const stampDate = b.stampDate ? formatAppDate(b.stampDate) : eDate;
 
+        const bgStyle = idx % 2 === 1 ? 'background: #f8fafc;' : 'background: #ffffff;';
+        const missingBadge = b.missingMemoPrintDisplay === 'সম্পূর্ণ'
+            ? '<span style="color: #16a34a; font-weight: bold;">সম্পূর্ণ</span>'
+            : `<span style="color: #dc2626; font-weight: bold; font-size: 7.5px;">${escapeHTML(b.missingMemoPrintDisplay)}</span>`;
+
         return `
-            <tr>
-                <td style="text-align: center; font-weight: bold; font-family: monospace;">${idx + 1}</td>
-                <td style="text-align: center; font-weight: 900; font-family: monospace; color: #0284c7;">${escapeHTML(b.bookNo)}</td>
-                <td style="text-align: center; font-size: 8.5px; white-space: nowrap;">${dateStr}</td>
-                <td style="text-align: right; font-weight: 800; font-family: monospace; color: #b91c1c;">${formatAmountWithComma(gross)}</td>
-                <td style="text-align: right; font-weight: 700; font-family: monospace; color: #7e22ce;">${less > 0 ? formatAmountWithComma(less) : '-'}</td>
-                <td style="text-align: right; font-weight: 900; font-family: monospace; color: #047857;">${formatAmountWithComma(net)}</td>
-                <td style="text-align: right; font-weight: 800; font-family: monospace; color: #0f172a; background: #f8fafc;">${formatAmountWithComma(cum)}</td>
-                <td style="text-align: center; padding: 2px 3px;">
-                    <div style="border: 1.5px solid #1e40af; border-radius: 4px; padding: 1.5px 3px; background: #eff6ff; display: inline-block; text-align: center; line-height: 1.15; width: 88px;">
-                        <div style="font-size: 7px; font-weight: 900; color: #1e3a8a;">মেসার্স মা মোটরস</div>
-                        <div style="font-size: 7.5px; font-weight: 900; color: #1d4ed8;">${officerName}</div>
-                        <div style="font-size: 6.5px; font-weight: 800; color: #1e40af;">আই ডি-${officerId}</div>
-                        <div style="font-size: 6.5px; font-weight: 700; color: #2563eb;">তারিখ: ${stampDate}</div>
+            <tr class="print-row-no-break" style="${bgStyle}">
+                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8px; font-family: 'Inter', sans-serif; font-weight: bold;">${idx + 1}</td>
+                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-weight: 900; font-family: 'Inter', monospace; color: #0284c7;">#${escapeHTML(b.bookNo)}</td>
+                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 7.5px; font-family: 'Hind Siliguri', sans-serif; white-space: nowrap;">${dateStr}</td>
+                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-weight: 800; font-family: 'Inter', sans-serif; color: #0f172a;">${b.bookMemos} টি</td>
+                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-weight: 800; font-family: 'Inter', sans-serif; color: #0284c7;">${b.calculatedCumulativeMemos} টি</td>
+                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8px; font-family: 'Hind Siliguri', sans-serif;">${missingBadge}</td>
+                <td style="text-align: right; border: 1px solid #cbd5e1; padding: 3px 3px; font-size: 8.5px; font-weight: 800; font-family: 'Inter', sans-serif; color: #b91c1c; white-space: nowrap;">৳ ${formatAmountWithComma(gross)}</td>
+                <td style="text-align: right; border: 1px solid #cbd5e1; padding: 3px 3px; font-size: 8px; font-weight: 700; font-family: 'Inter', sans-serif; color: #7e22ce; white-space: nowrap;">${less > 0 ? '৳ ' + formatAmountWithComma(less) : '-'}</td>
+                <td style="text-align: right; border: 1px solid #cbd5e1; padding: 3px 3px; font-size: 8.5px; font-weight: 900; font-family: 'Inter', sans-serif; color: #047857; white-space: nowrap;">৳ ${formatAmountWithComma(net)}</td>
+                <td style="text-align: right; border: 1px solid #cbd5e1; padding: 3px 3px; font-size: 8.5px; font-weight: 800; font-family: 'Inter', sans-serif; color: #0f172a; white-space: nowrap; background: #f1f5f9;">৳ ${formatAmountWithComma(cum)}</td>
+                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 1.5px 2px;">
+                    <div style="border: 1px solid #1e40af; border-radius: 3px; padding: 1px 2px; background: #eff6ff; display: inline-block; text-align: center; line-height: 1.1; width: 72px;">
+                        <div style="font-size: 6px; font-weight: 900; color: #1e3a8a;">মেসার্স মা মোটরস</div>
+                        <div style="font-size: 6.5px; font-weight: 900; color: #1d4ed8;">${officerName}</div>
+                        <div style="font-size: 5.5px; font-weight: 800; color: #1e40af;">আই ডি-${officerId}</div>
+                        <div style="font-size: 5.5px; font-weight: 700; color: #2563eb;">${stampDate}</div>
                     </div>
                 </td>
             </tr>
         `;
-    }).join('');
+    });
 
-    const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="bn">
-        <head>
-            <meta charset="UTF-8">
-            <title>গোডাউন_মেমো_বিক্রয়_মাস্টার_রেজিস্টার</title>
-            <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700;800;900&family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
-            <style>
-                @page {
-                    size: A4 portrait;
-                    margin: 7mm 6mm 7mm 6mm;
-                }
-                * { box-sizing: border-box; }
-                body {
-                    margin: 0;
-                    padding: 0;
-                    font-family: 'Hind Siliguri', 'Inter', sans-serif;
-                    background: #ffffff;
-                    color: #0f172a;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                .container {
-                    width: 100%;
-                    max-width: 100%;
-                    margin: 0 auto;
-                }
-                .header-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 6px;
-                    border-bottom: 2px solid #0f172a;
-                    padding-bottom: 4px;
-                }
-                .title-main {
-                    font-size: 19px;
-                    font-weight: 900;
-                    color: #0f172a;
-                    letter-spacing: 0.5px;
-                    margin: 0;
-                    text-align: center;
-                }
-                .sub-headline {
-                    font-size: 12px;
-                    font-weight: 900;
-                    color: #1e3a8a;
-                    background: #dbeafe;
-                    border: 1px solid #93c5fd;
-                    border-radius: 4px;
-                    padding: 2px 10px;
-                    display: inline-block;
-                    margin: 3px 0;
-                }
-                .meta-row {
-                    display: flex;
-                    justify-content: space-between;
-                    font-size: 10px;
-                    font-weight: 700;
-                    color: #334155;
-                    margin-top: 2px;
-                }
-                .data-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 9.5px;
-                    margin-top: 5px;
-                }
-                .data-table th {
-                    background: #0f172a;
-                    color: #ffffff;
-                    font-weight: 800;
-                    padding: 5px 3px;
-                    border: 1px solid #0f172a;
-                    text-align: center;
-                    font-size: 9px;
-                }
-                .data-table td {
-                    border: 1px solid #cbd5e1;
-                    padding: 3px 4px;
-                    vertical-align: middle;
-                }
-                .data-table tr:nth-child(even) {
-                    background-color: #f8fafc;
-                }
-                .total-row td {
-                    background: #f1f5f9 !important;
-                    font-weight: 900 !important;
-                    border-top: 2px solid #0f172a !important;
-                    border-bottom: 2px solid #0f172a !important;
-                    padding: 5px 4px;
-                }
-                .words-box {
-                    margin-top: 6px;
-                    background: #f8fafc;
-                    border: 1px dashed #94a3b8;
-                    border-radius: 6px;
-                    padding: 5px 10px;
-                    font-size: 10px;
-                    font-weight: 700;
-                    color: #1e293b;
-                }
-                .signatures {
-                    margin-top: 22px;
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 0 25px;
-                }
-                .sign-line {
-                    border-top: 1.5px solid #475569;
-                    padding-top: 3px;
-                    font-size: 10.5px;
-                    font-weight: 900;
-                    color: #0f172a;
-                    text-align: center;
-                    width: 180px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <table class="header-table">
-                    <tr>
-                        <td style="text-align: center;">
-                            <div class="title-main">${shopName}</div>
-                            <div style="font-size: 9px; color: #475569; font-weight: 600;">${shopAddress} • মোবাইল: ${shopPhone}</div>
-                            <div class="sub-headline">২/১১/২০২৫ হইতে গোডাউন এর মোট মাল বিক্রয় হিসাব</div>
-                            <div class="meta-row">
-                                <div><strong>ইনচার্জ:</strong> ১ম তম; মোঃ এমরান (আই ডি-১৯২৫)</div>
-                                <div><strong>নথি নং:</strong> ০০০০১</div>
-                                <div><strong>প্রিন্ট তারিখ:</strong> ${formatAppDate(new Date().toISOString().split('T')[0])}</div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
+    // 5. Total Summary Row
+    rowsArray.push(`
+        <tr class="print-row-no-break" style="background: #f1f5f9; font-weight: 900; border-top: 2px solid #0f172a; border-bottom: 2px solid #0f172a;">
+            <td colspan="3" style="text-align: center; font-weight: 900; font-size: 8.5px; border: 1px solid #cbd5e1; padding: 4px 2px; font-family: 'Hind Siliguri', sans-serif;">সর্বমোট সমাপনী হিসাব:</td>
+            <td style="text-align: center; font-weight: 900; font-family: 'Inter', sans-serif; font-size: 8.5px; border: 1px solid #cbd5e1; padding: 4px 2px; color: #0f172a;">${totals.totalMemosCount} টি</td>
+            <td style="text-align: center; font-weight: 900; font-family: 'Inter', sans-serif; font-size: 8.5px; border: 1px solid #cbd5e1; padding: 4px 2px; color: #0284c7;">${totals.totalMemosCount} টি</td>
+            <td style="text-align: center; font-weight: 900; font-size: 7.5px; border: 1px solid #cbd5e1; padding: 4px 2px; color: #16a34a; font-family: 'Hind Siliguri', sans-serif;">১০০% অডিট</td>
+            <td style="text-align: right; font-weight: 900; font-family: 'Inter', sans-serif; font-size: 8.5px; border: 1px solid #cbd5e1; padding: 4px 3px; color: #b91c1c; white-space: nowrap;">৳ ${formatAmountWithComma(totals.totalGross)}</td>
+            <td style="text-align: right; font-weight: 900; font-family: 'Inter', sans-serif; font-size: 8.5px; border: 1px solid #cbd5e1; padding: 4px 3px; color: #7e22ce; white-space: nowrap;">৳ ${formatAmountWithComma(totals.totalLess)}</td>
+            <td style="text-align: right; font-weight: 900; font-family: 'Inter', sans-serif; font-size: 8.5px; border: 1px solid #cbd5e1; padding: 4px 3px; color: #047857; white-space: nowrap;">৳ ${formatAmountWithComma(totals.totalNet)}</td>
+            <td style="text-align: right; font-weight: 900; font-family: 'Inter', sans-serif; font-size: 8.5px; border: 1px solid #cbd5e1; padding: 4px 3px; color: #0f172a; white-space: nowrap; background: #e2e8f0;">৳ ${formatAmountWithComma(totals.grandCumulative)}</td>
+            <td style="text-align: center; font-weight: 900; font-size: 7.5px; border: 1px solid #cbd5e1; padding: 4px 2px; color: #1e40af; font-family: 'Hind Siliguri', sans-serif;">১০০% সংরক্ষিত</td>
+        </tr>
+    `);
 
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 26px;">ক্র:</th>
-                            <th style="width: 78px;">মেমো বই নং</th>
-                            <th style="width: 135px;">তারিখ রেঞ্জ</th>
-                            <th style="width: 95px;">মোট বিক্রয়</th>
-                            <th style="width: 60px;">লেস</th>
-                            <th style="width: 95px;">নিট বিক্রয়</th>
-                            <th style="width: 95px;">ক্রমপুঞ্জিত মোট</th>
-                            <th style="width: 95px;">সাক্ষর ও সিল</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                        <tr class="total-row">
-                            <td colspan="3" style="text-align: center; font-weight: 900; font-size: 10.5px;">সর্বমোট হিসাব:</td>
-                            <td style="text-align: right; font-weight: 900; font-family: monospace; color: #b91c1c; font-size: 10.5px;">${formatAmountWithComma(totals.totalGross)}</td>
-                            <td style="text-align: right; font-weight: 900; font-family: monospace; color: #7e22ce; font-size: 10.5px;">${formatAmountWithComma(totals.totalLess)}</td>
-                            <td style="text-align: right; font-weight: 900; font-family: monospace; color: #047857; font-size: 10.5px;">${formatAmountWithComma(totals.totalNet)}</td>
-                            <td style="text-align: right; font-weight: 900; font-family: monospace; color: #0f172a; font-size: 10.5px;">${formatAmountWithComma(totals.grandCumulative)}</td>
-                            <td style="text-align: center; font-weight: 900; font-size: 8px; color: #1e40af;">১০০% অডিটকৃত</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="words-box">
-                    <strong>কথায় (নিট বিক্রয়):</strong> ${totals.netInWords}
+    // 6. Summary Words & Exactly 2 Signatures (Manager & In-Charge/Office Boss)
+    const summaryHtml = `
+        <div style="margin-top: 4px; page-break-inside: avoid; break-inside: avoid; font-family: 'Hind Siliguri', sans-serif;">
+            <div style="background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 6px; padding: 4px 8px; font-size: 9px; font-weight: 700; color: #1e293b; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="color: #475569;">কথায় (নিট বিক্রয়):</span>
+                    <strong style="color: #15803d; font-size: 9.5px; margin-left: 4px;">${totals.netInWords}</strong>
                 </div>
-
-                <div class="signatures">
-                    <div class="sign-line">
-                        ১ম তম; ইনচার্জ: মোঃ এমরান<br>
-                        <span style="font-size: 8.5px; font-weight: 600; color: #475569;">গোডাউন ইনচার্জ (আইডি: ১৯২৫)</span>
-                    </div>
-                    <div class="sign-line">
-                        স্বত্বাধিকারী<br>
-                        <span style="font-size: 8.5px; font-weight: 600; color: #475569;">মেসার্স মা মোটরস</span>
-                    </div>
+                <div style="font-size: 8px; color: #64748b; font-family: 'Inter', sans-serif;">
+                    মোট বই: <strong>${totals.totalBooksCount}টি</strong> • মোট মেমো: <strong>${totals.totalMemosCount}টি</strong>
                 </div>
             </div>
-        </body>
-        </html>
+        </div>
     `;
 
-    printViaIframe(htmlContent, '', 'Maa_Motors_Godown_Sales_Register_A4_Portrait');
+    // 7. Exactly 2 Signatures: Left = Manager, Right = In-Charge / Office Boss
+    const signatureHtml = `
+        <div class="signature-last-page-block" style="margin-top: 26px; page-break-inside: avoid; break-inside: avoid; font-family: 'Hind Siliguri', sans-serif;">
+            <div style="display: flex; justify-content: space-between; padding: 0 45px;">
+                <div style="border-top: 1.5px dashed #475569; width: 170px; text-align: center; padding-top: 4px;">
+                    <div style="font-size: 10.5px; font-weight: 900; color: #0f172a;">ম্যানেজার</div>
+                    <div style="font-size: 8px; font-weight: 600; color: #64748b;">মেসার্স মা মোটরস</div>
+                </div>
+                <div style="border-top: 1.5px dashed #475569; width: 170px; text-align: center; padding-top: 4px;">
+                    <div style="font-size: 10.5px; font-weight: 900; color: #0f172a;">ইনচার্জ বা অফিস বস</div>
+                    <div style="font-size: 8px; font-weight: 600; color: #64748b;">অনুমোদন ও সিলমোহর</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const pdfTitle = `গোডাউন_মেমো_বিক্রয়_মাস্টার_রেজিস্টার_${reportDate.replace(/\//g, '-')}`;
+
+    const pagesHtml = await smartPaginatePrint({
+        page1HeaderHtml,
+        repeatHeaderHtml,
+        tableColHeaderHtml,
+        rowsArray,
+        summaryHtml,
+        signatureHtml,
+        formattedDate: reportDate
+    });
+
+    await printViaIframe(pagesHtml, '', pdfTitle);
 }

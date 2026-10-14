@@ -189,6 +189,21 @@ export async function openGodownMemoClosureModal(existingBooks = [], activeConfi
                 return false;
             }
 
+            if (currentScan.missingVouchers && currentScan.missingVouchers.length > 0) {
+                const confirmMissing = await Swal.fire({
+                    title: '<span class="text-amber-400">মেমো নম্বর বাদ পড়েছে!</span>',
+                    html: `এই বইয়ের রেঞ্জে <strong>${currentScan.missingVouchers.length}টি মেমো</strong> এখনো এন্ট্রি করা হয়নি:<br><div class="font-mono text-amber-300 font-bold p-2 bg-slate-950 rounded-lg my-2 text-xs border border-amber-500/30">#${currentScan.missingVouchers.slice(0, 8).join(', #')}${currentScan.missingVouchers.length > 8 ? '...' : ''}</div>আপনি কি মিসিং মেমোর হিসাব লিপিবদ্ধ রেখেই বই ক্লোজ করতে চান?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'হ্যাঁ, ক্লোজ করুন',
+                    cancelButtonText: 'না, এন্ট্রি চেক করব',
+                    confirmButtonColor: '#e11d48',
+                    cancelButtonColor: '#334155',
+                    customClass: { popup: 'bg-slate-900 border border-slate-800 rounded-3xl text-white' }
+                });
+                if (!confirmMissing.isConfirmed) return false;
+            }
+
             return {
                 startNo: sVal,
                 endNo: eVal,
@@ -216,7 +231,10 @@ export async function openGodownMemoClosureModal(existingBooks = [], activeConfi
         bookNo: bookRangeStr,
         startMemoNo: data.startNo,
         endMemoNo: data.endNo,
-        totalMemos: data.scan.usedCount || data.scan.totalExpected,
+        totalMemos: data.scan.totalExpected,
+        usedMemosCount: data.scan.usedCount,
+        missingMemos: data.scan.missingVouchers || [],
+        missingCount: (data.scan.missingVouchers || []).length,
         startDate: sDate,
         endDate: eDate,
         grossSales: data.scan.grossSales,
