@@ -226,8 +226,15 @@ export const GodownMemoDAO = new class {
             snap.forEach(doc => {
                 books.push({ id: doc.id, ...doc.data() });
             });
-            callback(books);
-        }, err => console.error('GodownMemoDAO listenAllBooks error:', err));
+            if (books.length === 0) {
+                callback(HISTORICAL_GODOWN_BOOKS);
+            } else {
+                callback(books);
+            }
+        }, err => {
+            console.error('GodownMemoDAO listenAllBooks error:', err);
+            callback(HISTORICAL_GODOWN_BOOKS);
+        });
     }
 
     /**

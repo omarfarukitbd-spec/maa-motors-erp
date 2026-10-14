@@ -126,8 +126,10 @@ service cloud.firestore {
 
     // Settings
     match /settings/{docId} {
-      allow read: if isAuthenticated() || docId in ['appSettings', 'google_sync'];
+      allow read: if isAuthenticated() || docId in ['appSettings', 'google_sync', 'godown_memo_config'];
       allow write: if isAdmin() || (
+        isAuthenticated() && docId == 'godown_memo_config'
+      ) || (
         docId == 'google_sync' && 
         resource != null && 
         resource.data.setupKey != null && 
@@ -195,6 +197,12 @@ service cloud.firestore {
 
     // Auto Parts Master Catalog & Fitment Database
     match /auto_parts_catalog/{partId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('editLedger', false) == true);
+    }
+
+    // Godown Memo Master Books Collection
+    match /godown_memo_books/{bookId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('editLedger', false) == true);
     }
