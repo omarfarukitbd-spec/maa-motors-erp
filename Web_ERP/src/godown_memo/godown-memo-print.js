@@ -129,13 +129,8 @@ export async function printGodownMemoRegisterA4Portrait(books = []) {
                 <td style="text-align: right; border: 1px solid #cbd5e1; padding: 3px 3px; font-size: 8px; font-weight: 700; font-family: 'Inter', sans-serif; color: #7e22ce; white-space: nowrap;">${less > 0 ? '৳ ' + formatAmountWithComma(less) : '-'}</td>
                 <td style="text-align: right; border: 1px solid #cbd5e1; padding: 3px 3px; font-size: 8.5px; font-weight: 900; font-family: 'Inter', sans-serif; color: #047857; white-space: nowrap;">৳ ${formatAmountWithComma(net)}</td>
                 <td style="text-align: right; border: 1px solid #cbd5e1; padding: 3px 3px; font-size: 8.5px; font-weight: 800; font-family: 'Inter', sans-serif; color: #0f172a; white-space: nowrap; background: #f1f5f9;">৳ ${formatAmountWithComma(cum)}</td>
-                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 1.5px 2px;">
-                    <div style="border: 1px solid #1e40af; border-radius: 3px; padding: 1px 2px; background: #eff6ff; display: inline-block; text-align: center; line-height: 1.1; width: 72px;">
-                        <div style="font-size: 6px; font-weight: 900; color: #1e3a8a;">মেসার্স মা মোটরস</div>
-                        <div style="font-size: 6.5px; font-weight: 900; color: #1d4ed8;">${officerName}</div>
-                        <div style="font-size: 5.5px; font-weight: 800; color: #1e40af;">আই ডি-${officerId}</div>
-                        <div style="font-size: 5.5px; font-weight: 700; color: #2563eb;">${stampDate}</div>
-                    </div>
+                <td style="text-align: center; border: 1px solid #cbd5e1; padding: 2px 2px; vertical-align: middle;">
+                    <div style="border: 1.2px dashed #94a3b8; border-radius: 4px; width: 76px; height: 32px; background: #ffffff; display: inline-block;"></div>
                 </td>
             </tr>
         `;

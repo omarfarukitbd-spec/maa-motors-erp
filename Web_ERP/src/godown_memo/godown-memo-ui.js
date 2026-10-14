@@ -315,11 +315,8 @@ function renderTableRows(books) {
                 <td class="py-3 px-2 text-right font-mono font-black text-emerald-400">৳ ${formatAmountWithComma(net)}</td>
                 <td class="py-3 px-2 text-right font-mono font-black text-slate-200 bg-slate-950/40">৳ ${formatAmountWithComma(cum)}</td>
                 <td class="py-2.5 px-2 text-center">
-                    <div class="px-2 py-1 rounded border border-blue-600/60 bg-blue-950/40 text-center leading-tight inline-block w-28 shadow-sm">
-                        <div class="text-[8px] font-black text-blue-200 uppercase">মেসার্স মা মোটরস</div>
-                        <div class="text-[9px] font-black text-blue-400">${officerName}</div>
-                        <div class="text-[7.5px] font-bold text-blue-300">আই ডি-${officerId}</div>
-                        <div class="text-[7.5px] text-blue-400/90 font-mono">তারিখ: ${stampDate}</div>
+                    <div class="w-24 h-8 mx-auto rounded border border-dashed border-slate-700 bg-slate-950/40 flex items-center justify-center text-[9px] text-slate-500 font-bn" title="প্রিন্ট করার পর অফলাইনে সিলমোহর দেওয়া হবে">
+                        <span class="opacity-40">সিলমোহর</span>
                     </div>
                 </td>
                 <td class="py-3 px-2 text-center">
