@@ -185,6 +185,40 @@ function renderPayrollContent(container, state) {
             <div id="payroll-sections-container" class="space-y-4">
                 ${renderSectionsHtml(summary.sections)}
             </div>
+
+            <!-- Bottom Master Actions & Cloud Save Bar -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-4 mt-6">
+                <div class="space-y-1 text-center md:text-left">
+                    <div class="text-xs text-slate-400 font-bold flex items-center justify-center md:justify-start gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up text-cyan-400"></i>
+                        <span>মাসিক সামগ্রিক ব্যালেন্স ও ক্লাউড সিঙ্ক্রোনাইজেশন</span>
+                    </div>
+                    <div class="text-xs text-slate-300">
+                        মোট বাজেট: <strong id="bottom-kpi-grand" class="text-blue-400 font-black">${formatTaka(summary.grandTotal)}</strong> • 
+                        পরিশোধিত: <strong id="bottom-kpi-paid" class="text-emerald-400 font-black">${formatTaka(summary.totalPaid)}</strong> • 
+                        বকেয়া: <strong id="bottom-kpi-pending" class="text-red-400 font-black">${formatTaka(summary.totalPending)}</strong>
+                    </div>
+                </div>
+
+                <div class="flex items-center flex-wrap justify-center gap-2.5">
+                    <button onclick="window.savePayrollCloud()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-emerald-600/30 flex items-center gap-2 transition-all active:scale-95 cursor-pointer" title="ক্লাউড ডাটাবেজে সংরক্ষণ করুন">
+                        <i class="fa-solid fa-cloud-arrow-up text-base"></i>
+                        <span>ক্লাউডে সেভ করুন</span>
+                    </button>
+                    <button onclick="window.syncPayrollToExpenses()" class="px-4 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer" title="পরিশোধিত আইটেমগুলো দৈনিক খরচে যুক্ত করুন">
+                        <i class="fa-solid fa-receipt text-sm"></i>
+                        <span>দৈনিক খরচে পোস্টিং</span>
+                    </button>
+                    <button onclick="window.printPayrollMaster()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white font-bold text-xs border border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer" title="অফিশিয়াল A4 Portrait প্রিন্ট">
+                        <i class="fa-solid fa-print text-sm"></i>
+                        <span>A4 প্রিন্ট</span>
+                    </button>
+                    <button onclick="window.exportPayrollXlsx()" class="px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 text-xs border border-slate-700 flex items-center gap-1 cursor-pointer" title="এক্সেল ডাউনলোড">
+                        <i class="fa-solid fa-file-excel text-sm"></i>
+                        <span>এক্সেল</span>
+                    </button>
+                </div>
+            </div>
         </div>
     `;
 }

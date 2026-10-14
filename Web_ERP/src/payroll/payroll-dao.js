@@ -35,12 +35,12 @@ export const PayrollDAO = new class {
     async savePayroll(monthYear, data) {
         if (!monthYear) throw new Error('MonthYear is required');
         try {
-            const payload = {
-                ...data,
-                monthYear,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await this.collection.doc(monthYear).set(payload, { merge: true });
+            // Sanitize payload to eliminate undefined fields before Firestore write
+            const sanitized = JSON.parse(JSON.stringify(data || {}));
+            sanitized.monthYear = monthYear;
+            sanitized.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+
+            await this.collection.doc(monthYear).set(sanitized, { merge: true });
             return true;
         } catch (e) {
             console.error('PayrollDAO.savePayroll error:', e);

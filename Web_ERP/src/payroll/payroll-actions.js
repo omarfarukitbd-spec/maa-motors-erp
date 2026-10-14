@@ -326,7 +326,7 @@ export function updateAedRate(rate) {
 export async function savePayrollToCloud() {
     if (!_activePayrollState) return;
 
-    const pinVerified = await promptSecurityPin();
+    const pinVerified = await promptSecurityPin('মাসিক বেতন ও খরচ ক্লাউডে সংরক্ষণ');
     if (!pinVerified) return;
 
     try {
@@ -369,6 +369,16 @@ function triggerReactiveCalculations() {
 
     const pendingEl = document.getElementById('kpi-total-pending');
     if (pendingEl) pendingEl.innerText = `৳ ${formatAmountWithComma(summary.totalPending)}`;
+
+    // Update bottom summary labels
+    const bGrandEl = document.getElementById('bottom-kpi-grand');
+    if (bGrandEl) bGrandEl.innerText = `৳ ${formatAmountWithComma(summary.grandTotal)}`;
+
+    const bPaidEl = document.getElementById('bottom-kpi-paid');
+    if (bPaidEl) bPaidEl.innerText = `৳ ${formatAmountWithComma(summary.totalPaid)}`;
+
+    const bPendingEl = document.getElementById('bottom-kpi-pending');
+    if (bPendingEl) bPendingEl.innerText = `৳ ${formatAmountWithComma(summary.totalPending)}`;
 
     const wordsEl = document.getElementById('payroll-words-display');
     if (wordsEl) wordsEl.innerText = summary.grandTotalInWords;

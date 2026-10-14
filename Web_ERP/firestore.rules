@@ -206,6 +206,17 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('editLedger', false) == true);
     }
+
+    // Monthly Payroll & Overall Expense Master Sheets
+    match /monthly_payroll_sheets/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (
+        isAdmin() || isBoss() || 
+        getPerms().get('manageExpenses', false) == true || 
+        getPerms().get('manageLedger', false) == true || 
+        getPerms().get('editExpenses', false) == true
+      );
+    }
   }
 }
 
