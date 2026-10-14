@@ -163,17 +163,23 @@ export async function printGodownMemoRegisterA4Portrait(books = []) {
         </div>
     `;
 
-    // 7. Exactly 2 Signatures: Left = Manager, Right = In-Charge / Office Boss
+    // 7. Exactly 2 Signatures: Left = Manager, Right = In-Charge / Office Boss with Offline Seal Boxes
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 26px; page-break-inside: avoid; break-inside: avoid; font-family: 'Hind Siliguri', sans-serif !important;">
+        <div class="signature-last-page-block" style="margin-top: 24px; page-break-inside: avoid; break-inside: avoid; font-family: 'Hind Siliguri', sans-serif !important;">
             <div style="display: flex; justify-content: space-between; padding: 0 45px;">
-                <div style="border-top: 1.5px dashed #475569; width: 170px; text-align: center; padding-top: 4px; font-family: 'Hind Siliguri', sans-serif !important;">
-                    <div style="font-size: 10.5px; font-weight: 900; color: #0f172a; font-family: 'Hind Siliguri', sans-serif !important;">ম্যানেজার</div>
-                    <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Hind Siliguri', sans-serif !important;">মেসার্স মা মোটরস</div>
+                <div style="width: 170px; text-align: center; font-family: 'Hind Siliguri', sans-serif !important;">
+                    <div style="border: 1px dashed #94a3b8; height: 38px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
+                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
+                        <div style="font-size: 10.5px; font-weight: 900; color: #0f172a; font-family: 'Hind Siliguri', sans-serif !important;">ম্যানেজার</div>
+                        <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Hind Siliguri', sans-serif !important;">মেসার্স মা মোটরস</div>
+                    </div>
                 </div>
-                <div style="border-top: 1.5px dashed #475569; width: 170px; text-align: center; padding-top: 4px; font-family: 'Hind Siliguri', sans-serif !important;">
-                    <div style="font-size: 10.5px; font-weight: 900; color: #0f172a; font-family: 'Hind Siliguri', sans-serif !important;">ইনচার্জ বা অফিস বস</div>
-                    <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Hind Siliguri', sans-serif !important;">অনুমোদন ও সিলমোহর</div>
+                <div style="width: 170px; text-align: center; font-family: 'Hind Siliguri', sans-serif !important;">
+                    <div style="border: 1px dashed #94a3b8; height: 38px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
+                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
+                        <div style="font-size: 10.5px; font-weight: 900; color: #0f172a; font-family: 'Hind Siliguri', sans-serif !important;">ইনচার্জ বা অফিস বস</div>
+                        <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Hind Siliguri', sans-serif !important;">অনুমোদন ও সিলমোহর</div>
+                    </div>
                 </div>
             </div>
         </div>

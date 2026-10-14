@@ -25,7 +25,7 @@ export async function printMemoBookAuditReport(summary, memos) {
 
     // 1. Sleek Compact Master Header Banner (Smart PDF Design)
     const masterHeaderHtml = `
-        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 10px; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2); margin-bottom: 6px; font-family: 'Inter', 'Kalpurush', sans-serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 10px; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2); margin-bottom: 6px; font-family: 'Hind Siliguri', 'Inter', sans-serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <div style="width: 44px; height: 44px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #ffffff; flex-shrink: 0; padding: 1px;">
                     <img src="${shopLogo}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />
@@ -33,7 +33,7 @@ export async function printMemoBookAuditReport(summary, memos) {
                 <div>
                     <h1 style="font-size: 16px; font-weight: 900 !important; margin: 0; text-transform: uppercase; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', sans-serif !important;">${shopName}</h1>
                     <p style="font-size: 8.5px; margin: 1px 0; font-weight: 700 !important; color: #e0f2fe !important;">Proprietor: ${shopOwner} • Mobile: ${shopPhone}</p>
-                    <p style="font-size: 8px; margin: 0; opacity: 0.9; font-weight: 600 !important; color: #f0f9ff !important; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif !important;">${shopAddress}</p>
+                    <p style="font-size: 8px; margin: 0; opacity: 0.9; font-weight: 600 !important; color: #f0f9ff !important; font-family: 'Hind Siliguri', 'Inter', sans-serif !important;">${shopAddress}</p>
                 </div>
             </div>
             <div style="text-align: right; flex-shrink: 0;">
@@ -139,7 +139,7 @@ export async function printMemoBookAuditReport(summary, memos) {
                     ${pBadge}
                 </td>
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 2px; font-size: 8.5px; font-family: 'Inter', sans-serif; white-space: nowrap;"><div style="font-weight: 700;">${formatAppDate(m.date)}</div><div style="font-size: 7.5px; color: #64748b; font-family: 'Hind Siliguri', sans-serif; font-weight: 600;">${getDayOfWeekBangla(m.date)}</div></td>
-                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.2; color: #0f172a;">
+                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 3px 4px; font-size: 9px; font-family: 'Hind Siliguri', 'Inter', sans-serif; line-height: 1.2; color: #0f172a;">
                     <strong>${escapeHTML(cleanCustName)}</strong>
                     ${m.customerAccountNo ? `<span style="font-size:7.5px; color:#0284c7; margin-left:2px;">[${escapeHTML(m.customerAccountNo)}]</span>` : ''}
                     ${m.customerPhone ? `<span style="font-size:7.5px; color:#64748b; margin-left:2px;">(${escapeHTML(m.customerPhone)})</span>` : ''}
@@ -195,12 +195,24 @@ export async function printMemoBookAuditReport(summary, memos) {
         </div>
     `;
 
+    // 7. Exactly 2 Signatures: Left = Manager, Right = In-Charge / Office Boss with Offline Seal Boxes
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 16px; page-break-inside: avoid; break-inside: avoid;">
-            <div style="display: flex; justify-content: space-between; padding: 0 15px;">
-                <div style="border-top: 1.5px dashed #64748b; width: 105px; text-align: center; font-size: 8px; font-weight: 700; color: #334155; padding-top: 2px; font-family: 'Hind Siliguri', sans-serif;">হিসাবরক্ষকের স্বাক্ষর</div>
-                <div style="border-top: 1.5px dashed #64748b; width: 105px; text-align: center; font-size: 8px; font-weight: 700; color: #334155; padding-top: 2px; font-family: 'Hind Siliguri', sans-serif;">নিরীক্ষকের স্বাক্ষর</div>
-                <div style="border-top: 1.5px dashed #64748b; width: 105px; text-align: center; font-size: 8px; font-weight: 700; color: #334155; padding-top: 2px; font-family: 'Hind Siliguri', sans-serif;">স্বত্বাধিকারীর স্বাক্ষর</div>
+        <div class="signature-last-page-block" style="margin-top: 24px; page-break-inside: avoid; break-inside: avoid; font-family: 'Hind Siliguri', sans-serif !important;">
+            <div style="display: flex; justify-content: space-between; padding: 0 45px;">
+                <div style="width: 170px; text-align: center; font-family: 'Hind Siliguri', sans-serif !important;">
+                    <div style="border: 1px dashed #94a3b8; height: 38px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
+                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
+                        <div style="font-size: 10px; font-weight: 900; color: #0f172a; font-family: 'Hind Siliguri', sans-serif !important;">ম্যানেজার</div>
+                        <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Hind Siliguri', sans-serif !important;">মেসার্স মা মোটরস</div>
+                    </div>
+                </div>
+                <div style="width: 170px; text-align: center; font-family: 'Hind Siliguri', sans-serif !important;">
+                    <div style="border: 1px dashed #94a3b8; height: 38px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
+                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
+                        <div style="font-size: 10px; font-weight: 900; color: #0f172a; font-family: 'Hind Siliguri', sans-serif !important;">ইনচার্জ বা অফিস বস</div>
+                        <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Hind Siliguri', sans-serif !important;">অনুমোদন ও সিলমোহর</div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -217,5 +229,11 @@ export async function printMemoBookAuditReport(summary, memos) {
         formattedDate: reportDate
     });
 
-    await printViaIframe(pagesHtml, pdfTitle);
+    const unifiedFontCss = `
+        * {
+            font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        }
+    `;
+
+    await printViaIframe(pagesHtml, unifiedFontCss, pdfTitle);
 }
