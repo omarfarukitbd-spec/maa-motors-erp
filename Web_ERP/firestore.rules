@@ -217,6 +217,18 @@ service cloud.firestore {
         getPerms().get('editExpenses', false) == true
       );
     }
+
+    // Godown Logistics & Support Contacts Directory
+    match /godown_contacts/{contactId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (
+        isAdmin() || isBoss() || 
+        getPerms().get('manageLedger', false) == true || 
+        getPerms().get('manageExpenses', false) == true || 
+        getPerms().get('manageCustomers', false) == true ||
+        getPerms().get('editLedger', false) == true
+      );
+    }
   }
 }
 

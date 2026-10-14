@@ -3,6 +3,7 @@ import { renderMemoCardHTML } from './memo-card-ui.js';
 import { startMemoVoiceSearch } from './memo-voice-search.js';
 import { renderMemoBookAuditUI } from './memo-book-audit-ui.js';
 import { renderGodownMemoRegisterUI } from '../godown_memo/index.js';
+import { renderGodownContactDirectory } from '../godown_contacts/index.js';
 import { escapeHTML, formatAppDate, formatAmountWithComma } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 
@@ -29,6 +30,9 @@ export async function renderMemoSearch(container, params = {}) {
                     </button>
                     <button id="tab-memo-register-btn" onclick="window.switchMemoSearchTab('register')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-900 transition-all flex items-center gap-1.5 cursor-pointer">
                         <i class="fa-solid fa-warehouse text-[10px] text-emerald-400"></i> <span>গোডাউন মাস্টার রেজিস্টার</span>
+                    </button>
+                    <button id="tab-memo-contacts-btn" onclick="window.switchMemoSearchTab('contacts')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-900 transition-all flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-address-book text-[10px] text-cyan-400"></i> <span>লজিস্টিকস ও কন্টাক্ট ডিরেক্টরি</span>
                     </button>
                 </div>
             </div>
@@ -104,6 +108,9 @@ export async function renderMemoSearch(container, params = {}) {
 
             <!-- Godown Memo Master Register View Container -->
             <div id="memo-register-view" class="hidden space-y-3.5"></div>
+
+            <!-- Godown Logistics & Contacts View Container -->
+            <div id="memo-contacts-view" class="hidden space-y-3.5"></div>
         </div>
     `;
 
@@ -111,17 +118,21 @@ export async function renderMemoSearch(container, params = {}) {
         const sBtn = document.getElementById('tab-memo-single-btn');
         const aBtn = document.getElementById('tab-memo-audit-btn');
         const rBtn = document.getElementById('tab-memo-register-btn');
+        const cBtn = document.getElementById('tab-memo-contacts-btn');
         const sView = document.getElementById('memo-single-view');
         const aView = document.getElementById('memo-audit-view');
         const rView = document.getElementById('memo-register-view');
+        const cView = document.getElementById('memo-contacts-view');
 
         const isSingle = tab === 'single';
         const isAudit = tab === 'audit';
         const isRegister = tab === 'register';
+        const isContacts = tab === 'contacts';
 
         if (sBtn) sBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${isSingle ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`;
         if (aBtn) aBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${isAudit ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`;
         if (rBtn) rBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${isRegister ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`;
+        if (cBtn) cBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${isContacts ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`;
 
         if (sView) sView.classList.toggle('hidden', !isSingle);
         if (aView) {
@@ -132,6 +143,10 @@ export async function renderMemoSearch(container, params = {}) {
             rView.classList.toggle('hidden', !isRegister);
             if (isRegister) renderGodownMemoRegisterUI(rView);
         }
+        if (cView) {
+            cView.classList.toggle('hidden', !isContacts);
+            if (isContacts) renderGodownContactDirectory(cView);
+        }
 
         if (isSingle) document.getElementById('memo-search-input')?.focus();
     };
@@ -140,6 +155,8 @@ export async function renderMemoSearch(container, params = {}) {
         window.switchMemoSearchTab('register');
     } else if (params?.tab === 'audit') {
         window.switchMemoSearchTab('audit');
+    } else if (params?.tab === 'contacts') {
+        window.switchMemoSearchTab('contacts');
     }
 
     setupMemoSearchEvents(params);

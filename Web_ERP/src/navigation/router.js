@@ -150,6 +150,8 @@ export function navigate(view, params = {}) {
         case 'memo_search': renderMemoSearch(container, params); break;
         case 'godown-register':
         case 'godown_register': renderMemoSearch(container, { ...params, tab: 'register' }); break;
+        case 'godown-contacts':
+        case 'godown_contacts': renderMemoSearch(container, { ...params, tab: 'contacts' }); break;
         case 'treasury': renderTreasury(container, params); break;
         case 'recycle-bin': renderRecycleBin(container); break;
         case 'dubai-procurement': renderDubaiProcurement(container, params); break;
