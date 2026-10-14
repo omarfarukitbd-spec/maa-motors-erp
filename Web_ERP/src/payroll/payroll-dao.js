@@ -83,8 +83,8 @@ export const PayrollDAO = new class {
                     items: [
                         { id: 'd-1', sl: '১.১', name: 'হৃদয় (বেতন)', details: '৩০,০০০ টাকা – ১০,০০০ (কর্তন)', baseSalary: 30000, deduction: 10000, bonus: 0, amount: 20000, type: 'salary', status: 'pending', paymentMethod: 'Cash', paymentAccount: 'শোরুম ক্যাশ' },
                         { id: 'd-2', sl: '১.২', name: 'ফারুক (বেতন)', details: 'মাসিক নির্ধারিত বেতন', baseSalary: 25000, deduction: 0, bonus: 0, amount: 25000, type: 'salary', status: 'pending', paymentMethod: 'Cash', paymentAccount: 'শোরুম ক্যাশ' },
-                        { id: 'd-3', sl: '১.৩', name: 'ফারুক ও হৃদয় রুম ভাড়া', details: '800 UED (@ ৩৫ টাকা)', foreignCurrency: 'AED', foreignAmount: 800, amount: 28000, type: 'expense', status: 'pending', paymentMethod: 'Dubai Fund', paymentAccount: 'দুবাই ক্যাশ' },
-                        { id: 'd-4', sl: '১.৪', name: 'কন্টেনার লোডিং নং: ২', details: '4000 UED (@ ৩৫ টাকা)', foreignCurrency: 'AED', foreignAmount: 4000, amount: 140000, type: 'expense', status: 'pending', paymentMethod: 'Dubai Fund', paymentAccount: 'দুবাই ক্যাশ' }
+                        { id: 'd-3', sl: '১.৩', name: 'ফারুক ও হৃদয় রুম ভাড়া', details: '800 AED (@ ৩৫ টাকা)', foreignCurrency: 'AED', foreignAmount: 800, amount: 28000, type: 'expense', status: 'pending', paymentMethod: 'Dubai Fund', paymentAccount: 'দুবাই ক্যাশ' },
+                        { id: 'd-4', sl: '১.৪', name: 'কন্টেনার লোডিং নং: ২', details: '4000 AED (@ ৩৫ টাকা)', foreignCurrency: 'AED', foreignAmount: 4000, amount: 140000, type: 'expense', status: 'pending', paymentMethod: 'Dubai Fund', paymentAccount: 'দুবাই ক্যাশ' }
                     ]
                 },
                 {

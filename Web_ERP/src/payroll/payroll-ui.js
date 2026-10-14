@@ -138,10 +138,7 @@ function renderPayrollContent(container, state) {
                         <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
                             <i class="fa-regular fa-calendar text-cyan-400 text-xs"></i>
                             <select id="payroll-month-select" onchange="window.switchPayrollMonth(this.value)" class="bg-slate-900 text-white font-black text-xs outline-none cursor-pointer rounded-lg px-1 py-0.5">
-                                <option class="bg-slate-900 text-white py-1" value="2026-10" ${state.monthYear === '2026-10' ? 'selected' : ''}>অক্টোবর ২০২৬</option>
-                                <option class="bg-slate-900 text-white py-1" value="2026-11" ${state.monthYear === '2026-11' ? 'selected' : ''}>নভেম্বর ২০২৬</option>
-                                <option class="bg-slate-900 text-white py-1" value="2026-12" ${state.monthYear === '2026-12' ? 'selected' : ''}>ডিসেম্বর ২০২৬</option>
-                                <option class="bg-slate-900 text-white py-1" value="2026-09" ${state.monthYear === '2026-09' ? 'selected' : ''}>সেপ্টেম্বর ২০২৬</option>
+                                ${renderMonthOptions(state.monthYear)}
                             </select>
                         </div>
 
@@ -193,14 +190,42 @@ function renderPayrollContent(container, state) {
 }
 
 /**
+ * Generate 2025-2027 Bangla Month Options dynamically
+ */
+function renderMonthOptions(selectedMonth) {
+    const monthsBn = [
+        'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+        'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+    ];
+    const years = [2025, 2026, 2027];
+    let html = '';
+    years.forEach(y => {
+        monthsBn.forEach((mName, idx) => {
+            const mVal = `${y}-${String(idx + 1).padStart(2, '0')}`;
+            const isSel = mVal === selectedMonth ? 'selected' : '';
+            html += `<option class="bg-slate-900 text-white py-1" value="${mVal}" ${isSel}>${mName} ${y}</option>`;
+        });
+    });
+    return html;
+}
+
+/**
  * Render all 6 sections HTML
  */
 function renderSectionsHtml(sections) {
     return sections.map(sec => {
         const filteredItems = (sec.items || []).filter(itm => {
             if (!_searchQuery) return true;
-            const q = _searchQuery.toLowerCase();
-            return (itm.name && itm.name.toLowerCase().includes(q)) || (itm.details && itm.details.toLowerCase().includes(q));
+            const q = _searchQuery.toLowerCase().trim();
+            const nameMatch = itm.name && itm.name.toLowerCase().includes(q);
+            const detailsMatch = itm.details && itm.details.toLowerCase().includes(q);
+            const accountMatch = itm.paymentAccount && itm.paymentAccount.toLowerCase().includes(q);
+            const statusMatch = (q === 'paid' || q === 'পরিশোধিত')
+                ? itm.status === 'paid'
+                : (q === 'বকেয়া' || q === 'pending')
+                    ? itm.status === 'pending'
+                    : false;
+            return nameMatch || detailsMatch || accountMatch || statusMatch;
         });
 
         const rowsHtml = filteredItems.map((itm, idx) => {

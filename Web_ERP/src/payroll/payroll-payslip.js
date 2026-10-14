@@ -105,13 +105,23 @@ export async function printEmployeePaySlip(sectionId, itemId) {
                 <div style="color: #64748b; font-size: 7.5px; margin-top: 2px;">পেমেন্ট পদ্ধতি: <strong>${escapeHTML(itm.paymentMethod || 'Cash')}</strong> (${escapeHTML(itm.paymentAccount || 'ক্যাশ')})</div>
             </div>
 
-            <!-- Signatures -->
-            <div style="display: flex; justify-content: space-between; padding: 0 20px; margin-top: 25px;">
-                <div style="border-top: 1px dashed #475569; width: 130px; text-align: center; padding-top: 3px; font-size: 8.5px; font-weight: bold;">
-                    কর্মীর স্বাক্ষর ও প্রাপ্তিস্বীকার
+            <!-- Signatures with Empty Seal Boxes for Offline Stamping -->
+            <div style="display: flex; justify-content: space-between; padding: 0 20px; margin-top: 20px;">
+                <div style="width: 140px; text-align: center;">
+                    <div style="border: 1px dashed #94a3b8; height: 34px; border-radius: 4px; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; font-size: 7px; color: #94a3b8;">
+                        (কর্মীর স্বাক্ষর / টিপসহি)
+                    </div>
+                    <div style="border-top: 1px dashed #475569; padding-top: 3px; font-size: 8.5px; font-weight: bold;">
+                        কর্মীর স্বাক্ষর ও প্রাপ্তিস্বীকার
+                    </div>
                 </div>
-                <div style="border-top: 1px dashed #475569; width: 130px; text-align: center; padding-top: 3px; font-size: 8.5px; font-weight: bold;">
-                    অনুমোদন ও অফিস সিলমোহর
+                <div style="width: 140px; text-align: center;">
+                    <div style="border: 1px dashed #94a3b8; height: 34px; border-radius: 4px; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; font-size: 7px; color: #94a3b8;">
+                        (অফিস সিলমোহর)
+                    </div>
+                    <div style="border-top: 1px dashed #475569; padding-top: 3px; font-size: 8.5px; font-weight: bold;">
+                        অনুমোদন ও অফিস সিলমোহর
+                    </div>
                 </div>
             </div>
         </div>

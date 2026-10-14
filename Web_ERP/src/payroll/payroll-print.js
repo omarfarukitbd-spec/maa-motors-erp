@@ -139,15 +139,25 @@ export async function printPayrollMasterReport(state) {
                 </div>
             </div>
 
-            <!-- Signatures -->
-            <div style="display: flex; justify-content: space-between; padding: 0 45px; margin-top: 25px; break-inside: avoid; page-break-inside: avoid;">
-                <div style="border-top: 1.5px dashed #475569; width: 170px; text-align: center; padding-top: 4px;">
-                    <div style="font-size: 10px; font-weight: 900; color: #0f172a;">ম্যানেজার</div>
-                    <div style="font-size: 7.5px; color: #64748b;">মেসার্স মা মোটরস</div>
+            <!-- Signatures with Empty Seal Boxes for Offline Stamping -->
+            <div style="display: flex; justify-content: space-between; padding: 0 45px; margin-top: 20px; break-inside: avoid; page-break-inside: avoid;">
+                <div style="width: 170px; text-align: center;">
+                    <div style="border: 1px dashed #94a3b8; height: 38px; border-radius: 4px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; font-size: 7.5px; color: #94a3b8;">
+                        (ম্যানেজার সিলমোহর ও স্বাক্ষর)
+                    </div>
+                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
+                        <div style="font-size: 10px; font-weight: 900; color: #0f172a;">ম্যানেজার</div>
+                        <div style="font-size: 7.5px; color: #64748b;">মেসার্স মা মোটরস</div>
+                    </div>
                 </div>
-                <div style="border-top: 1.5px dashed #475569; width: 170px; text-align: center; padding-top: 4px;">
-                    <div style="font-size: 10px; font-weight: 900; color: #0f172a;">ইনচার্জ বা অফিস বস</div>
-                    <div style="font-size: 7.5px; color: #64748b;">অনুমোদন ও সিলমোহর</div>
+                <div style="width: 170px; text-align: center;">
+                    <div style="border: 1px dashed #94a3b8; height: 38px; border-radius: 4px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; font-size: 7.5px; color: #94a3b8;">
+                        (অফিস বস সিলমোহর ও অনুমোদন)
+                    </div>
+                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
+                        <div style="font-size: 10px; font-weight: 900; color: #0f172a;">ইনচার্জ বা অফিস বস</div>
+                        <div style="font-size: 7.5px; color: #64748b;">অনুমোদন ও চূড়ান্ত সিদ্ধান্ত</div>
+                    </div>
                 </div>
             </div>
         </div>

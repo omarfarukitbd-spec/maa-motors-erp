@@ -1,6 +1,6 @@
 import { PayrollDAO } from './payroll-dao.js';
-import { calculatePayrollSummary, calculateNetSalary, formatTaka } from './payroll-calc.js';
-import { promptSecurityPin, showToast, escapeHTML, formatAmountWithComma, parseAmount } from '../utils.js';
+import { calculatePayrollSummary, calculateNetSalary, convertAedToBdt, formatTaka } from './payroll-calc.js';
+import { promptSecurityPin, showToast, escapeHTML, formatAmountWithComma, parseAmount, safeRound } from '../utils.js';
 
 let _activePayrollState = null;
 let _onStateChangeCallback = null;
@@ -30,6 +30,20 @@ export function handleAmountInput(inputElem, sectionId, itemId) {
     if (!itm) return;
 
     itm.amount = rawVal;
+
+    // Synchronize baseSalary if employee salary item
+    if (itm.type === 'salary') {
+        const bon = Number(itm.bonus) || 0;
+        const ded = Number(itm.deduction) || 0;
+        itm.baseSalary = safeRound(rawVal - bon + ded);
+    }
+
+    // Synchronize foreignAmount if AED item
+    if (itm.foreignCurrency === 'AED' && _activePayrollState.aedRate) {
+        itm.foreignAmount = safeRound(rawVal / _activePayrollState.aedRate);
+        itm.details = `${itm.foreignAmount} AED (@ ${_activePayrollState.aedRate} টাকা)`;
+    }
+
     triggerReactiveCalculations();
 }
 
@@ -297,7 +311,7 @@ export function updateAedRate(rate) {
     if (dubaiSec) {
         dubaiSec.items.forEach(itm => {
             if (itm.foreignCurrency === 'AED' && itm.foreignAmount) {
-                itm.amount = Math.round(itm.foreignAmount * r);
+                itm.amount = convertAedToBdt(itm.foreignAmount, r);
                 itm.details = `${itm.foreignAmount} AED (@ ${r} টাকা)`;
             }
         });

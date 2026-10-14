@@ -53,20 +53,19 @@ export function calculatePayrollSummary(sections = [], aedRate = 35) {
         let secPending = 0;
 
         const enrichedItems = (section.items || []).map(item => {
-            let amt = Number(item.amount) || 0;
+            let amt = item.amount !== undefined && item.amount !== null ? Number(item.amount) : NaN;
 
-            // Recalculate foreign currency if AED item
-            if (item.foreignCurrency === 'AED' && item.foreignAmount) {
-                amt = convertAedToBdt(item.foreignAmount, aedRate);
-            }
-
-            // Recalculate net salary if baseSalary present and not raw override
-            if (item.type === 'salary' && item.baseSalary !== undefined && item.deduction !== undefined) {
-                // If base is set, net = base + bonus - deduction
-                if (item.baseSalary > 0) {
+            if (isNaN(amt)) {
+                // Recalculate foreign currency if AED item
+                if (item.foreignCurrency === 'AED' && item.foreignAmount) {
+                    amt = convertAedToBdt(item.foreignAmount, aedRate);
+                } else if (item.type === 'salary' && item.baseSalary !== undefined && item.deduction !== undefined) {
                     amt = calculateNetSalary(item.baseSalary, item.bonus, item.deduction);
+                } else {
+                    amt = 0;
                 }
             }
+            amt = safeRound(amt || 0);
 
             subTotal = safeRound(subTotal + amt);
             totalItemsCount += 1;
