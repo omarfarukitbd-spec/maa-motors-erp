@@ -29,6 +29,10 @@ export function renderExpenses(container) {
                         <i class="fa-solid fa-wallet"></i>
                         <span>আজকের খরচ: <strong id="expense-today-sum" class="text-white font-black">৳ ০</strong></span>
                     </div>
+                    <button class="px-3.5 py-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer" onclick="navigate('payroll')" title="মাসিক বেতন ও বাজেট বিবরণী">
+                        <i class="fa-solid fa-users-gear text-sm"></i>
+                        <span>মাসিক বেতন ও বাজেট</span>
+                    </button>
                     <button data-perm="printExpenseStatement" class="m3-btn-primary px-4 py-2 text-xs" onclick="window.generateExpenseReport()">
                         <i class="fa-solid fa-file-pdf mr-1"></i> প্রিন্ট স্টেটমেন্ট
                     </button>

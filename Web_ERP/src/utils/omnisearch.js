@@ -97,6 +97,7 @@ function handleOmniSearch(query) {
         { title: 'মেমো / ভাউচার ইনস্ট্যান্ট সার্চ (F9 / Alt+M)', subtitle: 'মেমো নম্বর দিয়ে তাৎক্ষণিক বিবরণ ও প্রিন্ট', icon: 'fa-barcode text-cyan-400', action: () => goNav('memo-search') },
         { title: 'পার্টস মাস্টার ক্যাটালগ ও ফিটমেন্ট', subtitle: 'জাপানি রিকন্ডিশন্ড পার্টস, ফিটমেন্ট ও দর করিডোর', icon: 'fa-gears text-amber-400', action: () => goNav('parts-catalog') },
         { title: 'দৈনিক খরচ (F6 / Alt+E)', subtitle: 'দোকানের খরচের তালিকা', icon: 'fa-file-invoice-dollar text-red-400', action: () => goNav('expenses') },
+        { title: 'মাসিক বেতন ও খরচ বিবরণী (Payroll)', subtitle: 'কর্মী বেতন, বোনাস, ঋণ কর্তন ও ইউটিলিটি রেজিস্টার', icon: 'fa-users-gear text-cyan-400', action: () => goNav('payroll') },
         { title: 'সফটওয়্যার সেটিংস (F8 / Alt+S)', subtitle: 'দোকানের নাম ও সিকিউরিটি পিন', icon: 'fa-gear text-slate-400', action: () => goNav('settings') }
     ];
 

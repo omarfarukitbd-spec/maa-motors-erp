@@ -16,6 +16,7 @@ import { renderTreasury, unsubscribeTreasury } from '../treasury/index.js';
 import { renderMemoSearch } from '../memo_search/index.js';
 import { renderDubaiProcurement, unsubscribeDubaiAudits } from '../dubai_procurement/index.js';
 import { renderPartsCatalog, unsubscribePartsCatalog, initPartsCatalogCache } from '../parts_catalog/index.js';
+import { renderPayroll } from '../payroll/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
 import { initDatePickers } from '../utils/date-logic/date-picker.js';
@@ -154,6 +155,9 @@ export function navigate(view, params = {}) {
         case 'dubai-procurement': renderDubaiProcurement(container, params); break;
         case 'parts-catalog':
         case 'parts_catalog': renderPartsCatalog(container, params); break;
+        case 'payroll':
+        case 'salary-sheet':
+        case 'salary_sheet': renderPayroll(container, params); break;
     }
 
     // Refresh date pickers after render

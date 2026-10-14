@@ -128,6 +128,22 @@
 
 ---
 
+### 1.9 `monthly_payroll_sheets` Collection (Monthly Payroll & Expense Master)
+* **Document ID:** `YYYY-MM` (e.g. `"2026-10"`, `"2026-11"`)
+* **Fields:**
+  - `monthYear`: string (`"2026-10"`)
+  - `sheetTitle`: string (`"মাসিক সামগ্রিক ব্যয় ও বেতন বিবরণী"`)
+  - `status`: `'draft'` | `'approved'` | `'closed'`
+  - `aedRate`: exchange rate number (e.g. `35`)
+  - `grandTotal`: total budgeted expense amount (`494700`)
+  - `totalPaid`: total paid amount (`320000`)
+  - `totalPending`: total pending amount (`174700`)
+  - `grandTotalInWords`: amount in Bengali words
+  - `sections`: array of section objects (ডুবাই, দোকান কর্মী, গোডাউন কর্মী ও ভাড়া, বাসার খরচ, নতুন বাড়ি, অন্যান্য)
+  - `updatedAt`: serverTimestamp
+
+---
+
 ## 2. Core Accounting & Financial Invariants (Universal Laws)
 
 Every financial calculation in the codebase **MUST strictly satisfy these 6 mathematical invariants**:
