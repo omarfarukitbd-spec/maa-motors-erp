@@ -2,7 +2,8 @@ import { PayrollDAO } from './payroll-dao.js';
 import { calculatePayrollSummary, formatTaka } from './payroll-calc.js';
 import {
     getActivePayrollState, setActivePayrollState, setPayrollStateChangeListener,
-    handleAmountInput, handleTextInput, toggleItemStatus, updatePaymentAccount,
+    handleAmountInput, handleTextInput, toggleItemStatus, setAllItemsStatus,
+    setSectionItemsStatus, resetToDefaultTemplate, updatePaymentAccount,
     addNewRow, deleteRow, openSalaryBreakdownModal, updateAedRate, savePayrollToCloud
 } from './payroll-actions.js';
 import { syncPayrollToDailyExpenses } from './payroll-sync.js';
@@ -112,12 +113,12 @@ function renderPayrollContent(container, state) {
                         <div class="text-[10px] text-slate-400">${summary.paidCount} টি আইটেম ক্লিয়ার্ড</div>
                     </div>
 
-                    <div class="bg-slate-950 p-3 rounded-2xl border border-amber-500/30 space-y-1">
-                        <div class="text-[10px] font-bold text-amber-400 uppercase flex items-center gap-1">
-                            <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-red-500/30 space-y-1">
+                        <div class="text-[10px] font-bold text-red-400 uppercase flex items-center gap-1">
+                            <i class="fa-solid fa-clock-rotate-left text-red-400"></i>
                             <span>অবশিষ্ট বকেয়া (Pending)</span>
                         </div>
-                        <div id="kpi-total-pending" class="text-base sm:text-lg font-black text-amber-400">${formatTaka(summary.totalPending)}</div>
+                        <div id="kpi-total-pending" class="text-base sm:text-lg font-black text-red-400">${formatTaka(summary.totalPending)}</div>
                         <div class="text-[10px] text-slate-400">${summary.pendingCount} টি আইটেম বাকি</div>
                     </div>
 
@@ -131,7 +132,7 @@ function renderPayrollContent(container, state) {
                     </div>
                 </div>
 
-                <!-- Controls Bar: Month Picker, AED Rate & Search -->
+                <!-- Controls Bar: Month Picker, AED Rate, Bulk Status & Search -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                     <div class="flex items-center flex-wrap gap-2">
                         <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
@@ -147,6 +148,22 @@ function renderPayrollContent(container, state) {
                         <div class="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs">
                             <span class="text-slate-400">AED রেট: ৳</span>
                             <input type="number" value="${state.aedRate || 35}" onchange="window.handleAedRateChange(this.value)" class="w-12 bg-transparent text-cyan-300 font-bold outline-none text-center" title="দুবাই দিনার বিনিময় হার" />
+                        </div>
+
+                        <!-- Bulk Status Actions -->
+                        <div class="flex items-center gap-1.5 pl-1">
+                            <button onclick="window.payrollActions.setAllItemsStatus('pending')" class="px-2.5 py-1.5 rounded-xl bg-red-600/15 hover:bg-red-600/25 text-red-400 border border-red-500/30 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" title="সকল আইটেম বকেয়া করুন">
+                                <i class="fa-solid fa-clock-rotate-left text-[11px]"></i>
+                                <span>সব বকেয়া</span>
+                            </button>
+                            <button onclick="window.payrollActions.setAllItemsStatus('paid')" class="px-2.5 py-1.5 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" title="সকল আইটেম পরিশোধিত করুন">
+                                <i class="fa-solid fa-check-double text-[11px]"></i>
+                                <span>সব পেইড</span>
+                            </button>
+                            <button onclick="window.payrollActions.resetToDefaultTemplate()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" title="ডিফল্ট টেমপ্লেট রিসেট">
+                                <i class="fa-solid fa-rotate-left text-[11px]"></i>
+                                <span>রিসেট</span>
+                            </button>
                         </div>
                     </div>
 
@@ -189,21 +206,28 @@ function renderSectionsHtml(sections) {
         const rowsHtml = filteredItems.map((itm, idx) => {
             const isPaid = itm.status === 'paid';
             const statusBadgeClass = isPaid
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-            const statusLabel = isPaid ? 'পরিশোধিত' : 'বকেয়া';
+                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/25'
+                : 'bg-red-500/15 text-red-400 border-red-500/40 hover:bg-red-500/25';
+            const statusLabel = isPaid
+                ? '<i class="fa-solid fa-circle-check text-[10px]"></i><span>পরিশোধিত</span>'
+                : '<i class="fa-solid fa-clock text-[10px]"></i><span>বকেয়া</span>';
+
+            const amountColorClass = isPaid
+                ? 'text-emerald-400 border-emerald-500/40 bg-emerald-950/20 focus:border-emerald-400'
+                : 'text-red-400 border-red-500/40 bg-red-950/20 focus:border-red-400';
+            const currencyColor = isPaid ? 'text-emerald-400' : 'text-red-400';
 
             return `
-                <tr class="hover:bg-white/[0.02] transition-colors border-b border-slate-800/60">
-                    <td class="py-2 px-2 text-center text-slate-500 font-mono font-bold text-xs">${itm.sl || (idx + 1)}</td>
-                    <td class="py-2 px-2">
-                        <input type="text" value="${escapeHTML(itm.name || '')}" onchange="window.payrollActions.handleTextInput('${sec.id}', '${itm.id}', 'name', this.value)" class="w-full bg-transparent text-white font-bold text-xs outline-none focus:bg-slate-950/80 rounded px-1.5 py-1" />
+                <tr class="${isPaid ? 'hover:bg-emerald-500/[0.04]' : 'hover:bg-red-500/[0.04]'} transition-colors border-b border-slate-800/60">
+                    <td class="py-2.5 px-3 text-center text-slate-500 font-mono font-bold text-xs">${itm.sl || (idx + 1)}</td>
+                    <td class="py-2.5 px-3">
+                        <input type="text" value="${escapeHTML(itm.name || '')}" onchange="window.payrollActions.handleTextInput('${sec.id}', '${itm.id}', 'name', this.value)" class="w-full bg-slate-950/40 border border-slate-800/80 hover:border-slate-700/80 focus:border-cyan-500 focus:bg-slate-900 text-white font-bold text-xs rounded-xl px-2.5 py-1.5 outline-none transition-all shadow-inner" />
                     </td>
-                    <td class="py-2 px-2">
-                        <input type="text" value="${escapeHTML(itm.details || '')}" onchange="window.payrollActions.handleTextInput('${sec.id}', '${itm.id}', 'details', this.value)" class="w-full bg-transparent text-slate-300 text-xs outline-none focus:bg-slate-950/80 rounded px-1.5 py-1" />
+                    <td class="py-2.5 px-3">
+                        <input type="text" value="${escapeHTML(itm.details || '')}" onchange="window.payrollActions.handleTextInput('${sec.id}', '${itm.id}', 'details', this.value)" class="w-full bg-slate-950/40 border border-slate-800/80 hover:border-slate-700/80 focus:border-cyan-500 focus:bg-slate-900 text-slate-300 text-xs rounded-xl px-2.5 py-1.5 outline-none transition-all shadow-inner" />
                     </td>
-                    <td class="py-2 px-2 text-center">
-                        <select onchange="window.payrollActions.updatePaymentAccount('${sec.id}', '${itm.id}', this.value)" class="bg-slate-950 border border-slate-800 text-slate-300 text-[11px] rounded-lg px-2 py-1 outline-none cursor-pointer font-bold">
+                    <td class="py-2.5 px-3 text-center">
+                        <select onchange="window.payrollActions.updatePaymentAccount('${sec.id}', '${itm.id}', this.value)" class="bg-slate-950/80 border border-slate-800/80 hover:border-slate-700/80 focus:border-cyan-500 text-slate-200 text-xs rounded-xl px-2.5 py-1.5 font-bold outline-none cursor-pointer transition-all">
                             <option value="শোরুম ক্যাশ" ${itm.paymentAccount === 'শোরুম ক্যাশ' ? 'selected' : ''}>শোরুম ক্যাশ</option>
                             <option value="ইসলামী ব্যাংক" ${itm.paymentAccount === 'ইসলামী ব্যাংক' ? 'selected' : ''}>ইসলামী ব্যাংক</option>
                             <option value="আল-আরাফাহ ব্যাংক" ${itm.paymentAccount === 'আল-আরাফাহ ব্যাংক' ? 'selected' : ''}>আল-আরাফাহ</option>
@@ -211,18 +235,18 @@ function renderSectionsHtml(sections) {
                             <option value="দুবাই ক্যাশ" ${itm.paymentAccount === 'দুবাই ক্যাশ' ? 'selected' : ''}>দুবাই ক্যাশ (AED)</option>
                         </select>
                     </td>
-                    <td class="py-2 px-2 text-center">
-                        <button onclick="window.payrollActions.toggleItemStatus('${sec.id}', '${itm.id}')" class="px-2 py-0.5 rounded-full border text-[10px] font-bold cursor-pointer transition-all active:scale-95 ${statusBadgeClass}" title="ক্লিক করে স্ট্যাটাস পরিবর্তন করুন">
+                    <td class="py-2.5 px-3 text-center">
+                        <button onclick="window.payrollActions.toggleItemStatus('${sec.id}', '${itm.id}')" class="px-2.5 py-1 rounded-full border text-[11px] font-black cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1 mx-auto ${statusBadgeClass}" title="ক্লিক করে স্ট্যাটাস পরিবর্তন করুন">
                             ${statusLabel}
                         </button>
                     </td>
-                    <td class="py-2 px-2 text-right">
-                        <div class="flex items-center justify-end gap-1">
-                            <span class="text-red-400 font-bold text-xs">৳</span>
-                            <input type="text" value="${formatAmountWithComma(itm.amount)}" oninput="window.handleNumberInput(this); window.payrollActions.handleAmountInput(this, '${sec.id}', '${itm.id}')" class="w-28 bg-slate-950 border border-slate-800 text-red-400 font-black text-xs text-right outline-none focus:border-red-500 rounded px-2 py-1 shadow-inner" />
+                    <td class="py-2.5 px-3 text-right">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <span class="${currencyColor} font-black text-xs">৳</span>
+                            <input type="text" value="${formatAmountWithComma(itm.amount)}" oninput="window.handleNumberInput(this); window.payrollActions.handleAmountInput(this, '${sec.id}', '${itm.id}')" class="w-28 border font-black text-xs text-right outline-none rounded-xl px-2.5 py-1.5 shadow-inner transition-all ${amountColorClass}" />
                         </div>
                     </td>
-                    <td class="py-2 px-2 text-center whitespace-nowrap">
+                    <td class="py-2.5 px-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center gap-1">
                             ${itm.type === 'salary' ? `
                                 <button onclick="window.payrollActions.openSalaryBreakdownModal('${sec.id}', '${itm.id}')" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-cyan-400 flex items-center justify-center transition-all cursor-pointer" title="বেতন ব্রেকডাউন ও ঋণ কর্তন">
@@ -248,9 +272,13 @@ function renderSectionsHtml(sections) {
                         <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
                         <span>${escapeHTML(sec.title)}</span>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center flex-wrap gap-2">
                         <div class="text-xs text-slate-300">
                             উপ-মোট: <strong id="subtotal-${sec.id}" class="text-cyan-400 font-black">৳ ${formatAmountWithComma(sec.subTotal)}</strong>
+                        </div>
+                        <div class="flex items-center gap-1 ml-2">
+                            <button onclick="window.payrollActions.setSectionItemsStatus('${sec.id}', 'paid')" class="px-2 py-0.5 rounded-lg bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold transition-all cursor-pointer" title="এই শাখার সব আইটেম পরিশোধিত করুন">সব পেইড</button>
+                            <button onclick="window.payrollActions.setSectionItemsStatus('${sec.id}', 'pending')" class="px-2 py-0.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/30 text-[10px] font-bold transition-all cursor-pointer" title="এই শাখার সব আইটেম বকেয়া করুন">সব বকেয়া</button>
                         </div>
                         <button onclick="window.payrollActions.addNewRow('${sec.id}')" class="px-2.5 py-1 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1">
                             <i class="fa-solid fa-plus text-[10px]"></i>
@@ -263,13 +291,13 @@ function renderSectionsHtml(sections) {
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-950/80 text-slate-400 font-bold text-[11px] uppercase border-b border-slate-800">
-                                <th class="py-2 px-2 text-center w-10">ক্র:</th>
-                                <th class="py-2 px-2 w-48">নাম / কর্মী</th>
-                                <th class="py-2 px-2">বিবরণ ও বিবরণী নোট</th>
-                                <th class="py-2 px-2 text-center w-36">পেমেন্ট সোর্স ফান্ড</th>
-                                <th class="py-2 px-2 text-center w-24">স্ট্যাটাস</th>
-                                <th class="py-2 px-2 text-right w-36">পরিমাণ (টাকা)</th>
-                                <th class="py-2 px-2 text-center w-20">অ্যাকশন</th>
+                                <th class="py-2.5 px-3 text-center w-10">ক্র:</th>
+                                <th class="py-2.5 px-3 w-48">নাম / কর্মী</th>
+                                <th class="py-2.5 px-3">বিবরণ ও বিবরণী নোট</th>
+                                <th class="py-2.5 px-3 text-center w-36">পেমেন্ট সোর্স ফান্ড</th>
+                                <th class="py-2.5 px-3 text-center w-28">স্ট্যাটাস</th>
+                                <th class="py-2.5 px-3 text-right w-36">পরিমাণ (টাকা)</th>
+                                <th class="py-2.5 px-3 text-center w-20">অ্যাকশন</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -287,6 +315,9 @@ window.payrollActions = {
     handleAmountInput,
     handleTextInput,
     toggleItemStatus,
+    setAllItemsStatus,
+    setSectionItemsStatus,
+    resetToDefaultTemplate,
     updatePaymentAccount,
     addNewRow,
     deleteRow,

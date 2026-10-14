@@ -57,7 +57,69 @@ export function toggleItemStatus(sectionId, itemId) {
     if (!itm) return;
 
     itm.status = itm.status === 'paid' ? 'pending' : 'paid';
-    if (_onStateChangeCallback) _onStateChangeCallback(_activePayrollState, false);
+    if (_onStateChangeCallback) _onStateChangeCallback(_activePayrollState, true);
+    triggerReactiveCalculations();
+}
+
+/**
+ * Mark all items in entire sheet as paid or pending
+ * @param {'paid' | 'pending'} status
+ */
+export function setAllItemsStatus(status) {
+    if (!_activePayrollState) return;
+    _activePayrollState.sections.forEach(sec => {
+        (sec.items || []).forEach(itm => {
+            itm.status = status;
+        });
+    });
+    if (_onStateChangeCallback) _onStateChangeCallback(_activePayrollState, true);
+    triggerReactiveCalculations();
+    showToast(status === 'paid' ? 'সকল আইটেম "পরিশোধিত" করা হয়েছে' : 'সকল আইটেম "বকেয়া" করা হয়েছে', 'success');
+}
+
+/**
+ * Mark all items in a specific section as paid or pending
+ * @param {string} sectionId
+ * @param {'paid' | 'pending'} status
+ */
+export function setSectionItemsStatus(sectionId, status) {
+    if (!_activePayrollState) return;
+    const sec = _activePayrollState.sections.find(s => s.id === sectionId);
+    if (!sec) return;
+    (sec.items || []).forEach(itm => {
+        itm.status = status;
+    });
+    if (_onStateChangeCallback) _onStateChangeCallback(_activePayrollState, true);
+    triggerReactiveCalculations();
+    showToast(`শাখার সকল আইটেম "${status === 'paid' ? 'পরিশোধিত' : 'বকেয়া'}" করা হয়েছে`, 'success');
+}
+
+/**
+ * Reset current sheet to canonical default template
+ */
+export async function resetToDefaultTemplate() {
+    if (!_activePayrollState) return;
+    const confirmResult = await Swal.fire({
+        title: 'ডিফল্ট টেমপ্লেটে রিসেট করবেন?',
+        text: 'বর্তমান শিটটি অনুমোদিত ৩৫টি আইটেমের প্রাথমিক বকেয়া অবস্থায় ফিরে যাবে।',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'হ্যাঁ, রিসেট করুন',
+        cancelButtonText: 'বাতিল',
+        customClass: {
+            popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 shadow-2xl font-bn',
+            confirmButton: 'm3-btn-primary !bg-red-600 hover:!bg-red-500 !px-5 !py-2 rounded-xl font-bold',
+            cancelButton: 'bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2 rounded-xl font-bold ml-2'
+        }
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    const fresh = PayrollDAO.getDefaultTemplate(_activePayrollState.monthYear);
+    _activePayrollState = fresh;
+    if (_onStateChangeCallback) _onStateChangeCallback(_activePayrollState, true);
+    triggerReactiveCalculations();
+    showToast('ডিফল্ট টেমপ্লেটে রিসেট সফল হয়েছে', 'success');
 }
 
 /**
