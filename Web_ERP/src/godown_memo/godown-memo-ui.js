@@ -104,7 +104,7 @@ function renderRegisterContent(container, books, activeConfig) {
                             <i class="fa-solid fa-book-bookmark text-cyan-400"></i>
                             <span>মোট সংরক্ষিত বই</span>
                         </div>
-                        <div class="text-base font-black font-mono text-white">${totals.totalBooksCount} টি বই (${totals.totalMemosCount} মেমো)</div>
+                        <div class="text-base font-black text-white">${totals.totalBooksCount} টি বই (${totals.totalMemosCount} মেমো)</div>
                         <div class="text-[10px] text-slate-500">নথি নং: ০০০০১ • গোডাউন শাখা</div>
                     </div>
 
@@ -146,7 +146,7 @@ function renderRegisterContent(container, books, activeConfig) {
                         <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-[10px]">সক্রিয় খাতা</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-slate-400 font-mono text-[11px]">লোড হচ্ছে...</span>
+                        <span class="text-slate-400 text-[11px]">লোড হচ্ছে...</span>
                         <button onclick="window.triggerGodownMemoClosure()" class="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold transition-all cursor-pointer">
                             <i class="fa-solid fa-stamp text-[10px] mr-1"></i>বই অডিট ও সমাপ্তি করুন
                         </button>
@@ -189,8 +189,8 @@ function renderRegisterContent(container, books, activeConfig) {
                             ${renderTableRows(totals.books)}
                             <tr class="bg-slate-950/90 font-black border-t-2 border-slate-700 text-xs">
                                 <td colspan="3" class="py-3 px-2 text-center text-white text-sm">সর্বমোট সমাপনী হিসাব:</td>
-                                <td class="py-3 px-2 text-center font-mono font-black text-white text-xs">${totals.totalMemosCount} টি</td>
-                                <td class="py-3 px-2 text-center font-mono font-black text-cyan-400 text-xs">${totals.totalMemosCount} টি</td>
+                                <td class="py-3 px-2 text-center font-black text-white text-xs">${totals.totalMemosCount} টি</td>
+                                <td class="py-3 px-2 text-center font-black text-cyan-400 text-xs">${totals.totalMemosCount} টি</td>
                                 <td class="py-3 px-2 text-center font-bn">
                                     <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold">১০০% সম্পূর্ণ</span>
                                 </td>
@@ -260,7 +260,7 @@ async function refreshActiveBookHud(activeConfig) {
                     ${missingNotice}
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-slate-400 font-mono text-[11px]">${activeScan.usedCount} / ${activeScan.totalExpected} টি মেমো সম্পন্ন (${activeScan.percent}%)</span>
+                    <span class="text-slate-400 text-[11px]"><span class="font-mono">${activeScan.usedCount} / ${activeScan.totalExpected}</span> টি মেমো সম্পন্ন (<span class="font-mono">${activeScan.percent}%</span>)</span>
                     <button onclick="window.triggerGodownMemoClosure()" class="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold transition-all cursor-pointer">
                         <i class="fa-solid fa-stamp text-[10px] mr-1"></i>বই অডিট ও সমাপ্তি করুন
                     </button>
@@ -274,7 +274,7 @@ async function refreshActiveBookHud(activeConfig) {
 
             <div class="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
                 <div>লাইভ বিক্রয়: <strong class="text-red-400 font-mono">৳ ${formatAmountWithComma(activeScan.grossSales)}</strong> • লেস: <strong class="text-purple-400 font-mono">৳ ${formatAmountWithComma(activeScan.totalLess)}</strong> • নিট: <strong class="text-emerald-400 font-mono">৳ ${formatAmountWithComma(activeScan.netSales)}</strong></div>
-                <div>বাকি মেমো: <strong class="text-white font-mono">${activeScan.remainingCount} টি</strong></div>
+                <div>বাকি মেমো: <strong class="text-white"><span class="font-mono">${activeScan.remainingCount}</span> টি</strong></div>
             </div>
         `;
     } catch (e) {
@@ -306,9 +306,9 @@ function renderTableRows(books) {
                     #${escapeHTML(b.bookNo)}
                     ${b.isHistorical ? '<span class="block text-[8px] text-amber-400/80 font-normal">হস্তলিখিত খাতা</span>' : '<span class="block text-[8px] text-emerald-400/80 font-normal">অনলাইন খাতা</span>'}
                 </td>
-                <td class="py-3 px-2 text-center text-slate-300 font-mono text-[11px] whitespace-nowrap">${dateStr}</td>
-                <td class="py-3 px-2 text-center font-mono font-bold text-slate-200 text-xs">${b.bookMemos} টি</td>
-                <td class="py-3 px-2 text-center font-mono font-black text-cyan-400 text-xs">${b.calculatedCumulativeMemos} টি</td>
+                <td class="py-3 px-2 text-center text-slate-300 text-[11px] whitespace-nowrap">${dateStr}</td>
+                <td class="py-3 px-2 text-center font-bold text-slate-200 text-xs">${b.bookMemos} টি</td>
+                <td class="py-3 px-2 text-center font-black text-cyan-400 text-xs">${b.calculatedCumulativeMemos} টি</td>
                 <td class="py-3 px-2 text-center font-bn">${missingBadge}</td>
                 <td class="py-3 px-2 text-right font-mono font-black text-red-400">৳ ${formatAmountWithComma(gross)}</td>
                 <td class="py-3 px-2 text-right font-mono font-black text-purple-400">${less > 0 ? '৳ ' + formatAmountWithComma(less) : '-'}</td>

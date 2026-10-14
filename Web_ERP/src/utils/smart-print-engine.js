@@ -20,7 +20,7 @@ export function measureRowHeights(rowsArray, tableColHeaderHtml) {
         probe.style.cssText = [
             'position:fixed', 'left:-9999px', 'top:0',
             `width:${A4_W}px`, 'visibility:hidden', 'pointer-events:none',
-            'font-family:"Inter","Kalpurush","Hind Siliguri",sans-serif',
+            'font-family:"Hind Siliguri","Inter",sans-serif',
             'font-size:11px', 'color:#0f172a', 'background:white',
             'padding:6px 12px', 'box-sizing:border-box'
         ].join(';');
@@ -58,7 +58,7 @@ export function measureBlockHeight(html) {
         probe.style.cssText = [
             'position:fixed', 'left:-9999px', 'top:0',
             `width:${A4_W}px`, 'visibility:hidden', 'pointer-events:none',
-            'font-family:"Inter","Kalpurush","Hind Siliguri",sans-serif',
+            'font-family:"Hind Siliguri","Inter",sans-serif',
             'font-size:11px', 'padding:6px 12px', 'box-sizing:border-box'
         ].join(';');
         probe.innerHTML = html;
@@ -194,7 +194,7 @@ function _buildPageHtml(pages, opts) {
                 <tbody${tbodyStyle}>${rows.join('')}</tbody>
             </table>
             ${num === pages.length ? summaryHtml + signatureHtml : ''}
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#475569;font-weight:700;border-top:1px solid #cbd5e1;padding-top:6px;margin-top:8px;font-family:'Inter','Kalpurush',sans-serif;">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#475569;font-weight:700;border-top:1px solid #cbd5e1;padding-top:6px;margin-top:8px;font-family:'Hind Siliguri','Inter',sans-serif;">
                 <span>${formattedDate ? 'তারিখ: ' + formattedDate : ''}</span>
                 <span>পৃষ্ঠা ${num} / ${total}</span>
             </div>

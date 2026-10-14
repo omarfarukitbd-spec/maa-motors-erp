@@ -115,7 +115,7 @@ export async function openGodownMemoClosureModal(existingBooks = [], activeConfi
                 <div class="grid grid-cols-2 gap-2 text-center">
                     <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
                         <div class="text-[10px] text-slate-400">মেমো পূরণ হার</div>
-                        <div class="font-mono font-black text-cyan-400 text-sm mt-0.5">${currentScan.usedCount} / ${currentScan.totalExpected} টি (${currentScan.percent}%)</div>
+                        <div class="font-black text-cyan-400 text-sm mt-0.5"><span class="font-mono">${currentScan.usedCount} / ${currentScan.totalExpected}</span> টি (<span class="font-mono">${currentScan.percent}%</span>)</div>
                     </div>
                     <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
                         <div class="text-[10px] text-slate-400">তারিখ রেঞ্জ</div>
