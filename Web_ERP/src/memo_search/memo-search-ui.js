@@ -2,6 +2,7 @@ import { searchMemosByNumber, getRecentMemos, getAdjacentMemos, getCustomerLifet
 import { renderMemoCardHTML } from './memo-card-ui.js';
 import { startMemoVoiceSearch } from './memo-voice-search.js';
 import { renderMemoBookAuditUI } from './memo-book-audit-ui.js';
+import { renderGodownMemoRegisterUI } from '../godown_memo/index.js';
 import { escapeHTML, formatAppDate, formatAmountWithComma } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 
@@ -25,6 +26,9 @@ export async function renderMemoSearch(container, params = {}) {
                     </button>
                     <button id="tab-memo-audit-btn" onclick="window.switchMemoSearchTab('audit')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-900 transition-all flex items-center gap-1.5 cursor-pointer">
                         <i class="fa-solid fa-book-open text-[10px] text-purple-400"></i> <span>মেমো বুক রেঞ্জ অডিট</span>
+                    </button>
+                    <button id="tab-memo-register-btn" onclick="window.switchMemoSearchTab('register')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-900 transition-all flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-warehouse text-[10px] text-emerald-400"></i> <span>গোডাউন মাস্টার রেজিস্টার</span>
                     </button>
                 </div>
             </div>
@@ -97,25 +101,46 @@ export async function renderMemoSearch(container, params = {}) {
 
             <!-- Memo Book Audit View Container -->
             <div id="memo-audit-view" class="hidden space-y-3.5"></div>
+
+            <!-- Godown Memo Master Register View Container -->
+            <div id="memo-register-view" class="hidden space-y-3.5"></div>
         </div>
     `;
 
     window.switchMemoSearchTab = (tab) => {
         const sBtn = document.getElementById('tab-memo-single-btn');
         const aBtn = document.getElementById('tab-memo-audit-btn');
+        const rBtn = document.getElementById('tab-memo-register-btn');
         const sView = document.getElementById('memo-single-view');
         const aView = document.getElementById('memo-audit-view');
-        const isAudit = tab === 'audit';
+        const rView = document.getElementById('memo-register-view');
 
-        if (sBtn) sBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${!isAudit ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`;
+        const isSingle = tab === 'single';
+        const isAudit = tab === 'audit';
+        const isRegister = tab === 'register';
+
+        if (sBtn) sBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${isSingle ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`;
         if (aBtn) aBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${isAudit ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`;
-        if (sView) sView.classList.toggle('hidden', isAudit);
+        if (rBtn) rBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${isRegister ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}`;
+
+        if (sView) sView.classList.toggle('hidden', !isSingle);
         if (aView) {
             aView.classList.toggle('hidden', !isAudit);
             if (isAudit) renderMemoBookAuditUI(aView);
         }
-        if (!isAudit) document.getElementById('memo-search-input')?.focus();
+        if (rView) {
+            rView.classList.toggle('hidden', !isRegister);
+            if (isRegister) renderGodownMemoRegisterUI(rView);
+        }
+
+        if (isSingle) document.getElementById('memo-search-input')?.focus();
     };
+
+    if (params?.tab === 'register') {
+        window.switchMemoSearchTab('register');
+    } else if (params?.tab === 'audit') {
+        window.switchMemoSearchTab('audit');
+    }
 
     setupMemoSearchEvents(params);
     loadRecentMemoChips();

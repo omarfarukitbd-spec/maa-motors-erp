@@ -147,6 +147,8 @@ export function navigate(view, params = {}) {
         case 'banking': window.bankingApp.renderBankingLedger(container); break;
         case 'memo-search':
         case 'memo_search': renderMemoSearch(container, params); break;
+        case 'godown-register':
+        case 'godown_register': renderMemoSearch(container, { ...params, tab: 'register' }); break;
         case 'treasury': renderTreasury(container, params); break;
         case 'recycle-bin': renderRecycleBin(container); break;
         case 'dubai-procurement': renderDubaiProcurement(container, params); break;

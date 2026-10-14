@@ -77,6 +77,8 @@
 
 ---
 
+---
+
 ### 1.5 `TreasuryTransactions` & `settings/treasury` (Master Fund Ledger)
 * **TreasuryTransactions:**
   - `id`: document ID (string)
@@ -90,6 +92,36 @@
 * **settings/treasury:**
   - `openingBalance`: number (e.g. `46709275` BDT)
   - `openingDate`: `YYYY-MM-DD` (e.g. `2026-08-29`)
+
+---
+
+### 1.6 `godown_memo_books` & `settings/godown_memo_config` (Godown Sales Master Register)
+* **godown_memo_books:**
+  - `id`: document ID (string, e.g. `hist_book_01`, auto-generated)
+  - `bookSerial`: integer sequence (১, ২, ৩...)
+  - `bookNo`: memo voucher range string (e.g. `"1901-1988"`, `"101-200"`)
+  - `startMemoNo`: starting integer voucher number (`1901`)
+  - `endMemoNo`: ending integer voucher number (`1988`)
+  - `totalMemos`: total count of memos in book (`88`, `100`)
+  - `startDate`: starting date (`"2025-11-02"`)
+  - `endDate`: ending date (`"2025-11-26"`)
+  - `grossSales`: gross delivery / sales bill amount (`27041960`)
+  - `totalLess`: discount / less amount (`3150`)
+  - `netSales`: net sales amount (`27038810`) [Gross - Less]
+  - `cumulativeNetSales`: running cumulative balance (`27038810`)
+  - `isHistorical`: boolean (`true` for computer-prior paper register, `false` for app live books)
+  - `status`: `'CLOSED'` | `'ACTIVE'`
+  - `inChargeName`: in-charge officer name (`"মোঃ এমরান"`)
+  - `inChargeId`: employee ID string (`"১৯২৫"`)
+  - `stampDate`: date on official stamp (`"2025-11-26"`)
+  - `documentNo`: official register document number (`"00001"`)
+  - `createdAt`: serverTimestamp
+* **settings/godown_memo_config:**
+  - `activeBookSerial`: number (e.g. `10`)
+  - `startMemoNo`: number (e.g. `201`)
+  - `endMemoNo`: number (e.g. `300`)
+  - `defaultOfficerName`: string (`"মোঃ এমরান"`)
+  - `defaultOfficerId`: string (`"১৯২৫"`)
 
 ---
 
