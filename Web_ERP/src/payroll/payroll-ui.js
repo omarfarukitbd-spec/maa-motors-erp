@@ -137,11 +137,11 @@ function renderPayrollContent(container, state) {
                     <div class="flex items-center flex-wrap gap-2">
                         <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
                             <i class="fa-regular fa-calendar text-cyan-400 text-xs"></i>
-                            <select id="payroll-month-select" onchange="window.switchPayrollMonth(this.value)" class="bg-transparent text-white font-black text-xs outline-none cursor-pointer">
-                                <option value="2026-10" ${state.monthYear === '2026-10' ? 'selected' : ''}>অক্টোবর ২০২৬</option>
-                                <option value="2026-11" ${state.monthYear === '2026-11' ? 'selected' : ''}>নভেম্বর ২০২৬</option>
-                                <option value="2026-12" ${state.monthYear === '2026-12' ? 'selected' : ''}>ডিসেম্বর ২০২৬</option>
-                                <option value="2026-09" ${state.monthYear === '2026-09' ? 'selected' : ''}>সেপ্টেম্বর ২০২৬</option>
+                            <select id="payroll-month-select" onchange="window.switchPayrollMonth(this.value)" class="bg-slate-900 text-white font-black text-xs outline-none cursor-pointer rounded-lg px-1 py-0.5">
+                                <option class="bg-slate-900 text-white py-1" value="2026-10" ${state.monthYear === '2026-10' ? 'selected' : ''}>অক্টোবর ২০২৬</option>
+                                <option class="bg-slate-900 text-white py-1" value="2026-11" ${state.monthYear === '2026-11' ? 'selected' : ''}>নভেম্বর ২০২৬</option>
+                                <option class="bg-slate-900 text-white py-1" value="2026-12" ${state.monthYear === '2026-12' ? 'selected' : ''}>ডিসেম্বর ২০২৬</option>
+                                <option class="bg-slate-900 text-white py-1" value="2026-09" ${state.monthYear === '2026-09' ? 'selected' : ''}>সেপ্টেম্বর ২০২৬</option>
                             </select>
                         </div>
 
@@ -227,12 +227,12 @@ function renderSectionsHtml(sections) {
                         <input type="text" value="${escapeHTML(itm.details || '')}" onchange="window.payrollActions.handleTextInput('${sec.id}', '${itm.id}', 'details', this.value)" class="w-full bg-slate-950/40 border border-slate-800/80 hover:border-slate-700/80 focus:border-cyan-500 focus:bg-slate-900 text-slate-300 text-xs rounded-xl px-2.5 py-1.5 outline-none transition-all shadow-inner" />
                     </td>
                     <td class="py-2.5 px-3 text-center">
-                        <select onchange="window.payrollActions.updatePaymentAccount('${sec.id}', '${itm.id}', this.value)" class="bg-slate-950/80 border border-slate-800/80 hover:border-slate-700/80 focus:border-cyan-500 text-slate-200 text-xs rounded-xl px-2.5 py-1.5 font-bold outline-none cursor-pointer transition-all">
-                            <option value="শোরুম ক্যাশ" ${itm.paymentAccount === 'শোরুম ক্যাশ' ? 'selected' : ''}>শোরুম ক্যাশ</option>
-                            <option value="ইসলামী ব্যাংক" ${itm.paymentAccount === 'ইসলামী ব্যাংক' ? 'selected' : ''}>ইসলামী ব্যাংক</option>
-                            <option value="আল-আরাফাহ ব্যাংক" ${itm.paymentAccount === 'আল-আরাফাহ ব্যাংক' ? 'selected' : ''}>আল-আরাফাহ</option>
-                            <option value="পূবালী ব্যাংক" ${itm.paymentAccount === 'পূবালী ব্যাংক' ? 'selected' : ''}>পূবালী ব্যাংক</option>
-                            <option value="দুবাই ক্যাশ" ${itm.paymentAccount === 'দুবাই ক্যাশ' ? 'selected' : ''}>দুবাই ক্যাশ (AED)</option>
+                        <select onchange="window.payrollActions.updatePaymentAccount('${sec.id}', '${itm.id}', this.value)" class="bg-slate-900 border border-slate-800/80 hover:border-slate-700/80 focus:border-cyan-500 text-slate-200 text-xs rounded-xl px-2.5 py-1.5 font-bold outline-none cursor-pointer transition-all">
+                            <option class="bg-slate-900 text-white py-1" value="শোরুম ক্যাশ" ${itm.paymentAccount === 'শোরুম ক্যাশ' ? 'selected' : ''}>শোরুম ক্যাশ</option>
+                            <option class="bg-slate-900 text-white py-1" value="ইসলামী ব্যাংক" ${itm.paymentAccount === 'ইসলামী ব্যাংক' ? 'selected' : ''}>ইসলামী ব্যাংক</option>
+                            <option class="bg-slate-900 text-white py-1" value="আল-আরাফাহ ব্যাংক" ${itm.paymentAccount === 'আল-আরাফাহ ব্যাংক' ? 'selected' : ''}>আল-আরাফাহ</option>
+                            <option class="bg-slate-900 text-white py-1" value="পূবালী ব্যাংক" ${itm.paymentAccount === 'পূবালী ব্যাংক' ? 'selected' : ''}>পূবালী ব্যাংক</option>
+                            <option class="bg-slate-900 text-white py-1" value="দুবাই ক্যাশ" ${itm.paymentAccount === 'দুবাই ক্যাশ' ? 'selected' : ''}>দুবাই ক্যাশ (AED)</option>
                         </select>
                     </td>
                     <td class="py-2.5 px-3 text-center">
