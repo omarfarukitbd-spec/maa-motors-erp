@@ -3,7 +3,9 @@
  * Verified Master Default Contacts for Maa Motors Godown Logistics & Support
  */
 
-export const DEFAULT_GODOWN_CONTACTS = [
+import { EMERGENCY_DEFAULT_CONTACTS } from './godown-emergency-contacts.js';
+
+export const LOGISTICS_DEFAULT_CONTACTS = [
     {
         name: "হটলাইন ম্যানেজার",
         shopName: "ট্রাকবিডি৭১ (চট্টগ্রাম পিকআপ ও ট্রাক রেন্টাল)",
@@ -290,4 +292,9 @@ export const DEFAULT_GODOWN_CONTACTS = [
         isGoogleSynced: false,
         isSample: false
     }
+];
+
+export const DEFAULT_GODOWN_CONTACTS = [
+    ...LOGISTICS_DEFAULT_CONTACTS,
+    ...EMERGENCY_DEFAULT_CONTACTS
 ];

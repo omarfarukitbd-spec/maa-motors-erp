@@ -410,10 +410,12 @@ function renderCardsList() {
                             <i class="fa-solid fa-phone text-[10px]"></i>
                             <span>কল</span>
                         </a>
-                        <a href="${waUrl}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white font-bold text-xs flex items-center gap-1 border border-emerald-500/30 active:scale-95 transition-all" title="WhatsApp বার্তা পাঠান">
-                            <i class="fa-brands fa-whatsapp text-xs"></i>
-                            <span>WhatsApp</span>
-                        </a>
+                        ${waUrl && waUrl !== '#' ? `
+                            <a href="${waUrl}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white font-bold text-xs flex items-center gap-1 border border-emerald-500/30 active:scale-95 transition-all" title="WhatsApp বার্তা পাঠান">
+                                <i class="fa-brands fa-whatsapp text-xs"></i>
+                                <span>WhatsApp</span>
+                            </a>
+                        ` : ''}
                     </div>
 
                     <div class="flex items-center gap-1">

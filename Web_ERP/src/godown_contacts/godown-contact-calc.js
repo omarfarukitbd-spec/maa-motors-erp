@@ -136,6 +136,8 @@ export function normalizePhoneNumber(raw = '') {
 export function buildWhatsAppLink(phone, name = '') {
     const clean = normalizePhoneNumber(phone);
     if (!clean) return '#';
+    // Short emergency codes (e.g. 999, 16200, 333) or landlines don't have WhatsApp
+    if (clean.length < 10 || clean.startsWith('02') || clean.startsWith('031')) return '#';
     let intlPhone = clean;
     if (intlPhone.startsWith('0')) {
         intlPhone = '88' + intlPhone;
