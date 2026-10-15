@@ -246,6 +246,7 @@ if (typeof window !== 'undefined') {
         document.getElementById('cancel-edit-txn-btn')?.classList.add('hidden');
         if (showFeedback) {
             ['ledger-bill', 'ledger-paid', 'ledger-voucher', 'ledger-notes', 'ledger-ref-memo'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            if (window.resetLiveWords) { window.resetLiveWords('ledger-bill-words'); window.resetLiveWords('ledger-paid-words'); }
             updateLedgerLiveText(); showToast('এডিট বাতিল করা হয়েছে', 'info');
         }
     };

@@ -1,6 +1,7 @@
 import { getTodayLocalDateString, showToast } from '../utils.js';
 import { loadBankOptions, loadCashCollectorOptions } from './ledger-bank-cash.js';
 import { compressScannedMemo, isValidImageFile } from '../utils/memo-compressor.js';
+import { renderLedgerQuickAmountBarHtml, initLedgerQuickAmounts } from './ledger-quick-amounts.js';
 
 export function renderLedger(container, params, callbacks = {}) {
     const { loadCustomersForDropdown, loadRecentTransactions, filterLedgerByCustomer } = callbacks;
@@ -90,6 +91,9 @@ export function renderLedger(container, params, callbacks = {}) {
                     <div id="ledger-paid-words" class="text-[10px] font-black text-emerald-400 mt-1 hidden italic truncate"></div>
                 </div>
             </div>
+
+            <!-- Quick Amount Contextual Preset Bar (Shared for Bill & Paid) -->
+            ${renderLedgerQuickAmountBarHtml()}
 
             <!-- Customer Auto-Fill Details Strip (30% / 70% Balanced Ratio) -->
             <div id="ledger-cust-details-strip" class="grid grid-cols-12 gap-2.5 pt-0.5">
@@ -198,6 +202,7 @@ export function renderLedger(container, params, callbacks = {}) {
     loadCashCollectorOptions();
     if (window.initLedgerHotkeys) window.initLedgerHotkeys();
     initLedgerMemoAttachment();
+    initLedgerQuickAmounts();
 
     const targetCustId = params ? (params.customerId || params.custId) : null;
     if (targetCustId) {

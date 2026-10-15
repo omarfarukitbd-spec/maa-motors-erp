@@ -297,6 +297,11 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
     const billInput = document.getElementById('ledger-bill'); const paidInput = document.getElementById('ledger-paid');
     if (billInput) { billInput.value = b > 0 ? formatAmountWithComma(b) : ''; if (window.updateLiveWords) window.updateLiveWords(billInput, 'ledger-bill-words'); }
     if (paidInput) { paidInput.value = p > 0 ? formatAmountWithComma(p) : ''; if (window.updateLiveWords) window.updateLiveWords(paidInput, 'ledger-paid-words'); }
+    if (b > 0 && p === 0) {
+        if (window.setActiveLedgerTarget) window.setActiveLedgerTarget('bill');
+    } else if (p > 0) {
+        if (window.setActiveLedgerTarget) window.setActiveLedgerTarget('paid');
+    }
 
     if (window.setReceivedType) window.setReceivedType(rt);
     if (document.getElementById('ledger-received-from')) document.getElementById('ledger-received-from').value = rf;
