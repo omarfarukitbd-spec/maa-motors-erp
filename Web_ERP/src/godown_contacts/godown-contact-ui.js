@@ -193,7 +193,7 @@ export async function renderGodownContactDirectory(container) {
         });
     }
 
-    // Setup Mouse Wheel Horizontal Scroll Listener for Category Chips
+    // Setup Mouse Wheel & Drag Horizontal Scroll Listener for Category Chips
     const chipsContainer = document.getElementById('g-c-category-chips');
     if (chipsContainer) {
         chipsContainer.addEventListener('wheel', (e) => {
@@ -202,6 +202,30 @@ export async function renderGodownContactDirectory(container) {
                 chipsContainer.scrollLeft += e.deltaY;
             }
         }, { passive: false });
+
+        let isDown = false;
+        let startX = 0;
+        let scrollStart = 0;
+
+        chipsContainer.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - chipsContainer.offsetLeft;
+            scrollStart = chipsContainer.scrollLeft;
+            chipsContainer.classList.add('cursor-grabbing');
+        });
+        window.addEventListener('mouseup', () => {
+            if (isDown) {
+                isDown = false;
+                chipsContainer.classList.remove('cursor-grabbing');
+            }
+        });
+        chipsContainer.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - chipsContainer.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            chipsContainer.scrollLeft = scrollStart - walk;
+        });
     }
 
     // Auto Seed default contacts if empty

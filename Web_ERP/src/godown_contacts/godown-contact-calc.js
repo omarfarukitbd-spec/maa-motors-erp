@@ -54,6 +54,20 @@ const CUSTOM_CATEGORY_PALETTES = [
 ];
 
 export function getCategoryPalette(name = '') {
+    const lower = String(name || '').toLowerCase();
+    if (lower.includes('রং') || lower.includes('পেইন্ট') || lower.includes('paint')) {
+        return { color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30', icon: '<i class="fa-solid fa-paintbrush"></i>' };
+    }
+    if (lower.includes('বিদ্যুৎ') || lower.includes('ইলেকট্রিক') || lower.includes('electric')) {
+        return { color: 'text-amber-400 bg-amber-500/10 border-amber-500/30', icon: '<i class="fa-solid fa-bolt"></i>' };
+    }
+    if (lower.includes('গাড়ি') || lower.includes('ড্রাইভার') || lower.includes('ট্রাক') || lower.includes('পিকআপ')) {
+        return { color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30', icon: '<i class="fa-solid fa-truck"></i>' };
+    }
+    if (lower.includes('মিস্ত্রি') || lower.includes('মেকানিক')) {
+        return { color: 'text-purple-400 bg-purple-500/10 border-purple-500/30', icon: '<i class="fa-solid fa-screwdriver-wrench"></i>' };
+    }
+
     let hash = 0;
     const str = String(name || '');
     for (let i = 0; i < str.length; i++) {

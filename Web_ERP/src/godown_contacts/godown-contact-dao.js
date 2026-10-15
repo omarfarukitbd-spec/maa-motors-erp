@@ -94,6 +94,21 @@ export const DEFAULT_GODOWN_CONTACTS = [
         notes: "গোডাউনে কন্টেইনার খালাস বা বড় ট্রাক লোডিংয়ে লেবার টিম পাওয়া যায়",
         isGoogleSynced: false,
         isSample: false
+    },
+    {
+        name: "মোহাম্মদ সেলিম (প্রোপ্রাইটার)",
+        shopName: "বিছমিল্লাহ এন্টারপ্রাইজ",
+        category: "রং মিস্ত্রি",
+        role: "বিল্ডিং ও গোডাউন পেইন্টিং ঠিকাদার",
+        phone: "01912373316",
+        altPhone: "01723912211, 01676753023",
+        address: "ভাই ভাই স্টোর, (ফিরোজশাহ্ বড় মসজিদের সামনে) পূর্ব ফিরোজশাহ্, আকবরশাহ্, চট্টগ্রাম",
+        location: "ফিরোজশাহ্ ও আকবরশাহ্, চট্টগ্রাম",
+        standardRate: "স্কয়ার ফিট বা চুক্তিভিত্তিক (আলোচনা সাপেক্ষে)",
+        vehicleNo: "",
+        notes: "বিল্ডিং ও গোডাউনের যাবতীয় রং, মাজন কাতিয়া রং, প্লাস্টিক রং, ওয়েদার কোট, ডিস্টেম্পার, স্প্রে রং করা হয়। অতিরিক্ত নম্বর: 01723-912211, 01676-753023",
+        isGoogleSynced: false,
+        isSample: false
     }
 ];
 
@@ -202,6 +217,28 @@ export const GodownContactDAO = new class {
                 });
                 await batch.commit();
                 return true;
+            } else {
+                // Ensure all default verified contacts exist in DB (e.g. newly added paint contractor)
+                const existingPhones = new Set();
+                snap.forEach(d => {
+                    const phone = d.data().phone;
+                    if (phone) existingPhones.add(phone.trim());
+                });
+
+                const missing = DEFAULT_GODOWN_CONTACTS.filter(c => c.phone && !existingPhones.has(c.phone.trim()));
+                if (missing.length > 0) {
+                    const batch = db.batch();
+                    missing.forEach(item => {
+                        const docRef = this.collection.doc();
+                        batch.set(docRef, {
+                            ...item,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+                    await batch.commit();
+                    return true;
+                }
             }
         } catch (e) {
             console.warn('Seed contacts error:', e);
