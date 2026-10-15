@@ -59,22 +59,29 @@ export async function renderGodownContactDirectory(container) {
                     </div>
                 </div>
 
-                <!-- Search Bar & Category Filter Row -->
-                <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                    <!-- Search Input -->
-                    <div class="relative flex-1 flex items-center bg-slate-950 border border-slate-700/80 hover:border-slate-600 focus-within:!border-cyan-500 rounded-xl px-3 py-1.5 shadow-inner">
-                        <i class="fa-solid fa-magnifying-glass text-xs text-slate-400 mr-2"></i>
-                        <input type="text" id="g-c-search-input" placeholder="নাম, দোকান বা প্রতিষ্ঠান, গাড়ির ধরন, ঠিকানা বা মোবাইল দিয়ে খুঁজুন..." 
-                            class="w-full bg-transparent text-white text-xs outline-none placeholder:text-slate-500 font-medium">
-                        <button id="g-c-search-clear" class="hidden text-slate-400 hover:text-white text-xs ml-1 cursor-pointer" onclick="window.clearGodownContactSearch()">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
+                <!-- Search Bar Row -->
+                <div class="relative flex items-center bg-slate-950 border border-slate-700/80 hover:border-slate-600 focus-within:!border-cyan-500 rounded-xl px-3.5 py-2 shadow-inner">
+                    <i class="fa-solid fa-magnifying-glass text-xs text-slate-400 mr-2.5"></i>
+                    <input type="text" id="g-c-search-input" placeholder="নাম, দোকান বা ব্যবসা প্রতিষ্ঠান, গাড়ির ধরন, ঠিকানা বা মোবাইল নম্বর দিয়ে খুঁজুন..." 
+                        class="w-full bg-transparent text-white text-xs outline-none placeholder:text-slate-500 font-medium">
+                    <button id="g-c-search-clear" class="hidden text-slate-400 hover:text-white text-xs ml-1 cursor-pointer p-1" onclick="window.clearGodownContactSearch()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
 
-                    <!-- Category Pills Container -->
-                    <div id="g-c-category-chips" class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 text-xs shrink-0">
+                <!-- Category Chips Horizontal Scroll Bar (Full Width with Chevrons & Wheel Scroll) -->
+                <div class="relative flex items-center gap-1.5 pt-0.5">
+                    <button onclick="window.scrollGodownCategories('left')" class="hidden sm:flex shrink-0 w-7 h-7 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-cyan-300 items-center justify-center text-[10px] border border-slate-700/80 cursor-pointer shadow-sm active:scale-95 transition-all" title="বামে স্ক্রোল করুন">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+
+                    <div id="g-c-category-chips" class="flex-1 flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 text-xs scroll-smooth select-none">
                         <!-- Dynamic chips rendered by renderCategoryChips() -->
                     </div>
+
+                    <button onclick="window.scrollGodownCategories('right')" class="hidden sm:flex shrink-0 w-7 h-7 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-cyan-300 items-center justify-center text-[10px] border border-slate-700/80 cursor-pointer shadow-sm active:scale-95 transition-all" title="ডানে স্ক্রোল করুন">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
 
@@ -89,6 +96,12 @@ export async function renderGodownContactDirectory(container) {
     `;
 
     // Global window bridges
+    window.scrollGodownCategories = (direction) => {
+        const el = document.getElementById('g-c-category-chips');
+        if (!el) return;
+        const scrollAmount = direction === 'left' ? -220 : 220;
+        el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    };
     window.openNewGodownContactModal = () => openGodownContactModal(null, _allContacts);
     window.openEditGodownContact = (id) => {
         const item = _allContacts.find(c => c.id === id);
@@ -180,6 +193,17 @@ export async function renderGodownContactDirectory(container) {
         });
     }
 
+    // Setup Mouse Wheel Horizontal Scroll Listener for Category Chips
+    const chipsContainer = document.getElementById('g-c-category-chips');
+    if (chipsContainer) {
+        chipsContainer.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                chipsContainer.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+    }
+
     // Auto Seed default contacts if empty
     await GodownContactDAO.seedDefaultContactsIfEmpty();
 
@@ -215,7 +239,7 @@ function renderCategoryChips() {
 
     const allActive = _activeCategory === 'all';
     const allBtnHtml = `
-        <button onclick="window.selectGodownCategory('all')" class="px-2.5 py-1.5 rounded-xl border text-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${allActive ? 'bg-cyan-600 text-white font-black shadow-md shadow-cyan-600/30 border-cyan-500' : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'}">
+        <button onclick="window.selectGodownCategory('all')" class="px-2.5 py-1.5 rounded-xl border text-xs flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-all cursor-pointer ${allActive ? 'bg-cyan-600 text-white font-black shadow-md shadow-cyan-600/30 border-cyan-500' : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'}">
             <i class="fa-solid fa-layer-group"></i>
             <span>সকল কন্টাক্ট</span>
             <span class="px-1.5 py-0.2 rounded-md ${allActive ? 'bg-black/30 text-white' : 'bg-slate-800 text-slate-400'} text-[10px] font-mono font-bold">${totalCount}</span>
@@ -230,7 +254,7 @@ function renderCategoryChips() {
             : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800';
 
         return `
-            <button onclick="window.selectGodownCategory('${escapeHTML(cat.id)}')" class="px-2.5 py-1.5 rounded-xl border text-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${activeClass}">
+            <button onclick="window.selectGodownCategory('${escapeHTML(cat.id)}')" class="px-2.5 py-1.5 rounded-xl border text-xs flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-all cursor-pointer ${activeClass}">
                 <span>${cat.icon}</span>
                 <span>${escapeHTML(cat.title)}</span>
                 <span class="px-1.5 py-0.2 rounded-md ${isActive ? 'bg-black/30 text-white' : 'bg-slate-800 text-slate-400'} text-[10px] font-mono font-bold">${count}</span>
