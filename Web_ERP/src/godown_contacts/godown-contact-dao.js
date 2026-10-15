@@ -6,94 +6,94 @@ import { triggerSilentGodownContactGoogleSync } from './godown-google-sync.js';
  */
 export const DEFAULT_GODOWN_CONTACTS = [
     {
-        name: "মোঃ কাশেম",
-        shopName: "কাশেম পরিবহন সেবা",
+        name: "হটলাইন ম্যানেজার",
+        shopName: "ট্রাকবিডি৭১ (চট্টগ্রাম পিকআপ ও ট্রাক রেন্টাল)",
         category: "transport",
-        role: "পিকআপ ভ্যান (১ টন)",
-        phone: "01819397669",
-        altPhone: "01815707934",
-        address: "মুরাদপুর রেলগেট স্ট্যান্ড, চট্টগ্রাম",
-        location: "মুরাদপুর রেলগেট স্ট্যান্ড",
-        standardRate: "৫০০ টাকা (প্রতি ট্রিপ)",
-        vehicleNo: "চট্ট-মেট্রো-ন ১১-২২৩৩",
-        notes: "লোকাল শোরুম ও কাছাকাছি ডেলিভারির জন্য নির্ভরযোগ্য",
+        role: "১ টন / ১.৫ টন পিকআপ ও ৭-১২ ফিট মিনিট্রাক",
+        phone: "01771536999",
+        altPhone: "01771537999",
+        address: "মুরাদপুর ও বহদ্দারহাট পয়েন্ট, চট্টগ্রাম",
+        location: "মুরাদপুর ও বহদ্দারহাট পয়েন্ট, চট্টগ্রাম",
+        standardRate: "দূরত্ব ও ট্রিপ অনুযায়ী চুক্তিভিত্তিক",
+        vehicleNo: "",
+        notes: "বাসা বদল, গোডাউন শিফটিং ও সার্বক্ষণিক অন-কল পিকআপ সেবা",
         isGoogleSynced: false,
-        isSample: true
+        isSample: false
     },
     {
-        name: "আলমগীর সর্দার",
-        shopName: "আলমগীর লেবার গ্রুপ",
+        name: "কন্ট্রোল ডেস্ক",
+        shopName: "পিকআপ রেন্টাল ও ট্রান্সপোর্ট সার্ভিস",
+        category: "transport",
+        role: "৭ ও ৯ ফিট খোলা ও কাভার্ড পিকআপ",
+        phone: "01968732222",
+        altPhone: "",
+        address: "মুরাদপুর রেলগেট ও ২ নম্বর গেট, চট্টগ্রাম",
+        location: "মুরাদপুর রেলগেট ও ২ নম্বর গেট, চট্টগ্রাম",
+        standardRate: "৮০০ - ১৫০০ টাকা (চট্টগ্রাম শহর লোকাল ট্রিপ)",
+        vehicleNo: "",
+        notes: "লোকাল শোরুম ডেলিভারি ও দ্রুত পার্টস পরিবহনে নির্ভরযোগ্য",
+        isGoogleSynced: false,
+        isSample: false
+    },
+    {
+        name: "ডিউটি ইনচার্জ",
+        shopName: "চিটাগাং পিকআপ ও লাইট ট্রান্সপোর্ট",
+        category: "transport",
+        role: "১ টন টাটা এইস ও ছোট পিকআপ",
+        phone: "01857252506",
+        altPhone: "",
+        address: "মুরাদপুর ফ্লাইওভার মোড় ও অক্সিজেন রোড",
+        location: "মুরাদপুর ফ্লাইওভার মোড় ও অক্সিজেন রোড",
+        standardRate: "আলোচনা সাপেক্ষে (লোকাল ট্রিপ)",
+        vehicleNo: "",
+        notes: "গোডাউন থেকে শোরুম বা ওয়ার্কশপে পার্টস বহনের জন্য সহজলভ্য",
+        isGoogleSynced: false,
+        isSample: false
+    },
+    {
+        name: "লাইনম্যান / ড্রাইভার প্রতিনিধি",
+        shopName: "মুরাদপুর ফ্লাইওভার ও রেলগেট পিকআপ স্ট্যান্ড",
+        category: "transport",
+        role: "টাটা এইস, মাহিন্দ্রা ও ভ্যান গাড়ি",
+        phone: "01919550044",
+        altPhone: "0312517515",
+        address: "মির্জাপুর জলিল বিল্ডিং ও রেলগেট সংলগ্ন, মুরাদপুর, চট্টগ্রাম",
+        location: "মুরাদপুর রেলগেট ও ফ্লাইওভার স্ট্যান্ড",
+        standardRate: "৫০০ - ৮০০ টাকা (শহরের ভেতরে ট্রিপ)",
+        vehicleNo: "",
+        notes: "মুরাদপুর রেলগেট মোড়ে সরাসরি উপস্থিত থেকে তাৎক্ষণিক গাড়ি ভাড়া নেওয়া যায়",
+        isGoogleSynced: false,
+        isSample: false
+    },
+    {
+        name: "সেন্ট্রাল বুকিং অফিস",
+        shopName: "চট্টগ্রাম জেলা ট্রাক ও কাভার্ডভ্যান মালিক সমিতি",
+        category: "transport",
+        role: "৫ টন / ১০ টন ট্রাক, কাভার্ডভ্যান ও ট্রেইলার",
+        phone: "01919550044",
+        altPhone: "0312517515",
+        address: "সেন্ট্রাল ট্রান্সপোর্ট জোন (মুরাদপুর ও কদমতলী), চট্টগ্রাম",
+        location: "চট্টগ্রাম কেন্দ্রীয় পরিবহন টার্মিনাল",
+        standardRate: "দূরপাল্লা ও কন্টেইনার চুক্তিভিত্তিক",
+        vehicleNo: "",
+        notes: "ঢাকা, বগুড়া ও দূরপাল্লার জেলায় ভারী পার্টস ও কন্টেইনার চালান বুকিং",
+        isGoogleSynced: false,
+        isSample: false
+    },
+    {
+        name: "মুরাদপুর লেবার পয়েন্ট",
+        shopName: "মুরাদপুর কুলি ও লোডিং-আনলোডিং শ্রমিক ইউনিয়ন",
         category: "labor",
-        role: "লেবার সর্দার (লোডিং-আনলোডিং)",
+        role: "ভারী পার্টস ও কন্টেইনার লোডিং-আনলোডিং শ্রমিক",
         phone: "01815707934",
         altPhone: "",
-        address: "মুরাদপুর মোড়, চট্টগ্রাম",
+        address: "মুরাদপুর রেলগেট ও বিপ্লব উদ্যান রোড, চট্টগ্রাম",
         location: "মুরাদপুর মোড়",
-        standardRate: "৭৫০ টাকা (দৈনিক হাজিরা / কন্টেইনার চুক্তি)",
+        standardRate: "৮০০ টাকা (দৈনিক হাজিরা) / কন্টেইনার চুক্তি",
         vehicleNo: "",
-        notes: "কন্টেইনার খালাস বা বড় ট্রাক লোডিংয়ে ৫-১০ জন লেবার জোগাড় করে",
+        notes: "গোডাউনে কন্টেইনার খালাস বা বড় ট্রাক লোডিংয়ে লেবার টিম পাওয়া যায়",
         isGoogleSynced: false,
-        isSample: true
-    },
-    {
-        name: "রহিম ড্রাইভার",
-        shopName: "রহিম ট্রান্সপোর্ট এজেন্সি",
-        category: "transport",
-        role: "বড় ট্রাক (৫ টন)",
-        phone: "01711000000",
-        altPhone: "",
-        address: "কদমতলী ট্রাক টার্মিনাল, চট্টগ্রাম",
-        location: "কদমতলী ট্রাক টার্মিনাল",
-        standardRate: "চুক্তিভিত্তিক (দূরপাল্লা)",
-        vehicleNo: "ঢাকা-মেট্রো-ট ১৫-৯৮৭৬",
-        notes: "ঢাকা, বগুড়া ও উত্তরবঙ্গে পার্টস চালানের জন্য",
-        isGoogleSynced: false,
-        isSample: true
-    },
-    {
-        name: "রফিক মিস্ত্রি",
-        shopName: "রফিক ইঞ্জিনিয়ারিং ও লেদ ওয়ার্কস",
-        category: "technical",
-        role: "লেদ মেশিন ও বুশ কাটিং",
-        phone: "01911000000",
-        altPhone: "",
-        address: "হাজীপাড়া মেইন রোড, মুরাদপুর",
-        location: "হাজীপাড়া ওয়ার্কশপ",
-        standardRate: "কাজ অনুযায়ী",
-        vehicleNo: "",
-        notes: "শ্যাফট টার্নিং ও থ্রেড কাটিংয়ের অভিজ্ঞ মিস্ত্রি",
-        isGoogleSynced: false,
-        isSample: true
-    },
-    {
-        name: "ইকবাল হোসেন",
-        shopName: "মুরাদপুর হ্যান্ড ট্রলি",
-        category: "transport",
-        role: "হ্যান্ড ট্রলি ও ভ্যান গাড়ি",
-        phone: "01822000000",
-        altPhone: "",
-        address: "মুরাদপুর রেলগেট, চট্টগ্রাম",
-        location: "দোকানের সামনে / মুরাদপুর রেলগেট",
-        standardRate: "১৫০ - ৩০০ টাকা",
-        vehicleNo: "",
-        notes: "গোডাউন থেকে শোরুমে পার্টস বহনের জন্য",
-        isGoogleSynced: false,
-        isSample: true
-    },
-    {
-        name: "আমানত ক্রেন সার্ভিস",
-        shopName: "আমানত হেভি লিফটিং",
-        category: "labor",
-        role: "মোবাইল ক্রেন (৫ টন)",
-        phone: "01833000000",
-        altPhone: "",
-        address: "অক্সিজেন মোড়, বায়েজিদ লিংক রোড",
-        location: "অক্সিজেন মোড়",
-        standardRate: "৩,৫০০ টাকা (প্রতি ট্রিপ/ঘণ্টা)",
-        vehicleNo: "চট্ট-ক্রেন-০৩",
-        notes: "ভারী ইঞ্জিন ও গিয়ারবক্স গাড়ি থেকে নামানোর জন্য",
-        isGoogleSynced: false,
-        isSample: true
+        isSample: false
     }
 ];
 
@@ -180,9 +180,18 @@ export const GodownContactDAO = new class {
 
     async seedDefaultContactsIfEmpty() {
         try {
-            const snap = await this.collection.limit(1).get();
-            if (snap.empty) {
+            const snap = await this.collection.get();
+            const dummyPhones = ['01819397669', '01711000000', '01822000000', '01833000000'];
+            const hasOnlySample = !snap.empty && snap.docs.every(d => {
+                const data = d.data();
+                return data.isSample === true || dummyPhones.includes(data.phone);
+            });
+
+            if (snap.empty || hasOnlySample) {
                 const batch = db.batch();
+                if (!snap.empty) {
+                    snap.docs.forEach(d => batch.delete(d.ref));
+                }
                 DEFAULT_GODOWN_CONTACTS.forEach(item => {
                     const docRef = this.collection.doc();
                     batch.set(docRef, {

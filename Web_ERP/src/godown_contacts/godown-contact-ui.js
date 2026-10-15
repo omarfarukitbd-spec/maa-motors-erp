@@ -195,8 +195,8 @@ export async function renderGodownContactDirectory(container) {
 function updateSampleClearButtonVisibility() {
     const btn = document.getElementById('g-c-clear-samples-btn');
     if (!btn) return;
-    const samplePhones = ['01819397669', '01815707934', '01711000000', '01911000000', '01822000000', '01833000000'];
-    const hasSample = _allContacts.some(c => c.isSample === true || (c.phone && samplePhones.includes(c.phone)));
+    const dummyPhones = ['01819397669', '01711000000', '01822000000', '01833000000'];
+    const hasSample = _allContacts.some(c => c.isSample === true || (c.phone && dummyPhones.includes(c.phone)));
     if (hasSample) {
         btn.classList.remove('hidden');
         btn.classList.add('flex');
