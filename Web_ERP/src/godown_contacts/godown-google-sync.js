@@ -102,13 +102,19 @@ export async function syncSingleGodownContactToGoogle(contactId) {
     }
 
     const catMeta = getCategoryMeta(c.category);
-    const displayName = `[MM-গোডাউন] ${c.name} (${c.role || catMeta.title})`;
+    const orgTitle = `গোডাউন • ${catMeta.title}${c.role ? ' (' + c.role + ')' : ''}`;
+    const displayName = c.shopName 
+        ? `[MM-গোডাউন] ${c.name} - ${c.shopName}`
+        : `[MM-গোডাউন] ${c.name} (${c.role || catMeta.title})`;
+
+    const fullAddress = c.address || c.location || '';
     const bioText = [
+        c.shopName ? `দোকান/প্রতিষ্ঠান: ${c.shopName}` : '',
         `ক্যাটাগরি: ${catMeta.title}`,
         `ভূমিকা: ${c.role || '-'}`,
         c.standardRate ? `ভাড়া/মজুরি: ${c.standardRate}` : '',
         c.vehicleNo ? `গাড়ির নম্বর: ${c.vehicleNo}` : '',
-        c.location ? `স্ট্যান্ড/এলাকা: ${c.location}` : '',
+        fullAddress ? `ঠিকানা/স্ট্যান্ড: ${fullAddress}` : '',
         c.notes ? `নোট: ${c.notes}` : ''
     ].filter(Boolean).join('\n');
 
@@ -132,9 +138,9 @@ export async function syncSingleGodownContactToGoogle(contactId) {
                     etag: matched.etag,
                     names: [{ givenName: displayName }],
                     phoneNumbers: phoneList,
-                    organizations: [{ name: "M/S. MAA-MOTOR'S", title: `গোডাউন • ${c.role || catMeta.title}` }],
+                    organizations: [{ name: c.shopName || "M/S. MAA-MOTOR'S", title: orgTitle }],
                     biographies: [{ value: bioText }],
-                    addresses: [{ streetAddress: c.location || '', type: 'Work' }],
+                    addresses: fullAddress ? [{ streetAddress: fullAddress, type: 'Work' }] : [],
                     memberships: groupResName ? [{ contactGroupMembership: { contactGroupResourceName: groupResName } }] : undefined
                 };
 
@@ -153,9 +159,9 @@ export async function syncSingleGodownContactToGoogle(contactId) {
                 const createPayload = {
                     names: [{ givenName: displayName }],
                     phoneNumbers: phoneList,
-                    organizations: [{ name: "M/S. MAA-MOTOR'S", title: `গোডাউন • ${c.role || catMeta.title}` }],
+                    organizations: [{ name: c.shopName || "M/S. MAA-MOTOR'S", title: orgTitle }],
                     biographies: [{ value: bioText }],
-                    addresses: [{ streetAddress: c.location || '', type: 'Work' }],
+                    addresses: fullAddress ? [{ streetAddress: fullAddress, type: 'Work' }] : [],
                     memberships: groupResName ? [{ contactGroupMembership: { contactGroupResourceName: groupResName } }] : undefined
                 };
 

@@ -5,7 +5,7 @@
 
 import Swal from 'sweetalert2';
 import { GodownContactDAO } from './godown-contact-dao.js';
-import { GODOWN_CONTACT_CATEGORIES, getCategoryMeta, buildWhatsAppLink, buildCallLink } from './godown-contact-calc.js';
+import { extractUniqueCategories, getCategoryMeta, buildWhatsAppLink, buildCallLink } from './godown-contact-calc.js';
 import { openGodownContactModal, promptDeleteGodownContact } from './godown-contact-modal.js';
 import { executeBulkGodownGoogleSync, syncSingleGodownContactToGoogle } from './godown-google-sync.js';
 import { escapeHTML } from '../utils.js';
@@ -44,6 +44,10 @@ export async function renderGodownContactDirectory(container) {
 
                     <!-- Top Action Buttons -->
                     <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                        <button id="g-c-clear-samples-btn" onclick="window.triggerClearSampleGodownContacts()" class="hidden px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-red-950/50 text-slate-400 hover:text-red-400 border border-slate-700/80 font-bold text-xs items-center gap-1.5 transition-all cursor-pointer" title="নমুনা (ডেমো) কন্টাক্টগুলো মুছে ফেলুন">
+                            <i class="fa-solid fa-trash-can text-red-400"></i>
+                            <span>নমুনা ডাটা মুছুন</span>
+                        </button>
                         <button onclick="window.triggerBulkGodownGoogleSync()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer" title="সকল কন্টাক্ট গুগলে সিঙ্ক করুন">
                             <i class="fa-brands fa-google text-cyan-400"></i>
                             <span>গুগল সিঙ্ক করুন</span>
@@ -60,7 +64,7 @@ export async function renderGodownContactDirectory(container) {
                     <!-- Search Input -->
                     <div class="relative flex-1 flex items-center bg-slate-950 border border-slate-700/80 hover:border-slate-600 focus-within:!border-cyan-500 rounded-xl px-3 py-1.5 shadow-inner">
                         <i class="fa-solid fa-magnifying-glass text-xs text-slate-400 mr-2"></i>
-                        <input type="text" id="g-c-search-input" placeholder="নাম, গাড়ির ধরন (পিকআপ/ভ্যান/ট্রাক), স্ট্যান্ড বা মোবাইল দিয়ে খুঁজুন..." 
+                        <input type="text" id="g-c-search-input" placeholder="নাম, দোকান বা প্রতিষ্ঠান, গাড়ির ধরন, ঠিকানা বা মোবাইল দিয়ে খুঁজুন..." 
                             class="w-full bg-transparent text-white text-xs outline-none placeholder:text-slate-500 font-medium">
                         <button id="g-c-search-clear" class="hidden text-slate-400 hover:text-white text-xs ml-1 cursor-pointer" onclick="window.clearGodownContactSearch()">
                             <i class="fa-solid fa-xmark"></i>
@@ -85,10 +89,10 @@ export async function renderGodownContactDirectory(container) {
     `;
 
     // Global window bridges
-    window.openNewGodownContactModal = () => openGodownContactModal();
+    window.openNewGodownContactModal = () => openGodownContactModal(null, _allContacts);
     window.openEditGodownContact = (id) => {
         const item = _allContacts.find(c => c.id === id);
-        if (item) openGodownContactModal(item);
+        if (item) openGodownContactModal(item, _allContacts);
     };
     window.triggerDeleteGodownContact = (id) => {
         const item = _allContacts.find(c => c.id === id);
@@ -139,6 +143,32 @@ export async function renderGodownContactDirectory(container) {
         }
     };
 
+    window.triggerClearSampleGodownContacts = async () => {
+        const res = await Swal.fire({
+            title: 'নমুনা ডাটা মোছার নিশ্চিতকরণ',
+            text: 'আপনি কি ডিরেক্টরির প্রাথমিক ডামি / নমুনা কন্টাক্টগুলো মুছে ফেলতে চান?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'হ্যাঁ, নমুনা ডাটা মুছুন',
+            cancelButtonText: 'বাতিল',
+            customClass: {
+                popup: '!bg-slate-950 !text-white !rounded-3xl border border-red-500/30 font-bn',
+                confirmButton: 'm3-btn-primary !bg-red-600 hover:!bg-red-500 !px-5 !py-2 !rounded-xl font-bold',
+                cancelButton: 'm3-btn-tonal !bg-slate-800 !text-slate-300 !px-4 !py-2 !rounded-xl font-bold'
+            }
+        });
+
+        if (res.isConfirmed) {
+            try {
+                const count = await GodownContactDAO.clearSampleContacts();
+                showToast(`${count} টি নমুনা কন্টাক্ট মুছে ফেলা হয়েছে`, 'success');
+            } catch (e) {
+                console.error('Clear sample contacts error:', e);
+                showToast('নমুনা কন্টাক্ট মুছতে সমস্যা হয়েছে', 'error');
+            }
+        }
+    };
+
     // Setup Search Listener
     const sInput = document.getElementById('g-c-search-input');
     const sClear = document.getElementById('g-c-search-clear');
@@ -156,37 +186,59 @@ export async function renderGodownContactDirectory(container) {
     // Start Live Firestore Listener
     _unsubscribe = GodownContactDAO.listenAllContacts(list => {
         _allContacts = list;
+        updateSampleClearButtonVisibility();
         renderCategoryChips();
         renderCardsList();
     });
+}
+
+function updateSampleClearButtonVisibility() {
+    const btn = document.getElementById('g-c-clear-samples-btn');
+    if (!btn) return;
+    const samplePhones = ['01819397669', '01815707934', '01711000000', '01911000000', '01822000000', '01833000000'];
+    const hasSample = _allContacts.some(c => c.isSample === true || (c.phone && samplePhones.includes(c.phone)));
+    if (hasSample) {
+        btn.classList.remove('hidden');
+        btn.classList.add('flex');
+    } else {
+        btn.classList.add('hidden');
+        btn.classList.remove('flex');
+    }
 }
 
 function renderCategoryChips() {
     const container = document.getElementById('g-c-category-chips');
     if (!container) return;
 
-    const counts = { all: _allContacts.length };
-    Object.keys(GODOWN_CONTACT_CATEGORIES).forEach(k => {
-        if (k !== 'all') {
-            counts[k] = _allContacts.filter(c => c.category === k).length;
-        }
-    });
+    const categories = extractUniqueCategories(_allContacts);
+    const totalCount = _allContacts.length;
 
-    container.innerHTML = Object.entries(GODOWN_CONTACT_CATEGORIES).map(([k, meta]) => {
-        const isActive = _activeCategory === k;
-        const count = counts[k] || 0;
+    const allActive = _activeCategory === 'all';
+    const allBtnHtml = `
+        <button onclick="window.selectGodownCategory('all')" class="px-2.5 py-1.5 rounded-xl border text-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${allActive ? 'bg-cyan-600 text-white font-black shadow-md shadow-cyan-600/30 border-cyan-500' : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'}">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>সকল কন্টাক্ট</span>
+            <span class="px-1.5 py-0.2 rounded-md ${allActive ? 'bg-black/30 text-white' : 'bg-slate-800 text-slate-400'} text-[10px] font-mono font-bold">${totalCount}</span>
+        </button>
+    `;
+
+    const catBtnsHtml = categories.map(cat => {
+        const isActive = _activeCategory === cat.id;
+        const count = _allContacts.filter(c => c.category === cat.id).length;
         const activeClass = isActive 
             ? 'bg-cyan-600 text-white font-black shadow-md shadow-cyan-600/30 border-cyan-500' 
             : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800';
 
         return `
-            <button onclick="window.selectGodownCategory('${k}')" class="px-2.5 py-1.5 rounded-xl border text-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${activeClass}">
-                <span>${meta.icon}</span>
-                <span>${meta.title}</span>
+            <button onclick="window.selectGodownCategory('${escapeHTML(cat.id)}')" class="px-2.5 py-1.5 rounded-xl border text-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${activeClass}">
+                <span>${cat.icon}</span>
+                <span>${escapeHTML(cat.title)}</span>
                 <span class="px-1.5 py-0.2 rounded-md ${isActive ? 'bg-black/30 text-white' : 'bg-slate-800 text-slate-400'} text-[10px] font-mono font-bold">${count}</span>
             </button>
         `;
     }).join('');
+
+    container.innerHTML = allBtnHtml + catBtnsHtml;
 }
 
 function renderCardsList() {
@@ -202,15 +254,21 @@ function renderCardsList() {
     if (_searchQuery) {
         filtered = filtered.filter(c => {
             const name = (c.name || '').toLowerCase();
+            const shopName = (c.shopName || '').toLowerCase();
             const role = (c.role || '').toLowerCase();
-            const loc = (c.location || '').toLowerCase();
+            const cat = (c.category || '').toLowerCase();
+            const loc = (c.address || c.location || '').toLowerCase();
             const phone = (c.phone || '').toLowerCase();
+            const altPhone = (c.altPhone || '').toLowerCase();
             const vNo = (c.vehicleNo || '').toLowerCase();
             const notes = (c.notes || '').toLowerCase();
             return name.includes(_searchQuery) || 
+                   shopName.includes(_searchQuery) ||
                    role.includes(_searchQuery) || 
+                   cat.includes(_searchQuery) ||
                    loc.includes(_searchQuery) || 
                    phone.includes(_searchQuery) || 
+                   altPhone.includes(_searchQuery) ||
                    vNo.includes(_searchQuery) || 
                    notes.includes(_searchQuery);
         });
@@ -233,13 +291,20 @@ function renderCardsList() {
         const catMeta = getCategoryMeta(c.category);
         const callUrl = buildCallLink(c.phone);
         const waUrl = buildWhatsAppLink(c.phone, c.name);
+        const fullAddress = c.address || c.location || '';
 
         return `
             <div class="bg-slate-900/90 hover:bg-slate-900 border border-slate-800/90 hover:border-slate-700/80 rounded-2xl p-3.5 shadow-lg flex flex-col justify-between space-y-3 transition-all group">
                 <!-- Header: Name & Role Badge -->
                 <div>
                     <div class="flex items-start justify-between gap-2">
-                        <div>
+                        <div class="min-w-0 flex-1">
+                            ${c.shopName ? `
+                                <div class="text-[11px] font-bold text-amber-400 flex items-center gap-1.5 mb-0.5 truncate" title="${escapeHTML(c.shopName)}">
+                                    <i class="fa-solid fa-store text-[10px]"></i>
+                                    <span class="truncate">${escapeHTML(c.shopName)}</span>
+                                </div>
+                            ` : ''}
                             <h3 class="text-sm font-black text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
                                 <span>${escapeHTML(c.name)}</span>
                             </h3>
@@ -269,10 +334,10 @@ function renderCardsList() {
                             <span class="font-mono font-bold text-white tracking-wide">${escapeHTML(c.phone)}</span>
                             ${c.altPhone ? `<span class="text-slate-500 text-[11px] font-mono">(${escapeHTML(c.altPhone)})</span>` : ''}
                         </div>
-                        ${c.location ? `
+                        ${fullAddress ? `
                             <div class="flex items-center gap-2 text-slate-400">
                                 <i class="fa-solid fa-location-dot text-red-400 text-[11px] w-3.5 text-center"></i>
-                                <span class="truncate">${escapeHTML(c.location)}</span>
+                                <span class="truncate" title="${escapeHTML(fullAddress)}">${escapeHTML(fullAddress)}</span>
                             </div>
                         ` : ''}
                         ${c.standardRate ? `

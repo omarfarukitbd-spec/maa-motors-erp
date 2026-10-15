@@ -42,6 +42,59 @@ export const GODOWN_CONTACT_CATEGORIES = {
     }
 };
 
+const CUSTOM_CATEGORY_PALETTES = [
+    { color: 'text-purple-400 bg-purple-500/10 border-purple-500/30', icon: '<i class="fa-solid fa-tag"></i>' },
+    { color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30', icon: '<i class="fa-solid fa-briefcase"></i>' },
+    { color: 'text-rose-400 bg-rose-500/10 border-rose-500/30', icon: '<i class="fa-solid fa-shapes"></i>' },
+    { color: 'text-amber-400 bg-amber-500/10 border-amber-500/30', icon: '<i class="fa-solid fa-screwdriver-wrench"></i>' },
+    { color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30', icon: '<i class="fa-solid fa-truck-ramp-box"></i>' },
+    { color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30', icon: '<i class="fa-solid fa-cube"></i>' },
+    { color: 'text-teal-400 bg-teal-500/10 border-teal-500/30', icon: '<i class="fa-solid fa-boxes-packing"></i>' },
+    { color: 'text-orange-400 bg-orange-500/10 border-orange-500/30', icon: '<i class="fa-solid fa-shield"></i>' }
+];
+
+export function getCategoryPalette(name = '') {
+    let hash = 0;
+    const str = String(name || '');
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    const idx = Math.abs(hash) % CUSTOM_CATEGORY_PALETTES.length;
+    return CUSTOM_CATEGORY_PALETTES[idx];
+}
+
+/**
+ * Extract all unique categories combining presets and custom entries from contacts
+ */
+export function extractUniqueCategories(contactsList = []) {
+    const categoryMap = new Map();
+
+    // Default presets first
+    Object.entries(GODOWN_CONTACT_CATEGORIES).forEach(([id, meta]) => {
+        if (id !== 'all') {
+            categoryMap.set(id, { id, title: meta.title, icon: meta.icon, color: meta.color, isPreset: true });
+        }
+    });
+
+    // Custom categories found in contacts
+    contactsList.forEach(c => {
+        const cat = (c.category || '').trim();
+        if (cat && !categoryMap.has(cat)) {
+            const palette = getCategoryPalette(cat);
+            categoryMap.set(cat, {
+                id: cat,
+                title: cat,
+                icon: palette.icon,
+                color: palette.color,
+                isPreset: false
+            });
+        }
+    });
+
+    return Array.from(categoryMap.values());
+}
+
 /**
  * Standard Phone Number Normalization
  */
@@ -86,8 +139,18 @@ export function buildCallLink(phone) {
 }
 
 /**
- * Get Category Metadata
+ * Get Category Metadata (Presets or Dynamic Custom)
  */
 export function getCategoryMeta(key = 'transport') {
-    return GODOWN_CONTACT_CATEGORIES[key] || GODOWN_CONTACT_CATEGORIES.transport;
+    if (GODOWN_CONTACT_CATEGORIES[key]) {
+        return GODOWN_CONTACT_CATEGORIES[key];
+    }
+    const palette = getCategoryPalette(key);
+    return {
+        id: key,
+        title: key || 'সাধারণ',
+        icon: palette.icon,
+        color: palette.color,
+        isCustom: true
+    };
 }
