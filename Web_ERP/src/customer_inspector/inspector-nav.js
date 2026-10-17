@@ -14,8 +14,6 @@ export function initInspectorNav() {
     const input = document.getElementById('inspector-query-input');
 
     if (input) {
-        let autoSelectTimer = null;
-
         // Auto-select text on focus or click for zero-effort overwrite
         input.addEventListener('focus', () => {
             setTimeout(() => {
@@ -40,35 +38,39 @@ export function initInspectorNav() {
 
         input.addEventListener('input', (e) => {
             const q = e.target.value;
-            if (autoSelectTimer) {
-                clearTimeout(autoSelectTimer);
-                autoSelectTimer = null;
-            }
-
             if (!q || !q.trim()) return;
 
+            const cleanQ = q.trim();
+            const cleanLower = cleanQ.toLowerCase();
+
+            // 1. Check for exact account number match (e.g. 5, 6 or any number of digits)
+            // or exact 11-digit clean phone match
+            const exactIdx = inspectorCustomers.findIndex(c => {
+                const acc = (c.accountNo || '').toLowerCase();
+                if (acc === cleanLower) return true;
+                const p = (c.phone || '').replace(/\D/g, '');
+                if (cleanQ.length >= 11 && p === cleanQ) return true;
+                return false;
+            });
+
+            if (exactIdx !== -1) {
+                currentInspectorIndex = exactIdx;
+                renderCurrent(false);
+                // User requirement: Match howar shate shate select hoye jete hobe
+                const matched = inspectorCustomers[exactIdx];
+                if (matched && matched.accountNo) {
+                    input.value = matched.accountNo;
+                }
+                input.select();
+                return;
+            }
+
+            // 2. If not exact match yet: preview closest customer, but DO NOT select!
+            // User requirement: Jotokkhon na account number match hoccena totokkhon select hobena
             const idx = findCustomerIndexByQuery(inspectorCustomers, q);
             if (idx !== -1) {
                 currentInspectorIndex = idx;
                 renderCurrent(false);
-            }
-
-            const cleanQ = q.trim();
-            const matched = idx !== -1 ? inspectorCustomers[idx] : null;
-            const isExactAcc = matched && (matched.accountNo || '').toLowerCase() === cleanQ.toLowerCase();
-            const isFullNumeric = /^\d{4,6}$/.test(cleanQ);
-
-            // Auto-select text after typing completes so the user can immediately type the next number without backspacing
-            if (isExactAcc || isFullNumeric || cleanQ.length >= 3) {
-                const delay = isExactAcc ? 200 : (isFullNumeric ? 280 : 450);
-                autoSelectTimer = setTimeout(() => {
-                    if (document.activeElement === input && input.value) {
-                        if (isExactAcc && matched && matched.accountNo) {
-                            input.value = matched.accountNo;
-                        }
-                        input.select();
-                    }
-                }, delay);
             }
         });
 
