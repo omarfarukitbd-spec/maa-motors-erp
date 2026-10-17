@@ -21,7 +21,7 @@ export function getOrCreateInspectorModal() {
                 </div>
                 <div class="relative flex-1">
                     <i class="fa-solid fa-magnifying-glass text-slate-500 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
-                    <input type="text" id="inspector-query-input" placeholder="A/C নং (যেমন: 10001), মোবাইল বা নাম লিখুন..." class="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl pl-8 pr-3 py-1.5 text-white text-xs sm:text-sm font-bold placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all" autocomplete="off">
+                    <input type="text" id="inspector-query-input" placeholder="A/C নং (যেমন: 10001), মোবাইল বা নাম লিখুন..." class="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl pl-8 pr-3 py-1.5 text-white text-xs sm:text-sm font-bold placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-all" autocomplete="off" onclick="this.select()">
                 </div>
                 <span id="inspector-counter-badge" class="px-2 py-1 rounded-lg bg-slate-800 text-slate-400 font-mono text-[11px] font-bold border border-slate-700 shrink-0">0 / 0</span>
                 <button type="button" class="w-8 h-8 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center shrink-0 transition-all cursor-pointer" onclick="window.closeCustomerInspector()">

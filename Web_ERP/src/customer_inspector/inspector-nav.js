@@ -14,13 +14,61 @@ export function initInspectorNav() {
     const input = document.getElementById('inspector-query-input');
 
     if (input) {
+        let autoSelectTimer = null;
+
+        // Auto-select text on focus or click for zero-effort overwrite
+        input.addEventListener('focus', () => {
+            setTimeout(() => {
+                if (document.activeElement === input && input.value) {
+                    input.select();
+                }
+            }, 10);
+        });
+
+        input.addEventListener('click', () => {
+            if (input.value) {
+                input.select();
+            }
+        });
+
+        input.addEventListener('mouseup', () => {
+            // Select all if user clicked without dragging
+            if (input.value && input.selectionStart === input.selectionEnd) {
+                input.select();
+            }
+        });
+
         input.addEventListener('input', (e) => {
             const q = e.target.value;
+            if (autoSelectTimer) {
+                clearTimeout(autoSelectTimer);
+                autoSelectTimer = null;
+            }
+
             if (!q || !q.trim()) return;
+
             const idx = findCustomerIndexByQuery(inspectorCustomers, q);
             if (idx !== -1) {
                 currentInspectorIndex = idx;
                 renderCurrent(false);
+            }
+
+            const cleanQ = q.trim();
+            const matched = idx !== -1 ? inspectorCustomers[idx] : null;
+            const isExactAcc = matched && (matched.accountNo || '').toLowerCase() === cleanQ.toLowerCase();
+            const isFullNumeric = /^\d{4,6}$/.test(cleanQ);
+
+            // Auto-select text after typing completes so the user can immediately type the next number without backspacing
+            if (isExactAcc || isFullNumeric || cleanQ.length >= 3) {
+                const delay = isExactAcc ? 200 : (isFullNumeric ? 280 : 450);
+                autoSelectTimer = setTimeout(() => {
+                    if (document.activeElement === input && input.value) {
+                        if (isExactAcc && matched && matched.accountNo) {
+                            input.value = matched.accountNo;
+                        }
+                        input.select();
+                    }
+                }, delay);
             }
         });
 
@@ -131,6 +179,14 @@ export function openCustomerInspector(initialQuery = '') {
     }
 
     renderCurrent();
+
+    // Ensure input is cleanly focused and selected after modal transition/DOM unhiding
+    setTimeout(() => {
+        if (input && isInspectorOpen) {
+            input.focus();
+            input.select();
+        }
+    }, 50);
 }
 
 /**
