@@ -196,29 +196,41 @@ export function getDubaiAuditMainTemplate() {
                     <!-- Row 4: মার্কেট এডভান্স (সম্পূর্ণ আলাদা সারি) -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
                         <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
-                            <input type="text" id="desc-ad" value="মার্কেট এডভান্স (AD)" class="bg-transparent border-b border-dashed border-slate-700 text-cyan-300 text-sm sm:text-base font-bold focus:border-cyan-400 outline-none flex-grow">
+                            <input type="text" id="desc-ad" value="মার্কেট এডভান্স (AD)" oninput="window.handleAssetDescChange('ad', this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-cyan-300 text-sm sm:text-base font-bold focus:border-cyan-400 outline-none flex-grow">
                             <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-cyan-400 mr-0.5"></i> বিয়োগ</span>
                         </div>
                         <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
                             <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
                             <input type="text" id="val-market-ad" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextDubaiTableInput(this.id);}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-cyan-400 font-mono text-right font-black focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold">
+                        <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold" id="note-ad">
                             সাপ্লায়ারদের অগ্রিম
                         </div>
+                    </div>
+
+                    <!-- Subtotal 2.5: Row 4 বিয়োগের পর অবশিষ্ট ক্যাশ স্থিতি -->
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5" id="row-subtotal-ad">
+                        <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-cyan-300 pl-3 sm:pl-4">
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold" id="lbl-subtotal-ad">অবশিষ্ট ক্যাশ স্থিতি (এডভান্স বাদে):</span>
+                        </div>
+                        <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-cyan-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-normal">AED =</span>
+                            <span id="subtotal-ad" class="font-black">0</span>
+                        </div>
+                        <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
                     </div>
 
                     <!-- Row 5: নগদ ক্যাশ আছে (সম্পূর্ণ আলাদা সারি) -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
                         <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
-                            <input type="text" id="desc-cash" value="নগদ ক্যাশ আছে (Cash in Hand)" class="bg-transparent border-b border-dashed border-slate-700 text-emerald-300 text-sm sm:text-base font-bold focus:border-emerald-400 outline-none flex-grow">
+                            <input type="text" id="desc-cash" value="নগদ ক্যাশ আছে (Cash in Hand)" oninput="window.handleAssetDescChange('cash', this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-emerald-300 text-sm sm:text-base font-bold focus:border-emerald-400 outline-none flex-grow">
                             <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-emerald-400 mr-0.5"></i> বিয়োগ</span>
                         </div>
                         <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
                             <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
                             <input type="text" id="val-cash-in-hand" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextDubaiTableInput(this.id);}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-emerald-400 font-mono text-right font-black focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold">
+                        <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold" id="note-cash">
                             ক্যাশ বাক্সে নগদ দেরহাম
                         </div>
                     </div>
@@ -374,7 +386,7 @@ export function getDubaiAuditMainTemplate() {
                                 <th class="p-2.5 text-right text-red-400">মোট খরচ</th>
                                 <th class="p-2.5 text-right text-cyan-400">মার্কেট AD</th>
                                 <th class="p-2.5 text-right text-emerald-400">নগদ ক্যাশ</th>
-                                <th class="p-2.5 text-right text-purple-400">হস্তান্তর / মেস</th>
+                                <th class="p-2.5 text-right text-purple-400">অন্যান্য হিসাব</th>
                                 <th class="p-2.5 text-right text-white">ক্যাশ সমন্বয় (+/-)</th>
                                 <th class="p-2.5 text-center">অ্যাকশন</th>
                             </tr>
@@ -392,12 +404,12 @@ export function getDynamicHoldingRowHtml(h, idx) {
     const isPlus = h.op === '+';
     const textTheme = isPlus ? 'text-emerald-300 focus:border-emerald-400' : 'text-purple-300 focus:border-purple-400';
     const amtTheme = isPlus ? 'text-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/30' : 'text-purple-300 focus:border-purple-500 focus:ring-purple-500/30';
-    const noteText = isPlus ? 'ব্যক্তিগত প্রাপ্তি / সমন্বয়' : 'ব্যক্তিগত হস্তান্তর / মেস';
+    const labelTitle = escapeHTML(h.desc || h.name || 'হিসাব');
 
     return `
         <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
             <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
-                <input type="text" value="${escapeHTML(h.desc || h.name || '')}" placeholder="বিবরণ (যেমন: আলতাফ + মেছ)" oninput="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 ${textTheme} text-sm sm:text-base font-bold outline-none flex-grow">
+                <input type="text" id="dubai-holding-desc-${idx}" value="${labelTitle}" placeholder="বিবরণ" oninput="window.handleDubaiHoldingDescChange(${idx}, this.value)" class="bg-transparent border-b border-dashed border-slate-700 ${textTheme} text-sm sm:text-base font-bold outline-none flex-grow">
                 <div class="flex items-center gap-2 shrink-0">
                     <button type="button" onclick="window.toggleDubaiHoldingOp(${idx})" class="px-2 py-0.5 rounded-lg ${isPlus ? 'bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400' : 'bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300'} text-xs font-black transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm" title="ক্লিক করে বিয়োগ বা যোগ পরিবর্তন করুন">
                         <i class="fa-solid ${isPlus ? 'fa-plus text-[10px]' : 'fa-minus text-[10px]'}"></i>
@@ -412,9 +424,21 @@ export function getDynamicHoldingRowHtml(h, idx) {
                 <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
                 <input type="text" id="dubai-holding-amt-${idx}" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiHoldingAmtChange(${idx}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextHoldingInput(${idx});}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base ${amtTheme} font-mono text-right font-black focus:ring-1 outline-none shadow-inner">
             </div>
-            <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold">
-                ${noteText}
+            <div class="col-span-3 p-3 text-slate-500 text-xs sm:text-sm text-center pr-3 sm:pr-4 font-bold">
+                —
             </div>
+        </div>
+
+        <!-- Dedicated Intermediate Equal Row for Holding -->
+        <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/75 font-bold items-center py-1 sm:py-1.5" id="dubai-holding-equal-row-${idx}">
+            <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center pl-3 sm:pl-4">
+                <span class="text-xs sm:text-sm text-slate-400 font-bold" id="dubai-holding-equal-label-${idx}">অবশিষ্ট ব্যালেন্স (${labelTitle} এর পর):</span>
+            </div>
+            <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-sky-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
+                <span class="text-xs text-slate-400 font-normal">AED =</span>
+                <span id="dubai-holding-subtotal-${idx}" class="font-black text-sky-400">0</span>
+            </div>
+            <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
         </div>
     `;
 }

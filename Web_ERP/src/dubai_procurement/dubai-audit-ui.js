@@ -141,18 +141,16 @@ export function updateLiveWaterfall() {
 
     const sub1 = safeRound(effSent - effPur);
     const sub2 = safeRound(sub1 - effExp);
-    const sub3 = safeRound(sub2 - mAd - cHand);
+    const sub2_5 = safeRound(sub2 - mAd);
+    const sub3 = safeRound(sub2_5 - cHand);
 
-    let holdingsEffect = 0;
-    dynamicHoldings.forEach(h => {
+    let runningBal = sub3;
+    dynamicHoldings.forEach((h, idx) => {
         const amt = safeRound(parseAmount(h.amount));
-        if (h.op === '+') {
-            holdingsEffect = safeRound(holdingsEffect + amt);
-        } else {
-            holdingsEffect = safeRound(holdingsEffect - amt);
-        }
+        const isPlus = h.op === '+';
+        runningBal = safeRound(isPlus ? runningBal + amt : runningBal - amt);
     });
-    const finalVariance = safeRound(sub3 + holdingsEffect);
+    const finalVariance = runningBal;
 
     const setTxt = (id, val) => { 
         const el = document.getElementById(id); 
@@ -164,7 +162,8 @@ export function updateLiveWaterfall() {
     const valFinalEl = document.getElementById('val-final-variance');
 
     if (!hasNewEntries) {
-        ['subtotal-1', 'subtotal-2', 'subtotal-3', 'val-final-variance'].forEach(id => setTxt(id, 0));
+        ['subtotal-1', 'subtotal-2', 'subtotal-ad', 'subtotal-3', 'val-final-variance'].forEach(id => setTxt(id, 0));
+        dynamicHoldings.forEach((_, idx) => setTxt(`dubai-holding-subtotal-${idx}`, 0));
         if (badgeEl) {
             badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700';
             badgeEl.textContent = 'হিসাবের অপেক্ষায়';
@@ -174,7 +173,25 @@ export function updateLiveWaterfall() {
     } else {
         setTxt('subtotal-1', sub1);
         setTxt('subtotal-2', sub2);
+        setTxt('subtotal-ad', sub2_5);
         setTxt('subtotal-3', sub3);
+
+        let stepBal = sub3;
+        dynamicHoldings.forEach((h, idx) => {
+            const amt = safeRound(parseAmount(h.amount));
+            const isPlus = h.op === '+';
+            stepBal = safeRound(isPlus ? stepBal + amt : stepBal - amt);
+            setTxt(`dubai-holding-subtotal-${idx}`, stepBal);
+            const subEl = document.getElementById(`dubai-holding-subtotal-${idx}`);
+            if (subEl) {
+                subEl.className = `font-black ${stepBal >= 0 ? 'text-sky-400' : 'text-red-400'}`;
+            }
+            const lblEl = document.getElementById(`dubai-holding-equal-label-${idx}`);
+            if (lblEl) {
+                lblEl.textContent = `অবশিষ্ট ব্যালেন্স (${escapeHTML(h.desc || h.name || 'হিসাব')} এর পর):`;
+            }
+        });
+
         setTxt('val-final-variance', finalVariance);
 
         const isSurplus = finalVariance >= 0;
@@ -194,6 +211,21 @@ export function updateLiveWaterfall() {
         lblDate.textContent = `তারিখ: ${formatAppDate(dbDate)} (${dayBangla})`;
     }
 }
+
+window.handleAssetDescChange = function(type, val) {
+    const text = String(val || '').trim();
+    if (type === 'ad') {
+        const isCash = text.includes('নগদ') || text.toLowerCase().includes('cash');
+        const noteEl = document.getElementById('note-ad');
+        if (noteEl) noteEl.textContent = isCash ? 'ক্যাশ বাক্সে নগদ দেরহাম' : 'সাপ্লায়ারদের অগ্রিম';
+        const lblEl = document.getElementById('lbl-subtotal-ad');
+        if (lblEl) lblEl.textContent = isCash ? 'অবশিষ্ট ক্যাশ স্থিতি (নগদ বাদে):' : 'অবশিষ্ট ক্যাশ স্থিতি (এডভান্স বাদে):';
+    } else if (type === 'cash') {
+        const isAd = text.includes('এডভান্স') || text.toLowerCase().includes('ad') || text.includes('অগ্রিম');
+        const noteEl = document.getElementById('note-cash');
+        if (noteEl) noteEl.textContent = isAd ? 'সাপ্লায়ারদের অগ্রিম' : 'ক্যাশ বাক্সে নগদ দেরহাম';
+    }
+};
 
 const AUDIT_FIELD_MAP = {
     sent: ['dubai-prev-rem-input', 'input-cum-sent', 'input-running-sent'],
@@ -325,7 +357,11 @@ function renderDynamicHoldings() {
 }
 
 window.handleDubaiHoldingDescChange = function(idx, val) {
-    if (dynamicHoldings[idx]) dynamicHoldings[idx].desc = String(val).trim();
+    if (dynamicHoldings[idx]) {
+        dynamicHoldings[idx].desc = String(val).trim();
+        const lblEl = document.getElementById(`dubai-holding-equal-label-${idx}`);
+        if (lblEl) lblEl.textContent = `অবশিষ্ট ব্যালেন্স (${dynamicHoldings[idx].desc || 'হিসাব'} এর পর):`;
+    }
 };
 
 window.handleDubaiHoldingAmtChange = function(idx, val) {
@@ -339,7 +375,7 @@ window.removeDubaiHoldingRow = async function(idx) {
     if (dynamicHoldings[idx]) {
         const amt = safeRound(parseAmount(dynamicHoldings[idx].amount));
         if (amt > 0) {
-            const pinOk = await promptSecurityPin(`${dynamicHoldings[idx].desc || 'হস্তান্তর'} আমানত মুছে ফেলা`);
+            const pinOk = await promptSecurityPin(`${dynamicHoldings[idx].desc || 'হিসাব'} এন্ট্রি মুছে ফেলা`);
             if (!pinOk) return;
         }
         dynamicHoldings.splice(idx, 1);
@@ -550,6 +586,10 @@ window.loadDubaiAuditHistory = async function(id) {
         ['sent', 'purchase', 'memos', 'expense', 'ad', 'cash', 'status'].forEach(k => {
             if (audit.descriptions[k]) setInp(`desc-${k}`, audit.descriptions[k]);
         });
+        if (window.handleAssetDescChange) {
+            window.handleAssetDescChange('ad', audit.descriptions.ad || '');
+            window.handleAssetDescChange('cash', audit.descriptions.cash || '');
+        }
     }
 
     setInp('memo-range-start', audit.memoRangeStart || '');

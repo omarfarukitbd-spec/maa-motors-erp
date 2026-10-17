@@ -71,38 +71,54 @@ function generateAuditPrintHtml(audit, memos, settings) {
 
     const marketAd = safeRound(parseAmount(audit.marketAdvance));
     const cashInHand = safeRound(parseAmount(audit.cashInHand));
-    const sub3 = safeRound(sub2 - marketAd - cashInHand);
+    const sub2_5 = safeRound(sub2 - marketAd);
+    const sub3 = safeRound(sub2_5 - cashInHand);
 
-    let holdingsTotal = 0;
-    const holdingsList = Array.isArray(audit.personalHoldings) ? audit.personalHoldings : [];
-    holdingsList.forEach(h => {
-        const amt = safeRound(parseAmount(h.amount));
-        const isPlus = h.op === '+';
-        holdingsTotal = safeRound(isPlus ? holdingsTotal - amt : holdingsTotal + amt);
-    });
+    const labelAd = escapeHTML(desc.ad || 'মার্কেট এডভান্স (AD)');
+    const labelCash = escapeHTML(desc.cash || 'নগদ ক্যাশ আছে (Cash in Hand)');
+
+    const isAdActuallyCash = labelAd.includes('নগদ') || labelAd.toLowerCase().includes('cash');
+    const noteAd = isAdActuallyCash ? 'ক্যাশ বাক্সে নগদ দেরহাম' : 'সাপ্লায়ারদের অগ্রিম';
+    const subAdLabel = isAdActuallyCash ? 'অবশিষ্ট ক্যাশ স্থিতি (নগদ বাদে):' : 'অবশিষ্ট ক্যাশ স্থিতি (এডভান্স বাদে):';
+
+    const isCashActuallyAd = labelCash.includes('এডভান্স') || labelCash.toLowerCase().includes('ad') || labelCash.includes('অগ্রিম');
+    const noteCash = isCashActuallyAd ? 'সাপ্লায়ারদের অগ্রিম' : 'ক্যাশ বাক্সে নগদ দেরহাম';
 
     const finalVariance = safeRound(parseAmount(audit.varianceAmount));
     const isSurplus = finalVariance >= 0;
 
-    // Dynamic holdings rows
+    // Dynamic holdings rows with intermediate equals and clean dashes (—)
+    let currentBal = sub3;
     let holdingsHtml = '';
+    const holdingsList = Array.isArray(audit.personalHoldings) ? audit.personalHoldings : [];
     holdingsList.forEach(h => {
         const amt = safeRound(parseAmount(h.amount));
         const isPlus = h.op === '+';
+        currentBal = safeRound(isPlus ? currentBal + amt : currentBal - amt);
         const signText = isPlus ? '(+) AED:' : '(-) AED:';
         const signColor = isPlus ? '#059669' : '#6b21a8';
-        const noteText = isPlus ? 'ব্যক্তিগত প্রাপ্তি / সমন্বয়' : 'ব্যক্তিগত হস্তান্তর / মেস';
+        const itemTitle = escapeHTML(h.desc || h.name || 'হিসাব');
+
         holdingsHtml += `
             <tr class="print-row-no-break" style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
+                <td style="padding: 4px 8px; border: 1px solid #cbd5e1;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 700; color: #475569; font-size: 11px;">${escapeHTML(h.desc || h.name || 'ব্যক্তিগত হস্তান্তর')}</span>
+                        <span style="font-weight: 700; color: #334155; font-size: 10.5px;">${itemTitle}</span>
                         <span style="color: #64748b; font-size: 9.5px;">${signText} <b class="num-font" style="color: ${signColor}; font-size: 11.5px;">${formatAED(amt)}</b></span>
                     </div>
                 </td>
-                <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
-                    ${noteText}
+                <td style="text-align: center; color: #94a3b8; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">
+                    —
                 </td>
+            </tr>
+            <tr class="print-row-no-break" style="background: #f8fafc; font-weight: 800;">
+                <td style="padding: 3.5px 8px; border: 1px solid #cbd5e1; border-left: 3px solid ${isPlus ? '#10b981' : '#8b5cf6'}; color: #334155;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 10px; color: #475569;">অবশিষ্ট ব্যালেন্স (${itemTitle} এর পর):</span>
+                        <span style="color: #0f172a; font-size: 10.5px;">AED = <b class="num-font" style="font-size: 11.5px; color: ${currentBal >= 0 ? '#047857' : '#dc2626'};">${formatAED(currentBal)}</b></span>
+                    </div>
+                </td>
+                <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 9px; font-weight: bold;">—</td>
             </tr>
         `;
     });
@@ -239,41 +255,52 @@ function generateAuditPrintHtml(audit, memos, settings) {
                         <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 9px;">—</td>
                     </tr>
 
-                    <!-- Row 4: মার্কেট এডভান্স (সম্পূর্ণ আলাদা সারি) -->
+                    <!-- Row 4: মার্কেট এডভান্স (বা নগদ ক্যাশ) -->
                     <tr class="print-row-no-break" style="background: #ffffff;">
-                        <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
+                        <td style="padding: 4.5px 8px; border: 1px solid #cbd5e1;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <strong style="font-size: 11px; color: #0f172a;">${escapeHTML(desc.ad || 'মার্কেট এডভান্স (AD)')}</strong>
-                                <span style="color: #0284c7;">(-) AED: <b class="num-font" style="font-size: 12px;">${formatAED(marketAd)}</b></span>
+                                <strong style="font-size: 10.5px; color: #0f172a;">${labelAd}</strong>
+                                <span style="color: #0284c7;">(-) AED: <b class="num-font" style="font-size: 11.5px;">${formatAED(marketAd)}</b></span>
                             </div>
                         </td>
                         <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
-                            সাপ্লায়ারদের অগ্রিম
+                            ${noteAd}
                         </td>
+                    </tr>
+
+                    <!-- Subtotal 2.5 (Row 4 বিয়োগের পর অবশিষ্ট ক্যাশ স্থিতি) -->
+                    <tr class="print-row-no-break" style="background: #f0f9ff; font-weight: 800;">
+                        <td style="padding: 3.5px 8px; border: 1px solid #94a3b8; border-left: 3px solid #0284c7; color: #0369a1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 10px;">${subAdLabel}</span>
+                                <span>AED = <b class="num-font" style="font-size: 11.5px;">${formatAED(sub2_5)}</b></span>
+                            </div>
+                        </td>
+                        <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 9px; font-weight: bold;">—</td>
                     </tr>
 
                     <!-- Row 5: নগদ ক্যাশ আছে (সম্পূর্ণ আলাদা সারি) -->
                     <tr class="print-row-no-break" style="background: #ffffff;">
-                        <td style="padding: 5px 8px; border: 1px solid #cbd5e1;">
+                        <td style="padding: 4.5px 8px; border: 1px solid #cbd5e1;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <strong style="font-size: 11px; color: #0f172a;">${escapeHTML(desc.cash || 'নগদ ক্যাশ আছে (Cash in Hand)')}</strong>
-                                <span style="color: #059669;">(-) AED: <b class="num-font" style="font-size: 12px;">${formatAED(cashInHand)}</b></span>
+                                <strong style="font-size: 10.5px; color: #0f172a;">${labelCash}</strong>
+                                <span style="color: #059669;">(-) AED: <b class="num-font" style="font-size: 11.5px;">${formatAED(cashInHand)}</b></span>
                             </div>
                         </td>
                         <td style="text-align: center; color: #64748b; font-size: 9.5px; border: 1px solid #cbd5e1; background: #f8fafc;">
-                            ক্যাশ বাক্সে নগদ দেরহাম
+                            ${noteCash}
                         </td>
                     </tr>
 
                     <!-- Subtotal 3 (এডভান্স ও ক্যাশ বাদে অবশিষ্ট) -->
                     <tr class="print-row-no-break" style="background: #faf5ff; font-weight: 800;">
-                        <td style="padding: 4px 8px; border: 1px solid #c084fc; border-left: 3px solid #8b5cf6; color: #6b21a8;">
+                        <td style="padding: 3.5px 8px; border: 1px solid #c084fc; border-left: 3px solid #8b5cf6; color: #6b21a8;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>অবশিষ্ট ব্যালেন্স (এডভান্স ও ক্যাশ বাদে):</span>
-                                <span>AED = <b class="num-font" style="font-size: 12px;">${formatAED(sub3)}</b></span>
+                                <span style="font-size: 10px;">অবশিষ্ট ব্যালেন্স (এডভান্স ও ক্যাশ বাদে):</span>
+                                <span>AED = <b class="num-font" style="font-size: 11.5px;">${formatAED(sub3)}</b></span>
                             </div>
                         </td>
-                        <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 9px;">—</td>
+                        <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 9px; font-weight: bold;">—</td>
                     </tr>
 
                     <!-- Dynamic Holdings Rows -->
