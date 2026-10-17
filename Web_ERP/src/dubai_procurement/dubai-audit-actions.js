@@ -4,7 +4,7 @@
  */
 
 import { DubaiDAO } from './dubai-dao.js';
-import { safeRound, showToast, promptSecurityPin } from '../utils.js';
+import { safeRound, showToast, promptSecurityPin, formatAppDate } from '../utils.js';
 import { printDubaiAuditSheet } from './dubai-print.js';
 
 let unsubscribeAudits = null;
@@ -23,13 +23,13 @@ export const DubaiActions = {
         }
     },
 
-    async rollForward() {
-        const latest = await DubaiDAO.getPreviousAudit();
+    async rollForward(beforeDate = null) {
+        const latest = await DubaiDAO.getPreviousAudit(beforeDate);
         if (!latest) {
             showToast('কোনো পূর্ববর্তী সংরক্ষিত অডিট রেকর্ড পাওয়া যায়নি', 'error');
             return null;
         }
-        showToast(`গত অডিটের ব্যালেন্স রোল-ফরওয়ার্ড করা হয়েছে (${latest.weekEndDate || ''})`, 'success');
+        showToast(`গত অডিটের ব্যালেন্স রোল-ফরওয়ার্ড করা হয়েছে (${formatAppDate(latest.weekEndDate)})`, 'success');
         return latest;
     },
 

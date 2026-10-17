@@ -4,6 +4,7 @@
  */
 
 import { db, firebase } from '../firebase-config.js';
+import { toDBDate } from '../utils.js';
 
 const AUDITS_COLLECTION = 'dubai_weekly_audits';
 const MEMOS_COLLECTION = 'dubai_memos';
@@ -63,7 +64,8 @@ export const DubaiDAO = {
         try {
             let query = db.collection(AUDITS_COLLECTION);
             if (beforeDate) {
-                query = query.where('weekEndDate', '<', beforeDate);
+                const dbDate = toDBDate(beforeDate);
+                query = query.where('weekEndDate', '<', dbDate);
             }
             const snap = await query.orderBy('weekEndDate', 'desc').limit(1).get();
             if (!snap.empty) {

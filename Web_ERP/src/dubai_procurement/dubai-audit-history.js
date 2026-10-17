@@ -3,7 +3,7 @@
  * Renders the saved audits history table with load, print, and delete controls.
  */
 
-import { formatAmountWithComma, parseAmount, safeRound } from '../utils.js';
+import { formatAmountWithComma, parseAmount, safeRound, formatAppDate } from '../utils.js';
 
 export function renderDubaiHistoryTable(tbodyId, audits = []) {
     const tbody = document.getElementById(tbodyId);
@@ -28,7 +28,7 @@ export function renderDubaiHistoryTable(tbodyId, audits = []) {
         }
         html += `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors">
-                <td class="p-2.5 font-bold font-mono text-white">${a.weekEndDate || ''}</td>
+                <td class="p-2.5 font-bold font-mono text-white">${formatAppDate(a.weekEndDate)}</td>
                 <td class="p-2.5 text-slate-400">${a.containerNo || ''}</td>
                 <td class="p-2.5 text-right font-mono text-emerald-400">${formatAmountWithComma(a.cumulativeRemittance)}</td>
                 <td class="p-2.5 text-right font-mono text-amber-400">${formatAmountWithComma(a.cumulativePurchaseTotal)}</td>

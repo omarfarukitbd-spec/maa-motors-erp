@@ -12,7 +12,7 @@ import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
-    toDBDate, showToast, promptSecurityPin, getDayOfWeekBangla 
+    toDBDate, showToast, promptSecurityPin, getDayOfWeekBangla, formatAppDate 
 } from '../utils.js';
 
 let currentAuditId = null;
@@ -68,18 +68,63 @@ function setupActionButtons() {
 
     const dateInp = document.getElementById('dubai-week-date');
     if (dateInp) {
-        dateInp.addEventListener('change', () => {
+        const handleDateChange = () => {
             const val = dateInp.value;
             if (!val) return;
             const dbVal = toDBDate(val);
             const existing = auditHistory.find(a => toDBDate(a.weekEndDate) === dbVal);
             if (existing && existing.id !== currentAuditId) {
-                showToast(`${val} তারিখের সংরক্ষিত অডিট পাওয়া গেছে, লোড হচ্ছে...`, 'info');
+                showToast(`${formatAppDate(dbVal)} তারিখের সংরক্ষিত অডিট পাওয়া গেছে, লোড হচ্ছে...`, 'info');
                 window.loadDubaiAuditHistory(existing.id);
+            } else if (!existing && !currentAuditId) {
+                applyBaselineForDate(dbVal);
             }
             updateLiveWaterfall();
+        };
+
+        dateInp.addEventListener('change', handleDateChange);
+        dateInp.addEventListener('blur', handleDateChange);
+        setTimeout(() => {
+            if (dateInp._flatpickr && Array.isArray(dateInp._flatpickr.config?.onChange)) {
+                dateInp._flatpickr.config.onChange.push(handleDateChange);
+            }
+        }, 150);
+    }
+}
+
+function applyBaselineForDate(targetDbDate) {
+    if (!targetDbDate) return;
+    const prevAudit = auditHistory.find(a => toDBDate(a.weekEndDate) < targetDbDate);
+    if (prevAudit) {
+        const prevRem = prevAudit.cumulativeRemittance || 0;
+        const prevPur = prevAudit.cumulativePurchaseTotal || 0;
+        const prevExp = prevAudit.cumulativeExpenseTotal || 0;
+
+        setInp('dubai-prev-rem-input', formatAmountWithComma(prevRem));
+        setInp('dubai-prev-pur-input', formatAmountWithComma(prevPur));
+        setInp('dubai-prev-exp-input', formatAmountWithComma(prevExp));
+
+        ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.readOnly = true;
+        });
+
+        if (prevAudit.memoRangeEnd) {
+            const nextStart = parseInt(prevAudit.memoRangeEnd, 10) + 1;
+            if (!isNaN(nextStart)) {
+                setInp('memo-range-start', nextStart);
+                setInp('memo-range-end', '');
+                window.handleMemoRangeChange?.();
+            }
+        }
+    } else {
+        ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => {
+            setInp(id, '0');
+            const el = document.getElementById(id);
+            if (el) el.readOnly = false;
         });
     }
+    updateLiveWaterfall();
 }
 
 export function updateLiveWaterfall() {
@@ -144,8 +189,9 @@ export function updateLiveWaterfall() {
     const dateVal = getTxt('dubai-week-date');
     const lblDate = document.getElementById('label-table-date');
     if (lblDate && dateVal) {
-        const dayBangla = getDayOfWeekBangla(toDBDate(dateVal)) || 'বৃহস্পতিবার';
-        lblDate.textContent = `তারিখ: ${dateVal} (${dayBangla})`;
+        const dbDate = toDBDate(dateVal);
+        const dayBangla = getDayOfWeekBangla(dbDate) || 'বৃহস্পতিবার';
+        lblDate.textContent = `তারিখ: ${formatAppDate(dbDate)} (${dayBangla})`;
     }
 }
 
@@ -304,7 +350,16 @@ window.removeDubaiHoldingRow = async function(idx) {
 
 // --- Actions & History Handlers ---
 async function onRollForwardClick(silent = false) {
-    const latest = await DubaiActions.rollForward();
+    const curDateVal = getTxt('dubai-week-date');
+    const targetDbDate = curDateVal ? toDBDate(curDateVal) : null;
+
+    let latest = null;
+    if (targetDbDate && auditHistory.length > 0) {
+        latest = auditHistory.find(a => toDBDate(a.weekEndDate) < targetDbDate);
+    }
+    if (!latest) {
+        latest = await DubaiActions.rollForward(targetDbDate);
+    }
     if (!latest) return;
     currentAuditId = null;
 
@@ -320,12 +375,15 @@ async function onRollForwardClick(silent = false) {
 
     clearNewWeekFields();
 
-    if (latest.weekEndDate) {
+    if (!curDateVal && latest.weekEndDate) {
         try {
             const parts = String(toDBDate(latest.weekEndDate)).split('-');
             if (parts.length === 3) {
                 const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10) + 7);
-                setInp('dubai-week-date', `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+                const nextDateStr = formatAppDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+                setInp('dubai-week-date', nextDateStr);
+                const fp = document.getElementById('dubai-week-date')?._flatpickr;
+                if (fp) fp.setDate(nextDateStr, false);
             }
         } catch (e) {
             console.error('Date advance error:', e);
@@ -337,7 +395,7 @@ async function onRollForwardClick(silent = false) {
         if (!isNaN(nextStart)) {
             setInp('memo-range-start', nextStart);
             setInp('memo-range-end', '');
-            window.handleMemoRangeChange();
+            window.handleMemoRangeChange?.();
         }
     }
 
@@ -345,7 +403,7 @@ async function onRollForwardClick(silent = false) {
     renderDynamicHoldings();
     DubaiMemoModal.setMemos([]);
     updateLiveWaterfall();
-    if (!silent) showToast(`পূর্ববর্তী অডিট (${latest.weekEndDate || ''}) থেকে ব্যালেন্স লক করা হয়েছে। নতুন সপ্তাহের ডাটা ফাঁকা রাখা হয়েছে।`, 'success');
+    if (!silent) showToast(`পূর্ববর্তী অডিট (${formatAppDate(latest.weekEndDate)}) থেকে ব্যালেন্স লক করা হয়েছে। নতুন সপ্তাহের ডাটা ফাঁকা রাখা হয়েছে।`, 'success');
 }
 
 async function onSaveAuditClick() {
@@ -445,21 +503,22 @@ async function onNewAuditClick() {
         if (!res.isConfirmed) return;
     }
     currentAuditId = null;
-    setInp('dubai-week-date', getTodayLocalDateString());
+    const todayStr = getTodayLocalDateString();
+    setInp('dubai-week-date', todayStr);
+    const fp = document.getElementById('dubai-week-date')?._flatpickr;
+    if (fp) fp.setDate(todayStr, false);
+
     ['dubai-audit-note', 'memo-range-start', 'memo-range-end', 'desc-memos'].forEach(id => setInp(id, ''));
     clearNewWeekFields();
-    ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input'].forEach(id => {
-        setInp(id, '0');
-        const el = document.getElementById(id);
-        if (el) el.readOnly = false;
-    });
+    applyBaselineForDate(toDBDate(todayStr));
+
     const badgeEl = document.getElementById('memo-auto-count-badge');
     if (badgeEl) badgeEl.textContent = '০টি মেমো';
-    dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0 }];
+    dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0, op: '-' }];
     DubaiMemoModal.setMemos([]);
     renderDynamicHoldings();
     updateLiveWaterfall();
-    showToast('নতুন সপ্তাহের ব্ল্যাঙ্ক অডিট প্রস্তুত', 'info');
+    showToast('নতুন সপ্তাহের অডিট প্রস্তুত (পূর্ববর্তী ব্যালেন্স রোল-ফরওয়ার্ড সহ)', 'info');
 }
 
 let hasAutoLoadedDb = false;
@@ -481,7 +540,10 @@ window.loadDubaiAuditHistory = async function(id) {
 
     currentAuditId = audit.id;
     setInp('dubai-container-no', audit.containerNo || 'CT-2026-DXB-01');
-    setInp('dubai-week-date', audit.weekEndDate || '');
+    const formattedDate = formatAppDate(audit.weekEndDate);
+    setInp('dubai-week-date', formattedDate);
+    const fp = document.getElementById('dubai-week-date')?._flatpickr;
+    if (fp) fp.setDate(formattedDate, false);
     setInp('dubai-audit-note', audit.note || '');
 
     if (audit.descriptions) {
@@ -492,7 +554,7 @@ window.loadDubaiAuditHistory = async function(id) {
 
     setInp('memo-range-start', audit.memoRangeStart || '');
     setInp('memo-range-end', audit.memoRangeEnd || '');
-    window.handleMemoRangeChange();
+    window.handleMemoRangeChange?.();
 
     [['dubai-prev-rem-input', audit.prevRemittance], ['dubai-prev-pur-input', audit.prevPurchaseTotal], ['dubai-prev-exp-input', audit.prevExpenseTotal],
      ['input-cum-sent', audit.cumulativeRemittance], ['input-cum-purchase', audit.cumulativePurchaseTotal], ['input-cum-expense', audit.cumulativeExpenseTotal],
@@ -513,7 +575,7 @@ window.loadDubaiAuditHistory = async function(id) {
     DubaiMemoModal.setMemos(Array.isArray(memos) ? memos : []);
 
     updateLiveWaterfall();
-    showToast(`অডিট লোড করা হয়েছে (${audit.weekEndDate || ''})`, 'info');
+    showToast(`অডিট লোড করা হয়েছে (${formattedDate})`, 'info');
 };
 
 window.printDubaiAuditHistory = async function(id) {
