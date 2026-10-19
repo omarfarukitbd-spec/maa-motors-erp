@@ -15,7 +15,8 @@ export function setupTreasuryActions(getState) {
     // 1. Quick Daily Collection
     window.treasuryOpenDailyCollection = async () => {
         const today = getTodayLocalDateString();
-        let suggestedAmount = 0;
+        let suggestedCashAmount = 0;
+        let suggestedBankAmount = 0;
 
         try {
             const snap = await TransactionDAO.collection.where('date', '==', today).get();
@@ -23,13 +24,20 @@ export function setupTreasuryActions(getState) {
                 const t = doc.data();
                 if (t.voucherNo !== 'OPENING') {
                     if (String(t.receivedType || '').trim() === 'Less') return;
-                    suggestedAmount = safeRound(suggestedAmount + (Number(t.paid) || 0));
+                    const p = Number(t.paid) || 0;
+                    if (t.receivedType === 'Bank') {
+                        suggestedBankAmount = safeRound(suggestedBankAmount + p);
+                    } else {
+                        suggestedCashAmount = safeRound(suggestedCashAmount + p);
+                    }
                 }
             });
         } catch (e) {
             console.warn('ERP collection suggest fallback:', e);
         }
 
+        // Suggest showroom cash collection by default (since bank transactions sync via Bank Sync)
+        const suggestedAmount = suggestedCashAmount > 0 ? suggestedCashAmount : (suggestedBankAmount > 0 ? suggestedBankAmount : 0);
         const config = getDailyCollectionModalConfig(today, suggestedAmount);
         const { value: formValues } = await Swal.fire(config);
 
@@ -54,17 +62,23 @@ export function setupTreasuryActions(getState) {
         if (infoEl) infoEl.innerHTML = '<span class="text-amber-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-1"></i>ইআরপি থেকে কালেকশন খোঁজা হচ্ছে...</span>';
 
         try {
-            let total = 0;
+            let cashTotal = 0;
+            let bankTotal = 0;
             const snap = await TransactionDAO.collection.where('date', '==', dbDate).get();
             snap.forEach(doc => {
                 const t = doc.data();
                 if (t.voucherNo !== 'OPENING') {
                     if (String(t.receivedType || '').trim() === 'Less') return;
-                    total = safeRound(total + (Number(t.paid) || 0));
+                    const p = Number(t.paid) || 0;
+                    if (t.receivedType === 'Bank') {
+                        bankTotal = safeRound(bankTotal + p);
+                    } else {
+                        cashTotal = safeRound(cashTotal + p);
+                    }
                 }
             });
 
-            if (total === 0) {
+            if (cashTotal === 0 && bankTotal === 0) {
                 const altDate = formatAppDate(dbDate);
                 if (altDate !== dbDate) {
                     const snap2 = await TransactionDAO.collection.where('date', '==', altDate).get();
@@ -72,18 +86,30 @@ export function setupTreasuryActions(getState) {
                         const t = doc.data();
                         if (t.voucherNo !== 'OPENING') {
                             if (String(t.receivedType || '').trim() === 'Less') return;
-                            total = safeRound(total + (Number(t.paid) || 0));
+                            const p = Number(t.paid) || 0;
+                            if (t.receivedType === 'Bank') {
+                                bankTotal = safeRound(bankTotal + p);
+                            } else {
+                                cashTotal = safeRound(cashTotal + p);
+                            }
                         }
                     });
                 }
             }
 
+            const total = safeRound(cashTotal + bankTotal);
             if (total > 0) {
+                const suggestedAmt = cashTotal > 0 ? cashTotal : total;
                 if (amtEl) {
-                    amtEl.value = formatAmountWithComma(total);
+                    amtEl.value = formatAmountWithComma(suggestedAmt);
                     window.updateLiveWords(amtEl, 'tr-col-words');
                 }
-                if (infoEl) infoEl.innerHTML = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${formatAppDate(dbDate)} তারিখে ইআরপিতে মোট আদায় পাওয়া গেছে ৳ ${formatAmountWithComma(total)}</span>`;
+                let infoMsg = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${formatAppDate(dbDate)}: শোরুম নগদ ৳ ${formatAmountWithComma(cashTotal)}`;
+                if (bankTotal > 0) {
+                    infoMsg += ` | ব্যাংক আদায় ৳ ${formatAmountWithComma(bankTotal)} (যা ব্যাংক সিঙ্ক থেকে আসবে)`;
+                }
+                infoMsg += `</span>`;
+                if (infoEl) infoEl.innerHTML = infoMsg;
             } else {
                 if (amtEl && (!amtEl.value || amtEl.value === '0')) {
                     amtEl.value = '';

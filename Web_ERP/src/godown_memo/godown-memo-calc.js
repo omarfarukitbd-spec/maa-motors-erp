@@ -117,10 +117,23 @@ export function scanActiveBookProgress(transactions = [], startNo, endNo) {
     let latestDate = null;
 
     transactions.forEach(t => {
-        const match = String(t.voucherNo || '').match(/\d+/);
-        if (!match) return;
-        const vNum = parseInt(match[0], 10);
-        if (vNum >= min && vNum <= max) {
+        const vStr = String(t.voucherNo || '').trim();
+        // Ignore opening balance vouchers
+        if (/^open/i.test(vStr) || vStr.includes('প্রারম্ভিক')) return;
+        // Ignore standalone quick-collect receipts (QC-) that do not reference a specific memo
+        if (vStr.startsWith('QC-') && !t.refMemoNo) return;
+
+        let vNum = null;
+        if (t.refMemoNo) {
+            const refMatch = String(t.refMemoNo).match(/\d+/);
+            if (refMatch) vNum = parseInt(refMatch[0], 10);
+        }
+        if (vNum === null) {
+            const match = vStr.match(/\d+/);
+            if (match) vNum = parseInt(match[0], 10);
+        }
+
+        if (vNum !== null && vNum >= min && vNum <= max) {
             presentSet.add(vNum);
             matchedTxns.push({ ...t, vNum });
 

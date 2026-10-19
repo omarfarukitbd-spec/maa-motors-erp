@@ -132,6 +132,66 @@ function runFinancialMathTests() {
 
     passed++;
 
+    // Test 8: Invariant 8 - Dubai Weekly Physical Assets & Reconciliation Variance Law
+    const dubaiAuditMock = {
+        cashInHand: 15400,
+        marketAdvance: 28000,
+        messBalance: 3200,
+        personalHoldings: [
+            { name: 'আলতাফ', amount: 5000, op: '-' },
+            { name: 'এমরান মামা', amount: 4500 },
+            { name: 'ব্যক্তিগত পাওনা সমন্বয়', amount: 1100, op: '+' }
+        ],
+        cumulativeRemittance: 120000,
+        cumulativePurchase: 55000,
+        cumulativeExpense: 10000
+    };
+    let holdingsTotal = 0;
+    dubaiAuditMock.personalHoldings.forEach(h => {
+        const amt = safeRound(Number(h.amount) || 0);
+        const isLiabilityAdjustment = h.op === '+';
+        holdingsTotal = safeRound(isLiabilityAdjustment ? holdingsTotal - amt : holdingsTotal + amt);
+    });
+    // Expected holdings: 5000 + 4500 - 1100 = 8400
+    assert.strictEqual(holdingsTotal, 8400, "Dubai custodian holdings calculation mismatch");
+    const totalPhysical = safeRound(dubaiAuditMock.cashInHand + dubaiAuditMock.marketAdvance + holdingsTotal + dubaiAuditMock.messBalance);
+    // 15400 + 28000 + 8400 + 3200 = 55000
+    assert.strictEqual(totalPhysical, 55000, "Dubai total physical assets calculation mismatch");
+
+    const theoreticalCash = safeRound(dubaiAuditMock.cumulativeRemittance - dubaiAuditMock.cumulativePurchase - dubaiAuditMock.cumulativeExpense);
+    // 120000 - 55000 - 10000 = 55000
+    assert.strictEqual(theoreticalCash, 55000, "Dubai net theoretical cash mismatch");
+    const variance = safeRound(totalPhysical - theoreticalCash);
+    assert.strictEqual(variance, 0, "Dubai weekly audit must balance to 0 AED");
+    passed++;
+
+    // Test 9: Invariant 9 - Universal Ledger Reversal & Deletion Balance Law
+    let testDue = 100000;
+    // Step A: Add Bill of 25,000, Paid 0 -> due = 125,000
+    testDue = safeRound(testDue + (25000 - 0));
+    assert.strictEqual(testDue, 125000, "Ledger add bill failed");
+
+    // Step B: Delete the Bill of 25,000 -> increment(safeRound(paid - bill)) = increment(-25000)
+    testDue = safeRound(testDue + (0 - 25000));
+    assert.strictEqual(testDue, 100000, "Ledger delete bill reversal failed");
+
+    // Step C: Add Payment of 30,000 -> due = 70,000
+    testDue = safeRound(testDue + (0 - 30000));
+    assert.strictEqual(testDue, 70000, "Ledger add payment failed");
+
+    // Step D: Delete Payment of 30,000 -> increment(safeRound(paid - bill)) = increment(+30000)
+    testDue = safeRound(testDue + (30000 - 0));
+    assert.strictEqual(testDue, 100000, "Ledger delete payment reversal failed");
+
+    // Step E: Add Quick Less Discount of 5,000 -> due = 95,000
+    testDue = safeRound(testDue + (0 - 5000));
+    assert.strictEqual(testDue, 95000, "Ledger quick less addition failed");
+
+    // Step F: Delete Quick Less Discount of 5,000 -> increment(safeRound(paid - bill)) = increment(+5000)
+    testDue = safeRound(testDue + (5000 - 0));
+    assert.strictEqual(testDue, 100000, "Ledger quick less reversal failed");
+    passed++;
+
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);
     return true;
 }

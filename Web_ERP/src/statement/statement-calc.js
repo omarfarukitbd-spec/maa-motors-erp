@@ -283,8 +283,8 @@ export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {})
             });
             batch.update(CustomerDAO.getRef(currentCustomerInfo.id), { 
                 totalDue: firebase.firestore.FieldValue.increment(safeRound(-formValues.amount)),
-                lastTxnDate: formValues.date,
-                lastPaymentDate: formValues.date,
+                lastTxnDate: txnDate,
+                lastPaymentDate: txnDate,
                 lastPaymentAmount: safeRound(formValues.amount)
             });
             await batch.commit();

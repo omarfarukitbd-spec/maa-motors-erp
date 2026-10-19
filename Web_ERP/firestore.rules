@@ -64,8 +64,7 @@ service cloud.firestore {
 
     // Customers Collection
     match /customers/{customerId} {
-      allow get: if true;
-      allow list: if isAuthenticated();
+      allow get, list: if isAuthenticated();
       allow create, update: if isAuthenticated() && (
         isAdmin() || 
         (!isBoss() && (
@@ -77,7 +76,8 @@ service cloud.firestore {
         ))
       )
       && (!request.resource.data.keys().hasAny(['phone']) || request.resource.data.phone is string)
-      && (!request.resource.data.keys().hasAny(['balance']) || request.resource.data.balance is number);
+      && (!request.resource.data.keys().hasAny(['initialDue']) || request.resource.data.initialDue is number)
+      && (!request.resource.data.keys().hasAny(['totalDue']) || request.resource.data.totalDue is number);
       allow delete: if isAdmin();
     }
 
@@ -98,8 +98,7 @@ service cloud.firestore {
 
     // Transactions Collection
     match /transactions/{txnId} {
-      allow get: if isAuthenticated() || (resource.data.customerId != null && resource.data.voucherNo != null);
-      allow list: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true || getPerms().get('viewLedger', false) == true);
+      allow get, list: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('viewReports', false) == true || getPerms().get('viewLedger', false) == true);
       allow create, update: if isAuthenticated() && (
         isAdmin() || 
         (!isBoss() && (
@@ -108,7 +107,8 @@ service cloud.firestore {
           getPerms().get('editLedger', false) == true
         ))
       )
-      && (!request.resource.data.keys().hasAny(['amount']) || isAmountValid(request.resource.data.amount));
+      && (!request.resource.data.keys().hasAny(['bill']) || (request.resource.data.bill is number && request.resource.data.bill >= 0))
+      && (!request.resource.data.keys().hasAny(['paid']) || (request.resource.data.paid is number && request.resource.data.paid >= 0));
       allow delete: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('deleteLedger', false) == true)));
     }
 

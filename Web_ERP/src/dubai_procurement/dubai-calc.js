@@ -43,8 +43,11 @@ export function calculateTotalPhysicalAssets(cashInHand, marketAdvance, personal
     if (Array.isArray(personalHoldings)) {
         holdingsTotal = personalHoldings.reduce((sum, item) => {
             const amt = safeRound(parseAmount(item.amount));
-            const isPlus = item.op === '+';
-            return safeRound(isPlus ? sum - amt : sum + amt);
+            // In Dubai waterfall reconciliation:
+            // Default or op === '-' means physical cash held by custodian (positive physical asset).
+            // op === '+' means liability or incoming claim (deducted from physical assets).
+            const isLiabilityAdjustment = item.op === '+';
+            return safeRound(isLiabilityAdjustment ? sum - amt : sum + amt);
         }, 0);
     }
     

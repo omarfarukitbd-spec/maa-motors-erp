@@ -26,7 +26,9 @@ export function initAssetManager(initialData = {}, onChange = null) {
 export function getAssetData() {
     let holdingsTotal = 0;
     assetData.personalHoldings.forEach(h => {
-        holdingsTotal = safeRound(holdingsTotal + safeRound(parseAmount(h.amount)));
+        const amt = safeRound(parseAmount(h.amount));
+        const isLiabilityAdjustment = h.op === '+';
+        holdingsTotal = safeRound(isLiabilityAdjustment ? holdingsTotal - amt : holdingsTotal + amt);
     });
     const total = safeRound(assetData.cashInHand + assetData.marketAdvance + holdingsTotal + assetData.messBalance);
 
