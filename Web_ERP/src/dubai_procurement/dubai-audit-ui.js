@@ -12,7 +12,8 @@ import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
-    toDBDate, showToast, promptSecurityPin, getDayOfWeekBangla, formatAppDate 
+    toDBDate, showToast, promptSecurityPin, getDayOfWeekBangla, formatAppDate,
+    ensureOnline
 } from '../utils.js';
 
 let currentAuditId = null;
@@ -443,6 +444,7 @@ async function onRollForwardClick(silent = false) {
 }
 
 async function onSaveAuditClick() {
+    if (!ensureOnline('দুবাই সাপ্তাহিক অডিট সংরক্ষণ')) return;
     if (currentAuditId) {
         const pinOk = await promptSecurityPin('সংরক্ষিত অডিট সংশোধন ও পুনরায় সংরক্ষণ');
         if (!pinOk) return;

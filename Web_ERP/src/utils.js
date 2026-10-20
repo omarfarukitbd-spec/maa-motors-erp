@@ -27,3 +27,6 @@ export * from './utils/address-suggestions.js';
 
 // 7. Phone Dialer & Communication
 export * from './utils/phone-dialer.js';
+
+// 8. Universal Enterprise Offline Guard
+export * from './utils/network-guard.js';

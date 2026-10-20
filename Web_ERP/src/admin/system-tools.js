@@ -26,14 +26,19 @@ export async function setNextAccountNo() {
             title: 'অটো-সিরিয়াল কাউন্টার সেট করুন',
             html: `<div class="text-left space-y-4 font-bn p-2">
                     <div><label class="block text-xs font-bold text-slate-400 mb-1">জোন সিলেক্ট করুন</label><select id="set-next-zone" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-blue-500">${zoneOpts}</select></div>
-                    <div><label class="block text-xs font-bold text-slate-400 mb-1">বর্তমান সিরিয়াল নম্বর (e.g. 5 মানে পরবর্তী আইডি 0006 হবে)</label><input id="set-next-val" type="number" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-blue-500" placeholder="e.g. 5"></div>
+                    <div><label class="block text-xs font-bold text-slate-400 mb-1">বর্তমান সিরিয়াল নম্বর (যেমন: ৪৬ দিলে পরবর্তী আইডি ১০০৪৭ হবে)</label><input id="set-next-val" type="number" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-blue-500" placeholder="e.g. 46"></div>
+                    <p class="text-[11px] text-amber-400/90 font-mono"><i class="fa-solid fa-circle-info mr-1"></i>নোট: পুরো একাউন্ট নম্বর লেখার প্রয়োজন নেই, শুধু শেষ সিরিয়াল নম্বর লিখুন (যেমন: ৪৬)।</p>
                 </div>`,
             showCancelButton: true, confirmButtonText: 'আপডেট করুন', cancelButtonText: 'বাতিল',
             customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' },
             preConfirm: () => {
                 const zone = document.getElementById('set-next-zone').value;
-                const val = parseInt(document.getElementById('set-next-val').value);
+                let val = parseInt(document.getElementById('set-next-val').value, 10);
                 if (!zone || isNaN(val)) return Swal.showValidationMessage('সবগুলো ঘর পূরণ করুন');
+                // Auto-sanitize: if user entered full account number like 10046 or 110047, take only the last 4 digits
+                if (val > 9999) {
+                    val = parseInt(String(val).slice(-4), 10) || 0;
+                }
                 return { zone, val };
             }
         });
@@ -43,7 +48,7 @@ export async function setNextAccountNo() {
             if (!isPinValid) return;
             try {
                 await SettingsDAO.updateZoneCounter(formValues.zone, formValues.val);
-                Swal.fire('সফল!', `জোনের (${formValues.zone}) পরবর্তী সিরিয়াল আপডেট করা হয়েছে।`, 'success');
+                Swal.fire('সফল!', `জোনের (${formValues.zone}) পরবর্তী সিরিয়াল আপডেট করা হয়েছে (কাউন্টার: ${formValues.val})।`, 'success');
             } catch (e) { 
                 console.error(e);
                 Swal.fire('Error', 'কাউন্টার আপডেট করা যায়নি।', 'error'); 
@@ -118,10 +123,11 @@ export async function autoSyncZoneCounters() {
 
             let maxSerial = 0;
             zoneCusts.forEach(c => {
-                const acc = c.accountNo || '';
-                const match = acc.match(/\d+/);
-                if (match) {
-                    const num = parseInt(match[0], 10);
+                const acc = (c.accountNo || '').trim();
+                const digitsOnly = acc.replace(/\D/g, '');
+                if (digitsOnly) {
+                    // Strictly extract the pure 4-digit serial from the end of account number (e.g. 10046 -> 46, 110047 -> 47)
+                    const num = parseInt(digitsOnly.slice(-4), 10);
                     if (!isNaN(num) && num > maxSerial) maxSerial = num;
                 }
             });

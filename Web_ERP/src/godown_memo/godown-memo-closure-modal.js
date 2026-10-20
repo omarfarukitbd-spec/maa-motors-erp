@@ -2,7 +2,7 @@ import Swal from 'sweetalert2';
 import { TransactionDAO } from '../dao.js';
 import { GodownMemoDAO } from './godown-memo-dao.js';
 import { scanActiveBookProgress } from './godown-memo-calc.js';
-import { formatAmountWithComma, formatAppDate, safeRound, promptSecurityPin, showToast } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, safeRound, promptSecurityPin, showToast, ensureOnline } from '../utils.js';
 
 /**
  * Open 1-Click Book Closure & Reconciliation Wizard
@@ -11,6 +11,7 @@ import { formatAmountWithComma, formatAppDate, safeRound, promptSecurityPin, sho
  * @param {Function} onClosed - Callback after successful closure
  */
 export async function openGodownMemoClosureModal(existingBooks = [], activeConfig = {}, onClosed = null) {
+    if (!ensureOnline('গোডাউন মেমো বই সমাপ্তি ও সিলমোহর')) return;
     const sorted = [...existingBooks].sort((a, b) => (Number(a.bookSerial) || 0) - (Number(b.bookSerial) || 0));
     const lastBook = sorted[sorted.length - 1] || null;
     const nextSerial = (lastBook ? Number(lastBook.bookSerial || 0) : 0) + 1;

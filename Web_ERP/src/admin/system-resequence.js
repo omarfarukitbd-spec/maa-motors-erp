@@ -88,10 +88,11 @@ export async function syncSingleZoneCounter(zoneName) {
         const zoneCusts = customers.filter(c => (c.zone || '').trim() === zoneName);
         let maxSerial = 0;
         zoneCusts.forEach(c => {
-            const acc = c.accountNo || '';
-            const match = acc.match(/\d+/);
-            if (match) {
-                const num = parseInt(match[0], 10);
+            const acc = (c.accountNo || '').trim();
+            const digitsOnly = acc.replace(/\D/g, '');
+            if (digitsOnly) {
+                // Strictly extract the pure 4-digit serial from the end of account number (e.g. 10046 -> 46, 110047 -> 47)
+                const num = parseInt(digitsOnly.slice(-4), 10);
                 if (!isNaN(num) && num > maxSerial) maxSerial = num;
             }
         });

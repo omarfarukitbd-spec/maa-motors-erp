@@ -1,11 +1,12 @@
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
-import { promptSecurityPin, showToast, handleError } from '../utils.js';
+import { promptSecurityPin, showToast, handleError, ensureOnline } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedCustomers } from './customer-state.js';
 
 export async function deleteCustomer(id, name) {
+    if (!ensureOnline('কাস্টমার মুছে ফেলা')) return;
     if (window.AppState?.currentUserRole === 'Staff' && window.AppState?.permissions?.deleteCustomers === false) {
         return Swal.fire('অ্যাক্সেস ডিনাইড!', 'আপনার কাস্টমার ডিলেট করার অনুমতি নেই।', 'error');
     }

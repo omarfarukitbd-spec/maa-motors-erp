@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { TransactionDAO, CustomerDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, promptSecurityPin, toDBDate, safeRound, escapeHTML } from '../utils.js';
+import { parseAmount, formatAmountWithComma, promptSecurityPin, toDBDate, safeRound, escapeHTML, ensureOnline } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 import { auditLog } from '../audit.js';
 import { getCustomerCache } from '../customer/index.js';
@@ -11,6 +11,7 @@ import { getCustomerCache } from '../customer/index.js';
  */
 export async function openMemoEditModal(txnId, voucherNo) {
     if (!txnId) return;
+    if (!ensureOnline('মেমো সংশোধন')) return;
 
     const isPinValid = await promptSecurityPin("মেমো সংশোধন (Edit Memo)");
     if (!isPinValid) return;

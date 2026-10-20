@@ -1,6 +1,6 @@
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO, ZoneDAO } from '../dao.js';
-import { parseAmount, toDBDate, getTodayLocalDateString, promptSecurityPin, numberToBanglaWords, formatAmountWithComma, handleError } from '../utils.js';
+import { parseAmount, toDBDate, getTodayLocalDateString, promptSecurityPin, numberToBanglaWords, formatAmountWithComma, handleError, ensureOnline } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { cachedZones, cachedCustomers } from './customer-state.js';
@@ -12,16 +12,7 @@ export async function editCustomer(id, name, phone, address, currentZone) {
         return Swal.fire('অ্যাক্সেস ডিনাইড!', 'আপনার কাস্টমার তথ্য এডিট করার অনুমতি নেই।', 'error');
     }
 
-    // <i class="fa-solid fa-check text-emerald-400"></i> Offline Guard — editing requires server transaction
-    if (!navigator.onLine) {
-        return Swal.fire({
-            title: '<i class="fa-solid fa-wifi text-red-400 mr-2"></i>অফলাইন!',
-            html: '<p class="font-bn text-slate-300 text-sm">ইন্টারনেট সংযোগ নেই।<br><strong class="text-red-400">অফলাইনে কাস্টমার এডিট করা যাবে না।</strong><br><span class="text-xs text-slate-400 mt-1 block">অনুগ্রহ করে ইন্টারনেট চালু করে আবার চেষ্টা করুন।</span></p>',
-            icon: 'error',
-            confirmButtonText: 'ঠিক আছে',
-            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-red-500/30 font-bn', confirmButton: 'm3-btn-primary !bg-red-600 hover:!bg-red-500 !px-6 !py-2 !rounded-xl font-bold' }
-        });
-    }
+    if (!navigator.onLine || !ensureOnline('কাস্টমার তথ্য সংশোধন')) return;
 
     const isPinValid = await promptSecurityPin("কাস্টমার তথ্য এডিট (Authorization)");
     if (!isPinValid) return;

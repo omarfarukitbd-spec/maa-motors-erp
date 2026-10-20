@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, SettingsDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, formatSmsCounterText, buildSmsMessage, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords, escapeHTML } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, formatSmsCounterText, buildSmsMessage, toDBDate, safeRound, promptSecurityPin, sendSMS, showToast, handleError, resetLiveWords, escapeHTML, ensureOnline } from '../utils.js';
 import { AppState } from '../state.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
@@ -10,6 +10,7 @@ import { handlePostDeleteSms } from './ledger-delete-sms.js';
 import { triggerSilentCustomerGoogleSync } from '../customer/google-contact-sync-service.js';
 
 export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs = {}) {
+    if (!ensureOnline('নতুন লেজার এন্ট্রি সংরক্ষণ')) return;
     const mainBtn = document.getElementById('save-txn-btn');
     const sel = document.getElementById('ledger-customer-select');
     if (!sel || !sel.value) return Swal.fire('Error', 'কাস্টমার সিলেক্ট করুন', 'error');
@@ -259,6 +260,7 @@ export async function saveTransaction(editingRef = {}, callbacks = {}, stateRefs
 }
 
 export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef = {}, notes = '', memoPhotoUrl = null, refMemoNo = '') {
+    if (!ensureOnline('খতিয়ান এডিট')) return;
     if (!(await promptSecurityPin("খতিয়ান এডিট (Authorization)"))) return;
     editingRef.id = id; editingRef.oldCid = cid; editingRef.oldBill = b; editingRef.oldPaid = p; editingRef.oldMemoPhotoUrl = memoPhotoUrl || null;
     window._ledgerEditingRef = editingRef;
@@ -342,6 +344,7 @@ export async function editTransaction(id, cid, date, v, b, p, rt, rf, editingRef
 }
 
 export async function deleteTransaction(id, cid, b, p, callbacks = {}) {
+    if (!ensureOnline('ভাউচার ডিলিট')) return;
     if (!(await promptSecurityPin("ভাউচার ডিলেট", "deleteTxn"))) return;
     try {
         Swal.fire({ title: 'ডিলিট হচ্ছে...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });

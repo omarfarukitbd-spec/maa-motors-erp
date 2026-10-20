@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { TransactionDAO, CustomerDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, numberToBanglaWords, toDBDate, safeRound, escapeHTML, showToast, handleError } from '../utils.js';
+import { parseAmount, formatAmountWithComma, numberToBanglaWords, toDBDate, safeRound, escapeHTML, showToast, handleError, ensureOnline } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { extractVoucherNumber } from './memo-book-audit-calc.js';
 import { triggerSilentCustomerGoogleSync } from '../customer/google-contact-sync-service.js';
@@ -11,15 +11,7 @@ import { triggerSilentCustomerGoogleSync } from '../customer/google-contact-sync
  * Allows adding a deduction/return on any past or present date while keeping original bill intact.
  */
 export async function openMemoQuickLessModal(txnId, voucherNo, customerId, customerName, bill = 0) {
-    if (!navigator.onLine) {
-        return Swal.fire({
-            title: '<i class="fa-solid fa-wifi text-red-400 mr-2"></i>অফলাইন!',
-            text: 'ইন্টারনেট সংযোগ নেই। অফলাইনে নতুন লেস বা মাল ফেরত এন্ট্রি দেওয়া যাবে না।',
-            icon: 'error',
-            confirmButtonText: 'ঠিক আছে',
-            customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-red-500/30 font-bn' }
-        });
-    }
+    if (!ensureOnline('ছাড় / মাল ফেরত সমন্বয়')) return;
 
     let targetCustId = customerId;
     let targetCustName = customerName;

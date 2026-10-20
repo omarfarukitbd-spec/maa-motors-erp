@@ -8,7 +8,7 @@ import { navigate, toggleSidebarCollapse, initOnlineStatus } from './navigation/
 import { initSearch } from './search/global-search.js';
 import { initDatePickers, startDateObserver } from './utils/date-logic/date-picker.js';
 import { handleCalc, initCalculatorKeyboard, initDraggableCalculator } from './ui/calculator.js';
-import { initOmnisearch, initNetworkSyncBadge, initGlobalButtonInteractions, initPermissionObserver } from './utils.js';
+import { initOmnisearch, initNetworkSyncBadge, initGlobalButtonInteractions, initPermissionObserver, initGlobalNetworkGuard } from './utils.js';
 import { initCustomerInspector } from './customer_inspector/index.js';
 import { initStealthSystem } from './stealth/index.js';
 import './banking/banking-ui.js';
@@ -76,8 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initDatePickers();
     startDateObserver();
 
-    // 4. Initialize Network Status Badge, Touch Haptic & Permission Engine
+    // 4. Initialize Network Status Badge, Touch Haptic, Permission Engine & Enterprise Offline Guard
     initNetworkSyncBadge();
+    initGlobalNetworkGuard();
     initGlobalButtonInteractions();
     initPermissionObserver();
 
@@ -139,6 +140,16 @@ document.addEventListener('DOMContentLoaded', () => {
             await groupsModule.initDailyAutoLabelSync();
         } catch (syncErr) {
             console.error('Daily smart label auto sync error:', syncErr);
+        }
+    })();
+
+    // 9. Silent Corrupted Account Auto-Healing & Zone Counter Sync
+    (async () => {
+        try {
+            const healModule = await import('./admin/account-healing.js');
+            await healModule.autoHealCorruptedAccountsSilent();
+        } catch (healErr) {
+            console.error('Account auto heal error:', healErr);
         }
     })();
 });

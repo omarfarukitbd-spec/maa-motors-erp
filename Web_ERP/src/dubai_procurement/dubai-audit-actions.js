@@ -4,13 +4,14 @@
  */
 
 import { DubaiDAO } from './dubai-dao.js';
-import { safeRound, showToast, promptSecurityPin, formatAppDate } from '../utils.js';
+import { safeRound, showToast, promptSecurityPin, formatAppDate, ensureOnline } from '../utils.js';
 import { printDubaiAuditSheet } from './dubai-print.js';
 
 let unsubscribeAudits = null;
 
 export const DubaiActions = {
     async saveAudit(auditPayload, memoItems) {
+        if (!ensureOnline('দুবাই সাপ্তাহিক অডিট সংরক্ষণ')) return null;
         try {
             const savedId = await DubaiDAO.saveWeeklyAudit(auditPayload);
             await DubaiDAO.saveMemos(savedId, Array.isArray(memoItems) ? memoItems : []);
@@ -57,6 +58,7 @@ export const DubaiActions = {
     },
 
     async deleteAudit(id) {
+        if (!ensureOnline('দুবাই অডিট রেকর্ড ডিলিট')) return false;
         const pinOk = await promptSecurityPin('দুবাই অডিট রেকর্ড ডিলিট');
         if (!pinOk) return false;
 

@@ -149,10 +149,12 @@ export const SettingsDAO = new class {
 
     async updateZoneCounter(zoneName, val) {
         const counterRef = this.collection.doc('counters');
+        let cleanVal = parseInt(val, 10) || 0;
+        if (cleanVal > 9999) cleanVal = parseInt(String(cleanVal).slice(-4), 10) || 0;
         await db.runTransaction(async (t) => {
             const doc = await t.get(counterRef);
             let zoneCounters = (doc.exists && doc.data().zoneCounters) ? doc.data().zoneCounters : {};
-            zoneCounters[zoneName] = val;
+            zoneCounters[zoneName] = cleanVal;
             t.set(counterRef, { zoneCounters }, { merge: true });
         });
     }
@@ -162,7 +164,9 @@ export const SettingsDAO = new class {
         const work = async (t) => {
             const doc = await t.get(counterRef);
             let zoneCounters = (doc.exists && doc.data().zoneCounters) ? doc.data().zoneCounters : {};
-            let nextNo = (zoneCounters[zoneName] || 0) + 1;
+            let rawVal = parseInt(zoneCounters[zoneName] || 0, 10);
+            if (rawVal > 9999) rawVal = parseInt(String(rawVal).slice(-4), 10) || 0;
+            let nextNo = rawVal + 1;
             zoneCounters[zoneName] = nextNo;
             t.set(counterRef, { zoneCounters }, { merge: true });
             return String(nextNo).padStart(4, '0');
@@ -174,7 +178,9 @@ export const SettingsDAO = new class {
     async peekNextAccountNo(zoneName) {
         const doc = await this.collection.doc('counters').get();
         let zoneCounters = (doc.exists && doc.data().zoneCounters) ? doc.data().zoneCounters : {};
-        let nextNo = (zoneCounters[zoneName] || 0) + 1;
+        let rawVal = parseInt(zoneCounters[zoneName] || 0, 10);
+        if (rawVal > 9999) rawVal = parseInt(String(rawVal).slice(-4), 10) || 0;
+        let nextNo = rawVal + 1;
         return String(nextNo).padStart(4, '0');
     }
 }();

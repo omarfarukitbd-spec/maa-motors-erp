@@ -3,6 +3,7 @@ import { firebase } from '../firebase-config.js';
 import { SettingsDAO, UserDAO } from '../dao.js';
 import { shouldRequirePin } from '../settings/security-policy.js';
 import { auditLog } from '../audit.js';
+import { ensureOnline } from './network-guard.js';
 
 let consecutiveFailures = 0;
 
@@ -10,6 +11,7 @@ let consecutiveFailures = 0;
  * Security PIN Verification with Granular Policy Check
  */
 export async function promptSecurityPin(actionName = "ডিলেট/এডিট", actionKey = null) {
+    if (!ensureOnline(actionName)) return false;
     try {
         let targetKey = actionKey;
         if (!targetKey) {

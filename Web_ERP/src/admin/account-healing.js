@@ -105,4 +105,66 @@ export async function healAccountNumbersFlow() {
     }
 }
 
+/**
+ * Silent JIT Auto-Healer for Corrupted Account Numbers and Zone Counters
+ * Runs silently on startup or when loaded to ensure DB invariants remain 100% clean.
+ */
+export async function autoHealCorruptedAccountsSilent() {
+    try {
+        const [zones, customers] = await Promise.all([
+            ZoneDAO.getAllZones(),
+            CustomerDAO.getAll()
+        ]);
+
+        if (!zones || zones.length === 0 || !customers || customers.length === 0) return;
+
+        const zoneCodeMap = {};
+        zones.forEach(z => {
+            if (z.name && z.code) zoneCodeMap[z.name.trim()] = z.code.trim();
+        });
+
+        const zoneMaxSerialMap = {};
+        let repairedCount = 0;
+
+        for (const c of customers) {
+            const zName = (c.zone || 'General').trim();
+            const zCode = zoneCodeMap[zName] || '';
+            const currentAcc = (c.accountNo || '').trim();
+
+            if (!currentAcc) continue;
+
+            const digitsOnly = currentAcc.replace(/\D/g, '');
+            if (!digitsOnly) continue;
+
+            const serialNo = parseInt(digitsOnly.slice(-4), 10) || 1;
+            const paddedSerial = String(serialNo).padStart(4, '0');
+            const targetAcc = zCode ? (zCode + paddedSerial) : paddedSerial;
+
+            if (!zoneMaxSerialMap[zName] || serialNo > zoneMaxSerialMap[zName]) {
+                zoneMaxSerialMap[zName] = serialNo;
+            }
+
+            if (currentAcc !== targetAcc) {
+                await CustomerDAO.update(c.id, { accountNo: targetAcc });
+                c.accountNo = targetAcc;
+                repairedCount++;
+            }
+        }
+
+        // Sync and clamp zone counters
+        for (const [zName, maxSer] of Object.entries(zoneMaxSerialMap)) {
+            await SettingsDAO.updateZoneCounter(zName, maxSer);
+        }
+
+        if (repairedCount > 0) {
+            console.log(`[AutoHeal] Successfully healed ${repairedCount} corrupted customer accounts and synced zone counters.`);
+            auditLog('SILENT_HEAL_ACCOUNTS', 'System', 'AutoHeal', `Healed ${repairedCount} accounts`);
+            if (typeof window.loadCustomers === 'function') window.loadCustomers();
+        }
+    } catch (e) {
+        console.error("autoHealCorruptedAccountsSilent error:", e);
+    }
+}
+
 window.healAccountNumbersFlow = healAccountNumbersFlow;
+window.autoHealCorruptedAccountsSilent = autoHealCorruptedAccountsSilent;

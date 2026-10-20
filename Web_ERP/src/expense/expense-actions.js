@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { ExpenseDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, numberToBanglaWords, resetLiveWords, promptSecurityPin, showToast } from '../utils.js';
+import { parseAmount, formatAmountWithComma, formatAppDate, toDBDate, numberToBanglaWords, resetLiveWords, promptSecurityPin, showToast, ensureOnline } from '../utils.js';
 import { auditLog } from '../audit.js';
 import { AppState } from '../state.js';
 import { loadRecentExpenses } from './expense-ui.js';
@@ -16,6 +16,8 @@ export function getEditingId() { return editingExpenseId; }
 export function setEditingId(val) { editingExpenseId = val; }
 
 export async function saveExpense() {
+    if (!ensureOnline(editingExpenseId ? 'খরচ আপডেট' : 'নতুন খরচ এন্ট্রি')) return;
+
     const dateEl = document.getElementById('exp-date');
     const catEl = document.getElementById('exp-category');
     const detEl = document.getElementById('exp-details');
@@ -99,11 +101,15 @@ export async function saveExpense() {
         if (catEl) catEl.selectedIndex = 0;
         showToast('খরচ সফলভাবে সেভ হয়েছে!', 'success');
         loadRecentExpenses();
-    } catch(e) { Swal.fire('Error', 'ব্যর্থ হয়েছেন', 'error'); }
+    } catch(e) { 
+        console.error("saveExpense error:", e);
+        Swal.fire('Error', 'ব্যর্থ হয়েছেন', 'error'); 
+    }
     finally { if(btn) btn.disabled = false; }
 }
 
 export async function deleteExpense(id, desc) {
+    if (!ensureOnline('খরচ মুছে ফেলা')) return;
     if (!(await promptSecurityPin("খরচ মুছে ফেলা", "deleteExpense"))) return;
     try {
         const expDoc = await ExpenseDAO.getById(id);
@@ -123,6 +129,7 @@ export async function deleteExpense(id, desc) {
 }
 
 export async function editExpense(id, date, category, amount, detailsEncoded, pMethod, pAcc) {
+    if (!ensureOnline('খরচ সংশোধন')) return;
     if (!(await promptSecurityPin("খরচ সংশোধন"))) return;
 
     const details = decodeURIComponent(detailsEncoded || '');

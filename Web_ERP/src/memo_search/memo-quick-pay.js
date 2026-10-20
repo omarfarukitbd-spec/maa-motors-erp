@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { TransactionDAO, CustomerDAO, BankDAO } from '../dao.js';
-import { parseAmount, formatAmountWithComma, numberToBanglaWords, toDBDate, safeRound, escapeHTML } from '../utils.js';
+import { parseAmount, formatAmountWithComma, numberToBanglaWords, toDBDate, safeRound, escapeHTML, ensureOnline } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 import { auditLog } from '../audit.js';
 import { getCustomerCache } from '../customer/index.js';
@@ -10,6 +10,7 @@ import { getCustomerCache } from '../customer/index.js';
  * Open Quick Payment Collect Modal directly for a memo
  */
 export async function openMemoQuickPayModal(txnId, voucherNo, customerId, currentDue = 0) {
+    if (!ensureOnline('কুইক জমা গ্রহণ')) return;
     let targetTxn = null;
     if (txnId && (!customerId || !voucherNo)) {
         try {

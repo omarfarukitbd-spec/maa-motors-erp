@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, getTodayLocalDateString, parseAmount, safeRound, showToast, toDBDate } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, getTodayLocalDateString, parseAmount, safeRound, showToast, toDBDate, ensureOnline } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { auditLog } from '../audit.js';
 import { reconcileSingleCustomerBalance } from '../admin/balance-recon-heal.js';
@@ -210,6 +210,7 @@ export function setStmtPresetDate(type, callbacks = {}) {
 }
 
 export async function quickCollectPaymentFromStmt(stateRef = {}, callbacks = {}) {
+    if (!ensureOnline('স্টেটমেন্ট থেকে জমা গ্রহণ')) return;
     const { currentCustomerInfo } = stateRef;
     window.updateStmtRecvDropdown = function(val) {
         const r = document.getElementById('stmt-recv-ref');

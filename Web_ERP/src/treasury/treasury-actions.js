@@ -4,7 +4,7 @@ import { TransactionDAO } from '../dao.js';
 import { findTreasuryDuplicate } from './treasury-calc.js';
 import { getDailyCollectionModalConfig, getDailyExpenseModalConfig, getSpecialTransactionModalConfig, getOpeningFundModalConfig } from './treasury-modals.js';
 import { openBankSyncModal } from './treasury-bank-sync.js';
-import { formatAmountWithComma, getTodayLocalDateString, formatAppDate, safeRound, showToast, promptSecurityPin, toDBDate } from '../utils.js';
+import { formatAmountWithComma, getTodayLocalDateString, formatAppDate, safeRound, showToast, promptSecurityPin, toDBDate, ensureOnline } from '../utils.js';
 import { auditLog } from '../audit/audit-logger.js';
 
 /**
@@ -14,6 +14,7 @@ import { auditLog } from '../audit/audit-logger.js';
 export function setupTreasuryActions(getState) {
     // 1. Quick Daily Collection
     window.treasuryOpenDailyCollection = async () => {
+        if (!ensureOnline('দৈনিক কালেকশন এন্ট্রি')) return;
         const today = getTodayLocalDateString();
         let suggestedCashAmount = 0;
         let suggestedBankAmount = 0;
@@ -124,6 +125,7 @@ export function setupTreasuryActions(getState) {
 
     // 2. Quick Daily Expense
     window.treasuryOpenDailyExpense = async () => {
+        if (!ensureOnline('দৈনিক খরচ এন্ট্রি')) return;
         const today = getTodayLocalDateString();
         const config = getDailyExpenseModalConfig(today);
         const { value: formValues } = await Swal.fire(config);
@@ -155,8 +157,9 @@ export function setupTreasuryActions(getState) {
 
     // 3. Special Custom Transaction (or Edit Transaction)
     window.treasuryOpenSpecialTransaction = async (editItem = null) => {
-        const today = getTodayLocalDateString();
         const isEdit = Boolean(editItem && editItem.id);
+        if (!ensureOnline(isEdit ? 'লেনদেন সংশোধন' : 'বিশেষ লেনদেন এন্ট্রি')) return;
+        const today = getTodayLocalDateString();
 
         if (isEdit) {
             const pinOk = await promptSecurityPin();
@@ -186,11 +189,13 @@ export function setupTreasuryActions(getState) {
 
     // 3.5. Quick Bank Fund Sync
     window.treasuryOpenBankSyncModal = async () => {
+        if (!ensureOnline('ব্যাংক ফান্ড সিঙ্ক')) return;
         await openBankSyncModal(getState);
     };
 
     // 4. Opening Fund Balance
     window.treasuryEditOpeningFund = async () => {
+        if (!ensureOnline('প্রারম্ভিক তহবিল সংশোধন')) return;
         const pinOk = await promptSecurityPin();
         if (!pinOk) return;
 
@@ -211,6 +216,7 @@ export function setupTreasuryActions(getState) {
 
     // 5. Safe Delete
     window.treasuryDeleteItem = async (id, title, amount) => {
+        if (!ensureOnline('ফান্ড লেনদেন মুছে ফেলা')) return;
         const pinOk = await promptSecurityPin();
         if (!pinOk) return;
 
