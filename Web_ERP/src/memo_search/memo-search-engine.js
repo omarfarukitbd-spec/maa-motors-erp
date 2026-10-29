@@ -164,29 +164,75 @@ export async function getAdjacentMemos(currentVoucherNo) {
     try {
         const snap = await TransactionDAO.collection
             .orderBy('createdAt', 'desc')
-            .limit(50)
+            .limit(100)
             .get();
 
         const validMemos = [];
+        const seenVouchers = new Set();
+
         snap.forEach(doc => {
             const data = doc.data();
-            if (data.voucherNo && data.voucherNo !== 'OPENING' && !validMemos.some(m => m.voucherNo === data.voucherNo)) {
-                validMemos.push({ id: doc.id, voucherNo: data.voucherNo, customerName: data.customerName });
+            const vNo = data.voucherNo;
+            if (vNo && vNo !== 'OPENING' && !seenVouchers.has(vNo)) {
+                seenVouchers.add(vNo);
+                const vNum = extractVoucherNumber(vNo);
+                validMemos.push({
+                    id: doc.id,
+                    voucherNo: vNo,
+                    vNum,
+                    customerName: data.customerName || ''
+                });
             }
         });
 
-        const currentIdx = validMemos.findIndex(m => m.voucherNo === currentVoucherNo);
+        const currentNum = extractVoucherNumber(currentVoucherNo);
         let prevMemo = null;
         let nextMemo = null;
 
-        if (currentIdx !== -1) {
-            if (currentIdx > 0) nextMemo = validMemos[currentIdx - 1]; // newer
-            if (currentIdx < validMemos.length - 1) prevMemo = validMemos[currentIdx + 1]; // older
+        if (currentNum !== null && currentNum > 0) {
+            // Numeric based proximity sorting:
+            // Previous candidate: largest vNum < currentNum
+            // Next candidate: smallest vNum > currentNum
+            const lowerMemos = validMemos
+                .filter(m => m.vNum !== null && m.vNum < currentNum)
+                .sort((a, b) => b.vNum - a.vNum);
+
+            const higherMemos = validMemos
+                .filter(m => m.vNum !== null && m.vNum > currentNum)
+                .sort((a, b) => a.vNum - b.vNum);
+
+            if (lowerMemos.length > 0) {
+                prevMemo = lowerMemos[0];
+            } else if (currentNum > 1) {
+                // Guaranteed fallback to (N - 1)
+                prevMemo = { voucherNo: String(currentNum - 1), customerName: '' };
+            }
+
+            if (higherMemos.length > 0) {
+                nextMemo = higherMemos[0];
+            } else {
+                // Guaranteed fallback to (N + 1)
+                nextMemo = { voucherNo: String(currentNum + 1), customerName: '' };
+            }
+        } else {
+            // Non-numeric alphanumeric fallback based on chronological list
+            const currentIdx = validMemos.findIndex(m => m.voucherNo === currentVoucherNo);
+            if (currentIdx !== -1) {
+                if (currentIdx > 0) nextMemo = validMemos[currentIdx - 1]; // newer
+                if (currentIdx < validMemos.length - 1) prevMemo = validMemos[currentIdx + 1]; // older
+            }
         }
 
         return { prevMemo, nextMemo };
     } catch (e) {
         console.error("getAdjacentMemos error:", e);
+        const currentNum = extractVoucherNumber(currentVoucherNo);
+        if (currentNum !== null && currentNum > 0) {
+            return {
+                prevMemo: currentNum > 1 ? { voucherNo: String(currentNum - 1), customerName: '' } : null,
+                nextMemo: { voucherNo: String(currentNum + 1), customerName: '' }
+            };
+        }
         return { prevMemo: null, nextMemo: null };
     }
 }

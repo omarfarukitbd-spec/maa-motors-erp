@@ -1,9 +1,11 @@
+// ALLOW_LARGE_FILE: Memo Search UI Hub
 import { searchMemosByNumber, getRecentMemos, getAdjacentMemos, getCustomerLifetimeStats } from './memo-search-engine.js';
 import { renderMemoCardHTML } from './memo-card-ui.js';
 import { startMemoVoiceSearch } from './memo-voice-search.js';
 import { renderMemoBookAuditUI } from './memo-book-audit-ui.js';
 import { renderGodownMemoRegisterUI } from '../godown_memo/index.js';
 import { renderGodownContactDirectory } from '../godown_contacts/index.js';
+import { extractVoucherNumber } from './memo-book-audit-calc.js';
 import { escapeHTML, formatAppDate, formatAmountWithComma } from '../utils.js';
 import { showToast } from '../utils/ui-helpers.js';
 
@@ -56,26 +58,49 @@ export async function renderMemoSearch(container, params = {}) {
                             </div>
                         </div>
 
-                        <!-- Right Search Capsule -->
-                        <div class="relative w-full md:w-auto md:min-w-[380px] lg:min-w-[440px] flex items-center bg-slate-950 border border-slate-700/80 hover:border-slate-600 focus-within:!border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20 rounded-xl shadow-inner transition-all px-3 py-1">
-                            <div class="text-cyan-400 flex items-center justify-center pointer-events-none mr-2">
-                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        <!-- Right Search & Instant Navigation Hub -->
+                        <div class="flex items-center gap-1.5 w-full md:w-auto">
+                            <!-- Quick Stepper Back Button -->
+                            <button id="memo-quick-prev-btn" 
+                                onclick="window.navigateMemoStep('prev')" 
+                                class="h-9 px-2.5 sm:px-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/50 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-inner text-xs font-bold shrink-0" 
+                                title="পূর্ববর্তী মেমো (কিবোর্ড শর্টকাট: ← Left Arrow)">
+                                <i class="fa-solid fa-chevron-left text-[11px] text-cyan-400"></i>
+                                <span class="hidden sm:inline">পূর্ববর্তী</span>
+                                <span class="text-[9px] font-mono text-slate-400 bg-slate-900 px-1 py-0.5 rounded border border-slate-800">←</span>
+                            </button>
+
+                            <!-- Center Search Input Capsule -->
+                            <div class="relative flex-1 md:min-w-[320px] lg:min-w-[360px] flex items-center bg-slate-950 border border-slate-700/80 hover:border-slate-600 focus-within:!border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20 rounded-xl shadow-inner transition-all px-3 py-1">
+                                <div class="text-cyan-400 flex items-center justify-center pointer-events-none mr-2">
+                                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                                </div>
+
+                                <input type="text" 
+                                    id="memo-search-input" 
+                                    placeholder="মেমো নম্বর লিখুন (e.g. 265, #105)..." 
+                                    autocomplete="off"
+                                    class="w-full bg-transparent text-white py-1.5 text-sm font-mono font-black outline-none placeholder:font-bn placeholder:text-slate-500 placeholder:text-xs">
+                                
+                                <div class="flex items-center gap-1 shrink-0 ml-1">
+                                    <button id="memo-search-clear-btn" class="hidden w-6 h-6 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.clearMemoSearchInput()" title="মুছে ফেলুন">
+                                        <i class="fa-solid fa-xmark text-[10px]"></i>
+                                    </button>
+                                    <button id="memo-voice-btn" class="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 flex items-center justify-center border border-slate-700/60 hover:border-cyan-500/40 active:scale-95 transition-all cursor-pointer" onclick="window.triggerMemoVoiceSearch()" title="মুখে বলে সার্চ করুন">
+                                        <i class="fa-solid fa-microphone text-[10px]"></i>
+                                    </button>
+                                </div>
                             </div>
 
-                            <input type="text" 
-                                id="memo-search-input" 
-                                placeholder="মেমো বা ভাউচার নম্বর লিখুন (e.g. 100, #105)..." 
-                                autocomplete="off"
-                                class="w-full bg-transparent text-white py-1.5 text-sm font-mono font-black outline-none placeholder:font-bn placeholder:text-slate-500 placeholder:text-xs">
-                            
-                            <div class="flex items-center gap-1 shrink-0 ml-1">
-                                <button id="memo-search-clear-btn" class="hidden w-6 h-6 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" onclick="window.clearMemoSearchInput()" title="মুছে ফেলুন">
-                                    <i class="fa-solid fa-xmark text-[10px]"></i>
-                                </button>
-                                <button id="memo-voice-btn" class="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 flex items-center justify-center border border-slate-700/60 hover:border-cyan-500/40 active:scale-95 transition-all cursor-pointer" onclick="window.triggerMemoVoiceSearch()" title="মুখে বলে সার্চ করুন">
-                                    <i class="fa-solid fa-microphone text-[10px]"></i>
-                                </button>
-                            </div>
+                            <!-- Quick Stepper Next Button -->
+                            <button id="memo-quick-next-btn" 
+                                onclick="window.navigateMemoStep('next')" 
+                                class="h-9 px-2.5 sm:px-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/50 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-inner text-xs font-bold shrink-0" 
+                                title="পরবর্তী মেমো (কিবোর্ড শর্টকাট: → Right Arrow)">
+                                <span class="hidden sm:inline">পরবর্তী</span>
+                                <span class="text-[9px] font-mono text-slate-400 bg-slate-900 px-1 py-0.5 rounded border border-slate-800">→</span>
+                                <i class="fa-solid fa-chevron-right text-[11px] text-cyan-400"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -182,8 +207,48 @@ function setupMemoSearchEvents(params = {}) {
             e.preventDefault();
             clearTimeout(_searchDebounceTimer);
             executeMemoSearch(input.value);
+        } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            window.navigateMemoStep('prev');
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            window.navigateMemoStep('next');
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            window.navigateMemoStep('next');
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            window.navigateMemoStep('prev');
         }
     };
+
+    // Attach global keyboard listener once for single memo view
+    if (!window._memoGlobalKeydownAttached) {
+        window._memoGlobalKeydownAttached = true;
+        window.addEventListener('keydown', (e) => {
+            const singleView = document.getElementById('memo-single-view');
+            if (!singleView || singleView.classList.contains('hidden')) return;
+
+            // Do not intercept if a modal, drawer or sweetalert is open
+            if (document.querySelector('.swal2-container') || document.querySelector('.modal-open') || document.getElementById('customer-ledger-drawer')) {
+                return;
+            }
+
+            const activeEl = document.activeElement;
+            // Ignore if active in another input/textarea
+            if (activeEl && (activeEl.tagName === 'TEXTAREA' || (activeEl.tagName === 'INPUT' && activeEl.id !== 'memo-search-input'))) {
+                return;
+            }
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                window.navigateMemoStep('prev');
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                window.navigateMemoStep('next');
+            }
+        });
+    }
 
     if (params.memoNo) {
         input.value = params.memoNo;
@@ -220,6 +285,8 @@ export async function executeMemoSearch(query) {
             getCustomerLifetimeStats(activeTxn.customerId)
         ]);
         if (searchId !== _currentSearchRequestId) return;
+
+        window._currentAdjacentMemos = adjacent;
 
         if (list.length > 1 && multipleArea) {
             multipleArea.classList.remove('hidden');
@@ -263,6 +330,37 @@ export async function executeMemoSearch(query) {
     }
 }
 
+/**
+ * Smart Stepper Navigator (Next / Previous Memo)
+ */
+window.navigateMemoStep = function(direction) {
+    const adjacent = window._currentAdjacentMemos;
+    if (adjacent) {
+        if (direction === 'prev' && adjacent.prevMemo?.voucherNo) {
+            window.searchMemoDirectly(adjacent.prevMemo.voucherNo);
+            return;
+        }
+        if (direction === 'next' && adjacent.nextMemo?.voucherNo) {
+            window.searchMemoDirectly(adjacent.nextMemo.voucherNo);
+            return;
+        }
+    }
+
+    const input = document.getElementById('memo-search-input');
+    const currentVal = (input?.value || _currentVoucherNo || '').trim();
+    const currentNum = extractVoucherNumber(currentVal);
+
+    if (currentNum !== null && currentNum > 0) {
+        const nextNum = direction === 'prev' ? Math.max(1, currentNum - 1) : currentNum + 1;
+        window.searchMemoDirectly(String(nextNum));
+        return;
+    }
+
+    if (window._recentMemosList && window._recentMemosList.length > 0) {
+        window.searchMemoDirectly(window._recentMemosList[0].voucherNo);
+    }
+};
+
 window.triggerMemoVoiceSearch = function() {
     startMemoVoiceSearch((cleanSpoken, rawSpoken) => {
         const input = document.getElementById('memo-search-input');
@@ -280,6 +378,7 @@ async function loadRecentMemoChips() {
     if (!container) return;
     try {
         const recent = await getRecentMemos(8);
+        window._recentMemosList = recent;
         if (recent.length === 0) {
             container.innerHTML = `<span class="text-slate-600 text-xs">কোনো মেমো নেই</span>`;
             return;
@@ -298,6 +397,7 @@ window.selectSpecificMemoMatch = async function(idx) {
             getAdjacentMemos(selectedTxn.voucherNo),
             getCustomerLifetimeStats(selectedTxn.customerId)
         ]);
+        window._currentAdjacentMemos = adjacent;
         const resultArea = document.getElementById('memo-search-result-area');
         if (resultArea) resultArea.innerHTML = renderMemoCardHTML(selectedTxn, adjacent, lifetimeStats);
         document.querySelectorAll('.memo-match-btn').forEach(btn => {
@@ -313,6 +413,7 @@ window.searchMemoDirectly = function(memoNo) {
         input.value = memoNo;
         document.getElementById('memo-search-clear-btn')?.classList.remove('hidden');
         executeMemoSearch(memoNo);
+        input.select();
     }
 };
 
@@ -329,6 +430,7 @@ window.clearMemoSearchInput = function() {
 function resetMemoResultArea() {
     const resultArea = document.getElementById('memo-search-result-area');
     document.getElementById('memo-multiple-matches')?.classList.add('hidden');
+    window._currentAdjacentMemos = null;
     if (resultArea) {
         resultArea.innerHTML = `<div class="bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-12 text-center text-slate-500 space-y-3"><div class="w-16 h-16 rounded-3xl bg-slate-800/40 border border-slate-700/40 flex items-center justify-center mx-auto text-slate-600 text-2xl"><i class="fa-solid fa-barcode"></i></div><div class="text-sm font-bold text-slate-400">যেকোনো মেমো নম্বর লিখে সার্চ করুন</div><div class="text-xs text-slate-600">মেমো নম্বর লেখার সাথে সাথে সম্পূর্ণ বিবরণ ও হিসাবের সমীকরণ এখানে প্রদর্শিত হবে</div></div>`;
     }

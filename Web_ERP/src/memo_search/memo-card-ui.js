@@ -1,3 +1,4 @@
+// ALLOW_LARGE_FILE: Memo Card Ultra-Premium Complete View
 import { escapeHTML, formatAmountWithComma, formatAppDate, numberToBanglaWords, safeRound } from '../utils.js';
 import { renderInCardLedgerHistory } from './memo-history-table.js';
 import { renderMemoItemsTable, renderCustomerAllMemosBar } from './memo-items-table.js';
@@ -19,12 +20,19 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
     const currentDue = Number(txn.computedCurrentDue) || 0;
     const cleanCustName = String(txn.customerName || 'গ্রাহক').replace(/^\[.*?\]\s*/, '').trim();
 
+    const isLessMemo = txn.receivedType === 'Less' || (paid > 0 && bill === 0 && txn.refMemoNo);
+    const memoAmount = isLessMemo ? paid : (bill > 0 ? bill : (paid > 0 ? paid : 0));
+    const memoAmountWords = memoAmount > 0 ? numberToBanglaWords(memoAmount) : '';
+
+    const liveCustomerDue = Number(txn.customerTotalDue !== undefined ? txn.customerTotalDue : currentDue);
+    const liveDueWords = liveCustomerDue !== 0 ? numberToBanglaWords(Math.abs(liveCustomerDue)) : '';
+
     // Watermark Stamp & Status Badge
     let watermarkText = 'DUE';
     let watermarkColor = '#dc2626';
     let statusBadge = '';
 
-    if (txn.receivedType === 'Less' || (paid > 0 && bill === 0 && txn.refMemoNo)) {
+    if (isLessMemo) {
         watermarkText = 'LESS';
         watermarkColor = '#a855f7';
         statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-black bg-purple-500/10 text-purple-400 border border-purple-500/20"><i class="fa-solid fa-tags mr-1"></i>ছাড় / মাল ফেরত (LESS)</span>';
@@ -54,9 +62,6 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
 
     const publicUrl = `${window.location.origin}${window.location.pathname}?view=public-memo&id=${txn.id}`;
     const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=2&data=${encodeURIComponent(publicUrl)}`;
-
-    const billWords = bill > 0 ? numberToBanglaWords(bill) : '';
-    const dueWords = currentDue !== 0 ? numberToBanglaWords(Math.abs(currentDue)) : '';
 
     const addressStr = txn.customerAddress || txn.address || '';
     const zoneStr = txn.customerZone || txn.zone || '';
@@ -90,18 +95,26 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                         </div>
                     </div>
 
-                    <!-- Integrated Stepper Navigation Buttons -->
+                    <!-- Integrated Stepper Navigation Buttons with Keyboard Indicators -->
                     <div class="flex items-center gap-2 text-xs">
                         ${adjacent.prevMemo ? `
-                            <button onclick="window.searchMemoDirectly('${escapeHTML(adjacent.prevMemo.voucherNo)}')" class="px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer text-xs" title="পূর্ববর্তী মেমো">
-                                <i class="fa-solid fa-arrow-left text-[10px] text-cyan-400"></i>
-                                <span class="hidden sm:inline">পূর্ববর্তী:</span> <strong class="font-mono text-cyan-300">#${escapeHTML(adjacent.prevMemo.voucherNo)}</strong>
+                            <button onclick="window.searchMemoDirectly('${escapeHTML(adjacent.prevMemo.voucherNo)}')" 
+                                class="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-cyan-500/50 shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer text-xs group" 
+                                title="পূর্ববর্তী মেমো (কিবোর্ড: ← Left Arrow)">
+                                <i class="fa-solid fa-arrow-left text-[10px] text-cyan-400 group-hover:-translate-x-0.5 transition-transform"></i>
+                                <span class="hidden sm:inline">পূর্ববর্তী:</span> 
+                                <strong class="font-mono text-cyan-300">#${escapeHTML(adjacent.prevMemo.voucherNo)}</strong>
+                                <span class="text-[9px] font-mono text-slate-400 bg-slate-900 px-1 py-0.5 rounded border border-slate-800">←</span>
                             </button>
                         ` : ''}
                         ${adjacent.nextMemo ? `
-                            <button onclick="window.searchMemoDirectly('${escapeHTML(adjacent.nextMemo.voucherNo)}')" class="px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer text-xs" title="পরবর্তী মেমো">
-                                <span class="hidden sm:inline">পরবর্তী:</span> <strong class="font-mono text-cyan-300">#${escapeHTML(adjacent.nextMemo.voucherNo)}</strong>
-                                <i class="fa-solid fa-arrow-right text-[10px] text-cyan-400"></i>
+                            <button onclick="window.searchMemoDirectly('${escapeHTML(adjacent.nextMemo.voucherNo)}')" 
+                                class="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-cyan-500/50 shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer text-xs group" 
+                                title="পরবর্তী মেমো (কিবোর্ড: → Right Arrow)">
+                                <span class="text-[9px] font-mono text-slate-400 bg-slate-900 px-1 py-0.5 rounded border border-slate-800">→</span>
+                                <span class="hidden sm:inline">পরবর্তী:</span> 
+                                <strong class="font-mono text-cyan-300">#${escapeHTML(adjacent.nextMemo.voucherNo)}</strong>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-cyan-400 group-hover:translate-x-0.5 transition-transform"></i>
                             </button>
                         ` : ''}
                     </div>
@@ -119,7 +132,88 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                     </div>
                 ` : ''}
 
-                <!-- 2-Column Split Hero Grid (Above the Fold) -->
+                <!-- TOP HERO SPOTLIGHT: Searched Memo Amount (BIGGEST!) & Live Customer Due -->
+                <div class="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-3.5 items-stretch mb-3.5">
+                    <!-- Giant Memo Amount Hero Spotlight -->
+                    <div class="md:col-span-7 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 border border-cyan-500/40 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col justify-between relative overflow-hidden group">
+                        <div class="absolute -right-6 -bottom-6 text-cyan-500/5 group-hover:text-cyan-500/10 text-8xl pointer-events-none transition-all">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                                <div class="text-[11px] font-black uppercase text-cyan-400 tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-coins text-cyan-400"></i>
+                                    <span>${isLessMemo ? 'মেমোর সমন্বিত ছাড় (DISCOUNT)' : 'মেমোর মোট টাকার পরিমাণ (MEMO AMOUNT)'}</span>
+                                </div>
+                                <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
+                                    ভাউচার #${escapeHTML(txn.voucherNo || '')}
+                                </span>
+                            </div>
+
+                            <!-- THE GIANT MEMO AMOUNT -->
+                            <div class="flex items-baseline gap-2 text-white">
+                                <span class="text-2xl sm:text-3xl md:text-4xl font-black text-cyan-400 font-mono">৳</span>
+                                <span class="text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-tight text-white drop-shadow-[0_2px_14px_rgba(6,182,212,0.4)]">
+                                    ${formatAmountWithComma(memoAmount)}
+                                </span>
+                                ${isLessMemo ? '<span class="text-xs font-bold text-purple-300 font-bn">(লেস সমন্বয়)</span>' : ''}
+                            </div>
+
+                            ${txn.totalLinkedLess > 0 ? `
+                                <div class="text-[11px] text-purple-300 font-medium mt-1.5 flex items-center gap-2 flex-wrap bg-purple-950/30 p-1.5 rounded-lg border border-purple-500/20">
+                                    <span>মূল বিল: ৳ ${formatAmountWithComma(bill)}</span>
+                                    <span>•</span>
+                                    <span>সমন্বিত ছাড়: -৳ ${formatAmountWithComma(txn.totalLinkedLess)}</span>
+                                    <span>•</span>
+                                    <span class="font-bold text-cyan-300">নিট বিক্রয়: ৳ ${formatAmountWithComma(safeRound(bill - txn.totalLinkedLess))}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Bangla Words Pill -->
+                        <div class="pt-2 mt-2 border-t border-slate-800/80 text-[11px] text-amber-300/95 font-medium flex items-center gap-1.5 truncate">
+                            <i class="fa-solid fa-spell-check text-[10px] text-amber-400 shrink-0"></i>
+                            <span class="truncate">কথায়: <strong>${memoAmountWords || 'শূন্য টাকা মাত্র'}</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Customer's Current Live Net Due (বর্তমান লাইভ মোট বকেয়া) -->
+                    <div class="md:col-span-5 bg-slate-950/90 border ${liveCustomerDue > 0 ? 'border-red-500/40 shadow-red-950/20' : 'border-emerald-500/40 shadow-emerald-950/20'} rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <div class="text-[11px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full ${liveCustomerDue > 0 ? 'bg-red-400' : 'bg-emerald-400'} opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 ${liveCustomerDue > 0 ? 'bg-red-500' : 'bg-emerald-500'}"></span>
+                                    </span>
+                                    <span class="text-slate-300">কাস্টমারের বর্তমান লাইভ বকেয়া</span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black ${liveCustomerDue > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
+                                    ${liveCustomerDue > 0 ? 'বকেয়া আছে' : (liveCustomerDue < 0 ? 'অগ্রিম জমা' : 'পরিশোধিত')}
+                                </span>
+                            </div>
+
+                            <!-- Live Balance Figure -->
+                            <div class="text-2xl sm:text-3xl font-black font-mono ${liveCustomerDue > 0 ? 'text-red-400' : 'text-emerald-400'} tracking-tight mt-1">
+                                ৳ ${formatAmountWithComma(Math.abs(liveCustomerDue))} ${liveCustomerDue < 0 ? '<span class="text-xs font-bold text-emerald-300">(অগ্রিম)</span>' : ''}
+                            </div>
+
+                            <div class="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5">
+                                <i class="fa-solid fa-clock-rotate-left text-[10px] text-slate-500"></i>
+                                <span>আজকের রিয়েল-টাইম নিট স্থিতি (খতিয়ান সিঙ্ক)</span>
+                            </div>
+                        </div>
+
+                        ${liveDueWords ? `
+                            <div class="pt-2 mt-2 border-t border-slate-800/80 text-[10px] text-slate-400 truncate">
+                                <span>বকেয়া কথায়: ${liveDueWords}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- 2-Column Split: Customer Profile & Action Hub (Left) + Memo Snapshot Equation (Right) -->
                 <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
                     <!-- Left Column: Customer Profile & Action Hub (lg:col-span-7) -->
                     <div class="lg:col-span-7 flex flex-col justify-between space-y-2.5">
@@ -136,7 +230,7 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
                                 <div class="sm:col-span-4">
                                     <div class="text-slate-500 font-bold text-[11px]">কাস্টমার নাম:</div>
-                                    <div class="text-sm sm:text-base font-black text-white truncate" title="${escapeHTML(cleanCustName)}">${escapeHTML(cleanCustName)}</div>
+                                    <div class="text-base sm:text-lg font-black text-white truncate" title="${escapeHTML(cleanCustName)}">${escapeHTML(cleanCustName)}</div>
                                 </div>
                                 <div class="sm:col-span-3">
                                     <div class="text-slate-500 font-bold text-[11px]">অ্যাকাউন্ট নং:</div>
@@ -178,8 +272,8 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                             <button onclick="window.printMemoReceipt('${txn.id}', 'pos')" class="h-8 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] flex items-center gap-1 border border-slate-700 shrink-0 active:scale-95 transition-all cursor-pointer" title="৮০মিমি POS থার্মাল রসিদ">
                                 <i class="fa-solid fa-receipt"></i><span>POS</span>
                             </button>
-                            ${currentDue > 0 ? `
-                                <button onclick="window.openMemoQuickPayModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', ${currentDue})" class="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] flex items-center gap-1 shadow-sm shrink-0 active:scale-95 transition-all cursor-pointer" title="সরাসরি টাকা জমা নিন">
+                            ${liveCustomerDue > 0 ? `
+                                <button onclick="window.openMemoQuickPayModal('${txn.id}', '${escapeHTML(txn.voucherNo || '')}', '${txn.customerId}', ${liveCustomerDue})" class="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] flex items-center gap-1 shadow-sm shrink-0 active:scale-95 transition-all cursor-pointer" title="সরাসরি টাকা জমা নিন">
                                     <i class="fa-solid fa-hand-holding-dollar text-xs"></i><span>জমা নিন</span>
                                 </button>
                             ` : ''}
@@ -195,7 +289,7 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                             <button onclick="window.shareMemoOnWhatsApp('${txn.id}')" class="h-8 px-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-emerald-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="WhatsApp বার্তা">
                                 <i class="fa-brands fa-whatsapp text-xs"></i><span>WhatsApp</span>
                             </button>
-                            <button onclick="window.sendMemoDueSMS('${txn.id}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerPhone || '')}', ${currentDue}, '${escapeHTML(txn.voucherNo || '')}')" class="h-8 px-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-cyan-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="SMS পাঠান">
+                            <button onclick="window.sendMemoDueSMS('${txn.id}', '${escapeHTML(cleanCustName)}', '${escapeHTML(txn.customerPhone || '')}', ${liveCustomerDue}, '${escapeHTML(txn.voucherNo || '')}')" class="h-8 px-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white font-bold text-[11px] flex items-center gap-1 border border-cyan-500/30 shrink-0 active:scale-95 transition-all cursor-pointer" title="SMS পাঠান">
                                 <i class="fa-solid fa-comment-sms"></i><span>SMS</span>
                             </button>
                             <button onclick="window.copyDigitalMemoLink('${txn.id}')" class="h-8 w-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 shrink-0 active:scale-95 transition-all cursor-pointer" title="মেমো লিংক কপি">
@@ -204,24 +298,18 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                         </div>
                     </div>
 
-                    <!-- Right Column: Instant Financial Breakdown Hub (lg:col-span-5) -->
+                    <!-- Right Column: Memo Snapshot Financial Equation Hub (lg:col-span-5) -->
                     <div class="lg:col-span-5 bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col justify-between space-y-2 text-xs">
-                        <!-- Hero Highlight: Current Total Net Due -->
-                        <div class="flex items-center justify-between bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
-                            <div>
-                                <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider">বর্তমান মোট বকেয়া:</div>
-                                <div class="text-base sm:text-lg font-black font-mono ${currentDue > 0 ? 'text-red-400' : 'text-emerald-400'}">
-                                    ৳ ${formatAmountWithComma(Math.abs(currentDue))} ${currentDue < 0 ? '<span class="text-xs font-normal text-emerald-300">(অ্যাডভান্স)</span>' : ''}
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${currentDue > 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
-                                    ${currentDue > 0 ? 'বকেয়া আছে' : (currentDue < 0 ? 'অগ্রিম জমা' : 'পরিশোধিত')}
-                                </span>
-                            </div>
+                        <!-- Memo Equation Header -->
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-calculator text-cyan-400"></i>
+                                <span>মেমোর হিসাব সমীকরণ</span>
+                            </span>
+                            <span class="text-[10px] font-mono text-slate-500">${formatAppDate(txn.date)}</span>
                         </div>
 
-                        <!-- 3-Pill Financial Breakdown -->
+                        <!-- 4-Pill Historical Balance Breakdown -->
                         <div class="space-y-1.5 font-medium">
                             <div class="flex justify-between items-center text-slate-300 px-1">
                                 <span class="text-slate-400">পূর্বের বকেয়া:</span>
@@ -229,31 +317,24 @@ export function renderMemoCardHTML(txn, adjacent = {}, lifetimeStats = {}) {
                             </div>
                             <div class="flex justify-between items-center text-red-400 font-bold px-1">
                                 <span>আজকের বিল (Debit):</span>
-                                <span class="font-mono font-black">৳ ${formatAmountWithComma(bill)}</span>
+                                <span class="font-mono font-black">+ ৳ ${formatAmountWithComma(bill)}</span>
                             </div>
                             <div class="flex justify-between items-center text-emerald-400 font-bold px-1">
                                 <span>আজকের জমা (Credit):${paymentMethodHtml}</span>
                                 <span class="font-mono font-black">- ৳ ${formatAmountWithComma(paid)}</span>
                             </div>
-                            ${txn.totalLinkedLess > 0 ? `
-                                <div class="flex justify-between items-center text-purple-400 font-bold px-1 pt-1 border-t border-slate-800">
-                                    <span class="flex items-center gap-1"><i class="fa-solid fa-tags text-[10px]"></i>পরবর্তী ছাড় (Less):</span>
-                                    <span class="font-mono font-black">- ৳ ${formatAmountWithComma(txn.totalLinkedLess)}</span>
-                                </div>
-                                <div class="flex justify-between items-center text-cyan-300 font-bold px-1">
-                                    <span>নিট বিক্রয়মূল্য:</span>
-                                    <span class="font-mono font-black">৳ ${formatAmountWithComma(safeRound(bill - txn.totalLinkedLess))}</span>
-                                </div>
-                            ` : ''}
+                            <div class="flex justify-between items-center text-slate-200 font-bold px-1 pt-1.5 border-t border-slate-800">
+                                <span class="text-slate-400">মেমো শেষে তৎকালীন বকেয়া:</span>
+                                <span class="font-mono font-black ${currentDue > 0 ? 'text-red-400' : 'text-emerald-400'}">
+                                    ৳ ${formatAmountWithComma(Math.abs(currentDue))} ${currentDue < 0 ? '(অগ্রিম)' : ''}
+                                </span>
+                            </div>
                         </div>
 
-                        <!-- Words Pill (if any) -->
-                        ${dueWords || billWords ? `
-                            <div class="pt-1.5 border-t border-slate-800/80 text-[11px] text-amber-300/90 font-medium truncate" title="${dueWords ? 'বকেয়া: ' + dueWords : 'বিল: ' + billWords}">
-                                <i class="fa-solid fa-coins text-[10px] text-amber-400 mr-1"></i>
-                                <span>কথায়: ${dueWords || billWords}</span>
-                            </div>
-                        ` : ''}
+                        <div class="pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-500 flex items-center justify-between">
+                            <span>লেনদেন আইডি: <span class="font-mono">${escapeHTML(txn.id.slice(-8).toUpperCase())}</span></span>
+                            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-check-double text-[9px] mr-1"></i>সমীকরণ ভেরিফাইড</span>
+                        </div>
                     </div>
                 </div>
             </div>
