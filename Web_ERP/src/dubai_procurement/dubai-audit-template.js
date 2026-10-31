@@ -206,9 +206,7 @@ export function getDubaiAuditMainTemplate() {
                             <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
                             <input type="text" id="val-market-ad" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextDubaiTableInput(this.id);}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-cyan-400 font-mono text-right font-black focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-3 flex items-center justify-end pr-3 sm:pr-4">
-                            <input type="text" id="desc-note-ad" value="সাপ্লায়ারদের অগ্রিম" placeholder="মন্তব্য" oninput="window.handleDubaiWaterfallChange()" class="w-full bg-transparent border-b border-dashed border-slate-700/60 hover:border-cyan-400 text-slate-400 text-xs sm:text-sm text-right pr-1 font-semibold focus:border-cyan-400 outline-none">
-                        </div>
+                        <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
                     </div>
 
                     <!-- Subtotal 2.5: Row 4 বিয়োগের পর অবশিষ্ট ব্যালেন্স -->
@@ -236,9 +234,7 @@ export function getDubaiAuditMainTemplate() {
                             <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
                             <input type="text" id="val-cash-in-hand" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextDubaiTableInput(this.id);}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-emerald-400 font-mono text-right font-black focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-3 flex items-center justify-end pr-3 sm:pr-4">
-                            <input type="text" id="desc-note-cash" value="ক্যাশ বাক্সে নগদ দেরহাম" placeholder="মন্তব্য" oninput="window.handleDubaiWaterfallChange()" class="w-full bg-transparent border-b border-dashed border-slate-700/60 hover:border-emerald-400 text-slate-400 text-xs sm:text-sm text-right pr-1 font-semibold focus:border-emerald-400 outline-none">
-                        </div>
+                        <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
                     </div>
 
                     <!-- Subtotal 3: ক্যাশ ও এডভান্স বিয়োগের পর অবশিষ্ট -->

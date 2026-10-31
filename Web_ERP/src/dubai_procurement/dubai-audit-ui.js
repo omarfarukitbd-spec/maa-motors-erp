@@ -213,22 +213,10 @@ export function updateLiveWaterfall() {
     }
 }
 
-window.handleAssetDescChange = function(type, val) {
-    const text = String(val || '').trim();
+window.handleAssetDescChange = function(type) {
     if (type === 'ad') {
-        const isCash = text.includes('নগদ') || text.toLowerCase().includes('cash');
-        const noteInp = document.getElementById('desc-note-ad');
-        if (noteInp && !noteInp.dataset.userEdited) {
-            noteInp.value = isCash ? 'ক্যাশ বাক্সে নগদ দেরহাম' : 'সাপ্লায়ারদের অগ্রিম';
-        }
         const lblEl = document.getElementById('lbl-subtotal-ad');
         if (lblEl) lblEl.textContent = 'অবশিষ্ট ব্যালেন্স:';
-    } else if (type === 'cash') {
-        const isAd = text.includes('এডভান্স') || text.toLowerCase().includes('ad') || text.includes('অগ্রিম');
-        const noteInp = document.getElementById('desc-note-cash');
-        if (noteInp && !noteInp.dataset.userEdited) {
-            noteInp.value = isAd ? 'সাপ্লায়ারদের অগ্রিম' : 'ক্যাশ বাক্সে নগদ দেরহাম';
-        }
     }
 };
 
@@ -356,8 +344,6 @@ function clearNewWeekFields() {
      'val-market-ad', 'val-cash-in-hand'].forEach(id => setInp(id, ''));
     setInp('desc-ad', 'মার্কেট এডভান্স (AD)');
     setInp('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)');
-    setInp('desc-note-ad', 'সাপ্লায়ারদের অগ্রিম');
-    setInp('desc-note-cash', 'ক্যাশ বাক্সে নগদ দেরহাম');
 }
 
 function renderDynamicHoldings() {
@@ -518,8 +504,6 @@ function buildCurrentAuditObject() {
             sent: getTxt('desc-sent', 'বৃহস্পতিবার পর্যন্ত টাকা পাঠানো'), purchase: getTxt('desc-purchase', 'সর্বমোট মাল ক্রয়'),
             memos: getTxt('desc-memos'), expense: getTxt('desc-expense', 'সর্বমোট খরচ'),
             ad: getTxt('desc-ad', 'মার্কেট এডভান্স (AD)'), cash: getTxt('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)'),
-            noteAd: getTxt('desc-note-ad', 'সাপ্লায়ারদের অগ্রিম'),
-            noteCash: getTxt('desc-note-cash', 'ক্যাশ বাক্সে নগদ দেরহাম'),
             status: getTxt('desc-final-status', '(ক্যাশ বাড়তি)')
         },
         memoRangeStart: mStart, memoRangeEnd: mEnd, memoCount,
@@ -598,20 +582,6 @@ window.loadDubaiAuditHistory = async function(id) {
         ['sent', 'purchase', 'memos', 'expense', 'ad', 'cash', 'status'].forEach(k => {
             if (audit.descriptions[k]) setInp(`desc-${k}`, audit.descriptions[k]);
         });
-        if (audit.descriptions.noteAd) {
-            setInp('desc-note-ad', audit.descriptions.noteAd);
-        } else {
-            const isCash = String(audit.descriptions.ad || '').includes('নগদ') || String(audit.descriptions.ad || '').toLowerCase().includes('cash');
-            setInp('desc-note-ad', isCash ? 'ক্যাশ বাক্সে নগদ দেরহাম' : 'সাপ্লায়ারদের অগ্রিম');
-        }
-
-        if (audit.descriptions.noteCash) {
-            setInp('desc-note-cash', audit.descriptions.noteCash);
-        } else {
-            const isAd = String(audit.descriptions.cash || '').includes('এডভান্স') || String(audit.descriptions.cash || '').toLowerCase().includes('ad') || String(audit.descriptions.cash || '').includes('অগ্রিম');
-            setInp('desc-note-cash', isAd ? 'সাপ্লায়ারদের অগ্রিম' : 'ক্যাশ বাক্সে নগদ দেরহাম');
-        }
-
         if (window.handleAssetDescChange) {
             window.handleAssetDescChange('ad', audit.descriptions.ad || '');
             window.handleAssetDescChange('cash', audit.descriptions.cash || '');
@@ -619,8 +589,6 @@ window.loadDubaiAuditHistory = async function(id) {
     } else {
         setInp('desc-ad', 'মার্কেট এডভান্স (AD)');
         setInp('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)');
-        setInp('desc-note-ad', 'সাপ্লায়ারদের অগ্রিম');
-        setInp('desc-note-cash', 'ক্যাশ বাক্সে নগদ দেরহাম');
     }
 
     setInp('memo-range-start', audit.memoRangeStart || '');

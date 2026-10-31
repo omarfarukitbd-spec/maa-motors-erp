@@ -265,8 +265,8 @@ function generateAuditPrintHtml(audit, memos, settings) {
                                 <span style="color: #0284c7; font-size: 12px;">(-) AED: <b class="num-font" style="font-size: 14px;">${formatAED(marketAd)}</b></span>
                             </div>
                         </td>
-                        <td style="text-align: center; color: #475569; font-size: 11.5px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: 600;">
-                            ${noteAd}
+                        <td style="text-align: center; color: #94a3b8; font-size: 11px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">
+                            —
                         </td>
                     </tr>
 
@@ -289,8 +289,8 @@ function generateAuditPrintHtml(audit, memos, settings) {
                                 <span style="color: #059669; font-size: 12px;">(-) AED: <b class="num-font" style="font-size: 14px;">${formatAED(cashInHand)}</b></span>
                             </div>
                         </td>
-                        <td style="text-align: center; color: #475569; font-size: 11.5px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: 600;">
-                            ${noteCash}
+                        <td style="text-align: center; color: #94a3b8; font-size: 11px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">
+                            —
                         </td>
                     </tr>
 
