@@ -148,7 +148,7 @@ export function getDubaiAuditMainTemplate() {
                     <!-- Subtotal 1: টাকা পাঠানো - মাল ক্রয় -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5">
                         <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-sky-300 pl-3 sm:pl-4">
-                            <span class="text-xs sm:text-sm text-slate-300 font-bold">অবশিষ্ট ফান্ড (টাকা পাঠানো – মাল ক্রয়):</span>
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold">অবশিষ্ট ব্যালেন্স:</span>
                         </div>
                         <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-sky-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
                             <span class="text-xs text-slate-400 font-normal">AED =</span>
@@ -184,7 +184,7 @@ export function getDubaiAuditMainTemplate() {
                     <!-- Subtotal 2: নিট ক্যাশ স্থিতি (Subtotal 1 - খরচ) -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5">
                         <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-sky-300 pl-3 sm:pl-4">
-                            <span class="text-xs sm:text-sm text-slate-300 font-bold">নিট ক্যাশ স্থিতি (হাতে থাকার কথা):</span>
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold">অবশিষ্ট ব্যালেন্স:</span>
                         </div>
                         <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-sky-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
                             <span class="text-xs text-slate-400 font-normal">AED =</span>
@@ -196,22 +196,25 @@ export function getDubaiAuditMainTemplate() {
                     <!-- Row 4: মার্কেট এডভান্স (সম্পূর্ণ আলাদা সারি) -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
                         <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
-                            <input type="text" id="desc-ad" value="মার্কেট এডভান্স (AD)" oninput="window.handleAssetDescChange('ad', this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-cyan-300 text-sm sm:text-base font-bold focus:border-cyan-400 outline-none flex-grow">
+                            <div class="flex items-center gap-1.5 flex-grow">
+                                <i class="fa-solid fa-pen-to-square text-xs text-cyan-400/70" title="নাম পরিবর্তনযোগ্য"></i>
+                                <input type="text" id="desc-ad" value="মার্কেট এডভান্স (AD)" placeholder="বিবরণ" oninput="window.handleAssetDescChange('ad', this.value)" class="bg-transparent border-b border-dashed border-slate-700 hover:border-cyan-400 text-cyan-300 text-sm sm:text-base font-bold focus:border-cyan-400 outline-none w-full">
+                            </div>
                             <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-cyan-400 mr-0.5"></i> বিয়োগ</span>
                         </div>
                         <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
                             <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
                             <input type="text" id="val-market-ad" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextDubaiTableInput(this.id);}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-cyan-400 font-mono text-right font-black focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold" id="note-ad">
-                            সাপ্লায়ারদের অগ্রিম
+                        <div class="col-span-3 p-3 flex items-center justify-end pr-3 sm:pr-4">
+                            <input type="text" id="desc-note-ad" value="সাপ্লায়ারদের অগ্রিম" placeholder="মন্তব্য" oninput="window.handleDubaiWaterfallChange()" class="w-full bg-transparent border-b border-dashed border-slate-700/60 hover:border-cyan-400 text-slate-400 text-xs sm:text-sm text-right pr-1 font-semibold focus:border-cyan-400 outline-none">
                         </div>
                     </div>
 
-                    <!-- Subtotal 2.5: Row 4 বিয়োগের পর অবশিষ্ট ক্যাশ স্থিতি -->
+                    <!-- Subtotal 2.5: Row 4 বিয়োগের পর অবশিষ্ট ব্যালেন্স -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5" id="row-subtotal-ad">
                         <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-cyan-300 pl-3 sm:pl-4">
-                            <span class="text-xs sm:text-sm text-slate-300 font-bold" id="lbl-subtotal-ad">অবশিষ্ট ক্যাশ স্থিতি (এডভান্স বাদে):</span>
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold" id="lbl-subtotal-ad">অবশিষ্ট ব্যালেন্স:</span>
                         </div>
                         <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-cyan-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
                             <span class="text-xs text-slate-400 font-normal">AED =</span>
@@ -223,22 +226,25 @@ export function getDubaiAuditMainTemplate() {
                     <!-- Row 5: নগদ ক্যাশ আছে (সম্পূর্ণ আলাদা সারি) -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
                         <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
-                            <input type="text" id="desc-cash" value="নগদ ক্যাশ আছে (Cash in Hand)" oninput="window.handleAssetDescChange('cash', this.value)" class="bg-transparent border-b border-dashed border-slate-700 text-emerald-300 text-sm sm:text-base font-bold focus:border-emerald-400 outline-none flex-grow">
+                            <div class="flex items-center gap-1.5 flex-grow">
+                                <i class="fa-solid fa-pen-to-square text-xs text-emerald-400/70" title="নাম পরিবর্তনযোগ্য"></i>
+                                <input type="text" id="desc-cash" value="নগদ ক্যাশ আছে (Cash in Hand)" placeholder="বিবরণ" oninput="window.handleAssetDescChange('cash', this.value)" class="bg-transparent border-b border-dashed border-slate-700 hover:border-emerald-400 text-emerald-300 text-sm sm:text-base font-bold focus:border-emerald-400 outline-none w-full">
+                            </div>
                             <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-emerald-400 mr-0.5"></i> বিয়োগ</span>
                         </div>
                         <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
                             <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
                             <input type="text" id="val-cash-in-hand" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextDubaiTableInput(this.id);}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-emerald-400 font-mono text-right font-black focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 outline-none shadow-inner">
                         </div>
-                        <div class="col-span-3 p-3 text-slate-400 text-xs sm:text-sm text-right pr-3 sm:pr-4 font-semibold" id="note-cash">
-                            ক্যাশ বাক্সে নগদ দেরহাম
+                        <div class="col-span-3 p-3 flex items-center justify-end pr-3 sm:pr-4">
+                            <input type="text" id="desc-note-cash" value="ক্যাশ বাক্সে নগদ দেরহাম" placeholder="মন্তব্য" oninput="window.handleDubaiWaterfallChange()" class="w-full bg-transparent border-b border-dashed border-slate-700/60 hover:border-emerald-400 text-slate-400 text-xs sm:text-sm text-right pr-1 font-semibold focus:border-emerald-400 outline-none">
                         </div>
                     </div>
 
                     <!-- Subtotal 3: ক্যাশ ও এডভান্স বিয়োগের পর অবশিষ্ট -->
                     <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5">
                         <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-purple-300 pl-3 sm:pl-4">
-                            <span class="text-xs sm:text-sm text-slate-300 font-bold">অবশিষ্ট ব্যালেন্স (এডভান্স ও ক্যাশ বাদে):</span>
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold">অবশিষ্ট ব্যালেন্স:</span>
                         </div>
                         <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-purple-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
                             <span class="text-xs text-slate-400 font-normal">AED =</span>
@@ -432,7 +438,7 @@ export function getDynamicHoldingRowHtml(h, idx) {
         <!-- Dedicated Intermediate Equal Row for Holding -->
         <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/75 font-bold items-center py-1 sm:py-1.5" id="dubai-holding-equal-row-${idx}">
             <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center pl-3 sm:pl-4">
-                <span class="text-xs sm:text-sm text-slate-400 font-bold" id="dubai-holding-equal-label-${idx}">অবশিষ্ট ব্যালেন্স (${labelTitle} এর পর):</span>
+                <span class="text-xs sm:text-sm text-slate-400 font-bold" id="dubai-holding-equal-label-${idx}">অবশিষ্ট ব্যালেন্স:</span>
             </div>
             <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-sky-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
                 <span class="text-xs text-slate-400 font-normal">AED =</span>
