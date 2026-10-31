@@ -4,25 +4,66 @@ import { formatAmountWithComma, formatAppDate, toDBDate } from '../utils.js';
  *  Modal Configuration & HTML Builders for Treasury
  */
 
-export function getDailyCollectionModalConfig(today, suggestedAmount) {
+export function getDailyCollectionModalConfig(today, collectionBreakdown = {}) {
+    const total = typeof collectionBreakdown === 'object' ? Number(collectionBreakdown.total || 0) : Number(collectionBreakdown || 0);
+    const cash = typeof collectionBreakdown === 'object' ? Number(collectionBreakdown.cash || 0) : total;
+    const bank = typeof collectionBreakdown === 'object' ? Number(collectionBreakdown.bank || 0) : 0;
+
+    window._currentCollectionBreakdown = { total, cash, bank };
+    window._currentCollectionSelectedType = 'total';
+
     return {
         title: '<div class="flex items-center justify-center gap-2 text-emerald-400 text-lg font-black"><i class="fa-solid fa-hand-holding-dollar"></i><span>দৈনিক কালেকশন ফান্ড এন্ট্রি</span></div>',
         html: `
-            <div class="space-y-4 text-left p-1">
+            <div class="space-y-3.5 text-left p-1">
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">তারিখ</label>
                     <input id="tr-col-date" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono font-bold text-sm datepicker" value="${formatAppDate(today)}" onchange="window.treasuryFetchCollectionForSelectedDate && window.treasuryFetchCollectionForSelectedDate(this.value)">
                 </div>
+
+                <!-- 3-Pill Interactive Breakdown Selector -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold text-slate-400">কালেকশনের খাত নির্বাচন করুন</label>
+                        <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-1"><i class="fa-solid fa-bolt text-[9px]"></i><span>ইআরপি অটো-সিঙ্ক</span></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800">
+                        <button type="button" id="tr-col-pill-total" onclick="window.treasurySelectCollectionType('total')"
+                            class="tr-col-type-btn py-2 px-1 rounded-xl text-center transition-all cursor-pointer bg-emerald-600 text-white font-black shadow-md">
+                            <div class="text-[10px] uppercase tracking-wider opacity-90 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-coins text-[9px]"></i><span>মোট আদায়</span>
+                            </div>
+                            <div id="tr-pill-val-total" class="text-xs font-mono font-black mt-0.5">৳ ${formatAmountWithComma(total)}</div>
+                        </button>
+
+                        <button type="button" id="tr-col-pill-cash" onclick="window.treasurySelectCollectionType('cash')"
+                            class="tr-col-type-btn py-2 px-1 rounded-xl text-center transition-all cursor-pointer bg-slate-900 text-slate-400 hover:text-white font-bold border border-slate-800">
+                            <div class="text-[10px] uppercase tracking-wider opacity-90 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-money-bill-wave text-[9px] text-emerald-400"></i><span>শুধু নগদ</span>
+                            </div>
+                            <div id="tr-pill-val-cash" class="text-xs font-mono font-black mt-0.5">৳ ${formatAmountWithComma(cash)}</div>
+                        </button>
+
+                        <button type="button" id="tr-col-pill-bank" onclick="window.treasurySelectCollectionType('bank')"
+                            class="tr-col-type-btn py-2 px-1 rounded-xl text-center transition-all cursor-pointer bg-slate-900 text-slate-400 hover:text-white font-bold border border-slate-800">
+                            <div class="text-[10px] uppercase tracking-wider opacity-90 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-building-columns text-[9px] text-blue-400"></i><span>শুধু ব্যাংক</span>
+                            </div>
+                            <div id="tr-pill-val-bank" class="text-xs font-mono font-black mt-0.5">৳ ${formatAmountWithComma(bank)}</div>
+                        </button>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">কালেকশনের মোট টাকার অংক (৳)</label>
                     <input id="tr-col-amount" type="text" class="w-full bg-slate-900 border border-emerald-500/50 rounded-xl px-4 py-3 text-emerald-400 font-mono font-black text-lg focus:border-emerald-400 outline-none" 
-                        placeholder="0" value="${suggestedAmount > 0 ? formatAmountWithComma(suggestedAmount) : ''}" 
+                        placeholder="0" value="${total > 0 ? formatAmountWithComma(total) : ''}" 
                         oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'tr-col-words');">
                     <div id="tr-col-words" class="text-[11px] font-bold text-emerald-300 mt-1 italic min-h-[16px]"></div>
                     <div class="flex items-center justify-between mt-1.5 flex-wrap gap-1">
                         <div id="tr-col-info" class="text-[10px] text-slate-400 min-h-[16px]">
-                            ${suggestedAmount > 0 
-                                ? `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${formatAppDate(today)} তারিখে ইআরপি আদায় থেকে ৳ ${formatAmountWithComma(suggestedAmount)} অটো-সাজেস্ট করা হয়েছে।</span>` 
+                            ${total > 0 
+                                ? `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${formatAppDate(today)}: শোরুম নগদ ৳ ${formatAmountWithComma(cash)} + ব্যাংক ৳ ${formatAmountWithComma(bank)} = মোট ৳ ${formatAmountWithComma(total)}</span>` 
                                 : `<span class="text-slate-400"><i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>তারিখ পরিবর্তন করলে স্বয়ংক্রিয়ভাবে ওই দিনের মোট কালেকশন চলে আসবে।</span>`}
                         </div>
                         <button type="button" onclick="window.treasuryFetchCollectionForSelectedDate && window.treasuryFetchCollectionForSelectedDate(document.getElementById('tr-col-date')?.value)" class="text-[10px] font-bold text-blue-400 hover:text-blue-300 underline cursor-pointer flex items-center gap-1 shrink-0">
@@ -30,9 +71,12 @@ export function getDailyCollectionModalConfig(today, suggestedAmount) {
                         </button>
                     </div>
                 </div>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">মন্তব্য (ঐচ্ছিক)</label>
-                    <input id="tr-col-note" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-slate-300 text-xs" placeholder="যেমন: শোরুম ও ব্যাংকিং আদায়">
+                    <input id="tr-col-note" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-slate-300 text-xs" 
+                        value="${formatAppDate(today)} শোরুম ও ব্যাংক আদায়" 
+                        placeholder="যেমন: শোরুম ও ব্যাংকিং আদায়">
                 </div>
             </div>
         `,
@@ -46,6 +90,63 @@ export function getDailyCollectionModalConfig(today, suggestedAmount) {
         },
         didOpen: () => {
             const dateEl = document.getElementById('tr-col-date');
+            const amtEl = document.getElementById('tr-col-amount');
+            if (amtEl && amtEl.value) {
+                window.updateLiveWords(amtEl, 'tr-col-words');
+            }
+
+            // Define selection switcher
+            window.treasurySelectCollectionType = (type) => {
+                window._currentCollectionSelectedType = type;
+                const breakdown = window._currentCollectionBreakdown || { total: 0, cash: 0, bank: 0 };
+                const aEl = document.getElementById('tr-col-amount');
+                const nEl = document.getElementById('tr-col-note');
+                const dEl = document.getElementById('tr-col-date');
+                const iEl = document.getElementById('tr-col-info');
+                const curDateStr = dEl?.value || formatAppDate(today);
+
+                let targetAmt = 0;
+                let defaultNote = '';
+                let infoText = '';
+
+                if (type === 'total') {
+                    targetAmt = breakdown.total;
+                    defaultNote = `${curDateStr} শোরুম ও ব্যাংক আদায়`;
+                    infoText = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${curDateStr}: শোরুম নগদ ৳ ${formatAmountWithComma(breakdown.cash)} + ব্যাংক ৳ ${formatAmountWithComma(breakdown.bank)} = সর্বমোট ৳ ${formatAmountWithComma(breakdown.total)}</span>`;
+                } else if (type === 'cash') {
+                    targetAmt = breakdown.cash;
+                    defaultNote = `${curDateStr} শোরুম নগদ আদায়`;
+                    infoText = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${curDateStr}: শোরুম নগদ আদায় ৳ ${formatAmountWithComma(breakdown.cash)}</span>`;
+                } else if (type === 'bank') {
+                    targetAmt = breakdown.bank;
+                    defaultNote = `${curDateStr} কাস্টমার ব্যাংক জমা আদায়`;
+                    infoText = `<span class="text-blue-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${curDateStr}: কাস্টমারদের ব্যাংক জমা আদায় ৳ ${formatAmountWithComma(breakdown.bank)}</span>`;
+                }
+
+                if (aEl) {
+                    aEl.value = targetAmt > 0 ? formatAmountWithComma(targetAmt) : '0';
+                    window.updateLiveWords(aEl, 'tr-col-words');
+                }
+                if (nEl && (!nEl.value || nEl.value.includes('আদায়'))) {
+                    nEl.value = defaultNote;
+                }
+                if (iEl && infoText) {
+                    iEl.innerHTML = infoText;
+                }
+
+                // Update Button Active States
+                ['total', 'cash', 'bank'].forEach(tKey => {
+                    const btn = document.getElementById(`tr-col-pill-${tKey}`);
+                    if (btn) {
+                        if (tKey === type) {
+                            btn.className = 'tr-col-type-btn py-2 px-1 rounded-xl text-center transition-all cursor-pointer bg-emerald-600 text-white font-black shadow-md';
+                        } else {
+                            btn.className = 'tr-col-type-btn py-2 px-1 rounded-xl text-center transition-all cursor-pointer bg-slate-900 text-slate-400 hover:text-white font-bold border border-slate-800';
+                        }
+                    }
+                });
+            };
+
             if (dateEl && dateEl._flatpickr) {
                 dateEl._flatpickr.config.onChange.push((selectedDates, dateStr) => {
                     if (window.treasuryFetchCollectionForSelectedDate) {

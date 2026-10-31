@@ -1,3 +1,4 @@
+// ALLOW_LARGE_FILE: Treasury Actions & Logic Controller
 import { db, firebase } from '../firebase-config.js';
 import { TreasuryDAO } from './treasury-dao.js';
 import { TransactionDAO } from '../dao.js';
@@ -37,9 +38,12 @@ export function setupTreasuryActions(getState) {
             console.warn('ERP collection suggest fallback:', e);
         }
 
-        // Suggest showroom cash collection by default (since bank transactions sync via Bank Sync)
-        const suggestedAmount = suggestedCashAmount > 0 ? suggestedCashAmount : (suggestedBankAmount > 0 ? suggestedBankAmount : 0);
-        const config = getDailyCollectionModalConfig(today, suggestedAmount);
+        const total = safeRound(suggestedCashAmount + suggestedBankAmount);
+        const config = getDailyCollectionModalConfig(today, {
+            total,
+            cash: suggestedCashAmount,
+            bank: suggestedBankAmount
+        });
         const { value: formValues } = await Swal.fire(config);
 
         if (formValues) {
@@ -49,7 +53,7 @@ export function setupTreasuryActions(getState) {
                 category: 'collection',
                 amount: formValues.amount,
                 date: formValues.date,
-                note: formValues.note || 'দৈনিক শোরুম কালেকশন'
+                note: formValues.note || `${formatAppDate(formValues.date)} শোরুম ও ব্যাংক আদায়`
             }, getState);
         }
     };
@@ -99,18 +103,21 @@ export function setupTreasuryActions(getState) {
             }
 
             const total = safeRound(cashTotal + bankTotal);
+            window._currentCollectionBreakdown = { total, cash: cashTotal, bank: bankTotal };
+
+            // Update pill values in UI
+            const pillValTotal = document.getElementById('tr-pill-val-total');
+            const pillValCash = document.getElementById('tr-pill-val-cash');
+            const pillValBank = document.getElementById('tr-pill-val-bank');
+            if (pillValTotal) pillValTotal.innerText = `৳ ${formatAmountWithComma(total)}`;
+            if (pillValCash) pillValCash.innerText = `৳ ${formatAmountWithComma(cashTotal)}`;
+            if (pillValBank) pillValBank.innerText = `৳ ${formatAmountWithComma(bankTotal)}`;
+
             if (total > 0) {
-                const suggestedAmt = cashTotal > 0 ? cashTotal : total;
-                if (amtEl) {
-                    amtEl.value = formatAmountWithComma(suggestedAmt);
-                    window.updateLiveWords(amtEl, 'tr-col-words');
+                const activeType = window._currentCollectionSelectedType || 'total';
+                if (window.treasurySelectCollectionType) {
+                    window.treasurySelectCollectionType(activeType);
                 }
-                let infoMsg = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>${formatAppDate(dbDate)}: শোরুম নগদ ৳ ${formatAmountWithComma(cashTotal)}`;
-                if (bankTotal > 0) {
-                    infoMsg += ` | ব্যাংক আদায় ৳ ${formatAmountWithComma(bankTotal)} (যা ব্যাংক সিঙ্ক থেকে আসবে)`;
-                }
-                infoMsg += `</span>`;
-                if (infoEl) infoEl.innerHTML = infoMsg;
             } else {
                 if (amtEl && (!amtEl.value || amtEl.value === '0')) {
                     amtEl.value = '';
