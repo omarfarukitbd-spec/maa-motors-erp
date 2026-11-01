@@ -185,6 +185,7 @@ async function startBulkSmsProcess(customers, shopName, dateStr) {
 
         const c = customers[i];
         const percent = Math.round(((i + 1) / customers.length) * 100);
+        let ipErrorDetails = null;
 
         const swalRes = await Swal.fire({
             title: `<div class="font-bn font-black text-lg text-white">বাল্ক SMS পাঠানো হচ্ছে (${i + 1}/${customers.length})</div>`,
@@ -214,12 +215,46 @@ async function startBulkSmsProcess(customers, shopName, dateStr) {
                     const balanceText = (c.totalDue < 0) ? `Advance is Tk ${absAmount}` : `due is Tk ${absAmount}`;
                     const englishName = (typeof window.toBanglishName === 'function' ? window.toBanglishName(c.name) : c.name) || 'Customer';
                     const msg = `Reminder: Dear ${englishName}${accStr}, your ${balanceText} on ${dateStr}. Kindly clear payment soon. Thanks! - ${shopName}`.replace(/\s+/g, ' ').replace(/[^\x00-\x7F]/g, '');
-                    const res = await sendSMS(c.phone, msg, false);
-                    if (res) successCount++; else failCount++;
-                } catch (err) { console.error("Bulk SMS error:", err); failCount++; }
+                    const res = await sendSMS(c.phone, msg, { isBulk: true, returnDetails: true });
+                    if (res && res.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                        if (res && res.isIpError) {
+                            ipErrorDetails = res;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Bulk SMS error:", err);
+                    failCount++;
+                }
                 setTimeout(() => Swal.clickConfirm(), 400);
             }
         });
+
+        if (ipErrorDetails) {
+            cancelRequested = true;
+            await Swal.fire({
+                title: '<span class="text-amber-400 font-bold"><i class="fa-solid fa-shield-halved mr-2"></i>BulkSMSBD IP Whitelist সমস্যা!</span>',
+                html: `
+                    <div class="text-left space-y-2.5 font-bn text-sm">
+                        <p class="text-slate-300">আপনার বর্তমান ইন্টারনেট আইপি <b>BulkSMSBD</b> অ্যাকাউন্টে অনুমোদিত না থাকায় মেসেজ পাঠানো থামানো হয়েছে।</p>
+                        ${ipErrorDetails.ip ? `<div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center text-xs text-slate-300">আপনার বর্তমান আইপি: <span class="font-mono text-cyan-400 font-bold text-sm ml-1 select-all">${ipErrorDetails.ip}</span></div>` : ''}
+                        <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 text-xs text-slate-300 space-y-1.5">
+                            <p class="font-bold text-white"><i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> ১ মিনিটে সমাধান:</p>
+                            <p>১. <a href="https://bulksmsbd.net" target="_blank" class="text-sky-400 underline font-bold">BulkSMSBD.net</a>-এ লগইন করুন।</p>
+                            <p>২. <b>Phonebook</b> ➔ <b>IP White List</b> পেজে যান।</p>
+                            <p>৩. <b>Source IP Checking</b> অপশনটি <b>"Disable"</b> করে <b>Update</b> দিন।</p>
+                            <p class="text-[11px] text-slate-400"><i>(অথবা Add IP বক্সে <b>${ipErrorDetails.ip || 'বর্তমান আইপি'}</b> লিখে Submit করুন)</i></p>
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                confirmButtonText: 'ঠিক আছে, সমাধান করব',
+                customClass: { popup: '!bg-slate-950 !text-white !rounded-3xl border border-slate-800 font-bn' }
+            });
+            break;
+        }
 
         if (swalRes.isDismissed && (swalRes.dismiss === Swal.DismissReason.cancel || swalRes.dismiss === Swal.DismissReason.close)) {
             cancelRequested = true;

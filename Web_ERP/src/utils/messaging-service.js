@@ -4,14 +4,23 @@ import { SettingsDAO } from '../dao.js';
 /**
  * SMS Utility via BulkSMSBD API
  */
-export async function sendSMS(phone, message, isAuto = false) {
+export async function sendSMS(phone, message, options = false) {
+    const isAuto = typeof options === 'boolean' ? options : Boolean(options?.isAuto);
+    const isBulk = typeof options === 'object' ? Boolean(options?.isBulk) : false;
+    const silent = typeof options === 'object' ? Boolean(options?.silent) : false;
+    const returnDetails = typeof options === 'object' ? Boolean(options?.returnDetails) : false;
+
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        if (!isAuto) Swal.fire({ title: 'ইন্টারনেট অফলাইন!', text: 'ইন্টারনেট কানেকশন চেক করুন।', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
-        return false;
+        if (!isAuto && !isBulk && !silent) {
+            Swal.fire({ title: 'ইন্টারনেট অফলাইন!', text: 'ইন্টারনেট কানেকশন চেক করুন।', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
+        }
+        return returnDetails ? { success: false, error: 'ইন্টারনেট অফলাইন' } : false;
     }
     if (!phone || phone === '-' || !message) {
-        if (!isAuto) Swal.fire({ title: 'মোবাইল নম্বর মিসিং!', text: 'কাস্টমারের ফোন নম্বর পাওয়া যায়নি।', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
-        return false;
+        if (!isAuto && !isBulk && !silent) {
+            Swal.fire({ title: 'মোবাইল নম্বর মিসিং!', text: 'কাস্টমারের ফোন নম্বর পাওয়া যায়নি।', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
+        }
+        return returnDetails ? { success: false, error: 'মোবাইল নম্বর মিসিং' } : false;
     }
 
     const matchedNumbers = String(phone).match(/(?:88)?01[3-9]\d{8}/g);
@@ -20,17 +29,23 @@ export async function sendSMS(phone, message, isAuto = false) {
     let cleanPhone = String(targetPhone).replace(/[^0-9]/g, '');
     if (cleanPhone.startsWith('01') && cleanPhone.length === 11) cleanPhone = '88' + cleanPhone;
     if (!cleanPhone.startsWith('8801') || cleanPhone.length !== 13) {
-        if (!isAuto) Swal.fire({ title: 'ভুল মোবাইল নম্বর!', text: `মোবাইল নম্বরটি (${phone}) সঠিক নয়।`, icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
-        return false;
+        if (!isAuto && !isBulk && !silent) {
+            Swal.fire({ title: 'ভুল মোবাইল নম্বর!', text: `মোবাইল নম্বরটি (${phone}) সঠিক নয়।`, icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
+        }
+        return returnDetails ? { success: false, error: 'ভুল মোবাইল নম্বর' } : false;
     }
 
     try {
         const settings = await SettingsDAO.getAppSettings();
         if (!settings.smsApiKey) {
-            if (!isAuto) Swal.fire({ title: 'API Key পাওয়া যায়নি!', text: 'সেটিংসে গিয়ে আপনার BulkSMSBD API Key দিন এবং সেভ করুন।', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
-            return false;
+            if (!isAuto && !isBulk && !silent) {
+                Swal.fire({ title: 'API Key পাওয়া যায়নি!', text: 'সেটিংসে গিয়ে আপনার BulkSMSBD API Key দিন এবং সেভ করুন।', icon: 'warning', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
+            }
+            return returnDetails ? { success: false, error: 'API Key পাওয়া যায়নি' } : false;
         }
-        if (isAuto && !settings.smsAuto) return false;
+        if (isAuto && !settings.smsAuto) {
+            return returnDetails ? { success: false, error: 'অটো SMS নিষ্ক্রিয়' } : false;
+        }
 
         const apiKey = settings.smsApiKey.trim();
         const senderId = (settings.smsSenderId || '').trim();
@@ -38,7 +53,7 @@ export async function sendSMS(phone, message, isAuto = false) {
         const smsType = /[^\x00-\x7F]/.test(message) ? 'unicode' : 'text';
         const url = `https://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=${smsType}&number=${cleanPhone}${senderParam}&message=${encodeURIComponent(message)}`;
 
-        if (!isAuto) {
+        if (!isAuto && !isBulk && !silent) {
             Swal.fire({
                 title: 'SMS পাঠানো হচ্ছে...',
                 text: 'BulkSMSBD API গেইটওয়েতে রিকোয়েস্ট পাঠানো হচ্ছে...',
@@ -79,8 +94,12 @@ export async function sendSMS(phone, message, isAuto = false) {
             }
         }
 
+        const isIpError = Boolean(apiErrorMsg && (apiErrorMsg.includes('Whitelisted') || apiErrorMsg.includes('whitelist')));
+        const ipMatch = apiErrorMsg ? apiErrorMsg.match(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/) : null;
+        const detectedIp = ipMatch ? ipMatch[0] : '';
+
         if (isSuccess && !apiErrorMsg) {
-            if (!isAuto) {
+            if (!isAuto && !isBulk && !silent) {
                 Swal.fire({
                     title: '<i class="fa-solid fa-paper-plane text-emerald-400 mr-2"></i>SMS সফলভাবে পাঠানো হয়েছে!',
                     text: `${cleanPhone} নম্বরে SMS সাবমিট করা হয়েছে।`,
@@ -89,21 +108,45 @@ export async function sendSMS(phone, message, isAuto = false) {
                     customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
                 });
             }
-            return true;
+            return returnDetails ? { success: true } : true;
         } else {
-            if (!isAuto) {
-                Swal.fire({
-                    title: 'SMS পাঠানো ব্যর্থ হয়েছে!',
-                    text: apiErrorMsg ? `BulkSMSBD এরর: ${apiErrorMsg}` : 'API Key, ব্যালেন্স বা Sender ID সেটিংসে চেক করুন।',
-                    icon: 'error',
-                    customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
-                });
+            if (!isAuto && !isBulk && !silent) {
+                if (isIpError) {
+                    Swal.fire({
+                        title: '<span class="text-amber-400 font-bold"><i class="fa-solid fa-shield-halved mr-2"></i>BulkSMSBD IP Whitelist সমস্যা!</span>',
+                        html: `
+                            <div class="text-left space-y-2.5 font-bn text-sm">
+                                <p class="text-slate-300">আপনার বর্তমান ইন্টারনেট আইপি <b>BulkSMSBD</b> অ্যাকাউন্টে অনুমোদিত নয়।</p>
+                                ${detectedIp ? `<div class="bg-slate-950 p-2 rounded-xl border border-slate-800 text-center text-xs text-slate-400">বর্তমান আইপি: <span class="font-mono text-cyan-400 font-bold text-sm ml-1">${detectedIp}</span></div>` : ''}
+                                <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 text-xs text-slate-300 space-y-1.5">
+                                    <p class="font-bold text-white"><i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> ১ মিনিটে স্থায়ী সমাধান:</p>
+                                    <p>১. <a href="https://bulksmsbd.net" target="_blank" class="text-sky-400 underline font-bold">BulkSMSBD.net</a>-এ লগইন করুন।</p>
+                                    <p>২. <b>Phonebook</b> ➔ <b>IP White List</b> পেজে যান।</p>
+                                    <p>৩. <b>Source IP Checking</b> অপশনটি <b>"Disable"</b> করে <b>Update</b> দিন।</p>
+                                    <p class="text-[11px] text-slate-400"><i>(অথবা Add IP বক্সে ${detectedIp || 'বর্তমান আইপি'} লিখে Submit করুন)</i></p>
+                                </div>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        confirmButtonText: 'ঠিক আছে, বুঝেছি',
+                        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'SMS পাঠানো ব্যর্থ হয়েছে!',
+                        text: apiErrorMsg ? `BulkSMSBD এরর: ${apiErrorMsg}` : 'API Key, ব্যালেন্স বা Sender ID সেটিংসে চেক করুন।',
+                        icon: 'error',
+                        customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' }
+                    });
+                }
             }
-            return false;
+            return returnDetails ? { success: false, error: apiErrorMsg, isIpError, ip: detectedIp } : false;
         }
     } catch (error) {
-        if (!isAuto) Swal.fire({ title: 'SMS এরর!', text: 'মেসেজ পাঠাতে সমস্যা হয়েছে। সেটিংসে API তথ্য পরীক্ষা করুন।', icon: 'error', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
-        return false;
+        if (!isAuto && !isBulk && !silent) {
+            Swal.fire({ title: 'SMS এরর!', text: 'মেসেজ পাঠাতে সমস্যা হয়েছে। সেটিংসে API তথ্য পরীক্ষা করুন।', icon: 'error', customClass: { popup: '!bg-slate-900 !text-white !rounded-3xl border border-slate-700' } });
+        }
+        return returnDetails ? { success: false, error: error?.message || 'অজানা ত্রুটি' } : false;
     }
 }
 
