@@ -45,9 +45,9 @@ export function calcProfitSharing(netProfit = 0, partners = []) {
 
         let amt = 0;
         if (p.manualOverride && p.calculatedAmount !== undefined) {
-            amt = safeRound(parseAmount(p.calculatedAmount));
+            amt = safeRound(Math.round(parseAmount(p.calculatedAmount)));
         } else {
-            amt = safeRound((netProfit * pct) / 100);
+            amt = safeRound(Math.round((netProfit * pct) / 100));
         }
 
         totalDistributed = safeRound(totalDistributed + amt);
@@ -96,3 +96,4 @@ export function calcCapitalWaterfall(rows = []) {
         finalNetBalance: runningBalance
     };
 }
+

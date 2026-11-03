@@ -12,9 +12,9 @@ export const DEFAULT_27_CONTAINER_DATA = {
         { id: 'sc-2', desc: 'সর্বমোট খরচ ও লেন্স', op: '-', amount: 144247620 }
     ],
     profitSharing: [
-        { id: 'ps-1', partnerName: 'এমরান', shareType: 'লভ্যাংশ', percentage: 45, calculatedAmount: 9714140 },
-        { id: 'ps-2', partnerName: 'আলতাফ', shareType: 'লভ্যাংশ', percentage: 45, calculatedAmount: 9714140 },
-        { id: 'ps-3', partnerName: 'সজীব', shareType: 'ওয়ার্কিং', percentage: 10, calculatedAmount: 2158697 }
+        { id: 'ps-1', partnerName: 'এমরান', shareType: 'লভ্যাংশ', percentage: 45, calculatedAmount: 9714140, manualOverride: true },
+        { id: 'ps-2', partnerName: 'আলতাফ', shareType: 'লভ্যাংশ', percentage: 45, calculatedAmount: 9714140, manualOverride: true },
+        { id: 'ps-3', partnerName: 'সজীব', shareType: 'ওয়ার্কিং', percentage: 10, calculatedAmount: 2158697, manualOverride: true }
     ],
     capitalSettlements: [
         { id: 'cs-1', desc: 'এমরান ২৭ কন্টেইনার মূলধন', op: '+', amount: 144247620 },
@@ -101,3 +101,4 @@ export function recalculateActiveSettlement() {
 
 // Initial calculation on load
 recalculateActiveSettlement();
+

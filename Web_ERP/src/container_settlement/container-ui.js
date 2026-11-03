@@ -393,8 +393,8 @@ function updateLiveMetricsAndWords() {
     if (profitEl) profitEl.textContent = `৳ ${formatAmountWithComma(st.netProfit)}`;
     if (profitWordsEl) {
         profitWordsEl.textContent = st.netProfit > 0 
-            ? `কথায়: ${numberToBanglaWords(st.netProfit)} টাকা মাত্র`
-            : 'কথায়: শূন্য টাকা';
+            ? `কথায়: ${numberToBanglaWords(st.netProfit)}`
+            : 'কথায়: শূন্য টাকা মাত্র';
     }
 
     // Section 2 metrics
@@ -421,8 +421,8 @@ function updateLiveMetricsAndWords() {
     if (finalBalEl) finalBalEl.textContent = `৳ ${formatAmountWithComma(st.finalNetBalance)}`;
     if (finalWordsEl) {
         finalWordsEl.textContent = st.finalNetBalance > 0
-            ? `কথায়: ${numberToBanglaWords(st.finalNetBalance)} টাকা মাত্র`
-            : 'কথায়: শূন্য টাকা';
+            ? `কথায়: ${numberToBanglaWords(st.finalNetBalance)}`
+            : 'কথায়: শূন্য টাকা মাত্র';
     }
 }
 

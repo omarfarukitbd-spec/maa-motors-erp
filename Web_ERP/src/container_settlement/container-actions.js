@@ -183,11 +183,11 @@ export async function newContainerPrompt() {
     }
 }
 
-export function printReport() {
+export async function printReport() {
     const st = getActiveSettlement();
     const dateInput = document.getElementById('cont-date-input');
     if (dateInput) st.settlementDate = dateInput.value;
-    printContainerSettlement(st);
+    await printContainerSettlement(st);
 }
 
 export function exportExcel() {
@@ -298,3 +298,4 @@ export async function deleteBatchPrompt(id) {
         showToast('মুছে ফেলতে সমস্যা হয়েছে', 'error');
     }
 }
+
