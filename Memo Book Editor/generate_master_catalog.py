@@ -15,6 +15,7 @@ items_by_name = {}
 row_pattern = re.compile(r"^\|\s*(\d+|--)\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|")
 
 total_rows_parsed = 0
+lot_rows_excluded = 0
 
 for m in range(201, 301):
     fpath = os.path.join(folder, f"memo_{m}.md")
@@ -42,6 +43,10 @@ for m in range(201, 301):
                 tot = m_row.group(6).strip()
                 status = m_row.group(7).strip()
                 
+                # Check for struck-out / canceled items
+                if "~~" in raw_name or "বাতিল" in status:
+                    continue
+
                 # Clean unit from qty
                 unit = "পিছ"
                 if "সেট" in qty:
@@ -54,7 +59,20 @@ for m in range(201, 301):
                 # Group key by simplified clean name
                 clean_key = re.sub(r"\[.*?\]", "", raw_name).strip()
                 clean_key = re.sub(r"[~~]", "", clean_key).strip()
-                if not clean_key or clean_key.startswith("চালানী"):
+                if not clean_key:
+                    continue
+                
+                # Rule: চালানি মালামাল এবং লট হিসেবে যেগুলোর রেইট আছে সেগুলো আসবে না
+                is_lot_or_chalan = (
+                    "লট" in qty or 
+                    "lot" in qty.lower() or 
+                    unit == "লট" or 
+                    any(k in clean_key for k in ["চালান", "চালানী", "লট"]) or 
+                    clean_key in ["মাল", "মালামাল", "খুচরা মালামাল", "কেরিং", "কেরিং খরচ"]
+                )
+                
+                if is_lot_or_chalan:
+                    lot_rows_excluded += 1
                     continue
                 
                 if clean_key not in items_by_name:
@@ -73,29 +91,29 @@ for m in range(201, 301):
                 items_by_name[clean_key]["refs"].append(f"মেমো {m} (লাইন {l_no})")
                 total_rows_parsed += 1
         elif in_table and not line_s.startswith("|") and line_s:
-            # End of table
             in_table = False
 
-print(f"Total line items parsed: {total_rows_parsed}")
-print(f"Total unique parts identified: {len(items_by_name)}")
+print(f"Total valid line items parsed: {total_rows_parsed}")
+print(f"Total lot/chalan items excluded: {lot_rows_excluded}")
+print(f"Total unique parts in catalog: {len(items_by_name)}")
 
 # Categories
 def categorize(name):
     n = name.lower()
-    if any(k in n for k in ["ইঞ্জিন", "engine", "ব্লক", "হেড", "পিস্টন", "মন্টিন", "মাউন্টিং", "mounting", "বাটারফ্লাই", "ট্যাপেট", "vvti", "কয়েল", "কয়েল"]):
+    if any(k in n for k in ["ইঞ্জিন", "engine", "ব্লক", "হেড", "পিস্টন", "মন্টিন", "মাউন্টিং", "mounting", "বাটারফ্লাই", "ট্যাপেট", "vvti", "কয়েল", "কয়েল", "থার্মোস্টার"]):
         return "১. ইঞ্জিন, মাউন্টিং ও ইঞ্জিন যন্ত্রাংশ"
     elif any(k in n for k in ["গিয়ার", "গিয়ার", "gear", "cvt"]):
         return "২. গিয়ারবক্স ও ট্রান্সমিশন পার্টস"
-    elif any(k in n for k in ["রেক", "rack", "স্টিয়ারিং", "পাওয়ার പম্প", "টাই রড"]):
+    elif any(k in n for k in ["রেক", "rack", "স্টিয়ারিং", "পাওয়ার", "পাওয়ার", "টাই রড"]):
         return "৩. স্টিয়ারিং রেক ও পাওয়ার সিস্টেম"
     elif any(k in n for k in ["বুস্টার", "booster", "ড্রাম", "drum", "ডিস্ক", "disc", "abs", "ব্রেক", "brake", "হুইল সিলেন্ডার", "ডাস্ট প্লেট"]):
         return "৪. ব্রেকিং সিস্টেম, বুস্টার ও ড্রাম"
-    elif any(k in n for k in ["হাবস", "হাব", "hub", "জুয়েন্ট", "জুয়েন্ট", "cv", "এক্সেল", "flange", "কুলব"]):
+    elif any(k in n for k in ["হাবস", "হাব", "hub", "জুয়েন্ট", "জুয়েন্ট", "cv", "এক্সেল", "flange", "কুলব", "স্প্রিং", "শক"]):
         return "৫. সাসপেনশন, হাবস ও ড্রাইভ শ্যাফট (CV Joint)"
-    elif any(k in n for k in ["ডায়নামা", "ডায়নামা", "অল্টারনেটর", "সেল", "স্টার্টার", "ডায়নামো"]):
-        return "৬. ইলেকট্রিক্যাল ও ডায়নামা"
+    elif any(k in n for k in ["ডায়নামা", "ডায়নামা", "অল্টারনেটর", "সেল", "স্টার্টার", "ডায়নামো", "সেন্সার", "সেন্সর", "প্লাগ", "কন্ট্রোলার"]):
+        return "৬. ইলেকট্রিক্যাল ও ইলেকট্রনিক্স"
     else:
-        return "৭. বডি, পাইপ ও অন্যান্য খুচরা যন্ত্রাংশ"
+        return "৭. বডি, পাইপ, কুলিং ও অন্যান্য খুচরা যন্ত্রাংশ"
 
 categorized = {}
 for name, data in items_by_name.items():
@@ -109,9 +127,11 @@ out = []
 out.append("# 📋 মেসার্স মা মোটরস — পূর্ণাঙ্গ পার্টস ক্যাটালগ (মেমো বুক ৩: ২০১ থেকে ৩০০)")
 out.append("### দোকানের আসল ফিজিক্যাল ক্যাশ মেমো (মেমো ২০১ থেকে ৩০০) এর লাইন-বাই-লাইন প্রমাণিত ডাটাবেজ\n")
 out.append("> **[Financial Ground Truth & Certified Proof]**: প্রতিটি পার্টসের পাশে তার আসল বিক্রিত মেমো নম্বর, লাইন নম্বর, গাড়ির প্ল্যাটফর্ম এবং মেমোর প্রকৃত বিক্রয়মূল্য (টাকা) যুক্ত করা হয়েছে।\n")
+out.append("> **[নীতিগত নিয়ম]**: চালানি মালামাল এবং লট হিসেবে বিক্রিত আইটেমসমূহ ক্যাটালগ থেকে সম্পূর্ণ বাদ রাখা হয়েছে, কারণ লটে একাধিক আইটেম একসাথে প্যাকেজ হিসেবে বিক্রি হয়।\n")
 out.append(f"- **মোট পর্যালোচিত ক্যাশ মেমো**: ১০০টি (মেমো ২০১ থেকে ৩০০)")
-out.append(f"- **মোট পার্সকৃত লাইন আইটেম**: {total_rows_parsed}টি")
-out.append(f"- **মোট ইউনিক অটোমোবাইল পার্টস**: {len(items_by_name)}টি\n")
+out.append(f"- **মোট পার্সকৃত বৈধ খুচরা লাইন আইটেম**: {total_rows_parsed}টি")
+out.append(f"- **বাদ দেওয়া চালান ও লট আইটেম**: {lot_rows_excluded}টি")
+out.append(f"- **মোট অনুমোদিত ইউনিক অটোমোবাইল পার্টস**: {len(items_by_name)}টি\n")
 out.append("---\n")
 
 serial = 1
@@ -138,4 +158,3 @@ with open(out_catalog_path, "w", encoding="utf-8") as f:
     f.write("\n".join(out))
 
 print(f"Successfully generated master catalog to: {out_catalog_path}")
-
