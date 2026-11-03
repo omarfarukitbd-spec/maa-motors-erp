@@ -30,10 +30,10 @@ export async function printContainerSettlement(settlement) {
     const netProfitWords = netProfit > 0 ? numberToBanglaWords(netProfit) : '';
     const finalBalanceWords = finalBalance > 0 ? numberToBanglaWords(finalBalance) : '';
 
-    // 1. Official Canonical Gradient Header
+    // 1. Official Canonical Gradient Header (Clean, balanced corporate badge)
     const headerHtml = renderSharedPrintHeader(settings, {
-        title: title,
-        subtitle: `তারিখ: ${date} ${period ? `| অর্থবছর: ${period}` : ''}`
+        title: 'CONTAINER SETTLEMENT',
+        subtitle: 'কন্টেইনার অডিট ও লভ্যাংশ নিষ্পত্তি'
     });
 
     // 2. Section 1: Sales & Costs Rows
@@ -95,8 +95,15 @@ export async function printContainerSettlement(settlement) {
     const htmlBody = `
         <div class="print-sheet">
             <!-- Header -->
-            <div style="margin-bottom: 10px;">
+            <div style="margin-bottom: 8px;">
                 ${headerHtml}
+            </div>
+
+            <!-- Document Title (Rendered boldly below the header design as requested) -->
+            <div style="text-align: center; margin-bottom: 12px;">
+                <div style="display: inline-block; background: #0f172a; color: #ffffff; padding: 7px 26px; border-radius: 8px; font-size: 15.5px; font-weight: 900; letter-spacing: 0.5px; border: 1.5px solid #334155; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);">
+                    ${escapeHTML(title)}
+                </div>
             </div>
 
             <!-- Executive Metadata Bar -->

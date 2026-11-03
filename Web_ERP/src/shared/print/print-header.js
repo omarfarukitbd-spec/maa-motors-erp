@@ -25,6 +25,7 @@ export function renderSharedPrintHeader(arg1 = {}, arg2 = {}) {
     const title = options.title || 'CUSTOMER REPORT';
     const subtitle = options.subtitle || '';
     const dateRangeStr = options.dateRangeStr || '';
+    const hideRightPill = Boolean(options.hideRightPill);
 
     const shopName = escapeHTML(settings.shopName || "M/S. MAA-MOTOR'S");
     const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");
@@ -36,23 +37,27 @@ export function renderSharedPrintHeader(arg1 = {}, arg2 = {}) {
 
     const logoHtml = `<img src="${shopLogo}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />`;
 
+    const pillFontSize = title.length > 24 ? '11.5px' : (title.length > 18 ? '13px' : '16px');
+
     return `
-        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 16px; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); margin-bottom: 20px; font-family: 'Inter', 'Kalpurush', system-ui, -apple-system, sans-serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-            <div style="display: flex; align-items: center; gap: 18px;">
-                <div style="width: 72px; height: 72px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 3px solid #ffffff; flex-shrink: 0; padding: 2px;">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 14px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); margin-bottom: 12px; font-family: 'Inter', 'Kalpurush', system-ui, -apple-system, sans-serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+            <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+                <div style="width: 66px; height: 66px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 2.5px solid #ffffff; flex-shrink: 0; padding: 2px;">
                     ${logoHtml}
                 </div>
-                <div>
-                    <h1 style="font-size: 22px; font-weight: 900 !important; margin: 0; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">${shopName}</h1>
-                    <p style="font-size: 11px; margin: 3px 0 2px 0; opacity: 0.95; font-weight: 700 !important; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">Proprietor: ${shopOwner}</p>
-                    <p style="font-size: 11px; margin: 2px 0 3px 0; opacity: 0.95; font-weight: 600 !important; line-height: 1.3; color: #ffffff !important; max-width: 480px; font-family: 'Kalpurush', 'Hind Siliguri', 'Inter', sans-serif !important;">${shopAddress}</p>
-                    <p style="font-size: 11px; margin: 0; font-weight: 800 !important; opacity: 0.95; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">Mobile: ${shopPhone}</p>
+                <div style="min-width: 0;">
+                    <h1 style="font-size: 20px; font-weight: 900 !important; margin: 0; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">${shopName}</h1>
+                    <p style="font-size: 10.5px; margin: 2px 0; opacity: 0.95; font-weight: 700 !important; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">Proprietor: ${shopOwner}</p>
+                    <p style="font-size: 10px; margin: 2px 0; opacity: 0.95; font-weight: 600 !important; line-height: 1.3; color: #ffffff !important; max-width: 400px; font-family: 'Kalpurush', 'Hind Siliguri', 'Inter', sans-serif !important;">${shopAddress}</p>
+                    <p style="font-size: 10px; margin: 0; font-weight: 800 !important; opacity: 0.95; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">Mobile: ${shopPhone}</p>
                 </div>
             </div>
-            <div style="text-align: right; flex-shrink: 0;">
-                <div style="display: inline-block; font-size: 18px; font-weight: 900 !important; text-transform: uppercase; background: rgba(255, 255, 255, 0.18) !important; backdrop-filter: blur(8px); border: 1.5px solid rgba(255, 255, 255, 0.4); padding: 8px 22px; border-radius: 12px; letter-spacing: 1px; color: #ffffff !important; font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', system-ui, -apple-system, sans-serif !important;">${title}</div>
-                ${subtitleText ? `<div style="font-size: 10px; font-weight: 700 !important; margin-top: 6px; opacity: 0.95; text-align: right; color: #ffffff !important; font-family: 'Kalpurush', 'Hind Siliguri', 'Inter', sans-serif !important;">${subtitleText}</div>` : ''}
+            ${hideRightPill ? '' : `
+            <div style="text-align: right; flex-shrink: 0; max-width: 250px;">
+                <div style="display: inline-block; font-size: ${pillFontSize}; font-weight: 900 !important; text-transform: uppercase; background: rgba(255, 255, 255, 0.18) !important; backdrop-filter: blur(8px); border: 1.5px solid rgba(255, 255, 255, 0.4); padding: 6px 16px; border-radius: 10px; letter-spacing: 0.5px; color: #ffffff !important; font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', system-ui, -apple-system, sans-serif !important; word-break: break-word; text-align: center;">${title}</div>
+                ${subtitleText ? `<div style="font-size: 9.5px; font-weight: 700 !important; margin-top: 4px; opacity: 0.95; text-align: right; color: #ffffff !important; font-family: 'Kalpurush', 'Hind Siliguri', 'Inter', sans-serif !important;">${subtitleText}</div>` : ''}
             </div>
+            `}
         </div>
     `;
 }
