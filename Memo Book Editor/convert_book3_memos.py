@@ -31,12 +31,16 @@ for m in range(230, 258):
 for m in range(258, 261):
     memo_map[m] = (m - 155, 'white')
 
-# 261 to 273 -> Color pages 29 to 41
-for m in range(261, 274):
+# 261 to 269 -> Color pages 29 to 37
+for m in range(261, 270):
     memo_map[m] = (29 + (m - 261), 'color')
 
-# 274 -> White page 119
-memo_map[274] = (119, 'white')
+# 270 -> White page 115 (No color copy in PDF)
+memo_map[270] = (115, 'white')
+
+# 271 to 274 -> Color pages 38 to 41
+for m in range(271, 275):
+    memo_map[m] = (38 + (m - 271), 'color')
 
 # 275 to 278 -> Color pages 42 to 45
 for m in range(275, 279):
