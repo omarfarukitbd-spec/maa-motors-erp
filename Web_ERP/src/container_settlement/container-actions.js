@@ -34,6 +34,10 @@ export function handleTitleChange(val) {
     getActiveSettlement().title = val;
 }
 
+export function handleSubtitleChange(val) {
+    getActiveSettlement().subtitle = val;
+}
+
 export function handlePeriodChange(val) {
     getActiveSettlement().fiscalPeriod = val;
 }
@@ -188,6 +192,8 @@ export async function printReport() {
     const st = getActiveSettlement();
     const dateInput = document.getElementById('cont-date-input');
     if (dateInput) st.settlementDate = dateInput.value;
+    const subInput = document.getElementById('cont-subtitle-input');
+    if (subInput) st.subtitle = subInput.value;
     await printContainerSettlement(st);
 }
 
@@ -196,6 +202,7 @@ export function exportExcel() {
     const rows = [
         ['মেসার্স মা মোটরস — কন্টেইনার পার্টনারশিপ হিসাব'],
         [`শিরোনাম: ${st.title}`],
+        [`উপ-শিরোনাম: ${st.subtitle || ''}`],
         [`তারিখ: ${formatAppDate(st.settlementDate)}`, `অর্থবছর: ${st.fiscalPeriod || ''}`],
         [],
         ['১. মাল বিক্রয় ও কন্টেইনার লাভ হিসাব'],

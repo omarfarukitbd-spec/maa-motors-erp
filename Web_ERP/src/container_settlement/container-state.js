@@ -3,6 +3,7 @@ import { calcSalesAndCosts, calcProfitSharing, calcCapitalWaterfall } from './co
 export const DEFAULT_27_CONTAINER_DATA = {
     id: 'CONT-BATCH-27-2024-2025',
     title: '২৭ কন্টেইনার মাল বিক্রয় ও খরচের হিসাব (২০২৪/২০২৫)',
+    subtitle: '(এমরান + আলতাফ + সজীব) চালানী',
     containerCount: 27,
     fiscalPeriod: '2024 - 2025',
     settlementDate: '25/02/2026',
@@ -52,6 +53,7 @@ export function createNewBlankSettlement() {
     activeSettlement = {
         id: `CONT-${timestamp}`,
         title: 'নতুন কন্টেইনার মাল বিক্রয় ও খরচের হিসাব',
+        subtitle: '(এমরান + আলতাফ + সজীব) চালানী',
         containerCount: 1,
         fiscalPeriod: `${new Date().getFullYear()} - ${new Date().getFullYear() + 1}`,
         settlementDate: new Date().toLocaleDateString('en-GB'),

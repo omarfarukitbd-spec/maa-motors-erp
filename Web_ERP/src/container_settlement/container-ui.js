@@ -88,16 +88,20 @@ export function renderContainerSettlement(container) {
 
             <!-- Batch Title & Meta Details Bar -->
             <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 backdrop-blur-md grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                <div class="md:col-span-6">
-                    <label class="block text-[11px] font-black text-slate-400 mb-1">কন্টেইনার হিসাবের শিরোনাম ও বিবরণ</label>
+                <div class="md:col-span-5">
+                    <label class="block text-[11px] font-black text-slate-400 mb-1">কন্টেইনার হিসাবের মূল শিরোনাম</label>
                     <input type="text" id="cont-title-input" value="${escapeHTML(st.title)}" oninput="window.containerActions.handleTitleChange(this.value)" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-white font-black outline-none focus:border-teal-500 transition-all shadow-inner" placeholder="যেমন: ২৭ কন্টেইনার মাল বিক্রয় ও খরচের হিসাব (২০২৪/২০২৫)">
                 </div>
                 <div class="md:col-span-3">
+                    <label class="block text-[11px] font-black text-slate-400 mb-1">উপ-শিরোনাম / চালানী বিবরণ</label>
+                    <input type="text" id="cont-subtitle-input" value="${escapeHTML(st.subtitle || '(এমরান + আলতাফ + সজীব) চালানী')}" oninput="window.containerActions.handleSubtitleChange(this.value)" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-amber-300 font-bold outline-none focus:border-teal-500 transition-all" placeholder="(এমরান + আলতাফ + সজীব) চালানী">
+                </div>
+                <div class="md:col-span-2">
                     <label class="block text-[11px] font-black text-slate-400 mb-1">অর্থবছর / পিরিয়ড</label>
                     <input type="text" id="cont-period-input" value="${escapeHTML(st.fiscalPeriod || '')}" oninput="window.containerActions.handlePeriodChange(this.value)" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white font-bold outline-none focus:border-teal-500 transition-all" placeholder="২০২৪ - ২০২৫">
                 </div>
-                <div class="md:col-span-3">
-                    <label class="block text-[11px] font-black text-slate-400 mb-1">হিসাব নিষ্পত্তির তারিখ</label>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-black text-slate-400 mb-1">নিষ্পত্তির তারিখ</label>
                     <input type="text" id="cont-date-input" value="${escapeHTML(formatAppDate(st.settlementDate || ''))}" class="datepicker w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-teal-400 font-bold outline-none focus:border-teal-500 transition-all cursor-pointer">
                 </div>
             </div>

@@ -19,6 +19,7 @@ export async function printContainerSettlement(settlement) {
     }
 
     const title = settlement.title || 'কন্টেইনার মাল বিক্রয় ও খরচের হিসাব';
+    const subtitle = settlement.subtitle || '(এমরান + আলতাফ + সজীব) চালানী';
     const date = formatAppDate(settlement.settlementDate || new Date());
     const period = settlement.fiscalPeriod || '';
     const containerCount = settlement.containerCount || 27;
@@ -104,6 +105,11 @@ export async function printContainerSettlement(settlement) {
                 <div style="display: inline-block; background: #0f172a; color: #ffffff; padding: 7px 26px; border-radius: 8px; font-size: 15.5px; font-weight: 900; letter-spacing: 0.5px; border: 1.5px solid #334155; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);">
                     ${escapeHTML(title)}
                 </div>
+                ${subtitle ? `
+                <div style="margin-top: 5px; font-size: 13px; font-weight: 800; color: #1e293b; letter-spacing: 0.3px;">
+                    ${escapeHTML(subtitle)}
+                </div>
+                ` : ''}
             </div>
 
             <!-- Executive Metadata Bar -->
