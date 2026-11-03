@@ -16,6 +16,7 @@ import { renderTreasury, unsubscribeTreasury } from '../treasury/index.js';
 import { renderMemoSearch } from '../memo_search/index.js';
 import { renderDubaiProcurement, unsubscribeDubaiAudits } from '../dubai_procurement/index.js';
 import { renderPartsCatalog, unsubscribePartsCatalog, initPartsCatalogCache } from '../parts_catalog/index.js';
+import { renderContainerSettlement, unsubscribeContainerSettlement } from '../container_settlement/index.js';
 import { renderPayroll } from '../payroll/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
@@ -116,6 +117,7 @@ export function navigate(view, params = {}) {
     if (AppState.currentView === 'treasury' && view !== 'treasury') unsubscribeTreasury();
     if (AppState.currentView === 'dubai-procurement' && view !== 'dubai-procurement') unsubscribeDubaiAudits();
     if (AppState.currentView === 'parts-catalog' && view !== 'parts-catalog') unsubscribePartsCatalog();
+    if (AppState.currentView === 'container-settlement' && view !== 'container-settlement') unsubscribeContainerSettlement();
 
     AppState.currentView = view;
     const sidebar = document.getElementById('app-sidebar');
@@ -157,6 +159,8 @@ export function navigate(view, params = {}) {
         case 'dubai-procurement': renderDubaiProcurement(container, params); break;
         case 'parts-catalog':
         case 'parts_catalog': renderPartsCatalog(container, params); break;
+        case 'container-settlement':
+        case 'container_settlement': renderContainerSettlement(container, params); break;
         case 'payroll':
         case 'salary-sheet':
         case 'salary_sheet': renderPayroll(container, params); break;

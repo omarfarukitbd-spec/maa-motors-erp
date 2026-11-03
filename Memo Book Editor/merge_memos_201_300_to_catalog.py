@@ -239,3 +239,4 @@ with open(catalog_json_path, "w", encoding="utf-8") as f:
     json.dump(catalog, f, ensure_ascii=False, indent=2)
 
 print(f"Successfully saved updated catalog to: {catalog_json_path}")
+
