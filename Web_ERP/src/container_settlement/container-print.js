@@ -1,4 +1,4 @@
-import { formatAmountWithComma, numberToBanglaWords, escapeHTML } from '../utils.js';
+import { formatAppDate, formatAmountWithComma, numberToBanglaWords, escapeHTML } from '../utils.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
 import { renderSharedPrintHeader } from '../shared/print/print-header.js';
 import { SettingsDAO } from '../dao.js';
@@ -19,7 +19,7 @@ export async function printContainerSettlement(settlement) {
     }
 
     const title = settlement.title || 'কন্টেইনার মাল বিক্রয় ও খরচের হিসাব';
-    const date = settlement.settlementDate || new Date().toLocaleDateString('en-GB');
+    const date = formatAppDate(settlement.settlementDate || new Date());
     const period = settlement.fiscalPeriod || '';
     const containerCount = settlement.containerCount || 27;
     const netProfit = Math.round(Number(settlement.netProfit) || 0);

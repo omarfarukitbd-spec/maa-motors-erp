@@ -9,6 +9,7 @@ import {
 import { ContainerSettlementDAO } from './container-dao.js';
 import { printContainerSettlement } from './container-print.js';
 import { 
+    formatAppDate,
     formatAmountWithComma, 
     parseAmount, 
     showToast, 
@@ -195,7 +196,7 @@ export function exportExcel() {
     const rows = [
         ['মেসার্স মা মোটরস — কন্টেইনার পার্টনারশিপ হিসাব'],
         [`শিরোনাম: ${st.title}`],
-        [`তারিখ: ${st.settlementDate}`, `অর্থবছর: ${st.fiscalPeriod || ''}`],
+        [`তারিখ: ${formatAppDate(st.settlementDate)}`, `অর্থবছর: ${st.fiscalPeriod || ''}`],
         [],
         ['১. মাল বিক্রয় ও কন্টেইনার লাভ হিসাব'],
         ['ক্র:', 'বিবরণ', 'প্রকার', 'টাকা (BDT)'],

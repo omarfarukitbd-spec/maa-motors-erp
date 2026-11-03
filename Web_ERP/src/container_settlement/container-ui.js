@@ -5,6 +5,7 @@ import {
 } from './container-state.js';
 import { ContainerSettlementDAO } from './container-dao.js';
 import { 
+    formatAppDate,
     formatAmountWithComma, 
     numberToBanglaWords, 
     escapeHTML 
@@ -97,7 +98,7 @@ export function renderContainerSettlement(container) {
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-[11px] font-black text-slate-400 mb-1">হিসাব নিষ্পত্তির তারিখ</label>
-                    <input type="text" id="cont-date-input" value="${escapeHTML(st.settlementDate || '')}" class="datepicker w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-teal-400 font-bold outline-none focus:border-teal-500 transition-all cursor-pointer">
+                    <input type="text" id="cont-date-input" value="${escapeHTML(formatAppDate(st.settlementDate || ''))}" class="datepicker w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-teal-400 font-bold outline-none focus:border-teal-500 transition-all cursor-pointer">
                 </div>
             </div>
 
