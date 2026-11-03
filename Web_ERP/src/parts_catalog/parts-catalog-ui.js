@@ -44,7 +44,7 @@ export function renderPartsCatalog(container) {
                         <i class="fa-solid fa-percent text-amber-400 text-sm"></i>
                         <span class="hidden sm:inline">দর সমন্বয়</span>
                     </button>
-                    <button type="button" onclick="window.partsCatalogActions.seedDefault()" class="px-3.5 py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 hover:text-white border border-blue-500/30 font-bold text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer" title="১৩৪টি মেমো-ভেরিফাইড মাস্টার পার্টস ক্লাউডে আপলোড">
+                    <button type="button" onclick="window.partsCatalogActions.seedDefault()" class="px-3.5 py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 hover:text-white border border-blue-500/30 font-bold text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer" title="৬০৯টি মেমো-ভেরিফাইড মাস্টার পার্টস ক্লাউডে আপলোড">
                         <i class="fa-solid fa-cloud-arrow-up text-blue-400 text-sm"></i>
                         <span class="hidden sm:inline">ডাটা সিঙ্ক</span>
                     </button>

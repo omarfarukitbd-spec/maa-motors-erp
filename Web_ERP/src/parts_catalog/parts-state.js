@@ -47,7 +47,7 @@ export function subscribePartsCatalog(callback) {
     };
 }
 
-export const CURRENT_CATALOG_VERSION = 'v2_wholesale_highest_rate_2026';
+export const CURRENT_CATALOG_VERSION = 'v3_wholesale_memos_201_300_2026';
 
 /**
  * Initialize permanent background cache listener

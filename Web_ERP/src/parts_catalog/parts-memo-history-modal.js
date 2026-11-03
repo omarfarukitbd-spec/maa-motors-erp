@@ -113,7 +113,7 @@ export async function openMemoPriceHistoryModal(partId) {
                 </td>
                 <td class="py-3 px-3 text-center">
                     <button type="button" 
-                            onclick="window.partsCatalogActions.viewScannedMemo('${escapeHTML(m.memoNo)}', '${escapeHTML(m.memoNoBn || m.memoNo)}', '${escapeHTML(part.nameBn)}', ${m.rate || 0})"
+                            onclick="window.partsCatalogActions.viewScannedMemo('${escapeHTML(m.memoNo)}', '${escapeHTML(m.memoNoBn || m.memoNo)}', '${escapeHTML(part.nameBn)}', ${m.rate || 0}, '${escapeHTML(m.memoImageUrl || '')}')"
                             class="px-2.5 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-sm"
                             title="মেমো #${escapeHTML(m.memoNoBn || m.memoNo)} এর আসল স্ক্যান কপি দেখুন">
                         <i class="fa-solid fa-eye text-xs"></i>
@@ -227,10 +227,10 @@ export async function openMemoPriceHistoryModal(partId) {
  * @param {string} partName Part name in Bengali
  * @param {number} rate Rate of the part in memo
  */
-export async function viewScannedMemo(memoNo, memoNoBn, partName = '', rate = 0) {
+export async function viewScannedMemo(memoNo, memoNoBn, partName = '', rate = 0, customUrl = '') {
     if (!memoNo) return;
     const cleanNo = String(memoNo).trim();
-    const memoUrl = `/memos/${cleanNo}.webp`;
+    const memoUrl = customUrl || `/memos/${cleanNo}.webp`;
 
     await openMemoViewerModal({
         url: memoUrl,
