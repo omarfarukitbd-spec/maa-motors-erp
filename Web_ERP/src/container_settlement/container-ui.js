@@ -11,6 +11,7 @@ import {
     escapeHTML 
 } from '../utils.js';
 import * as actions from './container-actions.js';
+import { renderCustomSections } from './container-custom-ui.js';
 
 let containerListenerUnsub = null;
 let currentContainerElement = null;
@@ -32,6 +33,7 @@ export function renderContainerSettlement(container) {
             renderSalesCostsRows();
             renderProfitSharingRows();
             renderCapitalRows();
+            renderCustomSections();
             updateLiveMetricsAndWords();
         }
     });
@@ -199,6 +201,21 @@ export function renderContainerSettlement(container) {
                     <div id="summary-final-balance" class="text-2xl sm:text-3xl font-black font-mono text-sky-300">৳ ০</div>
                 </div>
             </div>
+
+            <!-- Dynamic Custom Sections (৪, ৫, ৬...) -->
+            <div id="cont-custom-sections-container" class="space-y-4"></div>
+
+            <!-- Master Add Custom Section Button -->
+            <div class="pt-1 pb-2">
+                <button type="button" 
+                        onclick="window.containerActions.addCustomSection()" 
+                        class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 hover:from-slate-800 hover:via-amber-900/30 hover:to-slate-800 border-2 border-dashed border-amber-500/40 hover:border-amber-400 text-amber-300 font-black text-sm flex items-center justify-center gap-2.5 shadow-lg transition-all cursor-pointer group">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-folder-plus text-sm"></i>
+                    </div>
+                    <span>+ নতুন কাস্টম সেকশন তৈরি করুন (৪, ৫...)</span>
+                </button>
+            </div>
         </div>
     `;
 
@@ -206,6 +223,7 @@ export function renderContainerSettlement(container) {
     renderSalesCostsRows();
     renderProfitSharingRows();
     renderCapitalRows();
+    renderCustomSections();
     updateLiveMetricsAndWords();
 
     // Start background listener for saved settlements

@@ -143,6 +143,134 @@ export function removeRow(section, idx) {
     refreshUi();
 }
 
+/**
+ * Helper to convert digits to Bengali numeral
+ */
+function toBengaliDigits(n) {
+    const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return String(n).replace(/\d/g, d => bn[d]);
+}
+
+/**
+ * Dynamic Custom Section Actions (৪, ৫, ৬...)
+ */
+export function addCustomSection() {
+    const st = getActiveSettlement();
+    if (!Array.isArray(st.customSections)) {
+        st.customSections = [];
+    }
+    const nextSecNo = 3 + st.customSections.length + 1;
+    st.customSections.push({
+        id: `sec-${Date.now()}`,
+        sectionNo: nextSecNo,
+        title: `${toBengaliDigits(nextSecNo)}. নতুন কাস্টম হিসাব`,
+        rows: [
+            {
+                id: `row-${Date.now()}-1`,
+                desc: 'আইটেমের বিবরণ লিখুন',
+                op: '+',
+                amount: 0
+            }
+        ],
+        subtotal: 0
+    });
+    refreshUi();
+    showToast(`সেকশন ${toBengaliDigits(nextSecNo)} সফলভাবে তৈরি হয়েছে`, 'success');
+}
+
+export async function removeCustomSection(sectionIdx) {
+    const st = getActiveSettlement();
+    if (!st.customSections || !st.customSections[sectionIdx]) return;
+
+    const sec = st.customSections[sectionIdx];
+    const secTitle = sec.title || `সেকশন ${toBengaliDigits(sectionIdx + 4)}`;
+
+    const res = await Swal.fire({
+        title: 'সেকশন মুছে ফেলবেন?',
+        html: `আপনি কি নিশ্চিতভাবে <b>${escapeHTML(secTitle)}</b> এবং এর সব আইটেম মুছে ফেলতে চান?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'হ্যাঁ, মুছুন',
+        cancelButtonText: 'বাতিল',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#475569',
+        background: '#0f172a',
+        color: '#ffffff'
+    });
+
+    if (res.isConfirmed) {
+        st.customSections.splice(sectionIdx, 1);
+        st.customSections.forEach((s, idx) => {
+            s.sectionNo = 4 + idx;
+        });
+        refreshUi();
+        showToast('সেকশন মুছে ফেলা হয়েছে', 'info');
+    }
+}
+
+export function handleCustomSectionTitleChange(sectionIdx, val) {
+    const st = getActiveSettlement();
+    if (st.customSections && st.customSections[sectionIdx]) {
+        st.customSections[sectionIdx].title = val;
+    }
+}
+
+export function addCustomSectionRow(sectionIdx) {
+    const st = getActiveSettlement();
+    if (st.customSections && st.customSections[sectionIdx]) {
+        if (!Array.isArray(st.customSections[sectionIdx].rows)) {
+            st.customSections[sectionIdx].rows = [];
+        }
+        st.customSections[sectionIdx].rows.push({
+            id: `row-${Date.now()}`,
+            desc: 'নতুন আইটেম',
+            op: '+',
+            amount: 0
+        });
+        refreshUi();
+    }
+}
+
+export function removeCustomSectionRow(sectionIdx, rowIdx) {
+    const st = getActiveSettlement();
+    if (st.customSections && st.customSections[sectionIdx] && st.customSections[sectionIdx].rows) {
+        st.customSections[sectionIdx].rows.splice(rowIdx, 1);
+        refreshUi();
+    }
+}
+
+export function toggleCustomSectionRowOp(sectionIdx, rowIdx) {
+    const st = getActiveSettlement();
+    if (st.customSections && st.customSections[sectionIdx] && st.customSections[sectionIdx].rows) {
+        const row = st.customSections[sectionIdx].rows[rowIdx];
+        if (row) {
+            row.op = row.op === '+' ? '-' : '+';
+            refreshUi();
+        }
+    }
+}
+
+export function handleCustomSectionRowDescChange(sectionIdx, rowIdx, val) {
+    const st = getActiveSettlement();
+    if (st.customSections && st.customSections[sectionIdx] && st.customSections[sectionIdx].rows) {
+        const row = st.customSections[sectionIdx].rows[rowIdx];
+        if (row) {
+            row.desc = val;
+        }
+    }
+}
+
+export function handleCustomSectionRowAmountChange(sectionIdx, rowIdx, val) {
+    const st = getActiveSettlement();
+    if (st.customSections && st.customSections[sectionIdx] && st.customSections[sectionIdx].rows) {
+        const row = st.customSections[sectionIdx].rows[rowIdx];
+        if (row) {
+            row.amount = parseAmount(val);
+            refreshUi();
+        }
+    }
+}
+
 export async function saveToCloud() {
     const st = getActiveSettlement();
     const dateInput = document.getElementById('cont-date-input');
@@ -222,6 +350,17 @@ export function exportExcel() {
         ...(st.capitalSettlements || []).map((r, i) => [i + 1, r.desc, r.op === '+' ? '(+) যোগ' : '(-) বাদ', r.amount]),
         ['', 'সর্বমোট অবশিষ্ট সমন্বিত ব্যালেন্স', '', st.finalNetBalance]
     ];
+
+    // Include dynamic custom sections (৪, ৫...)
+    (st.customSections || []).forEach(sec => {
+        rows.push([]);
+        rows.push([sec.title || `সেকশন ${sec.sectionNo}`]);
+        rows.push(['ক্র:', 'বিবরণ', 'প্রকার', 'টাকা (BDT)']);
+        (sec.rows || []).forEach((r, i) => {
+            rows.push([i + 1, r.desc, r.op === '+' ? '(+) আয়' : '(-) বাদ', r.amount]);
+        });
+        rows.push(['', 'উপ-মোট ব্যালেন্স', '', sec.subtotal || 0]);
+    });
 
     const escapeCsv = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
     const csvContent = '\uFEFF' + rows.map(r => r.map(escapeCsv).join(',')).join('\r\n');

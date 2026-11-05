@@ -93,6 +93,64 @@ export async function printContainerSettlement(settlement) {
         `;
     }).join('');
 
+    // Helper to convert digits to Bengali numeral
+    const toBengaliDigits = (n) => {
+        const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+        return String(n).replace(/\d/g, d => bn[d]);
+    };
+
+    // 4. Dynamic Custom Sections (৪, ৫, ৬...)
+    const customSectionsPrintHtml = (settlement.customSections || []).map((sec, sIdx) => {
+        const secNo = sec.sectionNo || (4 + sIdx);
+        const secTitle = sec.title || `${toBengaliDigits(secNo)}. কাস্টম হিসাব`;
+        const subtotal = Math.round(Number(sec.subtotal) || 0);
+        const subtotalWords = subtotal > 0 ? numberToBanglaWords(subtotal) : '';
+
+        const rowsHtml = (sec.rows || []).map((row, rIdx) => {
+            const isPlus = row.op === '+';
+            const roundedAmt = Math.round(Number(row.amount) || 0);
+            return `
+                <tr style="border-bottom: 1px solid #cbd5e1; background: ${rIdx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                    <td style="padding: 6px 8px; text-align: center; color: #64748b; font-weight: 700; width: 35px; border: 1px solid #cbd5e1;">${rIdx + 1}</td>
+                    <td style="padding: 6px 12px; font-weight: 700; color: #1e293b; border: 1px solid #cbd5e1;">${escapeHTML(row.desc)}</td>
+                    <td style="padding: 6px 8px; text-align: center; width: 75px; border: 1px solid #cbd5e1;">
+                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 11px; ${isPlus ? 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;' : 'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;'}">
+                            ${isPlus ? '(+) আয়' : '(-) বাদ'}
+                        </span>
+                    </td>
+                    <td style="padding: 6px 12px; text-align: right; font-weight: 800; font-size: 13px; color: ${isPlus ? '#059669' : '#dc2626'}; border: 1px solid #cbd5e1;" class="num-font">
+                        ৳ ${formatAmountWithComma(roundedAmt)}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <div class="page-break-avoid" style="margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
+                <div style="background: #0f172a; color: #ffffff; padding: 6px 12px; font-weight: 800; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>${escapeHTML(secTitle)}</span>
+                    <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">কাস্টম উপ-লেজার তালিকা</span>
+                </div>
+                <table class="print-table" style="font-size: 12px;">
+                    <tbody>
+                        ${rowsHtml || '<tr><td colspan="4" style="text-align:center; padding: 8px; color: #64748b;">কোনো আইটেম নেই</td></tr>'}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1;">
+                            <td colspan="3" style="padding: 8px 12px; font-weight: 800; text-align: right; font-size: 13px; color: #0f172a; border: 1px solid #cbd5e1;">
+                                সেকশন সর্বমোট ব্যালেন্স:
+                            </td>
+                            <td style="padding: 8px 12px; font-weight: 900; font-size: 14.5px; text-align: right; color: ${subtotal >= 0 ? '#059669' : '#dc2626'}; border: 1px solid #cbd5e1;" class="num-font">
+                                ৳ ${formatAmountWithComma(subtotal)}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+                ${subtotalWords ? `<div style="padding: 5px 12px; background: #f8fafc; font-size: 10.5px; color: #334155; font-weight: 700; border-top: 1px dashed #cbd5e1;">কথায়: ${escapeHTML(subtotalWords)}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+
     const htmlBody = `
         <div class="print-sheet">
             <!-- Header -->
@@ -218,6 +276,9 @@ export async function printContainerSettlement(settlement) {
                 </table>
                 ${finalBalanceWords ? `<div style="padding: 5px 12px; background: #f8fafc; font-size: 10.5px; color: #334155; font-weight: 700; border-top: 1px dashed #cbd5e1;">কথায়: ${escapeHTML(finalBalanceWords)}</div>` : ''}
             </div>
+
+            <!-- Dynamic Custom Sections (৪, ৫...) -->
+            ${customSectionsPrintHtml}
 
             <!-- Authentic 4-Partner Signature Block -->
             <div class="page-break-avoid" style="margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding-top: 5px;">

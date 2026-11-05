@@ -1,4 +1,4 @@
-import { calcSalesAndCosts, calcProfitSharing, calcCapitalWaterfall } from './container-calc.js';
+import { calcSalesAndCosts, calcProfitSharing, calcCapitalWaterfall, calcCustomSection } from './container-calc.js';
 
 export const DEFAULT_27_CONTAINER_DATA = {
     id: 'CONT-BATCH-27-2024-2025',
@@ -23,6 +23,7 @@ export const DEFAULT_27_CONTAINER_DATA = {
         { id: 'cs-3', desc: 'জাহেদ ভাই মারফত আলতাফ দিবে (+)', op: '+', amount: 500000 },
         { id: 'cs-4', desc: 'সুরাইয়া মারফত আলতাফ দিবে (+)', op: '+', amount: 300000 }
     ],
+    customSections: [],
     notes: '২৭ কন্টেইনারের মালামাল বিক্রয়, খরচ, পার্টনার লভ্যাংশ বণ্টন এবং এলসি মার্জিন ও ক্যাশ রিসিভ সমন্বয় হিসাব।'
 };
 
@@ -71,13 +72,14 @@ export function createNewBlankSettlement() {
             { id: `cs-${timestamp}-1`, desc: 'এমরান কন্টেইনার মূলধন', op: '+', amount: 0 },
             { id: `cs-${timestamp}-2`, desc: 'L/C মার্জিন ও ক্যাশ রিসিভ সজীব হইতে (-)', op: '-', amount: 0 }
         ],
+        customSections: [],
         notes: ''
     };
     return activeSettlement;
 }
 
 /**
- * Re-calculate all three sections of the active settlement
+ * Re-calculate all three sections of the active settlement plus dynamic custom sections
  */
 export function recalculateActiveSettlement() {
     // 1. Sales & Costs
@@ -97,6 +99,21 @@ export function recalculateActiveSettlement() {
     const cs = calcCapitalWaterfall(activeSettlement.capitalSettlements);
     activeSettlement.capitalSettlements = cs.rows;
     activeSettlement.finalNetBalance = cs.finalNetBalance;
+
+    // 4. Dynamic Custom Sections (৪, ৫...)
+    if (!Array.isArray(activeSettlement.customSections)) {
+        activeSettlement.customSections = [];
+    }
+    activeSettlement.customSections = activeSettlement.customSections.map(sec => {
+        const res = calcCustomSection(sec.rows);
+        return {
+            ...sec,
+            rows: res.rows,
+            totalPlus: res.totalPlus,
+            totalMinus: res.totalMinus,
+            subtotal: res.subtotal
+        };
+    });
 
     return activeSettlement;
 }

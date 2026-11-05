@@ -97,3 +97,34 @@ export function calcCapitalWaterfall(rows = []) {
     };
 }
 
+/**
+ * Calculate dynamic custom section totals
+ * @param {Array<{ op: string, amount: number|string }>} rows
+ */
+export function calcCustomSection(rows = []) {
+    let totalPlus = 0;
+    let totalMinus = 0;
+
+    const enriched = (Array.isArray(rows) ? rows : []).map(row => {
+        const amt = safeRound(Math.round(parseAmount(row.amount || 0)));
+        if (row.op === '+') {
+            totalPlus = safeRound(totalPlus + amt);
+        } else if (row.op === '-') {
+            totalMinus = safeRound(totalMinus + amt);
+        }
+        return {
+            ...row,
+            amount: amt
+        };
+    });
+
+    const subtotal = safeRound(totalPlus - totalMinus);
+
+    return {
+        rows: enriched,
+        totalPlus,
+        totalMinus,
+        subtotal
+    };
+}
+
