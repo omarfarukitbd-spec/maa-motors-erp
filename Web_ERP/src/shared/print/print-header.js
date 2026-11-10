@@ -57,7 +57,7 @@ export function renderSharedPrintHeader(arg1 = {}, arg2 = {}) {
     const hideRightPill = Boolean(options.hideRightPill);
 
     const rawShopName = settings.shopName || "মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)";
-    const rawShopOwner = settings.shopOwner || "মোহাম্মদ আমরান (Mohammed Amran)";
+    const rawShopOwner = settings.shopOwner || "মোহাম্মদ এমরান (Mohammed Amran)";
     const shopAddress = escapeHTML(settings.shopAddress || "দোকান নং-২২, রহমান টাওয়ার, ১ম ফ্লোর / ৫ম ফ্লোর, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম।");
     const shopPhone = escapeHTML(settings.shopPhone || "01819-397669, 01815-707934");
     const shopLogo = settings.shopLogo || "/shop-official-logo.png";

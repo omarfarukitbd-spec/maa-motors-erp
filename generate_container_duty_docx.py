@@ -76,32 +76,28 @@ def create_container_duty_document():
     p_meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_meta.paragraph_format.space_before = Pt(0)
     p_meta.paragraph_format.space_after = Pt(6)
-    r_meta = p_meta.add_run("১ম কনসোলমেন্ট কন্টেইনার ক্লিয়ারেন্স ও খালাস রেজিস্টার | খাতা পাতা: ০০০৪ | সময়কাল: ১২/১১/২০২৫ হইতে ২১/১০/২০২৬ পর্যন্ত")
+    r_meta = p_meta.add_run("১ম কনসোলমেন্ট কন্টেইনার ক্লিয়ারেন্স ও খালাস রেজিস্টার | খাতা পাতা: ০০০৪ | সময়কাল: ০৫/১১/২০২৫ হইতে ২১/১০/২০২৬ পর্যন্ত")
     r_meta.font.size = Pt(9)
     r_meta.font.bold = True
     r_meta.font.color.rgb = RGBColor(71, 85, 105)
 
-    # 2. Instruction Banner for User Review
+    # 2. Instruction Banner
     p_alert = doc.add_paragraph()
     p_alert.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p_alert.paragraph_format.space_before = Pt(2)
     p_alert.paragraph_format.space_after = Pt(6)
-    r_al1 = p_alert.add_run("📌 ব্যবহারকারীর সম্পাদনা ও সংশোধন নির্দেশিকা (User Correction Guide): ")
+    r_al1 = p_alert.add_run("✅ ব্যবহারকারী কর্তৃক চূড়ান্ত যাচাইকৃত ডাটা (Verified Data): ")
     r_al1.font.bold = True
     r_al1.font.size = Pt(9.5)
-    r_al1.font.color.rgb = RGBColor(180, 83, 9)
+    r_al1.font.color.rgb = RGBColor(5, 150, 105)
     r_al2 = p_alert.add_run(
-        "হস্তলিখিত খাতা (পাতা নং ০০০৪: কন্টেইনার ডিউটি/CSF/পোর্ট বিল/শিপিং বিল) থেকে ১ হতে ৭ নং কন্টেইনারের প্রতিটি এন্ট্রি নিচে সাজানো হয়েছে। "
-        "যদি কোনো কন্টেইনারের সাইজ (২০ ফুট / ৪০ ফুট), সিএন্ডএফ এজেন্ট/মারফতের নাম (আরমান, মিতুল, আরিয়ান), তারিখ বা টাকার অঙ্কে ভুল বা অস্পষ্টতা থাকে, "
-        "আপনি এই ওয়ার্ড ফাইলে সরাসরি টাইপ করে সংশোধন করে দিন। আপনার সংশোধিত ফাইলটি দিলেই আমরা ডাটাবেস ও সিস্টেমে লাইভ করে দেব।"
+        "আপনার দেওয়া তারিখ ও টাকার অঙ্কের চূড়ান্ত সংশোধন অনুযায়ী মোট বিল ২,৫১,৫০,৭১৩ টাকা নিখুঁতভাবে সমন্বয় করা হয়েছে।"
     )
     r_al2.font.size = Pt(9)
     r_al2.font.color.rgb = RGBColor(30, 41, 59)
 
     # 3. Master 3 KPI Summary Cards
-    total_duty = 24900993 # 2,49,00,993 BDT
-    twenty_ft_total = 3504526 # 4 no
-    forty_ft_total = 3312401 + 4446607 # 6 no + 7 no = 77,59,008
+    total_duty = 25150713 # 2,51,50,713 BDT
 
     kpi_table = doc.add_table(rows=1, cols=3)
     kpi_table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -140,15 +136,15 @@ def create_container_duty_document():
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # 4. Detailed Data Table (7 Containers)
-    # (নং, তারিখ, কন্টেইনার নং ও সাইজ, সিএন্ডএফ এজেন্ট / মারফত, বিবরণ / খাত, টাকা BDT, স্ট্যাটাস / মন্তব্য)
+    # (নং, তারিখ, কন্টেইনার নং ও সাইজ, সিএন্ডএফ এজেন্ট / মারফত, বিবরণ / খাত, টাকা BDT, স্ট্যাটাস)
     table_data = [
-        ("১", "১২/১১/২০২৫", "১ নং কন্টেইনার", "আরমান (আরিয়ান)", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3800000, "চূড়ান্ত পরিশোধিত (হলুদ হাইলাইট করা)"),
-        ("২", "১৯/১২/২০২৫", "২ নং কন্টেইনার", "আরমান (আরিয়ান)", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3550000, "চূড়ান্ত পরিশোধিত"),
-        ("৩", "১৮/০১/২০২৬", "৩ নং কন্টেইনার", "আরমান", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3500000, "চূড়ান্ত পরিশোধিত (১৮/১/২৫ বা ১৮/১/২৬)"),
-        ("৪", "২৫/০১/২০২৬", "৪ নং কন্টেইনার (২০ ফুট)", "আরমান ও মিতুল", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3504526, "চূড়ান্ত পরিশোধিত (২০ ফুট)"),
-        ("৫", "২৪/০২/২০২৬", "৫ নং কন্টেইনার", "আরমান ও মিতুল", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 2787459, "চূড়ান্ত পরিশোধিত"),
-        ("৬", "১৮/০৪/২০২৬", "৬ নং কন্টেইনার (৪০ ফুট)", "আরমান ও মিতুল", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3312401, "চূড়ান্ত পরিশোধিত (৪০ ফুট)"),
-        ("৭", "২১/১০/২০২৬", "৭ নং কন্টেইনার (৪০ ফুট)", "আরমান ও মিতুল", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 4446607, "চূড়ান্ত পরিশোধিত (৪০ ফুট)"),
+        ("১", "০৫/১১/২০২৫", "১ নং কন্টেইনার", "আরমান (আরিয়ান)", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3800000, "চূড়ান্ত পরিশোধিত (হলুদ হাইলাইট করা)"),
+        ("২", "০৪/১২/২০২৫", "২ নং কন্টেইনার", "আরমান (আরিয়ান)", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3580000, "চূড়ান্ত পরিশোধিত"),
+        ("৩", "১৮/১২/২০২৫", "৩ নং কন্টেইনার (৪০ ফুট)", "আরমান", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3500000, "চূড়ান্ত পরিশোধিত"),
+        ("৪", "২৬/০১/২০২৬", "৪ নং কন্টেইনার (৪০ ফুট)", "আরমান ও মিতুল", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3504236, "চূড়ান্ত পরিশোধিত"),
+        ("৫", "২৪/০২/২০২৬", "৫ নং কন্টেইনার", "আরমান ও মিতুল", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 2987439, "চূড়ান্ত পরিশোধিত"),
+        ("৬", "২৯/০৮/২০২৬", "৬ নং কন্টেইনার (৪০ ফুট)", "আরমান ও মিতুল", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 3332401, "চূড়ান্ত পরিশোধিত"),
+        ("৭", "২১/১০/২০২৬", "৭ নং কন্টেইনার (৪০ ফুট)", "আরমান ও মিতুল", "কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল", 4446637, "চূড়ান্ত পরিশোধিত"),
     ]
 
     table = doc.add_table(rows=len(table_data) + 2, cols=7)
@@ -178,7 +174,7 @@ def create_container_duty_document():
 
         bg_hex = "f8fafc" if row_idx % 2 == 1 else "ffffff"
         if row_idx == 0:
-            bg_hex = "fefce8" # subtle yellow tint matching highlighter in book
+            bg_hex = "fefce8"
 
         for c_idx in range(7):
             row_cells[c_idx].width = col_widths[c_idx]
@@ -258,7 +254,7 @@ def create_container_duty_document():
     r_gr_tag.font.bold = True
     r_gr_tag.font.color.rgb = RGBColor(180, 83, 9)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(10)
+    doc.add_paragraph().paragraph_format.space_after = Pt(8)
 
     # 5. Words Representation & Integration Info Box
     p_words = doc.add_paragraph()
@@ -267,11 +263,53 @@ def create_container_duty_document():
     r_w1 = p_words.add_run("কথায়: ")
     r_w1.font.bold = True
     r_w1.font.size = Pt(9)
-    r_w2 = p_words.add_run("দুই কোটি ঊনপঞ্চাশ লাখ নয়শত তিরানব্বই টাকা মাত্র।")
+    r_w2 = p_words.add_run("দুই কোটি একান্ন লাখ পঞ্চাশ হাজার সাতশত তেরো টাকা মাত্র।")
     r_w2.font.bold = True
     r_w2.font.color.rgb = RGBColor(180, 83, 9)
 
-    # 6. Four Signatures
+    # 6. Combined CapEx Summary Box (3 Tiers)
+    dubai_bdt = 236437459
+    bd_bdt = 57894052
+    grand_capex = dubai_bdt + total_duty + bd_bdt
+
+    comb_box = doc.add_table(rows=1, cols=4)
+    comb_box.alignment = WD_TABLE_ALIGNMENT.CENTER
+    comb_box.autofit = False
+
+    comb_cells = [
+        ("১. দুবাই পার্ট (পাতা ০০০১)", "৬৯,০৭,৩১৯ AED", f"৳ {format_bd(dubai_bdt)}", "f0f9ff", RGBColor(2, 132, 199)),
+        ("২. পোর্ট বিল (পাতা ০০০৪)", "১-৭ কন্টেইনার", f"৳ {format_bd(total_duty)}", "fef2f2", RGBColor(220, 38, 38)),
+        ("৩. বাংলাদেশ খরচ (পাতা ০০০২)", "১৯ কিস্তি + সাবেক", f"৳ {format_bd(bd_bdt)}", "fffbeb", RGBColor(180, 83, 9)),
+        ("সর্বমোট সামগ্রিক পুঁজী", "১ম কনসোলমেন্ট CapEx", f"৳ {format_bd(grand_capex)}", "ecfdf5", RGBColor(4, 120, 87)),
+    ]
+
+    for i, (title, sub, val, bg, col) in enumerate(comb_cells):
+        c = comb_box.cell(0, i)
+        c.width = Inches(1.85)
+        set_cell_background(c, bg)
+        set_cell_margins(c, top=60, bottom=60, left=60, right=60)
+        p = c.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.paragraph_format.space_before = Pt(1)
+        p.paragraph_format.space_after = Pt(1)
+
+        r1 = p.add_run(title + "\n")
+        r1.font.size = Pt(7.5)
+        r1.font.bold = True
+        r1.font.color.rgb = RGBColor(71, 85, 105)
+
+        r2 = p.add_run(val + "\n")
+        r2.font.size = Pt(9.5)
+        r2.font.bold = True
+        r2.font.color.rgb = col
+
+        r3 = p.add_run(sub)
+        r3.font.size = Pt(6.5)
+        r3.font.color.rgb = RGBColor(100, 116, 139)
+
+    doc.add_paragraph().paragraph_format.space_after = Pt(12)
+
+    # 7. Four Signatures
     sig_table = doc.add_table(rows=1, cols=4)
     sig_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     sig_table.autofit = False
@@ -295,9 +333,16 @@ def create_container_duty_document():
         r.font.bold = True
         r.font.color.rgb = RGBColor(71, 85, 105)
 
-    doc.save(out_path_1)
-    doc.save(out_path_2)
-    print(f"Successfully generated Word documents at:\n1. {out_path_1}\n2. {out_path_2}")
+    for p in [out_path_1, out_path_2]:
+        try:
+            doc.save(p)
+            print(f"Successfully saved Word document to: {p}")
+        except PermissionError:
+            print(f"Notice: {p} is currently open in Microsoft Word. Saved to alternative path.")
+            base, ext = os.path.splitext(p)
+            alt_path = f"{base}_সংশোধিত{ext}"
+            doc.save(alt_path)
+            print(f"Saved updated file as: {alt_path}")
 
 if __name__ == '__main__':
     create_container_duty_document()

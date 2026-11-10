@@ -159,7 +159,7 @@ export async function loadSettings() {
             'set-sms-new-bill': (data.smsTemplateNew || 'Dear Sir [AccNo], Memo #[Memo] of Tk [Bill] created on [Date]. Paid: Tk [Paid], Due: Tk [Due]. Thanks! - [Shop]').replace(/Dear\s*\[Name\]/gi, 'Dear Sir'),
             'set-sms-payment': data.smsTemplatePaid || 'We have received your payment of Tk [Paid] on [Date]. Your updated due is Tk [Due]. Thank you for staying with us! - [Shop]',
             'set-sms-less': data.smsTemplateLess || 'Dear Sir [AccNo], a discount/less of Tk [Paid] has been adjusted on [Date]. Your updated due is Tk [Due]. Thanks! - [Shop]',
-            'set-sms-correction': (data.smsTemplateCorrection || 'Correction Notice: Dear Sir [AccNo], a transaction of Tk [Amount] on [Date] has been cancelled/deleted due to an entry error. Your updated due is Tk [Due]. We apologize for any inconvenience. - [Shop]').replace(/Dear\s*\[Name\]/gi, 'Dear Sir'),
+            'set-sms-correction': (data.smsTemplateCorrection || 'Correction: Dear Sir [AccNo], txn of Tk [Amount] on [Date] was cancelled due to entry error. Updated due: Tk [Due]. Thanks! - [Shop]').replace(/Dear\s*\[Name\]/gi, 'Dear Sir'),
             'set-sms-api': data.smsApiKey || '', 'set-sms-sender': data.smsSenderId || '',
             'set-admin-pin': data.adminSecurityPin || '1060',
             'set-telegram-bot-token': data.telegramBotToken || '', 'set-telegram-chat-id': data.telegramChatId || ''
@@ -194,9 +194,10 @@ export async function saveSettings() {
     const smsCorr = document.getElementById('set-sms-correction')?.value.trim() || '';
 
     const validateSms = (val, label) => {
+        if (!val) return null;
         const isUni = /[^\x00-\x7F]/.test(val);
-        const limit = isUni ? 70 : 155;
-        if(val.length > limit) return `${label} (${isUni ? 'বাংলা' : 'English'}) ${limit} ক্যারেক্টারের বেশি হতে পারবে না।`;
+        const maxLimit = isUni ? 210 : 450;
+        if(val.length > maxLimit) return `${label} (${isUni ? 'বাংলা' : 'English'}) সর্বোচ্চ ${maxLimit} ক্যারেক্টার (৩ SMS) পর্যন্ত হতে পারবে।`;
         return null;
     };
 
