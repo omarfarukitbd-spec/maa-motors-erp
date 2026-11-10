@@ -30,12 +30,10 @@ export const DubaiRemittanceDAO = {
      */
     async getActiveConsignment() {
         try {
-            const snap = await db.collection(CONSIGNMENTS_COLLECTION)
-                .where('status', '===', 'active')
-                .limit(1)
-                .get();
+            const snap = await db.collection(CONSIGNMENTS_COLLECTION).get();
             if (!snap.empty) {
-                const doc = snap.docs[0];
+                const active = snap.docs.find(d => d.data().status === 'active');
+                const doc = active || snap.docs[0];
                 return { id: doc.id, ...doc.data() };
             }
             return null;
@@ -113,14 +111,16 @@ export const DubaiRemittanceDAO = {
      * Real-time listener for remittances of a specific consignment
      */
     listenRemittances(consignmentId, callback) {
-        let query = db.collection(REMITTANCES_COLLECTION);
-        if (consignmentId) {
-            query = query.where('consignmentId', '===', consignmentId);
-        }
-        return query.orderBy('date', 'asc')
+        return db.collection(REMITTANCES_COLLECTION)
             .onSnapshot(snap => {
                 const results = [];
-                snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if (!consignmentId || data.consignmentId === consignmentId) {
+                        results.push({ id: doc.id, ...data });
+                    }
+                });
+                results.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
                 callback(results);
             }, err => {
                 console.error('Error listening to dubai remittances:', err);
@@ -132,16 +132,18 @@ export const DubaiRemittanceDAO = {
      */
     async getRemittancesByDateRange(startDate, endDate) {
         try {
-            let query = db.collection(REMITTANCES_COLLECTION);
-            if (startDate) {
-                query = query.where('date', '>=', toDBDate(startDate));
-            }
-            if (endDate) {
-                query = query.where('date', '<=', toDBDate(endDate));
-            }
-            const snap = await query.orderBy('date', 'asc').get();
+            const snap = await db.collection(REMITTANCES_COLLECTION).get();
             const results = [];
-            snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+            const sDate = startDate ? toDBDate(startDate) : null;
+            const eDate = endDate ? toDBDate(endDate) : null;
+            snap.forEach(doc => {
+                const data = doc.data();
+                const d = data.date;
+                if ((!sDate || d >= sDate) && (!eDate || d <= eDate)) {
+                    results.push({ id: doc.id, ...data });
+                }
+            });
+            results.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
             return results;
         } catch (e) {
             console.error('Error fetching remittances by date range:', e);
@@ -189,39 +191,43 @@ export const DubaiRemittanceDAO = {
     /**
      * Initial Seed for Consignment 1 and notebook entries if database is empty
      */
-    async seedInitialDataIfNeeded() {
+    async seedInitialDataIfNeeded(force = false) {
         try {
-            const consSnap = await db.collection(CONSIGNMENTS_COLLECTION).limit(1).get();
-            if (!consSnap.empty) {
-                return; // Already initialized
+            const consId = 'CONSIGNMENT-01';
+            const consRef = db.collection(CONSIGNMENTS_COLLECTION).doc(consId);
+            const consDoc = await consRef.get();
+            if (!consDoc.exists || force) {
+                await consRef.set({
+                    id: consId,
+                    name: 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট, ডুবাই মাল ক্রয় ইনভেস্ট',
+                    status: 'active',
+                    stage1: {
+                        aed: 4285350,
+                        bdt: 145802430,
+                        rate: 34.02,
+                        dates: '29/08/2025 - 18/12/2025',
+                        agents: 'হৃদয়, ফারুক'
+                    },
+                    stage2: {
+                        aed: 1692497,
+                        bdt: 58421109,
+                        rate: 34.51,
+                        dates: '16/04/2026 - 13/10/2026',
+                        agents: 'ফারুক'
+                    },
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+
+            if (!force) {
+                const remSnap = await db.collection(REMITTANCES_COLLECTION).limit(1).get();
+                if (!remSnap.empty) {
+                    return; // Already seeded!
+                }
             }
 
             const batch = db.batch();
-
-            // Consignment 1 Document
-            const consId = 'CONSIGNMENT-01';
-            const consRef = db.collection(CONSIGNMENTS_COLLECTION).doc(consId);
-            batch.set(consRef, {
-                id: consId,
-                name: 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট, ডুবাই মাল ক্রয় ইনভেস্ট',
-                status: 'active',
-                stage1: {
-                    aed: 4285350,
-                    bdt: 145802430,
-                    rate: 34.02,
-                    dates: '29/08/2025 - 18/12/2025',
-                    agents: 'হৃদয়, ফারুক'
-                },
-                stage2: {
-                    aed: 1692497,
-                    bdt: 58421109,
-                    rate: 34.51,
-                    dates: '16/04/2026 - 13/10/2026',
-                    agents: 'ফারুক'
-                },
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
 
             // 19 Initial Remittance Entries
             const initialRecords = [

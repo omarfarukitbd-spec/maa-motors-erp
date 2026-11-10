@@ -35,6 +35,8 @@ export function initDubaiRemittanceModule(container) {
     DubaiRemittanceDAO.seedInitialDataIfNeeded().catch(e => console.error('Seed error:', e));
 
     renderRemittanceView(container);
+    renderRemittanceTable();
+    updateRemittanceKpis();
     setupRemittanceListeners();
 }
 
@@ -402,6 +404,24 @@ function renderRemittanceTable() {
         `;
     });
 
+    if (filtered.length === 0) {
+        rowsHtml += `
+            <tr class="border-b border-slate-800">
+                <td colspan="8" class="p-6 text-center text-slate-400">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-down text-sky-400 text-2xl"></i>
+                        <span class="font-bold text-slate-300">ডাটাবেসে কোনো এন্ট্রি পাওয়া যায়নি অথবা লোড হচ্ছে</span>
+                        <p class="text-xs text-slate-500">পিডিএফ-এর ১৯টি কিস্তির এন্ট্রি ডাটাবেসে এক ক্লিকে লোড করতে নিচের বাটনে চাপ দিন:</p>
+                        <button type="button" onclick="window.forceSeedRemittances()" class="mt-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2">
+                            <i class="fa-solid fa-database text-xs"></i>
+                            <span>পিডিএফ-এর খাতার ১৯টি এন্ট্রি ডাটাবেসে সেভ করুন</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
     tbody.innerHTML = rowsHtml;
 
     // Foot totals
@@ -420,7 +440,7 @@ function renderRemittanceTable() {
             <td colspan="3" class="p-3 text-right border-r border-slate-800 font-black">২০২৬ সেশনের মোট তহবিল (সাবেক সহ):</td>
             <td class="p-3 text-center font-mono font-black border-r border-slate-800">${summary.session2026.rate.toFixed(2)}</td>
             <td class="p-3 text-right font-mono font-black text-emerald-400 border-r border-slate-800">${formatAmountWithComma(summary.session2026.aed)} AED</td>
-            <td class="p-3 text-right font-mono font-black text-emerald-400 border-r border-slate-800">৳ ${formatAmountWithComma(summary.session2026.bdt)}</td>
+            <td class="p-3 text-right font-mono font-black text-red-400 border-r border-slate-800">৳ ${formatAmountWithComma(summary.session2026.bdt)}</td>
             <td colspan="2" class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">২০২৬ মোট</span></td>
         </tr>
 
@@ -435,6 +455,18 @@ function renderRemittanceTable() {
     `;
 
     // Global action helpers
+    window.forceSeedRemittances = async () => {
+        ensureOnline();
+        try {
+            showToast('ডাটাবেসে লোড করা হচ্ছে...', 'info');
+            await DubaiRemittanceDAO.seedInitialDataIfNeeded(true);
+            showToast('পিডিএফ-এর খাতার ১৯টি এন্ট্রি সফলভাবে ডাটাবেসে লোড হয়েছে', 'success');
+        } catch (e) {
+            console.error('Error seeding remittances:', e);
+            showToast('ডাটাবেসে লোড করতে সমস্যা হয়েছে: ' + (e.message || ''), 'error');
+        }
+    };
+
     window.editRemittanceEntry = (id) => {
         const item = remittancesList.find(r => r.id === id);
         if (!item) return;
