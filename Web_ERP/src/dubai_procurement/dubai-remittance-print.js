@@ -81,10 +81,6 @@ export async function printDubaiRemittanceBook(consignment, entries = []) {
 }
 
 function generateRemittancePrintHtml(consignment, entries, summary, settings) {
-    const shopName = settings.shopName || "মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)";
-    const ownerName = settings.ownerName || "স্বত্বাধিকারী: মোহাম্মদ এমরান (Mohammed Amran)";
-    const address = settings.address || "দোকান নং-২২, রহমান টাওয়ার, ১ম রেলগেট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম। | মোবাইল: 01819-397669, 01815-707934";
-
     const s1Aed = formatAmountWithComma(summary.stage1.aed);
     const s1Bdt = formatAmountWithComma(summary.stage1.bdt);
     const s2Aed = formatAmountWithComma(summary.stage2.aed);
@@ -132,21 +128,12 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
 
     return `
         <div class="remittance-print-sheet">
-            <!-- Header Banner -->
-            <div style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-radius: 6px; padding: 6px 12px; color: #ffffff; margin-bottom: 5px;">
-                <div style="display: flex; align-items: center; gap: 9px;">
-                    <div style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #fff; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #0284c7; font-weight: 900;">MM</div>
-                    <div>
-                        <h1 style="font-size: 15px; font-weight: 800; margin: 0 0 1px 0; letter-spacing: 0.3px;">${escapeHTML(shopName)}</h1>
-                        <div style="font-size: 8.5px; font-weight: 600; color: #e0f2fe; margin-bottom: 1px;">${escapeHTML(ownerName)}</div>
-                        <div style="font-size: 7.5px; color: #bae6fd; line-height: 1.15;">${escapeHTML(address)}</div>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="background: rgba(255, 255, 255, 0.22); border: 1px solid rgba(255, 255, 255, 0.45); padding: 2px 7px; border-radius: 4px; font-size: 8.5px; font-weight: 700; letter-spacing: 0.6px; display: inline-block; margin-bottom: 2px;">DUBAI REMITTANCE BOOK</div>
-                    <div style="font-size: 7.5px; color: #e0f2fe;">রেজিস্টার খাতা পাতা: <span class="num-font" style="font-weight: 700;">০০০১</span></div>
-                </div>
-            </div>
+            <!-- Official Mother Header Banner -->
+            ${renderPrintHeader(settings, {
+                title: 'DUBAI REMITTANCE BOOK',
+                pageLabel: 'রেজিস্টার খাতা পাতা',
+                pageNo: '০০০১'
+            })}
 
             <!-- Title Bar with Consignment Status -->
             <div style="background: #0f172a; color: #ffffff; display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; margin-bottom: 5px;">

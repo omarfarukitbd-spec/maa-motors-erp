@@ -1,9 +1,14 @@
 import { escapeHTML } from '../../utils/formatters.js';
 
 /**
- * Centralized Store Memo Header Generator
- * Guarantees 1-location update for shop name, logo, address, and Proprietor text across all memos & statements.
- * Features Smart Dual-Order Parameter Detection and Bulletproof Inter/Kalpurush Fonts.
+ * Mother PDF & Print Header Engine — Official Corporate Design of MAA MOTORS
+ * Generates an executive corporate A4 banner header matching the official Mother Design.
+ * Features:
+ * - Dynamic category badge and register sheet number (Image 3)
+ * - Official circular app logo from Settings/public assets (Image 2)
+ * - Pure SVG Japanese car brand vector logos (Mitsubishi & Toyota)
+ * - Crisp floating ribbon contact strip with location and phone icons
+ * - 100% offline-ready & print-color-adjust enforced
  */
 
 export function renderSharedPrintHeader(arg1 = {}, arg2 = {}) {
@@ -22,42 +27,174 @@ export function renderSharedPrintHeader(arg1 = {}, arg2 = {}) {
         options = arg2 || {};
     }
 
-    const title = options.title || 'CUSTOMER REPORT';
-    const subtitle = options.subtitle || '';
-    const dateRangeStr = options.dateRangeStr || '';
+    const title = options.title || 'DUBAI REMITTANCE BOOK';
+    const pageLabel = options.pageLabel || 'রেজিস্টার খাতা পাতা';
+    const pageNo = options.pageNo || options.sheetNo || options.invoiceNo || options.subtitle || '০০০১';
     const hideRightPill = Boolean(options.hideRightPill);
 
-    const shopName = escapeHTML(settings.shopName || "M/S. MAA-MOTOR'S");
-    const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");
-    const shopAddress = escapeHTML(settings.shopAddress || "Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road");
+    const shopName = escapeHTML(settings.shopName || "মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)");
+    const shopOwner = escapeHTML(settings.shopOwner || "মোহাম্মদ আমরান (Mohammed Amran)");
+    const shopAddress = escapeHTML(settings.shopAddress || "দোকান নং-২২, রহমান টাওয়ার, ১ম রেলগেট / ৫ম ফ্লোর, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম।");
     const shopPhone = escapeHTML(settings.shopPhone || "01819-397669, 01815-707934");
-    const shopLogo = settings.shopLogo || "/shop-official-logo.jpg";
+    const shopLogo = settings.shopLogo || "/shop-official-logo.png";
 
-    const subtitleText = dateRangeStr ? `সময়কাল: ${dateRangeStr}` : subtitle;
-
-    const logoHtml = `<img src="${shopLogo}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />`;
-
-    const pillFontSize = title.length > 24 ? '11.5px' : (title.length > 18 ? '13px' : '16px');
+    const titleFontSize = title.length > 25 ? '9.5px' : (title.length > 20 ? '10.5px' : '11.5px');
 
     return `
-        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 14px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); margin-bottom: 12px; font-family: 'Inter', 'Kalpurush', system-ui, -apple-system, sans-serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-            <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
-                <div style="width: 66px; height: 66px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 2.5px solid #ffffff; flex-shrink: 0; padding: 2px;">
-                    ${logoHtml}
+        <div class="mother-print-header" style="
+            background: linear-gradient(90deg, #024ea2 0%, #0056b8 36%, #00459e 70%, #002d72 100%) !important;
+            border-radius: 12px;
+            padding: 8px 12px 6px 12px;
+            color: #ffffff !important;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(2, 78, 162, 0.22);
+            margin-bottom: 8px;
+            box-sizing: border-box !important;
+            font-family: 'Kalpurush', 'Hind Siliguri', 'Inter', system-ui, -apple-system, sans-serif !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        ">
+            <!-- Decorative Accent Waves at bottom right corner -->
+            <div style="position: absolute; right: 0; bottom: 0; width: 140px; height: 38px; background: radial-gradient(ellipse at bottom right, rgba(217, 70, 239, 0.42) 0%, rgba(0, 229, 255, 0.35) 45%, transparent 72%); pointer-events: none; z-index: 1;"></div>
+
+            <!-- Top Row: Logo, Shop Details, Car Brands, and Dynamic Badge -->
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative; z-index: 2;">
+                <!-- Left: Circular App Logo from Settings -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                    <div style="width: 58px; height: 58px; min-width: 58px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.22); padding: 1px;">
+                        <img src="${shopLogo}" alt="Maa Motors Official Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />
+                    </div>
+                    <div style="width: 1.5px; height: 50px; background: rgba(255, 255, 255, 0.45); margin: 0 1px;"></div>
                 </div>
-                <div style="min-width: 0;">
-                    <h1 style="font-size: 20px; font-weight: 900 !important; margin: 0; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">${shopName}</h1>
-                    <p style="font-size: 10.5px; margin: 2px 0; opacity: 0.95; font-weight: 700 !important; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">Proprietor: ${shopOwner}</p>
-                    <p style="font-size: 10px; margin: 2px 0; opacity: 0.95; font-weight: 600 !important; line-height: 1.3; color: #ffffff !important; max-width: 400px; font-family: 'Kalpurush', 'Hind Siliguri', 'Inter', sans-serif !important;">${shopAddress}</p>
-                    <p style="font-size: 10px; margin: 0; font-weight: 800 !important; opacity: 0.95; color: #ffffff !important; font-family: 'Inter', system-ui, -apple-system, sans-serif !important;">Mobile: ${shopPhone}</p>
+
+                <!-- Center: Business Branding -->
+                <div style="flex-grow: 1; min-width: 0; padding-left: 2px;">
+                    <!-- Shop Name in Bright Yellow -->
+                    <h1 style="font-size: 19px; font-weight: 900 !important; margin: 0 0 2px 0; color: #ffdf00 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.45); letter-spacing: -0.2px; line-height: 1.15; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif !important; white-space: nowrap;">
+                        ${shopName}
+                    </h1>
+                    <!-- Subtitle in White Rounded Pill with Navy Text -->
+                    <div style="display: inline-block; background: #ffffff !important; color: #001a70 !important; border-radius: 14px; padding: 1.5px 9px; font-size: 8.5px; font-weight: 800 !important; margin-bottom: 2.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); line-height: 1.25; font-family: 'Kalpurush', sans-serif !important; white-space: nowrap;">
+                        জাতীয় জাপানি কার ও মাইক্রোবাসের রিকন্ডিশন ইঞ্জিন ও পার্টস বিক্রয় করা হয়।
+                    </div>
+                    <!-- Proprietor with Red Badge -->
+                    <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; line-height: 1.2;">
+                        <span style="background: #e11d48 !important; color: #ffffff !important; border-radius: 4px; padding: 1px 5px; font-size: 9.5px; font-weight: 900 !important; letter-spacing: 0.2px; white-space: nowrap;">
+                            প্রোপাইটর:
+                        </span>
+                        <span style="color: #ffffff !important; font-weight: 800 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-size: 11px; white-space: nowrap;">
+                            ${shopOwner}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Middle-Right: Pure SVG Japanese Car Brand Vectors (Mitsubishi & Toyota) -->
+                <div style="display: flex; align-items: center; gap: 12px; margin: 0 8px; flex-shrink: 0;">
+                    <!-- Mitsubishi Brand Vector -->
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                        <svg width="22" height="18" viewBox="0 0 30 25" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+                            <polygon points="15,0 20,8.66 15,17.32 10,8.66" fill="#e11d48"/>
+                            <polygon points="10,8.66 15,17.32 10,25.98 5,17.32" fill="#e11d48"/>
+                            <polygon points="20,8.66 25,17.32 20,25.98 15,17.32" fill="#e11d48"/>
+                        </svg>
+                        <span style="font-size: 5.5px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; margin-top: 1px; font-family: 'Inter', sans-serif;">MITSUBISHI</span>
+                    </div>
+
+                    <!-- Toyota Brand Vector -->
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                        <svg width="22" height="17" viewBox="0 0 32 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+                            <ellipse cx="16" cy="12" rx="15" ry="11" stroke="#ffffff" stroke-width="1.8"/>
+                            <ellipse cx="16" cy="8.5" rx="9" ry="5.5" stroke="#ffffff" stroke-width="1.5"/>
+                            <ellipse cx="16" cy="12" rx="4.5" ry="9" stroke="#ffffff" stroke-width="1.5"/>
+                        </svg>
+                        <span style="font-size: 5.5px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; margin-top: 1px; font-family: 'Inter', sans-serif;">TOYOTA</span>
+                    </div>
+                </div>
+
+                <!-- Far-Right: Dynamic Category Badge & Sheet Indicator (Image 3) -->
+                ${hideRightPill ? '' : `
+                <div style="text-align: right; flex-shrink: 0; min-width: 135px;">
+                    <!-- Category Title in White Pill with Red Border -->
+                    <div style="
+                        background: #ffffff !important;
+                        color: #001a70 !important;
+                        border: 1.8px solid #ef4444;
+                        border-radius: 7px;
+                        padding: 3px 10px;
+                        font-size: ${titleFontSize};
+                        font-weight: 900 !important;
+                        letter-spacing: 0.4px;
+                        text-align: center;
+                        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+                        white-space: nowrap;
+                        font-family: 'Inter', 'Segoe UI', Arial, sans-serif !important;
+                    ">
+                        ${title}
+                    </div>
+
+                    <!-- Register Page / Sheet Number Indicator -->
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 3px;">
+                        <span style="color: #ffffff !important; font-size: 9.5px; font-weight: 800 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-family: 'Kalpurush', sans-serif !important; white-space: nowrap;">
+                            ${pageLabel}:
+                        </span>
+                        <span style="
+                            background: #ffd700 !important;
+                            color: #000000 !important;
+                            border-radius: 12px;
+                            padding: 1px 8px;
+                            font-size: 10px;
+                            font-weight: 900 !important;
+                            font-family: 'Inter', monospace;
+                            line-height: 1.2;
+                            white-space: nowrap;
+                            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                        ">
+                            ${pageNo}
+                        </span>
+                    </div>
+                </div>
+                `}
+            </div>
+
+            <!-- Bottom Row: Floating Light-Blue Ribbon Contact Strip (Image 1) -->
+            <div style="
+                background: linear-gradient(90deg, #ffffff 0%, #e0f2fe 50%, #ffffff 100%) !important;
+                border-radius: 18px;
+                padding: 2.5px 12px;
+                margin-top: 5px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                color: #002d72 !important;
+                font-size: 8.5px;
+                font-weight: 800 !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+                border: 1px solid #bae6fd;
+                position: relative;
+                z-index: 2;
+                white-space: nowrap;
+                font-family: 'Kalpurush', 'Inter', sans-serif !important;
+            ">
+                <!-- Location pin + Shop Address -->
+                <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; min-width: 13px; background: #fbbf24; border-radius: 50%; color: #dc2626; font-size: 7.5px;">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="#dc2626"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                    </span>
+                    <span style="color: #0f172a !important; font-weight: 700;">${shopAddress}</span>
+                </div>
+
+                <!-- Separator -->
+                <span style="color: #94a3b8; margin: 0 6px;">|</span>
+
+                <!-- Phone icon + Mobile numbers -->
+                <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; min-width: 13px; background: #fbbf24; border-radius: 50%; color: #dc2626; font-size: 7.5px;">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="#16a34a"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                    </span>
+                    <span style="color: #002d72 !important; font-family: 'Inter', 'Kalpurush', sans-serif; font-weight: 800;">মোবাইল: ${shopPhone}</span>
                 </div>
             </div>
-            ${hideRightPill ? '' : `
-            <div style="text-align: right; flex-shrink: 0; max-width: 250px;">
-                <div style="display: inline-block; font-size: ${pillFontSize}; font-weight: 900 !important; text-transform: uppercase; background: rgba(255, 255, 255, 0.18) !important; backdrop-filter: blur(8px); border: 1.5px solid rgba(255, 255, 255, 0.4); padding: 6px 16px; border-radius: 10px; letter-spacing: 0.5px; color: #ffffff !important; font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', system-ui, -apple-system, sans-serif !important; word-break: break-word; text-align: center;">${title}</div>
-                ${subtitleText ? `<div style="font-size: 9.5px; font-weight: 700 !important; margin-top: 4px; opacity: 0.95; text-align: right; color: #ffffff !important; font-family: 'Kalpurush', 'Hind Siliguri', 'Inter', sans-serif !important;">${subtitleText}</div>` : ''}
-            </div>
-            `}
         </div>
     `;
 }
