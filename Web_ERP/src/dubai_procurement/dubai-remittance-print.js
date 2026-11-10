@@ -41,7 +41,26 @@ export async function printDubaiRemittanceBook(consignment, entries = []) {
             font-feature-settings: 'tnum' 1;
             font-variant-numeric: tabular-nums;
         }
-        table { border-collapse: collapse; width: 100%; }
+        table { border-collapse: collapse !important; width: 100% !important; }
+        .remittance-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border: 1.5px solid #334155 !important;
+        }
+        .remittance-table th {
+            border: 1px solid #334155 !important;
+            background: #1e293b !important;
+            color: #ffffff !important;
+            padding: 3.5px 4px !important;
+            font-size: 8px !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .remittance-table td {
+            border: 1px solid #94a3b8 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
         tr { page-break-inside: avoid !important; }
         thead { display: table-header-group !important; }
         .remittance-print-sheet {
@@ -80,14 +99,14 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
     let rowsHtml = '';
     // Row 0: Opening / Former Balance
     rowsHtml += `
-        <tr style="background: #eff6ff; border-bottom: 1px solid #bfdbfe;">
-            <td style="text-align: center; color: #0284c7; font-weight: 800; padding: 3px 4px;">০</td>
-            <td style="text-align: center; font-weight: 600; padding: 3px 4px;" class="num-font">13/10/2026</td>
-            <td style="font-weight: 800; color: #0369a1; padding: 3px 4px;">সাবেক (পূর্ববর্তী কিউমুলেটিভ ব্যালেন্স)</td>
-            <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 4px;" class="num-font">${summary.stage2.rate.toFixed(2)}</td>
-            <td style="text-align: right; font-weight: 800; color: #059669; padding: 3px 4px;" class="num-font">${s2Aed}</td>
-            <td style="text-align: right; font-weight: 800; color: #dc2626; padding: 3px 4px;" class="num-font">৳ ${s2Bdt}</td>
-            <td style="text-align: center; padding: 3px 4px;"><span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 1px 4px; border-radius: 3px; font-size: 7.5px; font-weight: 700;">সাবেক শুরু</span></td>
+        <tr style="background: #eff6ff; font-weight: 700;">
+            <td style="text-align: center; color: #0284c7; font-weight: 800; padding: 3px 4px; border: 1px solid #94a3b8;">০</td>
+            <td style="text-align: center; font-weight: 600; padding: 3px 4px; border: 1px solid #94a3b8;" class="num-font">13/10/2026</td>
+            <td style="font-weight: 800; color: #0369a1; padding: 3px 4px; border: 1px solid #94a3b8;">সাবেক (পূর্ববর্তী কিউমুলেটিভ ব্যালেন্স)</td>
+            <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 4px; border: 1px solid #94a3b8;" class="num-font">${summary.stage2.rate.toFixed(2)}</td>
+            <td style="text-align: right; font-weight: 800; color: #059669; padding: 3px 4px; border: 1px solid #94a3b8;" class="num-font">${s2Aed}</td>
+            <td style="text-align: right; font-weight: 800; color: #dc2626; padding: 3px 4px; border: 1px solid #94a3b8;" class="num-font">৳ ${s2Bdt}</td>
+            <td style="text-align: center; padding: 3px 4px; border: 1px solid #94a3b8;"><span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 1px 4px; border-radius: 3px; font-size: 7.5px; font-weight: 700;">সাবেক শুরু</span></td>
         </tr>
     `;
 
@@ -99,14 +118,14 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
         const bg = (idx % 2 === 1) ? 'background: #f8fafc;' : 'background: #ffffff;';
 
         rowsHtml += `
-            <tr style="${bg} border-bottom: 1px solid #e2e8f0;">
-                <td style="text-align: center; color: #64748b; font-weight: 700; padding: 2.5px 4px;">${idx + 1}</td>
-                <td style="text-align: center; font-weight: 600; padding: 2.5px 4px;" class="num-font">${escapeHTML(dtStr)}</td>
-                <td style="font-weight: 600; color: #0f172a; padding: 2.5px 4px;">${escapeHTML(e.via || '')}</td>
-                <td style="text-align: center; font-weight: 700; color: #475569; padding: 2.5px 4px;" class="num-font">${rateStr}</td>
-                <td style="text-align: right; font-weight: 800; color: #059669; padding: 2.5px 4px;" class="num-font">${aedStr}</td>
-                <td style="text-align: right; font-weight: 800; color: #dc2626; padding: 2.5px 4px;" class="num-font">৳ ${bdtStr}</td>
-                <td style="text-align: center; padding: 2.5px 4px;"><span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 1px 4px; border-radius: 3px; font-size: 7.5px; font-weight: 700;">${escapeHTML(e.status || 'পরিশোধিত')}</span></td>
+            <tr style="${bg}">
+                <td style="text-align: center; color: #64748b; font-weight: 700; padding: 2.5px 4px; border: 1px solid #94a3b8;">${idx + 1}</td>
+                <td style="text-align: center; font-weight: 600; padding: 2.5px 4px; border: 1px solid #94a3b8;" class="num-font">${escapeHTML(dtStr)}</td>
+                <td style="font-weight: 600; color: #0f172a; padding: 2.5px 4px; border: 1px solid #94a3b8;">${escapeHTML(e.via || '')}</td>
+                <td style="text-align: center; font-weight: 700; color: #475569; padding: 2.5px 4px; border: 1px solid #94a3b8;" class="num-font">${rateStr}</td>
+                <td style="text-align: right; font-weight: 800; color: #059669; padding: 2.5px 4px; border: 1px solid #94a3b8;" class="num-font">${aedStr}</td>
+                <td style="text-align: right; font-weight: 800; color: #dc2626; padding: 2.5px 4px; border: 1px solid #94a3b8;" class="num-font">৳ ${bdtStr}</td>
+                <td style="text-align: center; padding: 2.5px 4px; border: 1px solid #94a3b8;"><span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 1px 4px; border-radius: 3px; font-size: 7.5px; font-weight: 700;">${escapeHTML(e.status || 'পরিশোধিত')}</span></td>
             </tr>
         `;
     });
@@ -160,46 +179,46 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
             </div>
 
             <!-- Detail Table -->
-            <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; border: 1px solid #cbd5e1;">
+            <table class="remittance-table" style="width: 100%; border-collapse: collapse; font-size: 8.5px; border: 1.5px solid #334155;">
                 <thead>
                     <tr style="background: #1e293b; color: #ffffff;">
-                        <th style="width: 4%; padding: 3px 4px; border: 1px solid #334155; text-align: center; font-size: 8px;">নং</th>
-                        <th style="width: 11%; padding: 3px 4px; border: 1px solid #334155; text-align: center; font-size: 8px;">তারিখ</th>
-                        <th style="width: 32%; padding: 3px 4px; border: 1px solid #334155; text-align: left; font-size: 8px;">বিবরণ / মারফত (Particulars)</th>
-                        <th style="width: 9%; padding: 3px 4px; border: 1px solid #334155; text-align: center; font-size: 8px;">রেট (Rate)</th>
-                        <th style="width: 18%; padding: 3px 4px; border: 1px solid #334155; text-align: right; font-size: 8px;">দিরহাম (AED)</th>
-                        <th style="width: 18%; padding: 3px 4px; border: 1px solid #334155; text-align: right; font-size: 8px;">টাকা (BDT / TK)</th>
-                        <th style="width: 8%; padding: 3px 4px; border: 1px solid #334155; text-align: center; font-size: 8px;">স্ট্যাটাস</th>
+                        <th style="width: 4%; padding: 3.5px 4px; border: 1px solid #334155; text-align: center; font-size: 8px;">নং</th>
+                        <th style="width: 11%; padding: 3.5px 4px; border: 1px solid #334155; text-align: center; font-size: 8px;">তারিখ</th>
+                        <th style="width: 32%; padding: 3.5px 4px; border: 1px solid #334155; text-align: left; font-size: 8px;">বিবরণ / মারফত (Particulars)</th>
+                        <th style="width: 9%; padding: 3.5px 4px; border: 1px solid #334155; text-align: center; font-size: 8px;">রেট (Rate)</th>
+                        <th style="width: 18%; padding: 3.5px 4px; border: 1px solid #334155; text-align: right; font-size: 8px;">দিরহাম (AED)</th>
+                        <th style="width: 18%; padding: 3.5px 4px; border: 1px solid #334155; text-align: right; font-size: 8px;">টাকা (BDT / TK)</th>
+                        <th style="width: 8%; padding: 3.5px 4px; border: 1px solid #334155; text-align: center; font-size: 8px;">স্ট্যাটাস</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${rowsHtml}
 
                     <!-- 1. Running Subtotal Row -->
-                    <tr style="background: #f8fafc; font-weight: 700; border-top: 1.5px solid #cbd5e1; color: #475569;">
-                        <td colspan="3" style="text-align: right; padding: 2.5px 4px;">চলমান খাতার উপ-মোট (${summary.stage3.count} টি লেনদেন):</td>
-                        <td style="text-align: center; padding: 2.5px 4px;" class="num-font">${summary.stage3.rate.toFixed(2)}</td>
-                        <td style="text-align: right; font-weight: 800; color: #059669; padding: 2.5px 4px;" class="num-font">${s3Aed} AED</td>
-                        <td style="text-align: right; font-weight: 800; color: #dc2626; padding: 2.5px 4px;" class="num-font">৳ ${s3Bdt}</td>
-                        <td style="text-align: center; font-size: 7px; color: #64748b; padding: 2.5px 4px;">উপ-মোট</td>
+                    <tr style="background: #f8fafc; font-weight: 700; color: #475569;">
+                        <td colspan="3" style="text-align: right; padding: 3px 5px; border: 1px solid #94a3b8; font-weight: 800;">চলমান খাতার উপ-মোট (${summary.stage3.count} টি লেনদেন):</td>
+                        <td style="text-align: center; padding: 3px 4px; border: 1px solid #94a3b8;" class="num-font">${summary.stage3.rate.toFixed(2)}</td>
+                        <td style="text-align: right; font-weight: 800; color: #059669; padding: 3px 5px; border: 1px solid #94a3b8;" class="num-font">${s3Aed} AED</td>
+                        <td style="text-align: right; font-weight: 800; color: #dc2626; padding: 3px 5px; border: 1px solid #94a3b8;" class="num-font">৳ ${s3Bdt}</td>
+                        <td style="text-align: center; font-size: 7.5px; font-weight: 800; color: #475569; padding: 3px 4px; border: 1px solid #94a3b8;">উপ-মোট</td>
                     </tr>
 
                     <!-- 2. 2026 Session Cumulative Total Row -->
-                    <tr style="background: #f0fdf4; font-weight: 800; border-top: 1.5px solid #10b981; color: #065f46;">
-                        <td colspan="3" style="text-align: right; padding: 2.5px 4px;">২০২৬ সেশনের মোট তহবিল (সাবেক সহ):</td>
-                        <td style="text-align: center; padding: 2.5px 4px;" class="num-font">${summary.session2026.rate.toFixed(2)}</td>
-                        <td style="text-align: right; font-weight: 800; color: #047857; padding: 2.5px 4px;" class="num-font">${session2026Aed} AED</td>
-                        <td style="text-align: right; font-weight: 800; color: #b91c1c; padding: 2.5px 4px;" class="num-font">৳ ${session2026Bdt}</td>
-                        <td style="text-align: center; padding: 2.5px 4px;"><span style="background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: 700;">২০২৬ মোট</span></td>
+                    <tr style="background: #f0fdf4; font-weight: 800; color: #065f46;">
+                        <td colspan="3" style="text-align: right; padding: 3px 5px; border: 1.5px solid #86efac; font-weight: 900;">২০২৬ সেশনের মোট তহবিল (সাবেক সহ):</td>
+                        <td style="text-align: center; padding: 3px 4px; border: 1.5px solid #86efac;" class="num-font">${summary.session2026.rate.toFixed(2)}</td>
+                        <td style="text-align: right; font-weight: 900; color: #047857; padding: 3px 5px; border: 1.5px solid #86efac;" class="num-font">${session2026Aed} AED</td>
+                        <td style="text-align: right; font-weight: 900; color: #b91c1c; padding: 3px 5px; border: 1.5px solid #86efac;" class="num-font">৳ ${session2026Bdt}</td>
+                        <td style="text-align: center; padding: 3px 4px; border: 1.5px solid #86efac;"><span style="background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: 800;">২০২৬ মোট</span></td>
                     </tr>
 
                     <!-- 3. ALL-TIME 1ST CONSIGNMENT GRAND TOTAL -->
-                    <tr style="background: #eff6ff; font-weight: 900; border-top: 2px solid #0284c7; border-bottom: 2px solid #0284c7;">
-                        <td colspan="3" style="text-align: right; font-size: 9.5px; color: #0f172a; padding: 3px 4px;">১ম কনসোলমেন্টের সর্বমোট তহবিল (পর্যায় ১ + ২ + ৩):</td>
-                        <td style="text-align: center; font-size: 9px; color: #0284c7; padding: 3px 4px;" class="num-font">${summary.grandTotal.rate.toFixed(2)}</td>
-                        <td style="text-align: right; font-size: 10px; font-weight: 900; color: #047857; padding: 3px 4px;" class="num-font">${grandAed} AED</td>
-                        <td style="text-align: right; font-size: 10px; font-weight: 900; color: #b91c1c; padding: 3px 4px;" class="num-font">৳ ${grandBdt}</td>
-                        <td style="text-align: center; padding: 3px 4px;"><span style="background: #0284c7; color: #fff; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: 800;">সর্বমোট</span></td>
+                    <tr style="background: #eff6ff; font-weight: 900;">
+                        <td colspan="3" style="text-align: right; font-size: 9.5px; color: #0f172a; padding: 4px 6px; border: 2px solid #0284c7; font-weight: 900;">১ম কনসোলমেন্টের সর্বমোট তহবিল (পর্যায় ১ + ২ + ৩):</td>
+                        <td style="text-align: center; font-size: 9px; color: #0284c7; padding: 4px 5px; border: 2px solid #0284c7;" class="num-font">${summary.grandTotal.rate.toFixed(2)}</td>
+                        <td style="text-align: right; font-size: 10px; font-weight: 900; color: #047857; padding: 4px 6px; border: 2px solid #0284c7;" class="num-font">${grandAed} AED</td>
+                        <td style="text-align: right; font-size: 10px; font-weight: 900; color: #b91c1c; padding: 4px 6px; border: 2px solid #0284c7;" class="num-font">৳ ${grandBdt}</td>
+                        <td style="text-align: center; padding: 4px 5px; border: 2px solid #0284c7;"><span style="background: #0284c7; color: #fff; padding: 1.5px 5px; border-radius: 3px; font-size: 7.5px; font-weight: 900;">সর্বমোট</span></td>
                     </tr>
                 </tbody>
             </table>
