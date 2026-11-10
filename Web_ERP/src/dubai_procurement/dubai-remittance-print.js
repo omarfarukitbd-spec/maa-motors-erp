@@ -200,41 +200,8 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
                 </tbody>
             </table>
 
-            <!-- Master Consignment Closure & Rollover Certificate Box -->
-            <div style="margin-top: 5px; background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 4px 7px; font-size: 8px; color: #78350f;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #d97706; padding-bottom: 2px; margin-bottom: 3px;">
-                    <div style="font-size: 9px; font-weight: 800; color: #92400e;"><i class="fa-solid fa-certificate" style="color: #d97706; margin-right: 4px;"></i>এমরান ব্যক্তিগত ১ম কনসোলমেন্ট — সার্বিক সমাপ্তি ও ২য় কনসোলমেন্টে স্থানান্তর বিবরণী</div>
-                    <span style="font-weight: 700; color: #92400e; font-size: 7.5px;">স্ট্যাটাস: চলমান (মাল ক্রয় শেষে ক্লোজ হবে)</span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; text-align: center; margin-bottom: 3px;">
-                    <div style="background: #fff; border: 1px solid #fde68a; border-radius: 3px; padding: 2px;">
-                        <div style="font-size: 7px; font-weight: 700; color: #92400e;">১ম পর্যায় (২০২৫)</div>
-                        <div class="num-font" style="font-size: 9px; font-weight: 900; color: #4f46e5;">${s1Aed} AED</div>
-                        <div style="font-size: 6.8px; color: #475569;">৳ ${s1Bdt}</div>
-                    </div>
-                    <div style="background: #fff; border: 1px solid #fde68a; border-radius: 3px; padding: 2px;">
-                        <div style="font-size: 7px; font-weight: 700; color: #92400e;">২য় পর্যায় (২০২৬ সাবেক)</div>
-                        <div class="num-font" style="font-size: 9px; font-weight: 900; color: #0284c7;">${s2Aed} AED</div>
-                        <div style="font-size: 6.8px; color: #475569;">৳ ${s2Bdt}</div>
-                    </div>
-                    <div style="background: #fff; border: 1px solid #fde68a; border-radius: 3px; padding: 2px;">
-                        <div style="font-size: 7px; font-weight: 700; color: #92400e;">৩য় পর্যায় (চলমান খাতা)</div>
-                        <div class="num-font" style="font-size: 9px; font-weight: 900; color: #059669;">${s3Aed} AED</div>
-                        <div style="font-size: 6.8px; color: #475569;">৳ ${s3Bdt}</div>
-                    </div>
-                    <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 3px; padding: 2px;">
-                        <div style="font-size: 7px; font-weight: 800; color: #92400e;">১ম কনসোলমেন্ট সর্বমোট তহবিল</div>
-                        <div class="num-font" style="font-size: 9.5px; font-weight: 900; color: #b45309;">${grandAed} AED</div>
-                        <div style="font-size: 7px; font-weight: 700; color: #b91c1c;">৳ ${grandBdt}</div>
-                    </div>
-                </div>
-                <div style="font-size: 7.5px; line-height: 1.25; color: #451a03; background: rgba(254, 243, 199, 0.6); padding: 2px 5px; border-radius: 3px;">
-                    <i class="fa-solid fa-circle-info" style="color: #d97706; margin-right: 3px;"></i><strong>ক্লোজিং ও ২য় কনসোলমেন্ট রোল-ওভার নীতি:</strong> এই ১ম কনসোলমেন্টের অধীনে আরও লেনদেন যুক্ত করা যাবে। ১ম কনসোলমেন্টের সম্পূর্ণ মাল ক্রয় শেষ হলে হিসাবটি আনুষ্ঠানিকভাবে <strong>"ক্লোজ / সমাপ্ত"</strong> হবে এবং এর চূড়ান্ত সমাপনী ব্যালেন্স স্বয়ংক্রিয়ভাবে <strong>'এমরান ব্যক্তিগত ২য় কনসোলমেন্ট'</strong>-এর প্রারম্ভিক তহবিল (Opening Balance) হিসেবে স্থানান্তরিত হবে।
-                </div>
-            </div>
-
             <!-- 4 Signatures Block -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px;">
                 <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">প্রস্তুতকারক (হিসাব বিভাগ)</div>
                 <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">অভ্যন্তরীণ নিরীক্ষক (অফিস ইনচার্জ)</div>
                 <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">পার্টনার অনুমোদন</div>
