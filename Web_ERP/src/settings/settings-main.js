@@ -152,7 +152,7 @@ export async function loadSettings() {
         const data = await SettingsDAO.getAppSettings();
         const fields = {
             'set-shop-name': data.shopName || 'M/S. Maa Motors', 'set-shop-owner': data.shopOwner || 'Mohammed Amran',
-            'set-shop-phone': data.shopPhone || '01819-397669, 01815-707934', 'set-shop-address': data.shopAddress || 'রহমান টাওয়ার, চট্টগ্রাম।',
+            'set-shop-phone': data.shopPhone || '01819-397669, 01815-707934', 'set-shop-address': data.shopAddress || 'দোকান নং-২২, রহমান টাওয়ার, ১ নং রেইল গেইট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম।',
             'set-print-size': data.printSize || 'a4',
             'set-sms-reminder': (data.smsTemplateReminder || 'Reminder: Dear Sir [AccNo], your due is Tk [Due] on [Date]. Kindly clear payment soon. Thanks! - [Shop]').replace(/Dear\s*\[Name\]/gi, 'Dear Sir'),
             'set-sms-opening': (data.smsTemplateOpening || 'Dear Sir [AccNo], A/C opened at [Shop] on [Date]. Opening Due: Tk [Due]. Thanks!').replace(/Dear\s*\[Name\]/gi, 'Dear Sir'),

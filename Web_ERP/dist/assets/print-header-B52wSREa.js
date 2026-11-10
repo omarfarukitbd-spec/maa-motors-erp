@@ -14,7 +14,7 @@ import"./rolldown-runtime-Dd_uD5pT.js";import{n as e}from"./vendor-ui-n4g2UPZQ.j
                 <td class="py-4 px-4"><div class="h-3 bg-slate-800/60 rounded-md w-20"></div></td>
                 <td class="py-4 px-4 text-right"><div class="h-4 bg-slate-800 rounded-md w-16 ml-auto"></div></td>
                 <td class="py-4 px-4 text-center"><div class="h-7 bg-slate-800/80 rounded-lg w-24 mx-auto"></div></td>
-            </tr>`;e.innerHTML=n}function y(){let e=()=>{let e=navigator.onLine,t=document.getElementById(`network-sync-badge`);t.innerHTML=e?`<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-emerald-400">অনলাইন</span>`:`<span class="w-2.5 h-2.5 rounded-full bg-red-500 block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-red-400">অফলাইন</span>`,t.className=e?`w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm cursor-default`:`w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 shadow-sm cursor-default`,t.title=e?`অনলাইন — Sync Active`:`অফলাইন — Local Mode`};window.addEventListener(`online`,()=>{e(),h(`অনলাইন কানেকশন পুনরুদ্ধার হয়েছে!`,`success`,`নেটওয়ার্ক`)}),window.addEventListener(`offline`,()=>{e(),h(`ইন্টারনেট সংযোগ বিচ্ছিন্ন! অফলাইন মোড সক্রিয়।`,`warning`,`নেটওয়ার্ক`)}),e()}function b(e,r=`export.xlsx`){let i=document.getElementById(e);if(!i)return h(`টেবিল ডাটা পাওয়া যায়নি!`,`warning`,`এক্সপোর্ট`);try{let e=t.book_new(),a=t.table_to_sheet(i,{raw:!0});t.book_append_sheet(e,a,`Sheet1`),n(e,r),h(`এক্সেল ডাটা সফলভাবে ডাউনলোড হয়েছে!`,`success`,`এক্সপোর্ট`)}catch(e){console.error(`Excel Export Error:`,e),h(`এক্সপোর্ট করতে সমস্যা হয়েছে!`,`error`,`এক্সপোর্ট`)}}function x(e){if(!e)return;let t=Array.from(e.querySelectorAll(`img`)),n=0;if(t.length===0){setTimeout(()=>window.print(),100);return}t.forEach(e=>{e.complete?(n++,n===t.length&&setTimeout(()=>window.print(),100)):e.onload=e.onerror=()=>{n++,n===t.length&&setTimeout(()=>window.print(),100)}})}typeof window<`u`&&(window.exportTableToExcel=b);function S(){let e=()=>{if(!window.AppState||!window.AppState.permissions)return;let e=window.AppState.permissions;document.querySelectorAll(`[data-perm]`).forEach(t=>{let n=t.getAttribute(`data-perm`);e[n]===!1?(t.style.cssText=`display: none !important;`,t.classList.contains(`nav-item`)||(t.innerHTML=``)):t.style.cssText=``})};e(),new MutationObserver(()=>{e()}).observe(document.body,{childList:!0,subtree:!0})}function C(e){if(e==null)return`০০০১`;let t=String(e).trim(),n=[`০`,`১`,`২`,`৩`,`৪`,`৫`,`৬`,`৭`,`৮`,`৯`];return/^\d+$/.test(t)?(t.length<4?t.padStart(4,`0`):t).replace(/\d/g,e=>n[Number(e)]):t.replace(/\d/g,e=>n[Number(e)])}function w(e,t=`#ffdf00`,n=`#ffffff`){if(!e)return``;let i=e.match(/^(.*?)\s*(\(.*?\))\s*$/);return i?`<span style="color: ${t} !important;">${r(i[1].trim())}</span> <span style="color: ${n} !important; font-size: 0.88em; font-weight: 700;">${r(i[2].trim())}</span>`:`<span style="color: ${t} !important;">${r(e)}</span>`}function T(e={},t={}){let n={},i={};e&&(e.shopName!==void 0||e.shopLogo!==void 0||e.shopPhone!==void 0||e.shopAddress!==void 0)?(n=e,i=t||{}):t&&(t.shopName!==void 0||t.shopLogo!==void 0||t.shopPhone!==void 0||t.shopAddress!==void 0)?(n=t,i=e||{}):(n=e||{},i=t||{});let a=i.title||`DUBAI REMITTANCE BOOK`,o=i.pageLabel||`রেজিস্টার খাতা পাতা`,s=C(i.pageNo||i.sheetNo||i.invoiceNo||i.subtitle||`০০০১`),c=!!i.hideRightPill,l=n.shopName||`মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)`,u=n.shopOwner||`মোহাম্মদ এমরান (Mohammed Amran)`,d=r(n.shopAddress||`দোকান নং-২২, রহমান টাওয়ার, ১ম ফ্লোর / ৫ম ফ্লোর, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম।`),f=r(n.shopPhone||`01819-397669, 01815-707934`),p=n.shopLogo||`/shop-official-logo.png`,m=w(l,`#ffdf00`,`#ffffff`),h=w(u,`#ffdf00`,`#ffffff`),g=a.length>25?`9.5px`:a.length>20?`10.5px`:`11.5px`;return`
+            </tr>`;e.innerHTML=n}function y(){let e=()=>{let e=navigator.onLine,t=document.getElementById(`network-sync-badge`);t.innerHTML=e?`<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-emerald-400">অনলাইন</span>`:`<span class="w-2.5 h-2.5 rounded-full bg-red-500 block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-red-400">অফলাইন</span>`,t.className=e?`w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm cursor-default`:`w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 shadow-sm cursor-default`,t.title=e?`অনলাইন — Sync Active`:`অফলাইন — Local Mode`};window.addEventListener(`online`,()=>{e(),h(`অনলাইন কানেকশন পুনরুদ্ধার হয়েছে!`,`success`,`নেটওয়ার্ক`)}),window.addEventListener(`offline`,()=>{e(),h(`ইন্টারনেট সংযোগ বিচ্ছিন্ন! অফলাইন মোড সক্রিয়।`,`warning`,`নেটওয়ার্ক`)}),e()}function b(e,r=`export.xlsx`){let i=document.getElementById(e);if(!i)return h(`টেবিল ডাটা পাওয়া যায়নি!`,`warning`,`এক্সপোর্ট`);try{let e=t.book_new(),a=t.table_to_sheet(i,{raw:!0});t.book_append_sheet(e,a,`Sheet1`),n(e,r),h(`এক্সেল ডাটা সফলভাবে ডাউনলোড হয়েছে!`,`success`,`এক্সপোর্ট`)}catch(e){console.error(`Excel Export Error:`,e),h(`এক্সপোর্ট করতে সমস্যা হয়েছে!`,`error`,`এক্সপোর্ট`)}}function x(e){if(!e)return;let t=Array.from(e.querySelectorAll(`img`)),n=0;if(t.length===0){setTimeout(()=>window.print(),100);return}t.forEach(e=>{e.complete?(n++,n===t.length&&setTimeout(()=>window.print(),100)):e.onload=e.onerror=()=>{n++,n===t.length&&setTimeout(()=>window.print(),100)}})}typeof window<`u`&&(window.exportTableToExcel=b);function S(){let e=()=>{if(!window.AppState||!window.AppState.permissions)return;let e=window.AppState.permissions;document.querySelectorAll(`[data-perm]`).forEach(t=>{let n=t.getAttribute(`data-perm`);e[n]===!1?(t.style.cssText=`display: none !important;`,t.classList.contains(`nav-item`)||(t.innerHTML=``)):t.style.cssText=``})};e(),new MutationObserver(()=>{e()}).observe(document.body,{childList:!0,subtree:!0})}function C(e){if(e==null)return`০০০১`;let t=String(e).trim(),n=[`০`,`১`,`২`,`৩`,`৪`,`৫`,`৬`,`৭`,`৮`,`৯`];return/^\d+$/.test(t)?(t.length<4?t.padStart(4,`0`):t).replace(/\d/g,e=>n[Number(e)]):t.replace(/\d/g,e=>n[Number(e)])}function w(e,t=`#ffdf00`,n=`#ffffff`){if(!e)return``;let i=e.match(/^(.*?)\s*(\(.*?\))\s*$/);return i?`<span style="color: ${t} !important;">${r(i[1].trim())}</span> <span style="color: ${n} !important; font-size: 0.88em; font-weight: 700;">${r(i[2].trim())}</span>`:`<span style="color: ${t} !important;">${r(e)}</span>`}function T(e={},t={}){let n={},i={};e&&(e.shopName!==void 0||e.shopLogo!==void 0||e.shopPhone!==void 0||e.shopAddress!==void 0)?(n=e,i=t||{}):t&&(t.shopName!==void 0||t.shopLogo!==void 0||t.shopPhone!==void 0||t.shopAddress!==void 0)?(n=t,i=e||{}):(n=e||{},i=t||{});let a=i.title||`ডুবাই টাকা পাঠানোর হিসাব বুক`,o=i.pageLabel||`রেজিস্টার খাতা পাতা`,s=C(i.pageNo||i.sheetNo||i.invoiceNo||i.subtitle||`০০০১`),c=!!i.hideRightPill,l=n.shopName||`মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)`,u=n.shopOwner||`মোহাম্মদ এমরান (Mohammed Amran)`,d=r(n.shopAddress||`দোকান নং-২২, রহমান টাওয়ার, ১ নং রেইল গেইট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম।`),f=r(n.shopPhone||`01819-397669, 01815-707934`),p=n.shopLogo||`/shop-official-logo.png`,m=w(l,`#ffdf00`,`#ffffff`),h=w(u,`#ffdf00`,`#ffffff`),g=/[^\x00-\x7F]/.test(a)?`'Anek Bangla', 'Hind Siliguri', sans-serif !important;`:`'Inter', 'Segoe UI', Arial, sans-serif !important;`,_=a.length>25?`10px`:a.length>18?`11px`:`11.5px`;return`
         <div class="mother-print-header" style="
             background: linear-gradient(90deg, #024ea2 0%, #0056b8 36%, #00459e 70%, #002d72 100%) !important;
             border-radius: 14px;
@@ -91,21 +91,21 @@ import"./rolldown-runtime-Dd_uD5pT.js";import{n as e}from"./vendor-ui-n4g2UPZQ.j
 
                 <!-- Far-Right: Dynamic Category Badge & Sheet Indicator (Image 3) -->
                 ${c?``:`
-                <div style="text-align: right; flex-shrink: 0; min-width: 140px;">
+                <div style="text-align: right; flex-shrink: 0; min-width: 145px;">
                     <!-- Category Title in White Pill with Red Border -->
                     <div style="
                         background: #ffffff !important;
                         color: #001a70 !important;
                         border: 2.2px solid #ef4444 !important;
                         border-radius: 7px;
-                        padding: 3.5px 12px;
-                        font-size: ${g};
+                        padding: 3.5px 10px;
+                        font-size: ${_};
                         font-weight: 900 !important;
-                        letter-spacing: 0.4px;
+                        letter-spacing: 0.2px;
                         text-align: center;
                         box-shadow: 0 1px 4px rgba(0,0,0,0.18);
                         white-space: nowrap;
-                        font-family: 'Inter', 'Segoe UI', Arial, sans-serif !important;
+                        font-family: ${g};
                     ">
                         ${a}
                     </div>
@@ -137,8 +137,8 @@ import"./rolldown-runtime-Dd_uD5pT.js";import{n as e}from"./vendor-ui-n4g2UPZQ.j
             <!-- Bottom Row: Floating Light-Blue Ribbon Contact Strip (Image 1) -->
             <div style="
                 background: linear-gradient(90deg, #ffffff 0%, #e0f2fe 50%, #ffffff 100%) !important;
-                border-radius: 18px;
-                padding: 2.5px 14px;
+                border-radius: 9999px;
+                padding: 3px 14px;
                 margin-top: 6px;
                 display: flex;
                 justify-content: space-between;
@@ -146,28 +146,28 @@ import"./rolldown-runtime-Dd_uD5pT.js";import{n as e}from"./vendor-ui-n4g2UPZQ.j
                 color: #002d72 !important;
                 font-size: 9px;
                 font-weight: 700 !important;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-                border: 1px solid #bae6fd;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+                border: 1px solid #7dd3fc;
                 position: relative;
                 z-index: 2;
                 white-space: nowrap;
                 font-family: 'Anek Bangla', 'Inter', sans-serif !important;
             ">
                 <!-- Left: Location pin + Shop Address + Separator -->
-                <div style="display: flex; align-items: center; gap: 5px; overflow: hidden; text-overflow: ellipsis;">
-                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; min-width: 14px; background: #fbbf24; border-radius: 50%; color: #dc2626; font-size: 8px;">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="#dc2626"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; min-width: 17px; background: #ffd700; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.18); vertical-align: middle;">
+                        <svg width="9.5" height="9.5" viewBox="0 0 24 24" fill="#dc2626"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                     </span>
-                    <span style="color: #0f172a !important; font-weight: 700; font-family: 'Anek Bangla', sans-serif !important;">${d}</span>
-                    <span style="color: #0284c7; margin: 0 8px; font-weight: 400;">|</span>
+                    <span style="color: #0f172a !important; font-weight: 700; font-family: 'Anek Bangla', sans-serif !important; font-size: 9px; line-height: 1; vertical-align: middle;">${d}</span>
+                    <span style="color: #0284c7; margin: 0 6px; font-weight: 400;">|</span>
                 </div>
 
                 <!-- Right: Phone icon + Mobile numbers -->
-                <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
-                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; min-width: 14px; background: #fbbf24; border-radius: 50%; color: #dc2626; font-size: 8px;">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="#16a34a"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; min-width: 17px; background: #ffd700; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.18); vertical-align: middle;">
+                        <svg width="9.5" height="9.5" viewBox="0 0 24 24" fill="#16a34a"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
                     </span>
-                    <span style="color: #002d72 !important; font-family: 'Anek Bangla', 'Inter', sans-serif !important; font-weight: 700;"><strong style="font-weight: 800;">মোবাইল:</strong> ${f}</span>
+                    <span style="color: #002d72 !important; font-family: 'Anek Bangla', 'Inter', sans-serif !important; font-weight: 700; font-size: 9px; line-height: 1; vertical-align: middle;"><strong style="font-weight: 800;">মোবাইল:</strong> ${f}</span>
                 </div>
             </div>
         </div>

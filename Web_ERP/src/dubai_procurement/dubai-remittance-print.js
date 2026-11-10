@@ -81,6 +81,9 @@ export async function printDubaiRemittanceBook(consignment, entries = []) {
 }
 
 function generateRemittancePrintHtml(consignment, entries, summary, settings) {
+    const rawConsignmentName = consignment?.name || 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট, ডুবাই মাল ক্রয় ইনভেস্ট';
+    const cleanConsignmentName = rawConsignmentName.replace(/^ডুবাই টাকা পাঠা(?:নো|নার)\s*(?:এর)?\s*হিসাব\s*[-—:]*\s*/i, '').trim();
+
     const s1Aed = formatAmountWithComma(summary.stage1.aed);
     const s1Bdt = formatAmountWithComma(summary.stage1.bdt);
     const s2Aed = formatAmountWithComma(summary.stage2.aed);
@@ -130,15 +133,45 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
         <div class="remittance-print-sheet">
             <!-- Official Mother Header Banner -->
             ${renderPrintHeader(settings, {
-                title: 'DUBAI REMITTANCE BOOK',
+                title: 'ডুবাই টাকা পাঠানোর হিসাব বুক',
                 pageLabel: 'রেজিস্টার খাতা পাতা',
                 pageNo: '০০০১'
             })}
 
-            <!-- Title Bar with Consignment Status -->
-            <div style="background: #0f172a; color: #ffffff; display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; margin-bottom: 5px;">
-                <h2 style="margin: 0; font-size: 11px; font-weight: 700;">ডুবাই টাকা পাঠানো এর হিসাব — ${escapeHTML(consignment?.name || 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট, ডুবাই মাল ক্রয় ইনভেস্ট')}</h2>
-                <span style="background: #10b981; color: #ffffff; font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 12px;">● চলমান কনসোলমেন্ট (Active)</span>
+            <!-- Title Bar with Consignment Status (Image 2 & 3 Match) -->
+            <div style="
+                background: linear-gradient(90deg, #032b69 0%, #011b40 100%) !important;
+                border: 1px solid #1d4ed8;
+                box-shadow: 0 1px 3px rgba(3, 43, 105, 0.25);
+                color: #ffffff;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 4px 10px;
+                border-radius: 6px;
+                margin-bottom: 6px;
+            ">
+                <h2 style="margin: 0; font-size: 11px; font-weight: 800; font-family: 'Anek Bangla', sans-serif !important; color: #ffffff; letter-spacing: 0.1px;">
+                    কনসোলমেন্ট: <span style="color: #ffd700;">${escapeHTML(cleanConsignmentName)}</span>
+                </h2>
+                <span style="
+                    background: #047857 !important;
+                    color: #ffffff !important;
+                    border: 1px solid #34d399;
+                    font-size: 8px;
+                    font-weight: 800;
+                    font-family: 'Anek Bangla', sans-serif !important;
+                    padding: 2.5px 8px;
+                    border-radius: 12px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4.5px;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+                    white-space: nowrap;
+                ">
+                    <span style="width: 6px; height: 6px; background: #a7f3d0; border-radius: 50%; display: inline-block;"></span>
+                    চলমান কনসোলমেন্ট (Active)
+                </span>
             </div>
 
             <!-- 4 Master KPI Grid -->
@@ -210,12 +243,12 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
                 </tbody>
             </table>
 
-            <!-- 4 Signatures Block -->
-            <div class="print-sig-block" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px;">
-                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">প্রস্তুতকারক (হিসাব বিভাগ)</div>
-                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">অভ্যন্তরীণ নিরীক্ষক (অফিস ইনচার্জ)</div>
-                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">পার্টনার অনুমোদন</div>
-                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">মোহাম্মদ এমরান (স্বত্বাধিকারী)</div>
+            <!-- 4 Signatures Block (Spacious & Official) -->
+            <div class="print-sig-block" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 5px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">প্রস্তুতকারক (হিসাব বিভাগ)</div>
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 5px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">অভ্যন্তরীণ নিরীক্ষক (অফিস ইনচার্জ)</div>
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 5px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">পার্টনার অনুমোদন</div>
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 5px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">মোহাম্মদ এমরান (স্বত্বাধিকারী)</div>
             </div>
         </div>
     `;
