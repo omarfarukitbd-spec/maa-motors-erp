@@ -15,7 +15,7 @@ html, body {
     margin: 0 !important; padding: 0 !important;
     background: #fff !important; color: #0f172a !important;
     width: 100% !important; overflow: visible !important;
-    font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 table {
     border-collapse: collapse !important;

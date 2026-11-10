@@ -14,7 +14,7 @@ function e(e,t){return new Promise(n=>{let r=document.createElement(`div`);r.sty
 <title>${n}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/kalpurush/font.css" rel="stylesheet">
 <style>
 @page { size: A4 portrait; margin: 0 !important; }
@@ -27,7 +27,7 @@ html, body {
     margin: 0 !important; padding: 0 !important;
     background: #fff !important; color: #0f172a !important;
     width: 100% !important; overflow: visible !important;
-    font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 table {
     border-collapse: collapse !important;

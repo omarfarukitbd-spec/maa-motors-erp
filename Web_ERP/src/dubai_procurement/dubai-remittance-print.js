@@ -30,7 +30,7 @@ export async function printDubaiRemittanceBook(consignment, entries = []) {
     const extraCss = `
         @page { size: A4 portrait; margin: 0 !important; }
         html, body {
-            font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important;
+            font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important;
             background: #fff !important;
             color: #0f172a !important;
             margin: 0 !important;
