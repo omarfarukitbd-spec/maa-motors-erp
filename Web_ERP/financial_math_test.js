@@ -192,6 +192,28 @@ function runFinancialMathTests() {
     assert.strictEqual(testDue, 100000, "Ledger quick less reversal failed");
     passed++;
 
+    // Test 10: Invariant 10 - Dubai Consignment Cross-Currency Capital & Rollover Accounting Law
+    const s1Aed = 4285350;
+    const s1Bdt = 145802430;
+    const s2Aed = 1692497;
+    const s2Bdt = 58421109;
+    const s3Aed = 929472;
+    const s3Bdt = 32213920;
+
+    const session2026Aed = safeRound(s2Aed + s3Aed);
+    const session2026Bdt = safeRound(s2Bdt + s3Bdt);
+    assert.strictEqual(session2026Aed, 2621969, "2026 session AED total mismatch");
+    assert.strictEqual(session2026Bdt, 90635029, "2026 session BDT total mismatch");
+
+    const grandAed = safeRound(s1Aed + s2Aed + s3Aed);
+    const grandBdt = safeRound(s1Bdt + s2Bdt + s3Bdt);
+    assert.strictEqual(grandAed, 6907319, "Consignment 1 grand total AED mismatch");
+    assert.strictEqual(grandBdt, 236437459, "Consignment 1 grand total BDT mismatch");
+
+    const grandRate = safeRound(Math.round((grandBdt / grandAed) * 100) / 100);
+    assert.strictEqual(grandRate, 34.23, "Consignment 1 overall weighted average rate mismatch");
+    passed++;
+
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);
     return true;
 }

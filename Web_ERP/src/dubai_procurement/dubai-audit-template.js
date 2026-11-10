@@ -24,6 +24,10 @@ export function getDubaiAuditMainTemplate() {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <button type="button" onclick="window.switchDubaiProcurementView('remittance')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="বাংলাদেশ থেকে টাকা পাঠানো ও রেমিট্যান্স রেজিস্টার খাতা খুলুন">
+                        <i class="fa-solid fa-money-bill-transfer text-emerald-400 text-xs"></i>
+                        <span>টাকা পাঠানোর খাতা</span>
+                    </button>
                     <button type="button" id="btn-dubai-roll-forward" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="গত সপ্তাহের ব্যালেন্স নিজে নিজে নিয়ে আসবে">
                         <i class="fa-solid fa-arrows-rotate text-sky-400 text-xs"></i>
                         <span>রোল-ফরওয়ার্ড</span>
@@ -98,6 +102,10 @@ export function getDubaiAuditMainTemplate() {
                                 <input type="text" id="dubai-prev-rem-input" value="0" placeholder="০.০০" readonly oninput="window.handleNumberInput(this); window.handlePrevBaselineChange('sent')" class="w-28 sm:w-32 h-7 bg-slate-950/90 border border-slate-700/70 rounded-lg px-2 text-xs sm:text-sm text-emerald-400 font-mono text-right font-bold outline-none cursor-default" title="গত সপ্তাহের সমাপনী ব্যালেন্স (লক করা)">
                                 <span class="text-slate-500 font-bold">AED</span>
                                 <button type="button" onclick="window.toggleUnlockPrevBaseline('sent')" class="text-xs text-slate-500 hover:text-sky-400 px-1 cursor-pointer" title="প্রয়োজনে আনলক করে এডিট করুন"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button type="button" onclick="window.syncRemittanceToDubaiAudit()" class="px-2 py-0.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-md text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors ml-1" title="বাংলাদেশ রেমিট্যান্স বুক থেকে চলতি সপ্তাহের দিরহাম স্বয়ংক্রিয়ভাবে নিয়ে আসুন">
+                                    <i class="fa-solid fa-rotate text-emerald-400 text-[10px]"></i>
+                                    <span>রেমিট্যান্স বুক সিঙ্ক</span>
+                                </button>
                             </div>
                         </div>
                         <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">

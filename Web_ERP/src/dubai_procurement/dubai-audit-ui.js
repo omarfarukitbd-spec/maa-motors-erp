@@ -10,6 +10,8 @@ import { printDubaiAuditSheet } from './dubai-print.js';
 import { getDubaiAuditMainTemplate, getDynamicHoldingRowHtml } from './dubai-audit-template.js';
 import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
+import { initDubaiRemittanceModule, cleanupDubaiRemittance } from './dubai-remittance-ui.js';
+import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
     toDBDate, showToast, promptSecurityPin, getDayOfWeekBangla, formatAppDate,
@@ -21,6 +23,8 @@ let auditHistory = [];
 let dynamicHoldings = [
     { desc: 'আলতাফ জাবেদ', amount: 0, op: '-' }
 ];
+let currentView = 'audit';
+let currentRootContainer = null;
 
 const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
 const getTxt = (id, def = '') => document.getElementById(id)?.value?.trim() || def;
@@ -28,7 +32,27 @@ const setInp = (id, val = '') => { const el = document.getElementById(id); if (e
 
 export async function renderDubaiProcurement(container) {
     if (!container) return;
+    currentRootContainer = container;
 
+    window.switchDubaiProcurementView = (view) => {
+        currentView = view;
+        if (view === 'remittance') {
+            unsubscribeDubaiAudits();
+            initDubaiRemittanceModule(currentRootContainer);
+        } else {
+            cleanupDubaiRemittance();
+            renderDubaiAuditView(currentRootContainer);
+        }
+    };
+
+    if (currentView === 'remittance') {
+        initDubaiRemittanceModule(container);
+    } else {
+        renderDubaiAuditView(container);
+    }
+}
+
+function renderDubaiAuditView(container) {
     container.innerHTML = getDubaiAuditMainTemplate();
 
     DubaiMemoModal.init((total, memoRangeText) => {
@@ -652,6 +676,38 @@ window.focusNextHoldingInput = function(idx) {
     }
 };
 
+window.syncRemittanceToDubaiAudit = async function() {
+    ensureOnline();
+    const curDateVal = getTxt('dubai-week-date');
+    const targetDbDate = curDateVal ? toDBDate(curDateVal) : toDBDate(getTodayLocalDateString());
+
+    let prevAuditDate = null;
+    if (auditHistory.length > 0) {
+        const prevAudit = auditHistory.find(a => toDBDate(a.weekEndDate) < targetDbDate);
+        if (prevAudit) {
+            prevAuditDate = toDBDate(prevAudit.weekEndDate);
+        }
+    }
+
+    try {
+        const items = await DubaiRemittanceDAO.getRemittancesByDateRange(prevAuditDate, targetDbDate);
+        if (!items || items.length === 0) {
+            showToast('এই অডিট সময়কালের জন্য রেমিট্যান্স বুকে কোনো নতুন লেনদেন পাওয়া যায়নি', 'info');
+            return;
+        }
+
+        const totalAed = items.reduce((sum, item) => safeRound(sum + parseAmount(item.aedAmount || 0)), 0);
+        setInp('input-running-sent', formatAmountWithComma(totalAed));
+        updateLiveWaterfall();
+
+        showToast(`রেমিট্যান্স বুক থেকে ${items.length} টি কিস্তির মোট ${formatAmountWithComma(totalAed)} AED সফলভাবে সিঙ্ক হয়েছে`, 'success');
+    } catch (e) {
+        console.error('Error syncing remittances to weekly audit:', e);
+        showToast('রেমিট্যান্স সিঙ্ক করতে সমস্যা হয়েছে', 'error');
+    }
+};
+
 export function unsubscribeDubaiAudits() {
     DubaiActions.unsubscribe();
+    cleanupDubaiRemittance();
 }
