@@ -119,6 +119,10 @@ function renderBDExpenseView(container) {
                         <i class="fa-solid fa-money-bill-transfer text-emerald-400 text-xs"></i>
                         <span>দুবাই রেমিট্যান্স বুক</span>
                     </button>
+                    <button type="button" id="btn-bd-to-port" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="কন্টেইনার ডিউটি ও পোর্ট বিলে যান">
+                        <i class="fa-solid fa-ship text-indigo-400 text-xs"></i>
+                        <span>পোর্ট ও ডিউটি বিল</span>
+                    </button>
                     <button type="button" id="btn-print-bd-expense" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
                         <i class="fa-solid fa-print text-slate-400 text-xs"></i>
                         <span>A4 প্রিন্ট / ভাউচার</span>
@@ -281,6 +285,12 @@ function bindBDExpenseEvents() {
     bind('btn-bd-to-remittance', () => {
         if (window.switchDubaiProcurementView) {
             window.switchDubaiProcurementView('remittance');
+        }
+    });
+
+    bind('btn-bd-to-port', () => {
+        if (window.switchDubaiProcurementView) {
+            window.switchDubaiProcurementView('port-duty');
         }
     });
 

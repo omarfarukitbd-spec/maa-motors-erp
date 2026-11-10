@@ -103,6 +103,10 @@ function renderRemittanceView(container) {
                         <i class="fa-solid fa-file-invoice-dollar text-amber-400 text-xs"></i>
                         <span>বাংলাদেশ খরচ খাতা</span>
                     </button>
+                    <button type="button" id="btn-switch-to-port-duty" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+                        <i class="fa-solid fa-ship text-indigo-400 text-xs"></i>
+                        <span>পোর্ট ও ডিউটি বিল</span>
+                    </button>
                     <button type="button" id="btn-print-remittance" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
                         <i class="fa-solid fa-print text-slate-400 text-xs"></i>
                         <span>A4 প্রিন্ট / ভাউচার</span>
@@ -259,6 +263,12 @@ function bindRemittanceEvents() {
     bind('btn-switch-to-bd-expense', () => {
         if (window.switchDubaiProcurementView) {
             window.switchDubaiProcurementView('bd-expense');
+        }
+    });
+
+    bind('btn-switch-to-port-duty', () => {
+        if (window.switchDubaiProcurementView) {
+            window.switchDubaiProcurementView('port-duty');
         }
     });
 

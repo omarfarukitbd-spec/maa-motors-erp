@@ -234,6 +234,33 @@ function runFinancialMathTests() {
     assert.strictEqual(totalCapExBDT, 294331511, "Consolidated Master CapEx mismatch (Target: 29,43,31,511)");
     passed++;
 
+    // Test 12: Invariant 12 - Container Port & Customs Duty Bills (Page 0004) & 3-Tier Master Project CapEx
+    const containerDutyRows = [
+        { containerNo: 1, date: '05/11/2025', vendor: 'আরমান (আরিয়ান)', size: 'Standard', amount: 3800000 },
+        { containerNo: 2, date: '04/12/2025', vendor: 'আরমান (আরিয়ান)', size: 'Standard', amount: 3580000 },
+        { containerNo: 3, date: '18/12/2025', vendor: 'আরমান', size: '40 FT', amount: 3500000 },
+        { containerNo: 4, date: '26/01/2026', vendor: 'আরমান ও মিতুল', size: '40 FT', amount: 3504236 },
+        { containerNo: 5, date: '24/02/2026', vendor: 'আরমান ও মিতুল', size: 'Standard', amount: 2987439 },
+        { containerNo: 6, date: '29/08/2026', vendor: 'আরমান ও মিতুল', size: '40 FT', amount: 3332401 },
+        { containerNo: 7, date: '21/10/2026', vendor: 'আরমান ও মিতুল', size: '40 FT', amount: 4446637 }
+    ];
+    assert.strictEqual(containerDutyRows.length, 7, "Container port duty bills count must be 7");
+
+    const totalPortDutyBDT = safeRound(containerDutyRows.reduce((acc, curr) => acc + curr.amount, 0));
+    assert.strictEqual(totalPortDutyBDT, 25150713, "Container port & customs duty grand total mismatch (Target: 2,51,50,713)");
+
+    const fortyFtSubtotal = safeRound(containerDutyRows.filter(c => c.size === '40 FT').reduce((acc, curr) => acc + curr.amount, 0));
+    assert.strictEqual(fortyFtSubtotal, 14783274, "40 FT containers subtotal mismatch (Target: 1,47,83,274)");
+
+    const standardSubtotal = safeRound(containerDutyRows.filter(c => c.size !== '40 FT').reduce((acc, curr) => acc + curr.amount, 0));
+    assert.strictEqual(standardSubtotal, 10367439, "Standard containers subtotal mismatch (Target: 1,03,67,439)");
+    assert.strictEqual(safeRound(fortyFtSubtotal + standardSubtotal), totalPortDutyBDT, "Container subtotal partition law failed");
+
+    // 3-Tier Master Project CapEx Formula (Dubai FOB + Port Clearance + BD Landed)
+    const masterProjectCapEx = safeRound(grandBdt + totalPortDutyBDT + bdGrandTotal);
+    assert.strictEqual(masterProjectCapEx, 319482224, "3-Tier Master Project CapEx mismatch (Target: 31,94,82,224)");
+    passed++;
+
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);
     return true;
 }

@@ -12,6 +12,7 @@ import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { initDubaiRemittanceModule, cleanupDubaiRemittance } from './dubai-remittance-ui.js';
 import { initDubaiBDExpenseModule, cleanupDubaiBDExpense } from './dubai-bd-expense-ui.js';
+import { initDubaiPortDutyModule, cleanupDubaiPortDuty } from './dubai-port-duty-ui.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
@@ -40,14 +41,22 @@ export async function renderDubaiProcurement(container) {
         if (view === 'remittance') {
             unsubscribeDubaiAudits();
             cleanupDubaiBDExpense();
+            cleanupDubaiPortDuty();
             initDubaiRemittanceModule(currentRootContainer);
         } else if (view === 'bd-expense') {
             unsubscribeDubaiAudits();
             cleanupDubaiRemittance();
+            cleanupDubaiPortDuty();
             initDubaiBDExpenseModule(currentRootContainer);
+        } else if (view === 'port-duty') {
+            unsubscribeDubaiAudits();
+            cleanupDubaiRemittance();
+            cleanupDubaiBDExpense();
+            initDubaiPortDutyModule(currentRootContainer);
         } else {
             cleanupDubaiRemittance();
             cleanupDubaiBDExpense();
+            cleanupDubaiPortDuty();
             renderDubaiAuditView(currentRootContainer);
         }
     };
@@ -56,6 +65,8 @@ export async function renderDubaiProcurement(container) {
         initDubaiRemittanceModule(container);
     } else if (currentView === 'bd-expense') {
         initDubaiBDExpenseModule(container);
+    } else if (currentView === 'port-duty') {
+        initDubaiPortDutyModule(container);
     } else {
         renderDubaiAuditView(container);
     }
