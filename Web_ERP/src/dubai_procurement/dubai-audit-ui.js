@@ -11,6 +11,7 @@ import { getDubaiAuditMainTemplate, getDynamicHoldingRowHtml } from './dubai-aud
 import { DubaiMemoModal } from './dubai-memo-modal.js';
 import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { initDubaiRemittanceModule, cleanupDubaiRemittance } from './dubai-remittance-ui.js';
+import { initDubaiBDExpenseModule, cleanupDubaiBDExpense } from './dubai-bd-expense-ui.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
@@ -38,15 +39,23 @@ export async function renderDubaiProcurement(container) {
         currentView = view;
         if (view === 'remittance') {
             unsubscribeDubaiAudits();
+            cleanupDubaiBDExpense();
             initDubaiRemittanceModule(currentRootContainer);
+        } else if (view === 'bd-expense') {
+            unsubscribeDubaiAudits();
+            cleanupDubaiRemittance();
+            initDubaiBDExpenseModule(currentRootContainer);
         } else {
             cleanupDubaiRemittance();
+            cleanupDubaiBDExpense();
             renderDubaiAuditView(currentRootContainer);
         }
     };
 
     if (currentView === 'remittance') {
         initDubaiRemittanceModule(container);
+    } else if (currentView === 'bd-expense') {
+        initDubaiBDExpenseModule(container);
     } else {
         renderDubaiAuditView(container);
     }

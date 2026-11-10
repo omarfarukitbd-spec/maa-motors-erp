@@ -1,0 +1,227 @@
+/**
+ * Dubai Procurement - Bangladesh Landed Expenses Corporate Print Engine
+ * Generates an executive A4 printable register voucher for Page 0002 matching MAA MOTORS ERP standards.
+ */
+
+import {
+    formatAmountWithComma,
+    safeRound,
+    escapeHTML,
+    formatAppDate
+} from '../utils.js';
+import { SettingsDAO } from '../dao.js';
+import { printViaIframe } from '../utils/smart-print-engine.js';
+import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
+
+export async function printDubaiBDExpenseBook(consignment, entries = [], dubaiSummary = null) {
+    let settings = {};
+    try {
+        settings = (await SettingsDAO.getAppSettings()) || {};
+    } catch (e) {
+        console.error('Settings fetch error in BD expense print:', e);
+    }
+
+    const title = `Bangladesh_Expenses_${consignment?.name || 'Consignment_1'}_Page_0002`;
+    const summary = calculateBDExpenseSummary(consignment, entries);
+    const htmlBody = generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary, settings);
+
+    const extraCss = `
+        @page { size: A4 portrait; margin: 0 !important; }
+        html, body {
+            font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important;
+            background: #fff !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .num-font {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif !important;
+            font-feature-settings: 'tnum' 1;
+            font-variant-numeric: tabular-nums;
+        }
+        table { border-collapse: collapse !important; width: 100% !important; }
+        .bd-expense-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border: 1.5px solid #334155 !important;
+        }
+        .bd-expense-table th {
+            border: 1px solid #334155 !important;
+            background: #1e293b !important;
+            color: #ffffff !important;
+            padding: 3.5px 4px !important;
+            font-size: 8px !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .bd-expense-table td {
+            border: 1px solid #94a3b8 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        tr { page-break-inside: avoid !important; }
+        thead { display: table-header-group !important; }
+        .bd-print-sheet {
+            width: 100% !important;
+            max-width: 210mm !important;
+            margin: 0 auto !important;
+            box-sizing: border-box !important;
+            padding: 5mm 9mm 5mm 9mm !important;
+            background: #ffffff !important;
+        }
+        .print-sig-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+    `;
+
+    printViaIframe(htmlBody, extraCss, title);
+}
+
+function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary, settings) {
+    const shopName = settings.shopName || "মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)";
+    const ownerName = settings.ownerName || "স্বত্বাধিকারী: মোহাম্মদ এমরান (Mohammed Amran)";
+    const address = settings.address || "দোকান নং-২২, রহমান টাওয়ার, ১ম রেলগেট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম। | মোবাইল: 01819-397669, 01815-707934";
+
+    const bfFormatted = formatAmountWithComma(summary.bfAmount);
+    const runningFormatted = formatAmountWithComma(summary.runningTotal);
+    const grandFormatted = formatAmountWithComma(summary.grandTotal);
+
+    // Consolidated CapEx numbers
+    const dubaiBdt = dubaiSummary?.grandTotal?.bdt || 236437459;
+    const dubaiAed = dubaiSummary?.grandTotal?.aed || 6907319;
+    const totalCapEx = dubaiBdt + summary.grandTotal;
+
+    const rowsHtml = entries.map((item, idx) => {
+        const amtStr = formatAmountWithComma(item.amount);
+        const appDate = formatAppDate(item.date);
+        const bgStyle = idx % 2 === 1 ? 'background: #f8fafc;' : 'background: #ffffff;';
+
+        return `
+            <tr style="${bgStyle}">
+                <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #64748b; font-weight: bold;">${idx + 1}</td>
+                <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; font-weight: 600; white-space: nowrap;">${appDate}</td>
+                <td style="padding: 2.5px 6px; font-size: 8.5px; font-weight: 600; color: #0f172a;">${escapeHTML(item.description || item.vendor || '—')}</td>
+                <td style="padding: 2.5px 4px; font-size: 7.5px; color: #475569;">${escapeHTML(item.category || '—')}</td>
+                <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #64748b;">${escapeHTML(item.memo || '—')}</td>
+                <td style="padding: 2.5px 6px; text-align: right; font-size: 8.5px; font-weight: 700; color: #b91c1c;" class="num-font">৳ ${amtStr}</td>
+                <td style="padding: 2.5px 4px; text-align: center; font-size: 7.5px; font-weight: 600; color: #047857;">${escapeHTML(item.status || 'চূড়ান্ত পরিশোধিত')}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div class="bd-print-sheet">
+            <!-- Header Section -->
+            <div style="border-bottom: 2px solid #0f172a; padding-bottom: 3px; margin-bottom: 4px; text-align: center;">
+                <h1 style="font-size: 15px; font-weight: 900; color: #0284c7; margin: 0; padding: 0; text-transform: uppercase;">${escapeHTML(shopName)}</h1>
+                <div style="font-size: 8.5px; font-weight: 700; color: #1e293b; margin-top: 1px;">${escapeHTML(ownerName)}</div>
+                <div style="font-size: 7px; color: #475569; margin-top: 1px;">${escapeHTML(address)}</div>
+                
+                <div style="margin-top: 3px; display: inline-block; background: #0f172a; color: #fff; padding: 2px 12px; border-radius: 4px;">
+                    <span style="font-size: 10px; font-weight: 900; letter-spacing: 0.5px;">বাংলাদেশ খরচ, মাল ক্রয়, গোডাউন খরচ ও চালানি কেরিং রেজিস্টার</span>
+                </div>
+                <div style="font-size: 7.5px; font-weight: 700; color: #334155; margin-top: 2px;">
+                    ${escapeHTML(consignment?.name || 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট')} | 
+                    <span style="color: #b91c1c;">রেজিস্টার খাতা পাতা: ০০০২</span> | 
+                    সময়কাল: ০১/১১/২০২৫ হইতে ০৯/১১/২০২৬ পর্যন্ত
+                </div>
+            </div>
+
+            <!-- 3 Master KPI Summary Cards -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 4px;">
+                <div style="background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 4px; padding: 3px 6px; text-align: center;">
+                    <div style="font-size: 7px; font-weight: 700; color: #0369a1;">১. সাবেক ব্যালেন্স (B/F)</div>
+                    <div style="font-size: 10px; font-weight: 900; color: #0284c7;" class="num-font">৳ ${bfFormatted}</div>
+                    <div style="font-size: 6.5px; color: #64748b;">০১/১১/২০২৫ - ০৬/০৮/২০২৬ সেশন</div>
+                </div>
+                <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 4px; padding: 3px 6px; text-align: center;">
+                    <div style="font-size: 7px; font-weight: 700; color: #991b1b;">২. রানিং খাতার খরচ (${summary.count} কিস্তি)</div>
+                    <div style="font-size: 10px; font-weight: 900; color: #dc2626;" class="num-font">৳ ${runningFormatted}</div>
+                    <div style="font-size: 6.5px; color: #64748b;">২৯/০৮/২০২৬ - ০৯/১১/২০২৬ সেশন</div>
+                </div>
+                <div style="background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 3px 6px; text-align: center;">
+                    <div style="font-size: 7px; font-weight: 800; color: #92400e;">৩. সর্বমোট বাংলাদেশ খরচ</div>
+                    <div style="font-size: 11px; font-weight: 900; color: #b45309;" class="num-font">৳ ${grandFormatted}</div>
+                    <div style="font-size: 6.5px; color: #78350f;">০১/১১/২০২৫ - ০৯/১১/২০২৬ সর্বমোট</div>
+                </div>
+            </div>
+
+            <!-- Detailed Expense Register Table -->
+            <table class="bd-expense-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20px;">নং</th>
+                        <th style="width: 60px;">তারিখ</th>
+                        <th style="width: 170px; text-align: left;">বিবরণ / বিক্রেতা / মারফত</th>
+                        <th style="width: 90px; text-align: left;">ক্যাটাগরি</th>
+                        <th style="width: 55px;">মেমো / চালান</th>
+                        <th style="width: 90px; text-align: right;">টাকা (BDT)</th>
+                        <th style="width: 65px;">স্ট্যাটাস</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- B/F Row -->
+                    <tr style="background: #f0f9ff; font-weight: bold;">
+                        <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #0284c7;">০</td>
+                        <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #0369a1;">০১/১১/২৫ - ০৬/০৮/২৬</td>
+                        <td style="padding: 2.5px 6px; font-size: 8.5px; color: #0369a1;">B/F (পূর্ববর্তী স্থানান্তরিত কিউমুলেটিভ ব্যালেন্স)</td>
+                        <td style="padding: 2.5px 4px; font-size: 7.5px; color: #0284c7;">প্রারম্ভিক ব্যালেন্স</td>
+                        <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #64748b;">—</td>
+                        <td style="padding: 2.5px 6px; text-align: right; font-size: 8.5px; font-weight: 800; color: #0284c7;" class="num-font">৳ ${bfFormatted}</td>
+                        <td style="padding: 2.5px 4px; text-align: center; font-size: 7.5px; color: #0284c7;">সাবেক ব্যালেন্স শুরু</td>
+                    </tr>
+
+                    ${rowsHtml}
+
+                    <!-- Subtotal Row -->
+                    <tr style="background: #f8fafc; font-weight: bold; border-top: 1.5px solid #64748b;">
+                        <td colspan="5" style="padding: 3px 6px; text-align: right; font-size: 8.5px; color: #334155;">চলমান খাতার উপ-মোট (${summary.count} টি রানিং খরচ):</td>
+                        <td style="padding: 3px 6px; text-align: right; font-size: 9px; font-weight: 800; color: #dc2626;" class="num-font">৳ ${runningFormatted}</td>
+                        <td style="padding: 3px 4px; text-align: center; font-size: 7.5px; color: #475569;">উপ-মোট</td>
+                    </tr>
+
+                    <!-- Grand Total Row -->
+                    <tr style="background: #fffbeb; font-weight: 900; border-top: 1.5px solid #d97706; border-bottom: 2px solid #d97706;">
+                        <td colspan="5" style="padding: 4px 6px; text-align: right; font-size: 9.5px; color: #92400e;">সর্বমোট বাংলাদেশ খরচ (B/F সাবেক + রানিং খাতা):</td>
+                        <td style="padding: 4px 6px; text-align: right; font-size: 10px; font-weight: 900; color: #b45309;" class="num-font">৳ ${grandFormatted}</td>
+                        <td style="padding: 4px 4px; text-align: center; font-size: 8px; color: #b45309;">সর্বমোট</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Consolidated Dubai + BD Grand Capital Summary Box -->
+            <div style="margin-top: 4px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 4px; padding: 4px 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #94a3b8; padding-bottom: 2px; margin-bottom: 2px;">
+                    <div style="font-size: 8px; font-weight: 800; color: #0f172a;">
+                        <span style="color: #0284c7;">১ম কনসোলমেন্ট সমন্বিত পুঁজী বিবরণী:</span> দুবাই ক্রয় + বাংলাদেশ ল্যান্ডেড খরচ
+                    </div>
+                    <div style="font-size: 8px; font-weight: 800; color: #047857;">
+                        সর্বমোট পুঁজী: <span style="font-size: 10px;" class="num-font">৳ ${formatAmountWithComma(totalCapEx)}</span>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; text-align: center; font-size: 7.5px;">
+                    <div>• দুবাই পার্ট (পাতা ০০০১): <strong>${formatAmountWithComma(dubaiAed)} AED</strong> = <strong class="num-font">৳ ${formatAmountWithComma(dubaiBdt)}</strong></div>
+                    <div>• বাংলাদেশ পার্ট (পাতা ০০০২): <strong class="num-font">৳ ${grandFormatted}</strong> (${summary.count} কিস্তি + সাবেক)</div>
+                    <div>• সর্বসাকুল্যে ক্যাপিটাল: <strong style="color: #047857;" class="num-font">৳ ${formatAmountWithComma(totalCapEx)}</strong> (১০০%)</div>
+                </div>
+            </div>
+
+            <!-- Signatures Section -->
+            <div class="print-sig-block" style="margin-top: 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
+                <div style="padding-top: 18px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+                    প্রস্তুতকারক (হিসাব বিভাগ)
+                </div>
+                <div style="padding-top: 18px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+                    অভ্যন্তরীণ নিরীক্ষক (অফিস ইনচার্জ)
+                </div>
+                <div style="padding-top: 18px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+                    পার্টনার অনুমোদন
+                </div>
+                <div style="padding-top: 18px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #0f172a;">
+                    মোহাম্মদ এমরান (স্বত্বাধিকারী)
+                </div>
+            </div>
+        </div>
+    `;
+}

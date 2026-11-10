@@ -214,6 +214,26 @@ function runFinancialMathTests() {
     assert.strictEqual(grandRate, 34.23, "Consignment 1 overall weighted average rate mismatch");
     passed++;
 
+    // Test 11: Invariant 11 - Bangladesh Landed Expenses (Page 0002) & Consolidated CapEx Invariant
+    const bdBf = 30303773;
+    const bdRunningRows = [
+        1223000, 560000, 2500000, 633355, 1061251, 2543800, 1102000, 297316,
+        797500, 560000, 18000, 28000, 1350000, 373687, 418900, 1790000,
+        7050000, 3600000, 1683470
+    ];
+    assert.strictEqual(bdRunningRows.length, 19, "Bangladesh expense rows count must be 19");
+
+    const bdRunningSum = safeRound(bdRunningRows.reduce((acc, curr) => acc + curr, 0));
+    assert.strictEqual(bdRunningSum, 27590279, "Bangladesh running expenses sum mismatch");
+
+    const bdGrandTotal = safeRound(bdBf + bdRunningSum);
+    assert.strictEqual(bdGrandTotal, 57894052, "Bangladesh grand total expenses mismatch (Target: 5,78,94,052)");
+
+    // Combined Consignment 1 CapEx Law (Dubai + Bangladesh)
+    const totalCapExBDT = safeRound(grandBdt + bdGrandTotal);
+    assert.strictEqual(totalCapExBDT, 294331511, "Consolidated Master CapEx mismatch (Target: 29,43,31,511)");
+    passed++;
+
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);
     return true;
 }

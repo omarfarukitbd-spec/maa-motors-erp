@@ -28,6 +28,10 @@ export function getDubaiAuditMainTemplate() {
                         <i class="fa-solid fa-money-bill-transfer text-emerald-400 text-xs"></i>
                         <span>টাকা পাঠানোর খাতা</span>
                     </button>
+                    <button type="button" onclick="window.switchDubaiProcurementView('bd-expense')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="বাংলাদেশ খরচ, মাল ক্রয়, গোডাউন ও কেরিং রেজিস্টার খাতা খুলুন">
+                        <i class="fa-solid fa-file-invoice-dollar text-amber-400 text-xs"></i>
+                        <span>বাংলাদেশ খরচ</span>
+                    </button>
                     <button type="button" id="btn-dubai-roll-forward" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="গত সপ্তাহের ব্যালেন্স নিজে নিজে নিয়ে আসবে">
                         <i class="fa-solid fa-arrows-rotate text-sky-400 text-xs"></i>
                         <span>রোল-ফরওয়ার্ড</span>
