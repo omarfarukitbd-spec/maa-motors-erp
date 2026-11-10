@@ -471,7 +471,14 @@ function renderRemittanceTable() {
         const item = remittancesList.find(r => r.id === id);
         if (!item) return;
         editingRemittanceId = id;
-        document.getElementById('rem-input-date').value = formatAppDate(item.date);
+        const dateInp = document.getElementById('rem-input-date');
+        const appDt = formatAppDate(item.date);
+        if (dateInp) {
+            dateInp.value = appDt;
+            if (dateInp._flatpickr) {
+                dateInp._flatpickr.setDate(appDt, false);
+            }
+        }
         document.getElementById('rem-input-via').value = item.via || '';
         document.getElementById('rem-input-rate').value = item.rate || '';
         document.getElementById('rem-input-aed').value = formatAmountWithComma(item.aedAmount);
@@ -549,7 +556,14 @@ async function onSaveRemittanceSubmit(e) {
 function resetRemittanceForm() {
     editingRemittanceId = null;
     document.getElementById('form-remittance')?.reset();
-    document.getElementById('rem-input-date').value = getTodayLocalDateString();
+    const dateInp = document.getElementById('rem-input-date');
+    const todayStr = getTodayLocalDateString();
+    if (dateInp) {
+        dateInp.value = todayStr;
+        if (dateInp._flatpickr) {
+            dateInp._flatpickr.setDate(todayStr, false);
+        }
+    }
     document.getElementById('rem-input-rate').value = '34.75';
     document.getElementById('form-remittance-title').innerText = 'নতুন টাকা পাঠানোর এন্ট্রি যোগ করুন';
     document.getElementById('btn-save-rem-text').innerText = 'এন্ট্রি যোগ করুন';

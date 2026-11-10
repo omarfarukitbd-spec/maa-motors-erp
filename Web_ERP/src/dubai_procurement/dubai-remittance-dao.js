@@ -139,7 +139,7 @@ export const DubaiRemittanceDAO = {
             snap.forEach(doc => {
                 const data = doc.data();
                 const d = data.date;
-                if ((!sDate || d >= sDate) && (!eDate || d <= eDate)) {
+                if ((!sDate || d > sDate) && (!eDate || d <= eDate)) {
                     results.push({ id: doc.id, ...data });
                 }
             });

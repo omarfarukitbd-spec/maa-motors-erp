@@ -60,15 +60,36 @@ export function calcWeightedRate(totalBDT, totalAED) {
  * @param {Array<Object>} entries 
  */
 export function calculateConsignmentSummary(consignment, entries = []) {
-    // Stage 1: 2025 Historical Investment
-    const s1Aed = consignment?.stage1?.aed || 4285350;
-    const s1Bdt = consignment?.stage1?.bdt || 145802430;
-    const s1Rate = consignment?.stage1?.rate || 34.02;
+    const isRolloverConsignment = Boolean(consignment?.openingBalance);
 
-    // Stage 2: 2026 Early Former Balance
-    const s2Aed = consignment?.stage2?.aed || 1692497;
-    const s2Bdt = consignment?.stage2?.bdt || 58421109;
-    const s2Rate = consignment?.stage2?.rate || 34.51;
+    let s1Aed = 0;
+    let s1Bdt = 0;
+    let s1Rate = 0;
+
+    let s2Aed = 0;
+    let s2Bdt = 0;
+    let s2Rate = 0;
+
+    if (isRolloverConsignment) {
+        // Next consignment: opening balance rolled forward from previous consignment
+        s1Aed = 0;
+        s1Bdt = 0;
+        s1Rate = 0;
+
+        s2Aed = safeRound(parseAmount(consignment.openingBalance.aed || 0));
+        s2Bdt = safeRound(parseAmount(consignment.openingBalance.bdt || 0));
+        s2Rate = consignment.openingBalance.rate || calcWeightedRate(s2Bdt, s2Aed);
+    } else {
+        // Stage 1: 2025 Historical Investment (Consignment 1)
+        s1Aed = consignment?.stage1?.aed ?? 4285350;
+        s1Bdt = consignment?.stage1?.bdt ?? 145802430;
+        s1Rate = consignment?.stage1?.rate ?? 34.02;
+
+        // Stage 2: 2026 Early Former Balance (Consignment 1)
+        s2Aed = consignment?.stage2?.aed ?? 1692497;
+        s2Bdt = consignment?.stage2?.bdt ?? 58421109;
+        s2Rate = consignment?.stage2?.rate ?? 34.51;
+    }
 
     // Stage 3: Running Entries
     let s3Aed = 0;
@@ -90,12 +111,13 @@ export function calculateConsignmentSummary(consignment, entries = []) {
     const session2026Bdt = safeRound(s2Bdt + s3Bdt);
     const session2026Rate = calcWeightedRate(session2026Bdt, session2026Aed);
 
-    // Consignment 1 All-Time Grand Total (Stage 1 + Stage 2 + Stage 3)
+    // Consignment All-Time Grand Total
     const grandAed = safeRound(s1Aed + s2Aed + s3Aed);
     const grandBdt = safeRound(s1Bdt + s2Bdt + s3Bdt);
     const grandRate = calcWeightedRate(grandBdt, grandAed);
 
     return {
+        isRollover: isRolloverConsignment,
         stage1: { aed: s1Aed, bdt: s1Bdt, rate: s1Rate },
         stage2: { aed: s2Aed, bdt: s2Bdt, rate: s2Rate },
         stage3: { aed: s3Aed, bdt: s3Bdt, rate: s3Rate, count: entries.length },

@@ -28,7 +28,7 @@ export async function printDubaiRemittanceBook(consignment, entries = []) {
     const htmlBody = generateRemittancePrintHtml(consignment, entries, summary, settings);
 
     const extraCss = `
-        @page { size: A4 portrait; margin: 5mm 8mm 5mm 8mm !important; }
+        @page { size: A4 portrait; margin: 0 !important; }
         html, body {
             font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important;
             background: #fff !important;
@@ -49,8 +49,12 @@ export async function printDubaiRemittanceBook(consignment, entries = []) {
             max-width: 210mm !important;
             margin: 0 auto !important;
             box-sizing: border-box !important;
-            padding: 2mm 4mm !important;
+            padding: 6mm 10mm 6mm 10mm !important;
             background: #ffffff !important;
+        }
+        .print-sig-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
         }
     `;
 
@@ -185,7 +189,7 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
                         <td colspan="3" style="text-align: right; padding: 2.5px 4px;">২০২৬ সেশনের মোট তহবিল (সাবেক সহ):</td>
                         <td style="text-align: center; padding: 2.5px 4px;" class="num-font">${summary.session2026.rate.toFixed(2)}</td>
                         <td style="text-align: right; font-weight: 800; color: #047857; padding: 2.5px 4px;" class="num-font">${session2026Aed} AED</td>
-                        <td style="text-align: right; font-weight: 800; color: #047857; padding: 2.5px 4px;" class="num-font">৳ ${session2026Bdt}</td>
+                        <td style="text-align: right; font-weight: 800; color: #b91c1c; padding: 2.5px 4px;" class="num-font">৳ ${session2026Bdt}</td>
                         <td style="text-align: center; padding: 2.5px 4px;"><span style="background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: 700;">২০২৬ মোট</span></td>
                     </tr>
 
@@ -201,7 +205,7 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
             </table>
 
             <!-- 4 Signatures Block -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px;">
+            <div class="print-sig-block" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px;">
                 <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">প্রস্তুতকারক (হিসাব বিভাগ)</div>
                 <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">অভ্যন্তরীণ নিরীক্ষক (অফিস ইনচার্জ)</div>
                 <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 2px; font-size: 7.5px; color: #334155; font-weight: 600;">পার্টনার অনুমোদন</div>
