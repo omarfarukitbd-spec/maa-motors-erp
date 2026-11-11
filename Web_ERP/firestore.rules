@@ -201,6 +201,10 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
     }
+    match /dubai_lc_bills/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+    }
 
     // Jarvis AI Memory
     match /jarvis_ai_memory/{docId} {

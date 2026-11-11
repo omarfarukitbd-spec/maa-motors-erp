@@ -261,6 +261,74 @@ function runFinancialMathTests() {
     assert.strictEqual(masterProjectCapEx, 319482224, "3-Tier Master Project CapEx mismatch (Target: 31,94,82,224)");
     passed++;
 
+    // Test 13: Invariant 13 - Container L/C Margin & Bank Expense Sub-Ledger (Page 0003) & 4-Tier Master Project CapEx
+    const lcContainerRows = [
+        {
+            containerNo: 1, lcNo: '10541', company: 'আরমান আরিয়ান',
+            payments: [{ usd: 4530, bdt: 350000 }, { usd: 0, bdt: 15550 }]
+        },
+        {
+            containerNo: 2, lcNo: '10602', company: 'আরমান আরিয়ান',
+            payments: [{ usd: 4620, bdt: 550000 }, { usd: 0, bdt: 14000 }]
+        },
+        {
+            containerNo: 3, lcNo: '10641', company: 'আরমান আরিয়ান',
+            payments: [{ usd: 6110, bdt: 750000 }, { usd: 0, bdt: 10000 }]
+        },
+        {
+            containerNo: 4, lcNo: '10701', company: 'মীম ও মিতুল',
+            payments: [{ usd: 5725, bdt: 900000 }]
+        },
+        {
+            containerNo: 5, lcNo: '10646', company: 'মীম ও মিতুল',
+            payments: [{ usd: 5780, bdt: 700000 }]
+        },
+        {
+            containerNo: 6, lcNo: '10354', company: 'মীম ও মিতুল',
+            payments: [{ usd: 5141, bdt: 600000 }, { usd: 0, bdt: 20000 }]
+        },
+        {
+            containerNo: 7, lcNo: '10395', company: 'মীম ও মিতুল',
+            payments: [{ usd: 4805, bdt: 700000 }, { usd: 0, bdt: 10850 }]
+        },
+        {
+            containerNo: 8, lcNo: '10476', company: 'মীম ও মিতুল',
+            payments: [{ usd: 5169, bdt: 600000 }]
+        },
+        {
+            containerNo: 9, lcNo: '10542', company: 'আলিফ মোটর',
+            payments: [{ usd: 0, bdt: 800000 }]
+        }
+    ];
+    assert.strictEqual(lcContainerRows.length, 9, "Container L/C active records count must be 9");
+
+    const containerTotals = lcContainerRows.map(c => ({
+        containerNo: c.containerNo,
+        usd: safeRound(c.payments.reduce((acc, p) => acc + p.usd, 0)),
+        bdt: safeRound(c.payments.reduce((acc, p) => acc + p.bdt, 0))
+    }));
+    const expectedBdtPerContainer = [365550, 564000, 760000, 900000, 700000, 620000, 710850, 600000, 800000];
+    containerTotals.forEach((ct, idx) => {
+        assert.strictEqual(ct.bdt, expectedBdtPerContainer[idx], `Container #${ct.containerNo} L/C BDT sub-total mismatch`);
+    });
+
+    const page1LcBdt = safeRound(containerTotals.slice(0, 5).reduce((acc, ct) => acc + ct.bdt, 0));
+    assert.strictEqual(page1LcBdt, 3289550, "Register Page 0003 Page-1 B/F subtotal mismatch (Target: 32,89,550)");
+
+    const page2LcBdt = safeRound(containerTotals.slice(5).reduce((acc, ct) => acc + ct.bdt, 0));
+    assert.strictEqual(page2LcBdt, 2730850, "Register Page 0003 Page-2 subtotal mismatch (Target: 27,30,850)");
+
+    const totalLcUSD = safeRound(containerTotals.reduce((acc, ct) => acc + ct.usd, 0));
+    assert.strictEqual(totalLcUSD, 41880, "Container L/C USD Grand Total mismatch (Target: $41,880)");
+
+    const totalLcBDT = safeRound(containerTotals.reduce((acc, ct) => acc + ct.bdt, 0));
+    assert.strictEqual(totalLcBDT, 6020400, "Container L/C BDT Grand Total mismatch (Target: 60,20,400)");
+
+    // 4-Tier Master Project CapEx Law (Dubai FOB + Container L/C + Port Duty + BD Landed)
+    const master4TierCapEx = safeRound(grandBdt + totalLcBDT + totalPortDutyBDT + bdGrandTotal);
+    assert.strictEqual(master4TierCapEx, 325502624, "4-Tier Master Project CapEx mismatch (Target: 32,55,02,624)");
+    passed++;
+
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);
     return true;
 }

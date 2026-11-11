@@ -31,7 +31,7 @@ export async function printDubaiAuditSheet(auditData, memos = [], remittances = 
     const extraCss = `
         @page { size: A4 portrait; margin: 0 !important; }
         html, body {
-            font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important;
+            font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important;
             background: #fff !important;
             color: #0f172a !important;
             margin: 0 !important;
@@ -136,8 +136,9 @@ function generateAuditPrintHtml(audit, memos, settings) {
     }
 
     const headerHtml = renderPrintHeader(settings, {
-        title: 'DUBAI CONTAINER AUDIT',
-        subtitle: 'দুবাই কনটেইনার ও বিদেশি ক্রয় খতিয়ান (Weekly Cash & Procurement Audit)'
+        title: 'দুবাই সাপ্তাহিক ক্যাশ অডিট শিট',
+        pageLabel: 'রেজিস্টার খাতা পাতা',
+        pageNo: '০০০২'
     });
 
     const printTimeStr = new Date().toLocaleString('en-US', {
@@ -341,22 +342,22 @@ function generateAuditPrintHtml(audit, memos, settings) {
             ` : ''}
 
             <!-- Signature Footers -->
-            <div class="print-row-no-break" style="margin-top: 32px; padding-top: 6px;">
+            <div class="print-row-no-break" style="margin-top: 48px; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                 <div style="display: flex; justify-content: space-between; padding: 0 16px; text-align: center;">
                     <div style="width: 180px;">
-                        <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; font-size: 11.5px; font-weight: 800; color: #1e293b;">
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 11.5px; font-weight: 800; color: #1e293b;">
                             দুবাই প্রতিনিধি স্বাক্ষর
                         </div>
                         <div style="font-size: 9px; color: #64748b; font-family: 'Inter', sans-serif;">Dubai Representative</div>
                     </div>
                     <div style="width: 180px;">
-                        <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; font-size: 11.5px; font-weight: 800; color: #1e293b;">
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 11.5px; font-weight: 800; color: #1e293b;">
                             অডিটর যাচাই ও নিরীক্ষা
                         </div>
                         <div style="font-size: 9px; color: #64748b; font-family: 'Inter', sans-serif;">Audited & Verified</div>
                     </div>
                     <div style="width: 180px;">
-                        <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; font-size: 11.5px; font-weight: 800; color: #1e293b;">
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 11.5px; font-weight: 800; color: #1e293b;">
                             স্বত্বাধিকারী চূড়ান্ত অনুমোদন
                         </div>
                         <div style="font-size: 9px; color: #64748b; font-family: 'Inter', sans-serif;">Proprietor Approval</div>
@@ -365,7 +366,7 @@ function generateAuditPrintHtml(audit, memos, settings) {
             </div>
 
             <!-- Print Footer Notice -->
-            <div style="margin-top: 14px; text-align: center; font-size: 9px; color: #94a3b8; font-family: 'Inter', 'Hind Siliguri', sans-serif; border-top: 1px dotted #e2e8f0; padding-top: 5px;">
+            <div style="margin-top: 14px; text-align: center; font-size: 9px; color: #94a3b8; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif; border-top: 1px dotted #e2e8f0; padding-top: 5px;">
                 সফটওয়্যার জেনারেটেড অফিসিয়াল অডিট ভাউচার • মা মোটরস ইআরপি সিস্টেম • প্রিন্ট সময়: ${printTimeStr}
             </div>
         </div>

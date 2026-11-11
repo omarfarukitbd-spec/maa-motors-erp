@@ -13,7 +13,7 @@ import { escapeHTML } from '../../utils/formatters.js';
  */
 
 function toBengaliNumerals(val) {
-    if (val === undefined || val === null) return '০০০১';
+    if (val === undefined || val === null) return '';
     const str = String(val).trim();
     const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
     if (/^\d+$/.test(str)) {
@@ -21,6 +21,64 @@ function toBengaliNumerals(val) {
         return padded.replace(/\d/g, d => bnDigits[Number(d)]);
     }
     return str.replace(/\d/g, d => bnDigits[Number(d)]);
+}
+
+function resolveRightSubBadge(options) {
+    const explicitPageNo = options.pageNo || options.sheetNo || options.invoiceNo;
+    if (explicitPageNo) {
+        return {
+            mode: 'pill',
+            label: options.pageLabel || 'রেজিস্টার খাতা পাতা',
+            value: toBengaliNumerals(explicitPageNo)
+        };
+    }
+
+    const rawRange = options.dateRangeStr ? String(options.dateRangeStr).trim() : '';
+    if (rawRange) {
+        let label = options.pageLabel || 'সময়কাল';
+        let cleanVal = rawRange;
+        if (/^তারিখ\s*[:ঃ]/i.test(cleanVal)) {
+            if (!options.pageLabel) label = 'তারিখ';
+            cleanVal = cleanVal.replace(/^তারিখ\s*[:ঃ]\s*/i, '').trim();
+        } else if (/^সময়কাল\s*[:ঃ]/i.test(cleanVal)) {
+            if (!options.pageLabel) label = 'সময়কাল';
+            cleanVal = cleanVal.replace(/^সময়কাল\s*[:ঃ]\s*/i, '').trim();
+        }
+        return {
+            mode: 'pill',
+            label,
+            value: toBengaliNumerals(cleanVal)
+        };
+    }
+
+    if (options.subtitle) {
+        return {
+            mode: 'subtitle',
+            label: '',
+            value: toBengaliNumerals(options.subtitle)
+        };
+    }
+
+    const now = new Date();
+    const todayFormatted = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    return {
+        mode: 'pill',
+        label: options.pageLabel || 'তারিখ',
+        value: toBengaliNumerals(todayFormatted)
+    };
+}
+
+export function renderSharedRepeatHeader(title, rightMeta = '') {
+    const cleanTitle = escapeHTML(title || 'হিসাব বিবরণী');
+    const cleanMeta = rightMeta ? escapeHTML(toBengaliNumerals(rightMeta)) : '';
+    return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, #eff6ff 0%, #ffffff 100%); border-left:4px solid #024ea2; border-bottom:2px solid #024ea2; border-radius:4px; padding:4px 10px; margin-bottom:8px; font-family:'Anek Bangla','Hind Siliguri','Inter',sans-serif !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;">
+            <div style="font-size:12px; font-weight:800; color:#002d72;">
+                মেসার্স মা মোটরস • ${cleanTitle} <span style="font-size:9.5px; color:#64748b; font-weight:600;">(চলমান পাতা)</span>
+            </div>
+            ${cleanMeta ? `<div style="font-size:9.5px; font-weight:700; color:#334155;">${cleanMeta}</div>` : ''}
+        </div>
+    `;
 }
 
 function formatTwoToneText(rawText, primaryColor = '#ffdf00', secondaryColor = '#ffffff') {
@@ -50,11 +108,10 @@ export function renderSharedPrintHeader(arg1 = {}, arg2 = {}) {
         options = arg2 || {};
     }
 
-    const title = options.title || 'ডুবাই টাকা পাঠানোর হিসাব বুক';
-    const pageLabel = options.pageLabel || 'রেজিস্টার খাতা পাতা';
-    const rawPageNo = options.pageNo || options.sheetNo || options.invoiceNo || options.subtitle || '০০০১';
-    const pageNo = toBengaliNumerals(rawPageNo);
+    const rawTitle = options.title || 'ডুবাই টাকা পাঠানোর হিসাব বুক';
+    const title = escapeHTML(rawTitle);
     const hideRightPill = Boolean(options.hideRightPill);
+    const subBadge = resolveRightSubBadge(options);
 
     const rawShopName = settings.shopName || "মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)";
     const rawShopOwner = settings.shopOwner || "মোহাম্মদ এমরান (Mohammed Amran)";
@@ -65,9 +122,11 @@ export function renderSharedPrintHeader(arg1 = {}, arg2 = {}) {
     const shopNameHtml = formatTwoToneText(rawShopName, '#ffdf00', '#ffffff');
     const shopOwnerHtml = formatTwoToneText(rawShopOwner, '#ffdf00', '#ffffff');
 
-    const isBengaliTitle = /[^\x00-\x7F]/.test(title);
+    const isBengaliTitle = /[^\x00-\x7F]/.test(rawTitle);
     const titleFontFamily = isBengaliTitle ? "'Anek Bangla', 'Hind Siliguri', sans-serif !important;" : "'Inter', 'Segoe UI', Arial, sans-serif !important;";
-    const titleFontSize = title.length > 25 ? '10px' : (title.length > 18 ? '11px' : '11.5px');
+    const titleFontSize = rawTitle.length > 32 ? '9.5px' : (rawTitle.length > 25 ? '10px' : (rawTitle.length > 18 ? '11px' : '11.5px'));
+    const subPillFontSize = subBadge.value.length > 22 ? '9px' : (subBadge.value.length > 14 ? '10px' : '11px');
+    const subPillPadding = subBadge.value.length > 22 ? '1.5px 7px' : '1px 9px';
 
     return `
         <div class="mother-print-header" style="
@@ -166,25 +225,31 @@ export function renderSharedPrintHeader(arg1 = {}, arg2 = {}) {
                     </div>
 
                     <!-- Register Page / Sheet Number Indicator -->
+                    ${subBadge.mode === 'pill' ? `
                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 3.5px;">
                         <span style="color: #ffffff !important; font-size: 10px; font-weight: 700 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-family: 'Anek Bangla', sans-serif !important; white-space: nowrap;">
-                            ${pageLabel}:
+                            ${escapeHTML(subBadge.label)}:
                         </span>
                         <span style="
                             background: #ffdf00 !important;
                             color: #000000 !important;
                             border-radius: 12px;
-                            padding: 1px 9px;
-                            font-size: 11px;
+                            padding: ${subPillPadding};
+                            font-size: ${subPillFontSize};
                             font-weight: 900 !important;
                             font-family: 'Anek Bangla', 'Inter', monospace !important;
                             line-height: 1.2;
                             white-space: nowrap;
                             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
                         ">
-                            ${pageNo}
+                            ${escapeHTML(subBadge.value)}
                         </span>
                     </div>
+                    ` : `
+                    <div style="color: #ffdf00 !important; font-size: 9px; font-weight: 700 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-family: 'Anek Bangla', sans-serif !important; white-space: nowrap; margin-top: 3.5px;">
+                        ${escapeHTML(subBadge.value)}
+                    </div>
+                    `}
                 </div>
                 `}
             </div>

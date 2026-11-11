@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, formatAppDate, toDBDate } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, formatAppDate, toDBDate, renderPrintHeader, renderRepeatHeader } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
 import Swal from 'sweetalert2';
@@ -29,31 +29,12 @@ export async function printClosingDepositPdfReport(summaryData) {
     const isSingleDay = startDate === endDate;
     const dateTitle = isSingleDay ? formatAppDate(startDate) : `${formatAppDate(startDate)} - ${formatAppDate(endDate)}`;
 
-    const shopName = escapeHTML(settings.shopName || "M/S. MAA-MOTOR'S");
-    const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");
-    const shopAddress = escapeHTML(settings.shopAddress || "Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road");
-    const shopPhone = escapeHTML(settings.shopPhone || "01819-397669, 01815-707934");
-    const shopLogo = settings.shopLogo || "/shop-official-logo.jpg";
-
-    // 1. Sleek Compact Master Header Banner
-    const masterHeaderHtml = `
-        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 10px; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2); margin-bottom: 6px; font-family: 'Inter', 'Kalpurush', sans-serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 46px; height: 46px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #ffffff; flex-shrink: 0; padding: 1px;">
-                    <img src="${shopLogo}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />
-                </div>
-                <div>
-                    <h1 style="font-size: 17px; font-weight: 900 !important; margin: 0; text-transform: uppercase; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', sans-serif !important;">${shopName}</h1>
-                    <p style="font-size: 9px; margin: 1px 0; font-weight: 700 !important; color: #e0f2fe !important;">Proprietor: ${shopOwner} • Mobile: ${shopPhone}</p>
-                    <p style="font-size: 8.5px; margin: 0; opacity: 0.9; font-weight: 600 !important; color: #f0f9ff !important; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif !important;">${shopAddress}</p>
-                </div>
-            </div>
-            <div style="text-align: right; flex-shrink: 0;">
-                <div style="display: inline-block; font-size: 11.5px; font-weight: 900 !important; text-transform: uppercase; background: rgba(255, 255, 255, 0.2) !important; border: 1px solid rgba(255, 255, 255, 0.4); padding: 4px 12px; border-radius: 6px; letter-spacing: 0.5px; color: #ffffff !important;">DAILY CLOSING & AUDIT REGISTER</div>
-                <div style="font-size: 9px; font-weight: 700 !important; margin-top: 2px; color: #e0f2fe !important; font-family: 'Hind Siliguri', sans-serif !important;">তারিখ: ${dateTitle}</div>
-            </div>
-        </div>
-    `;
+    // 1. Official Mother PDF Header
+    const masterHeaderHtml = renderPrintHeader(settings, {
+        title: 'দৈনিক ক্লোজিং ও অডিট রেজিস্টার',
+        pageLabel: isSingleDay ? 'তারিখ' : 'সময়কাল',
+        dateRangeStr: dateTitle
+    });
 
     // 2. Compact Executive KPI Summary Matrix (5 Cards)
     const kpiMatrixHtml = `
@@ -167,12 +148,7 @@ export async function printClosingDepositPdfReport(summaryData) {
 
     const page1HeaderHtml = `${masterHeaderHtml}${kpiMatrixHtml}${todayDepositCardsHtml}${bankBoxesHtml}${bankingTxnsHtml}`;
 
-    const repeatHeaderHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:3px; margin-bottom:5px;">
-            <div style="font-size:11.5px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">MASTER CLOSING & AUDIT REGISTER <span style="font-size:9px; color:#475569; font-weight:normal;">(Continued)</span></div>
-            <div style="font-size:9px; color:#475569; font-family:'Hind Siliguri',sans-serif;">তারিখ: ${dateTitle}</div>
-        </div>
-    `;
+    const repeatHeaderHtml = renderRepeatHeader('দৈনিক ক্লোজিং ও অডিট রেজিস্টার', `তারিখ: ${dateTitle}`);
 
     // 6. Customer Collections Rows (Chronologically Ascending)
     const sortedCollections = [...customerCollections].sort((a, b) => {
@@ -260,11 +236,11 @@ export async function printClosingDepositPdfReport(summaryData) {
     `;
 
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 20px; page-break-inside: avoid; break-inside: avoid;">
+        <div class="signature-last-page-block" style="margin-top: 48px; page-break-inside: avoid; break-inside: avoid;">
             <div style="display: flex; justify-content: space-between; padding: 0 15px;">
-                <div style="border-top: 1.5px dashed #64748b; width: 110px; text-align: center; font-size: 8.5px; font-weight: 700; color: #334155; padding-top: 2px; font-family: 'Hind Siliguri', sans-serif;">ক্যাশিয়ারের স্বাক্ষর</div>
-                <div style="border-top: 1.5px dashed #64748b; width: 110px; text-align: center; font-size: 8.5px; font-weight: 700; color: #334155; padding-top: 2px; font-family: 'Hind Siliguri', sans-serif;">ম্যানেজারের স্বাক্ষর</div>
-                <div style="border-top: 1.5px dashed #64748b; width: 110px; text-align: center; font-size: 8.5px; font-weight: 700; color: #334155; padding-top: 2px; font-family: 'Hind Siliguri', sans-serif;">স্বত্বাধিকারীর স্বাক্ষর</div>
+                <div style="border-top: 1.2px dashed #64748b; width: 135px; text-align: center; font-size: 9.5px; font-weight: 700; color: #1e293b; padding-top: 5px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">ক্যাশিয়ারের স্বাক্ষর</div>
+                <div style="border-top: 1.2px dashed #64748b; width: 135px; text-align: center; font-size: 9.5px; font-weight: 700; color: #1e293b; padding-top: 5px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">ম্যানেজারের স্বাক্ষর</div>
+                <div style="border-top: 1.2px dashed #64748b; width: 135px; text-align: center; font-size: 9.5px; font-weight: 700; color: #1e293b; padding-top: 5px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">স্বত্বাধিকারীর স্বাক্ষর</div>
             </div>
         </div>
     `;

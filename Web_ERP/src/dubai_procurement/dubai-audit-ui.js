@@ -13,6 +13,7 @@ import { renderDubaiHistoryTable } from './dubai-audit-history.js';
 import { initDubaiRemittanceModule, cleanupDubaiRemittance } from './dubai-remittance-ui.js';
 import { initDubaiBDExpenseModule, cleanupDubaiBDExpense } from './dubai-bd-expense-ui.js';
 import { initDubaiPortDutyModule, cleanupDubaiPortDuty } from './dubai-port-duty-ui.js';
+import { initDubaiLCModule, cleanupDubaiLC } from './dubai-lc-ui.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
@@ -42,21 +43,31 @@ export async function renderDubaiProcurement(container) {
             unsubscribeDubaiAudits();
             cleanupDubaiBDExpense();
             cleanupDubaiPortDuty();
+            cleanupDubaiLC();
             initDubaiRemittanceModule(currentRootContainer);
         } else if (view === 'bd-expense') {
             unsubscribeDubaiAudits();
             cleanupDubaiRemittance();
             cleanupDubaiPortDuty();
+            cleanupDubaiLC();
             initDubaiBDExpenseModule(currentRootContainer);
         } else if (view === 'port-duty') {
             unsubscribeDubaiAudits();
             cleanupDubaiRemittance();
             cleanupDubaiBDExpense();
+            cleanupDubaiLC();
             initDubaiPortDutyModule(currentRootContainer);
+        } else if (view === 'lc-bills') {
+            unsubscribeDubaiAudits();
+            cleanupDubaiRemittance();
+            cleanupDubaiBDExpense();
+            cleanupDubaiPortDuty();
+            initDubaiLCModule(currentRootContainer);
         } else {
             cleanupDubaiRemittance();
             cleanupDubaiBDExpense();
             cleanupDubaiPortDuty();
+            cleanupDubaiLC();
             renderDubaiAuditView(currentRootContainer);
         }
     };
@@ -67,6 +78,8 @@ export async function renderDubaiProcurement(container) {
         initDubaiBDExpenseModule(container);
     } else if (currentView === 'port-duty') {
         initDubaiPortDutyModule(container);
+    } else if (currentView === 'lc-bills') {
+        initDubaiLCModule(container);
     } else {
         renderDubaiAuditView(container);
     }

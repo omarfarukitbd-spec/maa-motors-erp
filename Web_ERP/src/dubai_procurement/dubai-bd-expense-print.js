@@ -7,7 +7,8 @@ import {
     formatAmountWithComma,
     safeRound,
     escapeHTML,
-    formatAppDate
+    formatAppDate,
+    renderPrintHeader
 } from '../utils.js';
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
@@ -21,14 +22,14 @@ export async function printDubaiBDExpenseBook(consignment, entries = [], dubaiSu
         console.error('Settings fetch error in BD expense print:', e);
     }
 
-    const title = `Bangladesh_Expenses_${consignment?.name || 'Consignment_1'}_Page_0002`;
+    const title = `Bangladesh_Expenses_${consignment?.name || 'Consignment_1'}_Page_0003`;
     const summary = calculateBDExpenseSummary(consignment, entries);
     const htmlBody = generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary, settings);
 
     const extraCss = `
         @page { size: A4 portrait; margin: 0 !important; }
         html, body {
-            font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important;
+            font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important;
             background: #fff !important;
             color: #0f172a !important;
             margin: 0 !important;
@@ -79,10 +80,6 @@ export async function printDubaiBDExpenseBook(consignment, entries = [], dubaiSu
 }
 
 function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary, settings) {
-    const shopName = settings.shopName || "মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)";
-    const ownerName = settings.ownerName || "স্বত্বাধিকারী: মোহাম্মদ এমরান (Mohammed Amran)";
-    const address = settings.address || "দোকান নং-২২, রহমান টাওয়ার, ১ম রেলগেট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম। | মোবাইল: 01819-397669, 01815-707934";
-
     const bfFormatted = formatAmountWithComma(summary.bfAmount);
     const runningFormatted = formatAmountWithComma(summary.runningTotal);
     const grandFormatted = formatAmountWithComma(summary.grandTotal);
@@ -112,20 +109,48 @@ function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary,
 
     return `
         <div class="bd-print-sheet">
-            <!-- Header Section -->
-            <div style="border-bottom: 2px solid #0f172a; padding-bottom: 3px; margin-bottom: 4px; text-align: center;">
-                <h1 style="font-size: 15px; font-weight: 900; color: #0284c7; margin: 0; padding: 0; text-transform: uppercase;">${escapeHTML(shopName)}</h1>
-                <div style="font-size: 8.5px; font-weight: 700; color: #1e293b; margin-top: 1px;">${escapeHTML(ownerName)}</div>
-                <div style="font-size: 7px; color: #475569; margin-top: 1px;">${escapeHTML(address)}</div>
-                
-                <div style="margin-top: 3px; display: inline-block; background: #0f172a; color: #fff; padding: 2px 12px; border-radius: 4px;">
-                    <span style="font-size: 10px; font-weight: 900; letter-spacing: 0.5px;">বাংলাদেশ খরচ, মাল ক্রয়, গোডাউন খরচ ও চালানি কেরিং রেজিস্টার</span>
-                </div>
-                <div style="font-size: 7.5px; font-weight: 700; color: #334155; margin-top: 2px;">
-                    ${escapeHTML(consignment?.name || 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট')} | 
-                    <span style="color: #b91c1c;">রেজিস্টার খাতা পাতা: ০০০২</span> | 
-                    সময়কাল: ০১/১১/২০২৫ হইতে ০৯/১১/২০২৬ পর্যন্ত
-                </div>
+            <!-- Mother Header (Official Corporate Design) -->
+            ${renderPrintHeader(settings, {
+                title: 'বাংলাদেশ লোকাল ক্লিয়ারেন্স ও ব্যয় বুক',
+                pageLabel: 'রেজিস্টার খাতা পাতা',
+                pageNo: '০০০৩'
+            })}
+
+            <!-- Consignment Title Bar (Navy Blue) -->
+            <div style="
+                background: linear-gradient(90deg, #032b69 0%, #011b40 100%) !important;
+                border: 1px solid #1d4ed8;
+                box-shadow: 0 1px 3px rgba(3, 43, 105, 0.25);
+                color: #ffffff;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 4px 10px;
+                border-radius: 6px;
+                margin-bottom: 6px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            ">
+                <h2 style="margin: 0; font-size: 11px; font-weight: 800; font-family: 'Anek Bangla', sans-serif !important; color: #ffffff; letter-spacing: 0.1px;">
+                    কনসোলমেন্ট: <span style="color: #ffd700;">${escapeHTML(consignment?.name || 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট')}</span>
+                </h2>
+                <span style="
+                    background: #047857 !important;
+                    color: #ffffff !important;
+                    border: 1px solid #34d399;
+                    font-size: 8px;
+                    font-weight: 800;
+                    font-family: 'Anek Bangla', sans-serif !important;
+                    padding: 2.5px 8px;
+                    border-radius: 12px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4.5px;
+                    white-space: nowrap;
+                ">
+                    <span style="width: 6px; height: 6px; background: #a7f3d0; border-radius: 50%; display: inline-block;"></span>
+                    চলমান কনসোলমেন্ট (Active)
+                </span>
             </div>
 
             <!-- 3 Master KPI Summary Cards -->
@@ -202,23 +227,23 @@ function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary,
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; text-align: center; font-size: 7.5px;">
                     <div>• দুবাই পার্ট (পাতা ০০০১): <strong>${formatAmountWithComma(dubaiAed)} AED</strong> = <strong class="num-font">৳ ${formatAmountWithComma(dubaiBdt)}</strong></div>
-                    <div>• বাংলাদেশ পার্ট (পাতা ০০০২): <strong class="num-font">৳ ${grandFormatted}</strong> (${summary.count} কিস্তি + সাবেক)</div>
+                    <div>• বাংলাদেশ পার্ট (পাতা ০০০৩): <strong class="num-font">৳ ${grandFormatted}</strong> (${summary.count} কিস্তি + সাবেক)</div>
                     <div>• সর্বসাকুল্যে ক্যাপিটাল: <strong style="color: #047857;" class="num-font">৳ ${formatAmountWithComma(totalCapEx)}</strong> (১০০%)</div>
                 </div>
             </div>
 
             <!-- Signatures Section -->
-            <div class="print-sig-block" style="margin-top: 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
-                <div style="padding-top: 18px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+            <div class="print-sig-block" style="margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">
                     প্রস্তুতকারক (হিসাব বিভাগ)
                 </div>
-                <div style="padding-top: 18px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">
                     অভ্যন্তরীণ নিরীক্ষক (অফিস ইনচার্জ)
                 </div>
-                <div style="padding-top: 18px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">
                     পার্টনার অনুমোদন
                 </div>
-                <div style="padding-top: 18px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #0f172a;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">
                     মোহাম্মদ এমরান (স্বত্বাধিকারী)
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
 import { calculatePayrollSummary } from './payroll-calc.js';
-import { formatAmountWithComma, formatAppDate, escapeHTML, getTodayLocalDateString } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, escapeHTML, getTodayLocalDateString, renderPrintHeader } from '../utils.js';
 
 /**
  * Print Ultra-High-Definition Master Payroll & Monthly Expense Report
@@ -78,39 +78,23 @@ export async function printPayrollMasterReport(state) {
         }).join('');
     };
 
-    const headerBannerHtml = (subTitle, pageNo) => `
-        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 8px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="${shopLogo}" style="width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid #ffffff; background: #ffffff;" />
-                <div>
-                    <h1 style="font-size: 14px; font-weight: 900; margin: 0; text-transform: uppercase; color: #ffffff;">${shopName}</h1>
-                    <p style="font-size: 8px; margin: 0; color: #e0f2fe; font-weight: 700;">Proprietor: ${shopOwner} • Mobile: ${shopPhone}</p>
-                    <p style="font-size: 7.5px; margin: 0; color: #f0f9ff; opacity: 0.9;">${shopAddress}</p>
-                </div>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-size: 10px; font-weight: 900; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; display: inline-block;">মাসিক সামগ্রিক ব্যয় ও বেতন বিবরণী</div>
-                <div style="font-size: 8px; color: #e0f2fe; margin-top: 2px;">মাস: <strong>${monthYear}</strong> • তারিখ: ${reportDate} • পৃষ্ঠা: ${pageNo}/২</div>
-            </div>
-        </div>
-    `;
-
     const fullHtml = `
         <!-- PAGE 1: Commercial Operations -->
         <div class="print-page" style="width: 100%; box-sizing: border-box; page-break-after: always; break-after: page; padding: 10mm 12mm; background: #ffffff;">
-            ${headerBannerHtml('বাণিজ্যিক ও অপারেশনাল লেয়ার — ১ম পাতা', 1)}
-            <div style="font-size: 8px; color: #64748b; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">
+            ${renderPrintHeader(settings, { title: 'মাসিক সামগ্রিক ব্যয় ও বেতন রেজিস্টার', pageLabel: 'পৃষ্ঠা', pageNo: '০১/০২' })}
+            <div style="font-size: 8.5px; color: #0f172a; font-weight: bold; margin-bottom: 6px; padding: 4px 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0284c7; border-radius: 4px; display: flex; justify-content: space-between;">
                 <span>বাণিজ্যিক শাখা: ডুবাই অপারেশন, শোরুম দোকান ও গোডাউন কর্মী বেতন ও ব্যয়</span>
-                <span>(চলবে ২য় পাতায়...)</span>
+                <span>মাস: <strong>${escapeHTML(monthYear)}</strong> • তারিখ: ${reportDate}</span>
             </div>
             ${renderSectionTable(page1Sections, 1)}
         </div>
 
         <!-- PAGE 2: Residence & Other Expenses + Final Balance -->
         <div class="print-page" style="width: 100%; box-sizing: border-box; padding: 10mm 12mm; background: #ffffff;">
-            ${headerBannerHtml('পারিবারিক, ব্যক্তিগত ও অন্যান্য লেয়ার — ২য় পাতা', 2)}
-            <div style="font-size: 8px; color: #64748b; font-weight: bold; margin-bottom: 4px;">
+            ${renderPrintHeader(settings, { title: 'মাসিক সামগ্রিক ব্যয় ও বেতন রেজিস্টার', pageLabel: 'পৃষ্ঠা', pageNo: '০২/০২' })}
+            <div style="font-size: 8.5px; color: #0f172a; font-weight: bold; margin-bottom: 6px; padding: 4px 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0284c7; border-radius: 4px; display: flex; justify-content: space-between;">
                 <span>আবাসিক শাখা: নিজ বাড়ি, নতুন বাড়ি, গৃহকর্মী/শিক্ষক বেতন ও ব্যবসায়িক লভ্যাংশ</span>
+                <span>মাস: <strong>${escapeHTML(monthYear)}</strong> • তারিখ: ${reportDate}</span>
             </div>
             ${renderSectionTable(page2Sections, 4)}
 
@@ -140,12 +124,12 @@ export async function printPayrollMasterReport(state) {
             </div>
 
             <!-- Signatures with Empty Seal Boxes for Offline Stamping -->
-            <div style="display: flex; justify-content: space-between; padding: 0 45px; margin-top: 20px; break-inside: avoid; page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; padding: 0 45px; margin-top: 48px; break-inside: avoid; page-break-inside: avoid;">
                 <div style="width: 170px; text-align: center;">
                     <div style="border: 1px dashed #94a3b8; height: 38px; border-radius: 4px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; font-size: 7.5px; color: #94a3b8;">
                         (ম্যানেজার সিলমোহর ও স্বাক্ষর)
                     </div>
-                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
                         <div style="font-size: 10px; font-weight: 900; color: #0f172a;">ম্যানেজার</div>
                         <div style="font-size: 7.5px; color: #64748b;">মেসার্স মা মোটরস</div>
                     </div>
@@ -154,7 +138,7 @@ export async function printPayrollMasterReport(state) {
                     <div style="border: 1px dashed #94a3b8; height: 38px; border-radius: 4px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; font-size: 7.5px; color: #94a3b8;">
                         (অফিস বস সিলমোহর ও অনুমোদন)
                     </div>
-                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
                         <div style="font-size: 10px; font-weight: 900; color: #0f172a;">ইনচার্জ বা অফিস বস</div>
                         <div style="font-size: 7.5px; color: #64748b;">অনুমোদন ও চূড়ান্ত সিদ্ধান্ত</div>
                     </div>
@@ -165,7 +149,7 @@ export async function printPayrollMasterReport(state) {
 
     const unifiedFontCss = `
         * {
-            font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
             box-sizing: border-box;
         }
         @page { size: A4 portrait; margin: 0 !important; }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dubai Procurement - Container Port, Customs Duty & C&F Corporate Print Engine
  * Generates an executive A4 printable register voucher for Page 0004 matching MAA MOTORS ERP standards.
  */
@@ -6,7 +6,8 @@
 import {
     formatAmountWithComma,
     escapeHTML,
-    formatAppDate
+    formatAppDate,
+    renderPrintHeader
 } from '../utils.js';
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
@@ -28,7 +29,7 @@ export async function printDubaiPortDutyBook(consignment, bills = [], dubaiSumma
     const extraCss = `
         @page { size: A4 portrait; margin: 0 !important; }
         html, body {
-            font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif !important;
+            font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important;
             background: #fff !important;
             color: #0f172a !important;
             margin: 0 !important;
@@ -79,9 +80,6 @@ export async function printDubaiPortDutyBook(consignment, bills = [], dubaiSumma
 }
 
 function generatePortDutyPrintHtml(consignment, bills, summary, capex, settings) {
-    const shopName = settings.shopName || "মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)";
-    const ownerName = settings.ownerName || "স্বত্বাধিকারী: মোহাম্মদ এমরান (Mohammed Amran)";
-    const address = settings.address || "দোকান নং-২২, রহমান টাওয়ার, ১ম রেলগেট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম। | মোবাইল: 01819-397669, 01815-707934";
 
     const totalDutyFormatted = formatAmountWithComma(summary.totalDuty);
 
@@ -108,20 +106,49 @@ function generatePortDutyPrintHtml(consignment, bills, summary, capex, settings)
 
     return `
         <div class="port-print-sheet">
-            <!-- Header Section -->
-            <div style="border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-bottom: 6px; text-align: center;">
-                <h1 style="font-size: 15px; font-weight: 900; color: #0284c7; margin: 0; padding: 0; text-transform: uppercase;">${escapeHTML(shopName)}</h1>
-                <div style="font-size: 8.5px; font-weight: 700; color: #1e293b; margin-top: 1px;">${escapeHTML(ownerName)}</div>
-                <div style="font-size: 7px; color: #475569; margin-top: 1px;">${escapeHTML(address)}</div>
-                
-                <div style="margin-top: 4px; display: inline-block; background: #0f172a; color: #fff; padding: 2px 14px; border-radius: 4px;">
-                    <span style="font-size: 10px; font-weight: 900; letter-spacing: 0.5px;">কন্টেইনার ডিউটি, সিএন্ডএফ (C&F), পোর্ট বিল ও শিপিং বিল রেজিস্টার</span>
-                </div>
-                <div style="font-size: 7.5px; font-weight: 700; color: #334155; margin-top: 3px;">
-                    ${escapeHTML(consignment?.name || '১ম কনসোলমেন্ট কন্টেইনার ক্লিয়ারেন্স ও খালাস রেজিস্টার')} | 
-                    <span style="color: #b91c1c;">খাতা পাতা: ০০০৪</span> | 
-                    সময়কাল: ০৫/১১/২০২৫ হইতে ২১/১০/২০২৬ পর্যন্ত
-                </div>
+            <!-- Mother Header (Official Corporate Design) -->
+            ${renderPrintHeader(settings, {
+                title: 'কন্টেইনার ডিউটি ও পোর্ট বিল বুক',
+                pageLabel: 'রেজিস্টার খাতা পাতা',
+                pageNo: '০০০৪'
+            })}
+
+            <!-- Consignment Title Bar (Navy Blue) -->
+            <div style="
+                background: linear-gradient(90deg, #032b69 0%, #011b40 100%) !important;
+                border: 1px solid #1d4ed8;
+                box-shadow: 0 1px 3px rgba(3, 43, 105, 0.25);
+                color: #ffffff;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 4px 10px;
+                border-radius: 6px;
+                margin-bottom: 6px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            ">
+                <h2 style="margin: 0; font-size: 11px; font-weight: 800; font-family: 'Anek Bangla', sans-serif !important; color: #ffffff; letter-spacing: 0.1px;">
+                    কনসোলমেন্ট: <span style="color: #ffd700;">${escapeHTML(consignment?.name || '১ম কনসোলমেন্ট কন্টেইনার ক্লিয়ারেন্স')}</span>
+                </h2>
+                <span style="
+                    background: #047857 !important;
+                    color: #ffffff !important;
+                    border: 1px solid #34d399;
+                    font-size: 8px;
+                    font-weight: 800;
+                    font-family: 'Anek Bangla', sans-serif !important;
+                    padding: 2.5px 8px;
+                    border-radius: 12px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4.5px;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+                    white-space: nowrap;
+                ">
+                    <span style="width: 6px; height: 6px; background: #a7f3d0; border-radius: 50%; display: inline-block;"></span>
+                    চলমান কনসোলমেন্ট (Active)
+                </span>
             </div>
 
             <!-- 3 Master KPI Summary Cards -->
@@ -204,17 +231,17 @@ function generatePortDutyPrintHtml(consignment, bills, summary, capex, settings)
             </div>
 
             <!-- Signatures Section -->
-            <div class="print-sig-block" style="margin-top: 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
-                <div style="padding-top: 20px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+            <div class="print-sig-block" style="margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">
                     প্রস্তুতকারক (হিসাব বিভাগ)
                 </div>
-                <div style="padding-top: 20px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">
                     সিএন্ডএফ নিরীক্ষক (পোর্ট ইনচার্জ)
                 </div>
-                <div style="padding-top: 20px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #334155;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">
                     পার্টনার অনুমোদন
                 </div>
-                <div style="padding-top: 20px; border-top: 1px solid #64748b; font-size: 7.5px; font-weight: bold; color: #0f172a;">
+                <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700; font-family: 'Anek Bangla', sans-serif;">
                     মোহাম্মদ এমরান (স্বত্বাধিকারী)
                 </div>
             </div>

@@ -36,6 +36,10 @@ export function getDubaiAuditMainTemplate() {
                         <i class="fa-solid fa-ship text-indigo-400 text-xs"></i>
                         <span>পোর্ট ও ডিউটি বিল</span>
                     </button>
+                    <button type="button" onclick="window.switchDubaiProcurementView('lc-bills')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার খাতা (পাতা ০০০৩) খুলুন">
+                        <i class="fa-solid fa-file-contract text-cyan-400 text-xs"></i>
+                        <span>এলসি ও ব্যাংক হিসাব</span>
+                    </button>
                     <button type="button" id="btn-dubai-roll-forward" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="গত সপ্তাহের ব্যালেন্স নিজে নিজে নিয়ে আসবে">
                         <i class="fa-solid fa-arrows-rotate text-sky-400 text-xs"></i>
                         <span>রোল-ফরওয়ার্ড</span>

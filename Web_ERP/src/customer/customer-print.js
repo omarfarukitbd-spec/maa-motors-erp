@@ -1,5 +1,5 @@
 import { SettingsDAO, ZoneDAO } from '../dao.js';
-import { formatAmountWithComma, promptSecurityPin, getTodayLocalDateString, escapeHTML, renderPrintHeader, formatAppDate, getDayOfWeekBangla, safeRound } from '../utils.js';
+import { formatAmountWithComma, promptSecurityPin, getTodayLocalDateString, escapeHTML, renderPrintHeader, renderRepeatHeader, formatAppDate, getDayOfWeekBangla, safeRound } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import Swal from 'sweetalert2';
 import { cachedCustomers } from './customer-state.js';
@@ -107,14 +107,19 @@ export async function printFilteredCustomerList() {
     const todayStr = getTodayLocalDateString();
     const [y, m, d] = todayStr.split('-');
     const formattedDate = `${d}/${m}/${y}`;
-    const page1HeaderHtml = renderPrintHeader(settings, { title: 'CUSTOMER REPORT', subtitle: `${reportTitle} • ${formattedDate}` });
-    
-    const repeatHeaderHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
-            <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">CUSTOMER REPORT <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
-            <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${reportTitle} • ${formattedDate}</div>
+    const page1HeaderHtml = `
+        ${renderPrintHeader(settings, {
+            title: 'গ্রাহক তালিকা ও বকেয়া খতিয়ান',
+            pageLabel: 'প্রিন্ট তারিখ',
+            pageNo: formattedDate
+        })}
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid #0284c7; border-radius:4px; padding:5px 10px; margin-bottom:8px; font-family:'Anek Bangla','Hind Siliguri',sans-serif; font-size:10px; color:#0f172a;">
+            <div><strong>রিপোর্ট বিবরণ:</strong> ${reportTitle}</div>
+            <div><strong>তারিখ:</strong> ${formattedDate}</div>
         </div>
     `;
+
+    const repeatHeaderHtml = renderRepeatHeader('গ্রাহক তালিকা ও বকেয়া খতিয়ান', `${reportTitle} • ${formattedDate}`);
 
     const rowsArray = filtered.map((c, idx) => {
         const isEven = idx % 2 === 0;
@@ -197,12 +202,12 @@ export async function printFilteredCustomerList() {
     `;
 
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 45px; page-break-inside: avoid; break-inside: avoid;">
+        <div class="signature-last-page-block" style="margin-top: 48px; page-break-inside: avoid; break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
             <div style="display: flex; justify-content: space-between; padding: 0 30px;">
-                <div style="border-top: 1.5px dashed #64748b; width: 160px; text-align: center; font-size: 11px; font-weight: 700; color: #334155; padding-top: 6px;">
+                <div style="border-top: 1.2px dashed #64748b; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b; padding-top: 6px;">
                     কাস্টমারের স্বাক্ষর<br><span style="font-size: 9px; font-weight: normal; color: #64748b;">Customer Signature</span>
                 </div>
-                <div style="border-top: 1.5px dashed #64748b; width: 160px; text-align: center; font-size: 11px; font-weight: 700; color: #334155; padding-top: 6px;">
+                <div style="border-top: 1.2px dashed #64748b; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b; padding-top: 6px;">
                     কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size: 9px; font-weight: normal; color: #64748b;">Authorized Signature</span>
                 </div>
             </div>

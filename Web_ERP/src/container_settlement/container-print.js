@@ -31,10 +31,11 @@ export async function printContainerSettlement(settlement) {
     const netProfitWords = netProfit > 0 ? numberToBanglaWords(netProfit) : '';
     const finalBalanceWords = finalBalance > 0 ? numberToBanglaWords(finalBalance) : '';
 
-    // 1. Official Canonical Gradient Header (Clean, balanced corporate badge)
+    // 1. Official Canonical Mother PDF Header
     const headerHtml = renderSharedPrintHeader(settings, {
-        title: 'CONTAINER SETTLEMENT',
-        subtitle: 'কন্টেইনার অডিট ও লভ্যাংশ নিষ্পত্তি'
+        title: 'কন্টেইনার পার্টনারশিপ সেটেলমেন্ট',
+        pageLabel: 'হিসাবের তারিখ',
+        pageNo: date
     });
 
     // 2. Section 1: Sales & Costs Rows
@@ -281,31 +282,31 @@ export async function printContainerSettlement(settlement) {
             ${customSectionsPrintHtml}
 
             <!-- Authentic 4-Partner Signature Block -->
-            <div class="page-break-avoid" style="margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding-top: 5px;">
+            <div class="page-break-avoid" style="margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding-top: 5px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                 <div style="text-align: center;">
                     <div style="border: 1px dashed #cbd5e1; height: 42px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
-                    <div style="border-top: 1.5px solid #334155; padding-top: 4px;">
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
                         <div style="font-size: 11px; font-weight: 800; color: #0f172a;">প্রস্তুতকারক</div>
                         <div style="font-size: 8.5px; color: #64748b; font-weight: 600;">মা মোটরস একাউন্টস</div>
                     </div>
                 </div>
                 <div style="text-align: center;">
                     <div style="border: 1px dashed #cbd5e1; height: 42px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
-                    <div style="border-top: 1.5px solid #334155; padding-top: 4px;">
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
                         <div style="font-size: 11px; font-weight: 800; color: #0f172a;">সজীব</div>
                         <div style="font-size: 8.5px; color: #64748b; font-weight: 600;">ওয়ার্কিং পার্টনার (১০%)</div>
                     </div>
                 </div>
                 <div style="text-align: center;">
                     <div style="border: 1px dashed #cbd5e1; height: 42px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
-                    <div style="border-top: 1.5px solid #334155; padding-top: 4px;">
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
                         <div style="font-size: 11px; font-weight: 800; color: #0f172a;">আলতাফ</div>
                         <div style="font-size: 8.5px; color: #64748b; font-weight: 600;">ইকুইটি পার্টনার (৪৫%)</div>
                     </div>
                 </div>
                 <div style="text-align: center;">
                     <div style="border: 1px dashed #cbd5e1; height: 42px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
-                    <div style="border-top: 1.5px solid #334155; padding-top: 4px;">
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
                         <div style="font-size: 11px; font-weight: 800; color: #0f172a;">এমরান</div>
                         <div style="font-size: 8.5px; color: #64748b; font-weight: 600;">ম্যানেজিং পার্টনার (৪৫%)</div>
                     </div>
@@ -326,7 +327,7 @@ export async function printContainerSettlement(settlement) {
             box-sizing: border-box !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-            font-family: 'Hind Siliguri', 'Kalpurush', 'Inter', system-ui, -apple-system, sans-serif !important;
+            font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', system-ui, -apple-system, sans-serif !important;
         }
         html, body {
             margin: 0 !important;

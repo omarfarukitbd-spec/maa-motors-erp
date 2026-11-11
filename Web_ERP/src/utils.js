@@ -13,7 +13,7 @@ export * from './utils/date-logic/date-converter.js';
 export * from './utils/business-logic.js';
 
 // 4. Printing Logic
-export { renderSharedPrintHeader as renderPrintHeader } from './shared/print/print-header.js';
+export { renderSharedPrintHeader as renderPrintHeader, renderSharedRepeatHeader as renderRepeatHeader } from './shared/print/print-header.js';
 export * from './utils/print-paginator.js';
 export * from './utils/smart-print-engine.js';
 

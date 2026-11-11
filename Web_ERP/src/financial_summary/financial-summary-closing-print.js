@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, escapeHTML, renderPrintHeader, safeRound } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, escapeHTML, renderPrintHeader, renderRepeatHeader, safeRound } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import Swal from 'sweetalert2';
 
@@ -50,16 +50,12 @@ export async function printClosingReport(closingData) {
     );
 
     const page1HeaderHtml = renderPrintHeader(settings, {
-        title: 'CUSTOMER CLOSING REPORT',
-        subtitle: `${reportTitle}`
+        title: 'গ্রাহক সমাপনী ক্লোজিং রিপোর্ট',
+        pageLabel: 'হিসাব কাল',
+        dateRangeStr: reportTitle
     });
 
-    const repeatHeaderHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
-            <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">CUSTOMER CLOSING REPORT <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
-            <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${reportTitle}</div>
-        </div>
-    `;
+    const repeatHeaderHtml = renderRepeatHeader('গ্রাহক সমাপনী ক্লোজিং রিপোর্ট', reportTitle);
 
     let totalDue = 0;
     const rowsArray = sortedCustomers.map((c, idx) => {
@@ -125,12 +121,12 @@ export async function printClosingReport(closingData) {
     `;
 
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top:20px; page-break-inside:avoid; break-inside:avoid;">
+        <div class="signature-last-page-block" style="margin-top:48px; page-break-inside:avoid; break-inside:avoid;">
             <div style="display:flex; justify-content:space-between; padding:0 30px;">
-                <div style="border-top:1.5px dashed #64748b; width:150px; text-align:center; font-size:10px; font-weight:700; color:#334155; padding-top:4px; font-family:'Hind Siliguri',sans-serif;">
+                <div style="border-top:1.2px dashed #64748b; width:165px; text-align:center; font-size:10.5px; font-weight:700; color:#1e293b; padding-top:6px; font-family:'Anek Bangla','Hind Siliguri',sans-serif;">
                     ক্যাশিয়ার / প্রস্তুতকারী<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Prepared By</span>
                 </div>
-                <div style="border-top:1.5px dashed #64748b; width:150px; text-align:center; font-size:10px; font-weight:700; color:#334155; padding-top:4px; font-family:'Hind Siliguri',sans-serif;">
+                <div style="border-top:1.2px dashed #64748b; width:165px; text-align:center; font-size:10.5px; font-weight:700; color:#1e293b; padding-top:6px; font-family:'Anek Bangla','Hind Siliguri',sans-serif;">
                     কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Authorized Signature</span>
                 </div>
             </div>

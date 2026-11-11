@@ -1,4 +1,4 @@
-import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-vTQ5Se06.js";import{_ as n,b as r,f as i,g as a,p as o,t as s}from"./print-header-B52wSREa.js";import"./customer-state-CWq9_U3f.js";import{n as c}from"./vendor-ui-n4g2UPZQ.js";import{i as l,r as u}from"./smart-print-engine-DAXrQHam.js";var d=e(c());async function f(e){let{customers:c}=e,f=e.selectedZone,p=c.filter(e=>(!f||(e.zone||``).trim()===f)&&(Number(e.totalDue)||0)>0);if(p.length===0)return d.default.fire(`তালিকায় কোনো বকেয়া কাস্টমার নেই`,`সিলেক্ট করা জোনে কোনো বকেয়াওয়ালা কাস্টমার পাওয়া যায়নি।`,`warning`);p.sort((e,t)=>(Number(t.totalDue)||0)-(Number(e.totalDue)||0));let m=await t.getAppSettings(),h=f?`${f} জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`:`সকল জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`,g=0;p.forEach(e=>g=r(g+(Number(e.totalDue)||0)));let _=o(),[v,y,b]=_.split(`-`),x=`${b}/${y}/${v}`,S=s(m,{title:f?`${f} TAGADA SHEET`:`FIELD TAGADA SHEET`,subtitle:`${h} • ${x} (${i(_)})`}),C=`
+import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-vTQ5Se06.js";import{_ as n,m as r,p as i,t as a,v as o,x as s}from"./print-header-Cd6Zst0y.js";import"./customer-state-DBHlIx5A.js";import{n as c}from"./vendor-ui-n4g2UPZQ.js";import{i as l,r as u}from"./smart-print-engine-CuFCu7l1.js";var d=e(c());async function f(e){let{customers:c}=e,f=e.selectedZone,p=c.filter(e=>(!f||(e.zone||``).trim()===f)&&(Number(e.totalDue)||0)>0);if(p.length===0)return d.default.fire(`তালিকায় কোনো বকেয়া কাস্টমার নেই`,`সিলেক্ট করা জোনে কোনো বকেয়াওয়ালা কাস্টমার পাওয়া যায়নি।`,`warning`);p.sort((e,t)=>(Number(t.totalDue)||0)-(Number(e.totalDue)||0));let m=await t.getAppSettings(),h=f?`${f} জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`:`সকল জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার`,g=0;p.forEach(e=>g=s(g+(Number(e.totalDue)||0)));let _=r(),[v,y,b]=_.split(`-`),x=`${b}/${y}/${v}`,S=a(m,{title:f?`${f} TAGADA SHEET`:`FIELD TAGADA SHEET`,subtitle:`${h} • ${x} (${i(_)})`}),C=`
         <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
             <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">FIELD TAGADA SHEET <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
             <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${h}</div>
@@ -6,13 +6,13 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-vTQ5
     `,w=p.map((e,t)=>{let r=t%2==0?`background: #ffffff;`:`background: #f8fafc;`,i=Number(e.totalDue)||0;return`
             <tr class="print-row-no-break" style="${r}">
                 <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 11px; font-family: 'Inter', sans-serif;">${t+1}</td>
-                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 11px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${a(e.accountNo||`-`)}</td>
+                <td style="text-align:center; vertical-align:middle; border: 1px solid #cbd5e1; padding: 6px 4px; font-size: 11px; font-weight: 800; font-family: 'Inter', monospace; color: #0284c7;">${n(e.accountNo||`-`)}</td>
                 <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 11px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #0f172a;">
-                    <strong>${a(e.name)}</strong><br>
-                    <span style="font-size:10px; color:#475569;">${a(e.phone||`-`)}</span>
+                    <strong>${n(e.name)}</strong><br>
+                    <span style="font-size:10px; color:#475569;">${n(e.phone||`-`)}</span>
                 </td>
-                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #334155;">${a(e.address||`-`)}</td>
-                <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 11px; font-weight: 900; color: #dc2626; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${n(i)}</td>
+                <td style="text-align:left; vertical-align:middle; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 10.5px; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; line-height: 1.25; color: #334155;">${n(e.address||`-`)}</td>
+                <td style="text-align:right; vertical-align:middle; border: 1px solid #cbd5e1; padding: 6px 6px; font-size: 11px; font-weight: 900; color: #dc2626; font-family: 'Inter', sans-serif; white-space: nowrap;">৳ ${o(i)}</td>
                 <td style="border: 1px solid #cbd5e1; padding: 6px; width: 110px;"></td>
                 <td style="border: 1px solid #cbd5e1; padding: 6px; width: 90px;"></td>
             </tr>
@@ -25,7 +25,7 @@ import{i as e}from"./rolldown-runtime-Dd_uD5pT.js";import{s as t}from"./dao-vTQ5
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 12px;">
                     <span style="color: #64748b; font-weight: 700;">মোট ফিল্ড বকেয়া:</span>
-                    <strong style="color: #dc2626; font-size: 15px; font-weight: 900;">৳ ${n(g)}</strong>
+                    <strong style="color: #dc2626; font-size: 15px; font-weight: 900;">৳ ${o(g)}</strong>
                 </div>
             </div>
         </div>

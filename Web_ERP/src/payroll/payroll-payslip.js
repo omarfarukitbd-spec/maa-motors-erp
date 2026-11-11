@@ -1,7 +1,7 @@
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
-import { formatAmountWithComma, formatAppDate, escapeHTML, getTodayLocalDateString } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, escapeHTML, getTodayLocalDateString, renderPrintHeader } from '../utils.js';
 import { getActivePayrollState } from './payroll-actions.js';
 
 /**
@@ -25,11 +25,6 @@ export async function printEmployeePaySlip(sectionId, itemId) {
         console.warn('Settings fetch error:', e);
     }
 
-    const shopName = escapeHTML(settings.shopName || "M/S. MAA-MOTOR'S");
-    const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");
-    const shopAddress = escapeHTML(settings.shopAddress || "Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road");
-    const shopPhone = escapeHTML(settings.shopPhone || "01819-397669, 01815-707934");
-    const shopLogo = settings.shopLogo || "/shop-official-logo.jpg";
     const today = formatAppDate(getTodayLocalDateString());
     const monthYear = state.monthYear || '';
 
@@ -40,22 +35,12 @@ export async function printEmployeePaySlip(sectionId, itemId) {
     const netWords = numberToBanglaWords(net);
 
     const slipHtml = `
-        <div style="width: 100%; max-width: 500px; margin: 0 auto; padding: 15px; border: 2px solid #0f172a; border-radius: 8px; font-family: 'Hind Siliguri', 'Inter', sans-serif !important; color: #0f172a; background: #ffffff;">
-            <!-- Header -->
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 8px; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <img src="${shopLogo}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1;" />
-                    <div>
-                        <div style="font-size: 15px; font-weight: 900; color: #0284c7; text-transform: uppercase;">${shopName}</div>
-                        <div style="font-size: 8px; color: #475569;">মোবাইল: ${shopPhone}</div>
-                        <div style="font-size: 7.5px; color: #64748b;">${shopAddress}</div>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <span style="font-size: 9px; font-weight: 900; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; border: 1px solid #bae6fd;">বেতন ভাউচার</span>
-                    <div style="font-size: 8px; color: #64748b; margin-top: 3px;">তারিখ: <strong>${today}</strong></div>
-                    <div style="font-size: 8px; color: #0369a1; font-weight: bold;">মাস: ${monthYear}</div>
-                </div>
+        <div style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 14mm; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important; color: #0f172a; background: #ffffff; box-sizing: border-box;">
+            ${renderPrintHeader(settings, { title: 'কর্মী বেতন ভাউচার', pageLabel: 'মাস', pageNo: monthYear || today })}
+            <div style="border: 1.5px solid #0f172a; border-radius: 8px; padding: 14px; background: #ffffff;">
+            <div style="display:flex; justify-content:space-between; font-size:9px; color:#475569; margin-bottom:8px; padding-bottom:4px; border-bottom:1px dashed #cbd5e1;">
+                <span>প্রিন্ট তারিখ: <strong>${today}</strong></span>
+                <span>বেতনের মাস: <strong style="color:#0369a1;">${escapeHTML(monthYear || today)}</strong></span>
             </div>
 
             <!-- Employee Info -->
@@ -106,30 +91,31 @@ export async function printEmployeePaySlip(sectionId, itemId) {
             </div>
 
             <!-- Signatures with Empty Seal Boxes for Offline Stamping -->
-            <div style="display: flex; justify-content: space-between; padding: 0 20px; margin-top: 20px;">
-                <div style="width: 140px; text-align: center;">
-                    <div style="border: 1px dashed #94a3b8; height: 34px; border-radius: 4px; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; font-size: 7px; color: #94a3b8;">
+            <div style="display: flex; justify-content: space-between; padding: 0 24px; margin-top: 48px;">
+                <div style="width: 170px; text-align: center;">
+                    <div style="border: 1px dashed #94a3b8; height: 36px; border-radius: 4px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; font-size: 7.5px; color: #94a3b8;">
                         (কর্মীর স্বাক্ষর / টিপসহি)
                     </div>
-                    <div style="border-top: 1px dashed #475569; padding-top: 3px; font-size: 8.5px; font-weight: bold;">
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 5px; font-size: 9.5px; font-weight: bold; color: #1e293b;">
                         কর্মীর স্বাক্ষর ও প্রাপ্তিস্বীকার
                     </div>
                 </div>
-                <div style="width: 140px; text-align: center;">
-                    <div style="border: 1px dashed #94a3b8; height: 34px; border-radius: 4px; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; font-size: 7px; color: #94a3b8;">
+                <div style="width: 170px; text-align: center;">
+                    <div style="border: 1px dashed #94a3b8; height: 36px; border-radius: 4px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; font-size: 7.5px; color: #94a3b8;">
                         (অফিস সিলমোহর)
                     </div>
-                    <div style="border-top: 1px dashed #475569; padding-top: 3px; font-size: 8.5px; font-weight: bold;">
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 5px; font-size: 9.5px; font-weight: bold; color: #1e293b;">
                         অনুমোদন ও অফিস সিলমোহর
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     `;
 
     const extraCss = `
-        * { font-family: 'Hind Siliguri', 'Inter', sans-serif !important; }
-        @page { size: auto; margin: 10mm !important; }
+        * { font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important; }
+        @page { size: A4 portrait; margin: 0 !important; }
     `;
 
     await printViaIframe(slipHtml, extraCss, `বেতন_ভাউচার_${itm.name}_${monthYear}`);

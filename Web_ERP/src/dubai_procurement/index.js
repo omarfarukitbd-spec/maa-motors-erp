@@ -14,4 +14,8 @@ export { calculateBDExpenseSummary, calculateConsolidatedCapEx } from './dubai-b
 export { DubaiPortDutyDAO } from './dubai-port-duty-dao.js';
 export { printDubaiPortDutyBook } from './dubai-port-duty-print.js';
 export { calculatePortDutySummary, calculateMasterProjectCapEx } from './dubai-port-duty-calc.js';
+export { initDubaiLCModule, cleanupDubaiLC } from './dubai-lc-ui.js';
+export { DubaiLCDAO } from './dubai-lc-dao.js';
+export { printDubaiLCBook } from './dubai-lc-print.js';
+export { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx } from './dubai-lc-calc.js';
 

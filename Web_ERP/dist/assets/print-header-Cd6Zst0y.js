@@ -14,7 +14,14 @@ import"./rolldown-runtime-Dd_uD5pT.js";import{n as e}from"./vendor-ui-n4g2UPZQ.j
                 <td class="py-4 px-4"><div class="h-3 bg-slate-800/60 rounded-md w-20"></div></td>
                 <td class="py-4 px-4 text-right"><div class="h-4 bg-slate-800 rounded-md w-16 ml-auto"></div></td>
                 <td class="py-4 px-4 text-center"><div class="h-7 bg-slate-800/80 rounded-lg w-24 mx-auto"></div></td>
-            </tr>`;e.innerHTML=n}function y(){let e=()=>{let e=navigator.onLine,t=document.getElementById(`network-sync-badge`);t.innerHTML=e?`<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-emerald-400">অনলাইন</span>`:`<span class="w-2.5 h-2.5 rounded-full bg-red-500 block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-red-400">অফলাইন</span>`,t.className=e?`w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm cursor-default`:`w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 shadow-sm cursor-default`,t.title=e?`অনলাইন — Sync Active`:`অফলাইন — Local Mode`};window.addEventListener(`online`,()=>{e(),h(`অনলাইন কানেকশন পুনরুদ্ধার হয়েছে!`,`success`,`নেটওয়ার্ক`)}),window.addEventListener(`offline`,()=>{e(),h(`ইন্টারনেট সংযোগ বিচ্ছিন্ন! অফলাইন মোড সক্রিয়।`,`warning`,`নেটওয়ার্ক`)}),e()}function b(e,r=`export.xlsx`){let i=document.getElementById(e);if(!i)return h(`টেবিল ডাটা পাওয়া যায়নি!`,`warning`,`এক্সপোর্ট`);try{let e=t.book_new(),a=t.table_to_sheet(i,{raw:!0});t.book_append_sheet(e,a,`Sheet1`),n(e,r),h(`এক্সেল ডাটা সফলভাবে ডাউনলোড হয়েছে!`,`success`,`এক্সপোর্ট`)}catch(e){console.error(`Excel Export Error:`,e),h(`এক্সপোর্ট করতে সমস্যা হয়েছে!`,`error`,`এক্সপোর্ট`)}}function x(e){if(!e)return;let t=Array.from(e.querySelectorAll(`img`)),n=0;if(t.length===0){setTimeout(()=>window.print(),100);return}t.forEach(e=>{e.complete?(n++,n===t.length&&setTimeout(()=>window.print(),100)):e.onload=e.onerror=()=>{n++,n===t.length&&setTimeout(()=>window.print(),100)}})}typeof window<`u`&&(window.exportTableToExcel=b);function S(){let e=()=>{if(!window.AppState||!window.AppState.permissions)return;let e=window.AppState.permissions;document.querySelectorAll(`[data-perm]`).forEach(t=>{let n=t.getAttribute(`data-perm`);e[n]===!1?(t.style.cssText=`display: none !important;`,t.classList.contains(`nav-item`)||(t.innerHTML=``)):t.style.cssText=``})};e(),new MutationObserver(()=>{e()}).observe(document.body,{childList:!0,subtree:!0})}function C(e){if(e==null)return`০০০১`;let t=String(e).trim(),n=[`০`,`১`,`২`,`৩`,`৪`,`৫`,`৬`,`৭`,`৮`,`৯`];return/^\d+$/.test(t)?(t.length<4?t.padStart(4,`0`):t).replace(/\d/g,e=>n[Number(e)]):t.replace(/\d/g,e=>n[Number(e)])}function w(e,t=`#ffdf00`,n=`#ffffff`){if(!e)return``;let i=e.match(/^(.*?)\s*(\(.*?\))\s*$/);return i?`<span style="color: ${t} !important;">${r(i[1].trim())}</span> <span style="color: ${n} !important; font-size: 0.88em; font-weight: 700;">${r(i[2].trim())}</span>`:`<span style="color: ${t} !important;">${r(e)}</span>`}function T(e={},t={}){let n={},i={};e&&(e.shopName!==void 0||e.shopLogo!==void 0||e.shopPhone!==void 0||e.shopAddress!==void 0)?(n=e,i=t||{}):t&&(t.shopName!==void 0||t.shopLogo!==void 0||t.shopPhone!==void 0||t.shopAddress!==void 0)?(n=t,i=e||{}):(n=e||{},i=t||{});let a=i.title||`ডুবাই টাকা পাঠানোর হিসাব বুক`,o=i.pageLabel||`রেজিস্টার খাতা পাতা`,s=C(i.pageNo||i.sheetNo||i.invoiceNo||i.subtitle||`০০০১`),c=!!i.hideRightPill,l=n.shopName||`মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)`,u=n.shopOwner||`মোহাম্মদ এমরান (Mohammed Amran)`,d=r(n.shopAddress||`দোকান নং-২২, রহমান টাওয়ার, ১ নং রেইল গেইট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম।`),f=r(n.shopPhone||`01819-397669, 01815-707934`),p=n.shopLogo||`/shop-official-logo.png`,m=w(l,`#ffdf00`,`#ffffff`),h=w(u,`#ffdf00`,`#ffffff`),g=/[^\x00-\x7F]/.test(a)?`'Anek Bangla', 'Hind Siliguri', sans-serif !important;`:`'Inter', 'Segoe UI', Arial, sans-serif !important;`,_=a.length>25?`10px`:a.length>18?`11px`:`11.5px`;return`
+            </tr>`;e.innerHTML=n}function y(){let e=()=>{let e=navigator.onLine,t=document.getElementById(`network-sync-badge`);t.innerHTML=e?`<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-emerald-400">অনলাইন</span>`:`<span class="w-2.5 h-2.5 rounded-full bg-red-500 block"></span><span class="hidden md:inline text-[10px] font-black uppercase text-red-400">অফলাইন</span>`,t.className=e?`w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm cursor-default`:`w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1 md:gap-1.5 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 shadow-sm cursor-default`,t.title=e?`অনলাইন — Sync Active`:`অফলাইন — Local Mode`};window.addEventListener(`online`,()=>{e(),h(`অনলাইন কানেকশন পুনরুদ্ধার হয়েছে!`,`success`,`নেটওয়ার্ক`)}),window.addEventListener(`offline`,()=>{e(),h(`ইন্টারনেট সংযোগ বিচ্ছিন্ন! অফলাইন মোড সক্রিয়।`,`warning`,`নেটওয়ার্ক`)}),e()}function b(e,r=`export.xlsx`){let i=document.getElementById(e);if(!i)return h(`টেবিল ডাটা পাওয়া যায়নি!`,`warning`,`এক্সপোর্ট`);try{let e=t.book_new(),a=t.table_to_sheet(i,{raw:!0});t.book_append_sheet(e,a,`Sheet1`),n(e,r),h(`এক্সেল ডাটা সফলভাবে ডাউনলোড হয়েছে!`,`success`,`এক্সপোর্ট`)}catch(e){console.error(`Excel Export Error:`,e),h(`এক্সপোর্ট করতে সমস্যা হয়েছে!`,`error`,`এক্সপোর্ট`)}}function x(e){if(!e)return;let t=Array.from(e.querySelectorAll(`img`)),n=0;if(t.length===0){setTimeout(()=>window.print(),100);return}t.forEach(e=>{e.complete?(n++,n===t.length&&setTimeout(()=>window.print(),100)):e.onload=e.onerror=()=>{n++,n===t.length&&setTimeout(()=>window.print(),100)}})}typeof window<`u`&&(window.exportTableToExcel=b);function S(){let e=()=>{if(!window.AppState||!window.AppState.permissions)return;let e=window.AppState.permissions;document.querySelectorAll(`[data-perm]`).forEach(t=>{let n=t.getAttribute(`data-perm`);e[n]===!1?(t.style.cssText=`display: none !important;`,t.classList.contains(`nav-item`)||(t.innerHTML=``)):t.style.cssText=``})};e(),new MutationObserver(()=>{e()}).observe(document.body,{childList:!0,subtree:!0})}function C(e){if(e==null)return``;let t=String(e).trim(),n=[`০`,`১`,`২`,`৩`,`৪`,`৫`,`৬`,`৭`,`৮`,`৯`];return/^\d+$/.test(t)?(t.length<4?t.padStart(4,`0`):t).replace(/\d/g,e=>n[Number(e)]):t.replace(/\d/g,e=>n[Number(e)])}function w(e){let t=e.pageNo||e.sheetNo||e.invoiceNo;if(t)return{mode:`pill`,label:e.pageLabel||`রেজিস্টার খাতা পাতা`,value:C(t)};let n=e.dateRangeStr?String(e.dateRangeStr).trim():``;if(n){let t=e.pageLabel||`সময়কাল`,r=n;return/^তারিখ\s*[:ঃ]/i.test(r)?(e.pageLabel||(t=`তারিখ`),r=r.replace(/^তারিখ\s*[:ঃ]\s*/i,``).trim()):/^সময়কাল\s*[:ঃ]/i.test(r)&&(e.pageLabel||(t=`সময়কাল`),r=r.replace(/^সময়কাল\s*[:ঃ]\s*/i,``).trim()),{mode:`pill`,label:t,value:C(r)}}if(e.subtitle)return{mode:`subtitle`,label:``,value:C(e.subtitle)};let r=new Date,i=`${String(r.getDate()).padStart(2,`0`)}/${String(r.getMonth()+1).padStart(2,`0`)}/${r.getFullYear()}`;return{mode:`pill`,label:e.pageLabel||`তারিখ`,value:C(i)}}function T(e,t=``){let n=r(e||`হিসাব বিবরণী`),i=t?r(C(t)):``;return`
+        <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, #eff6ff 0%, #ffffff 100%); border-left:4px solid #024ea2; border-bottom:2px solid #024ea2; border-radius:4px; padding:4px 10px; margin-bottom:8px; font-family:'Anek Bangla','Hind Siliguri','Inter',sans-serif !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;">
+            <div style="font-size:12px; font-weight:800; color:#002d72;">
+                মেসার্স মা মোটরস • ${n} <span style="font-size:9.5px; color:#64748b; font-weight:600;">(চলমান পাতা)</span>
+            </div>
+            ${i?`<div style="font-size:9.5px; font-weight:700; color:#334155;">${i}</div>`:``}
+        </div>
+    `}function E(e,t=`#ffdf00`,n=`#ffffff`){if(!e)return``;let i=e.match(/^(.*?)\s*(\(.*?\))\s*$/);return i?`<span style="color: ${t} !important;">${r(i[1].trim())}</span> <span style="color: ${n} !important; font-size: 0.88em; font-weight: 700;">${r(i[2].trim())}</span>`:`<span style="color: ${t} !important;">${r(e)}</span>`}function D(e={},t={}){let n={},i={};e&&(e.shopName!==void 0||e.shopLogo!==void 0||e.shopPhone!==void 0||e.shopAddress!==void 0)?(n=e,i=t||{}):t&&(t.shopName!==void 0||t.shopLogo!==void 0||t.shopPhone!==void 0||t.shopAddress!==void 0)?(n=t,i=e||{}):(n=e||{},i=t||{});let a=i.title||`ডুবাই টাকা পাঠানোর হিসাব বুক`,o=r(a),s=!!i.hideRightPill,c=w(i),l=n.shopName||`মেসার্স মা মোটরস (M/S. MAA-MOTOR'S)`,u=n.shopOwner||`মোহাম্মদ এমরান (Mohammed Amran)`,d=r(n.shopAddress||`দোকান নং-২২, রহমান টাওয়ার, ১ নং রেইল গেইট, মুরাদপুর, হাটহাজারী রোড, চট্টগ্রাম।`),f=r(n.shopPhone||`01819-397669, 01815-707934`),p=n.shopLogo||`/shop-official-logo.png`,m=E(l,`#ffdf00`,`#ffffff`),h=E(u,`#ffdf00`,`#ffffff`),g=/[^\x00-\x7F]/.test(a)?`'Anek Bangla', 'Hind Siliguri', sans-serif !important;`:`'Inter', 'Segoe UI', Arial, sans-serif !important;`,_=a.length>32?`9.5px`:a.length>25?`10px`:a.length>18?`11px`:`11.5px`,v=c.value.length>22?`9px`:c.value.length>14?`10px`:`11px`,y=c.value.length>22?`1.5px 7px`:`1px 9px`;return`
         <div class="mother-print-header" style="
             background: linear-gradient(90deg, #024ea2 0%, #0056b8 36%, #00459e 70%, #002d72 100%) !important;
             border-radius: 14px;
@@ -90,7 +97,7 @@ import"./rolldown-runtime-Dd_uD5pT.js";import{n as e}from"./vendor-ui-n4g2UPZQ.j
                 <div style="width: 1.5px; height: 50px; background: rgba(255, 255, 255, 0.45); margin: 0 4px; flex-shrink: 0;"></div>
 
                 <!-- Far-Right: Dynamic Category Badge & Sheet Indicator (Image 3) -->
-                ${c?``:`
+                ${s?``:`
                 <div style="text-align: right; flex-shrink: 0; min-width: 145px;">
                     <!-- Category Title in White Pill with Red Border -->
                     <div style="
@@ -107,29 +114,35 @@ import"./rolldown-runtime-Dd_uD5pT.js";import{n as e}from"./vendor-ui-n4g2UPZQ.j
                         white-space: nowrap;
                         font-family: ${g};
                     ">
-                        ${a}
+                        ${o}
                     </div>
 
                     <!-- Register Page / Sheet Number Indicator -->
+                    ${c.mode===`pill`?`
                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 3.5px;">
                         <span style="color: #ffffff !important; font-size: 10px; font-weight: 700 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-family: 'Anek Bangla', sans-serif !important; white-space: nowrap;">
-                            ${o}:
+                            ${r(c.label)}:
                         </span>
                         <span style="
                             background: #ffdf00 !important;
                             color: #000000 !important;
                             border-radius: 12px;
-                            padding: 1px 9px;
-                            font-size: 11px;
+                            padding: ${y};
+                            font-size: ${v};
                             font-weight: 900 !important;
                             font-family: 'Anek Bangla', 'Inter', monospace !important;
                             line-height: 1.2;
                             white-space: nowrap;
                             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
                         ">
-                            ${s}
+                            ${r(c.value)}
                         </span>
                     </div>
+                    `:`
+                    <div style="color: #ffdf00 !important; font-size: 9px; font-weight: 700 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-family: 'Anek Bangla', sans-serif !important; white-space: nowrap; margin-top: 3.5px;">
+                        ${r(c.value)}
+                    </div>
+                    `}
                 </div>
                 `}
             </div>
@@ -171,4 +184,4 @@ import"./rolldown-runtime-Dd_uD5pT.js";import{n as e}from"./vendor-ui-n4g2UPZQ.j
                 </div>
             </div>
         </div>
-    `}export{i as _,S as a,s as b,x as c,l as d,p as f,r as g,d as h,y as i,f as l,u as m,b as n,v as o,c as p,_ as r,h as s,T as t,m as u,o as v,a as y};
+    `}export{r as _,y as a,a as b,h as c,m as d,l as f,d as g,u as h,_ as i,x as l,c as m,T as n,S as o,p,b as r,v as s,D as t,f as u,i as v,s as x,o as y};

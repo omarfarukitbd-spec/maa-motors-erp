@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { SettingsDAO } from './dao.js';
-import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, renderPrintHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound, toDBDate, escapeHTML } from './utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, renderPrintHeader, renderRepeatHeader, triggerUniversalPrint, getTodayLocalDateString, paginateStatementRows, safeRound, toDBDate, escapeHTML } from './utils.js';
 import { smartPaginateStatement, printViaIframe } from './utils/smart-print-engine.js';
 import { renderScannedMemoPrintPage } from './shared/print/memo-print-page.js';
 
@@ -78,13 +78,12 @@ function generateRowsArray(initialDue, docs) {
 
 function getSharedHtmlTemplates(customer, totalBill, totalPaid, totalDue, running, settings, title, subtitle, dateRangeStr) {
     const cleanCustomerName = (customer.name || '').replace(/^\[.*?\]\s*/, '').trim();
-    const page1HeaderHtml = renderPrintHeader(settings, { title, subtitle, dateRangeStr });
-    const repeatHeaderHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
-            <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">${title} <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
-            <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${dateRangeStr || subtitle}</div>
-        </div>
-    `;
+    const page1HeaderHtml = renderPrintHeader(settings, {
+        title,
+        pageLabel: 'সময়কাল',
+        dateRangeStr: dateRangeStr || subtitle || 'সকল লেনদেন'
+    });
+    const repeatHeaderHtml = renderRepeatHeader(title, dateRangeStr || subtitle || 'সকল লেনদেন');
 
     const page1ExtraHtml = `
         <div style="position: relative; display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; margin-bottom: 16px; align-items: stretch; margin-top: 10px;">
@@ -137,10 +136,10 @@ function getSharedHtmlTemplates(customer, totalBill, totalPaid, totalDue, runnin
     `;
 
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 40px; page-break-inside: avoid; break-inside: avoid;">
+        <div class="signature-last-page-block" style="margin-top: 48px; page-break-inside: avoid; break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
             <div style="display: flex; justify-content: space-between; padding: 0 30px;">
-                <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">গ্রাহকের স্বাক্ষর<br><span style="font-size:8px; font-weight:normal;">Customer Signature</span></div>
-                <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:8px; font-weight:normal;">Authorized Signature</span></div>
+                <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">গ্রাহকের স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Customer Signature</span></div>
+                <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Authorized Signature</span></div>
             </div>
         </div>
     `;
@@ -278,7 +277,7 @@ export async function printStatement(currentCustomerInfo, currentOpeningBalance,
         const totalDue = `৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '(Adv)' : ''}`;
 
         const { page1HeaderHtml, repeatHeaderHtml, page1ExtraHtml, tableColHeaderHtml, signatureHtml } = getSharedHtmlTemplates(
-            currentCustomerInfo, totalBill, totalPaid, totalDue, running, settings, 'CUSTOMER KHATIYAN', 'কাস্টমার বকেয়া খতিয়ান', dateRangeStr
+            currentCustomerInfo, totalBill, totalPaid, totalDue, running, settings, 'গ্রাহক লেজার হিসাব বিবরণী', 'কাস্টমার বকেয়া খতিয়ান', dateRangeStr
         );
 
         const customNoteHtml = customNote && customNote.trim() ? `
@@ -374,7 +373,7 @@ export async function renderPublicStatementView(customerId) {
         currentPublicPrintData = { customer, docs, settings, initialDue, billSum, paidSum, lessSum, running };
 
         const { page1HeaderHtml, page1ExtraHtml } = getSharedHtmlTemplates(
-            customer, `৳ ${formatAmountWithComma(billSum)}`, `৳ ${formatAmountWithComma(paidSum)}`, `৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '(Adv)' : ''}`, running, settings, 'STATEMENT SUMMARY', 'সকল লেনদেন', 'সকল লেনদেন'
+            customer, `৳ ${formatAmountWithComma(billSum)}`, `৳ ${formatAmountWithComma(paidSum)}`, `৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '(Adv)' : ''}`, running, settings, 'গ্রাহক লেজার হিসাব বিবরণী', 'সকল লেনদেন', 'সকল লেনদেন'
         );
 
         publicContainer.innerHTML = `
@@ -390,9 +389,9 @@ export async function renderPublicStatementView(customerId) {
                         <thead><tr style="background:#f1f5f9; border-bottom:1.5px solid #0f172a;"><th style="width:12%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Date</th><th style="width:40%; padding:6px 8px; text-align:left; font-size:9px; font-weight:900;">Description</th><th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Debit</th><th style="width:15%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Credit</th><th style="width:18%; padding:6px 8px; text-align:right; font-size:9px; font-weight:900;">Balance</th></tr></thead>
                         <tbody style="font-size: 10px;">${rowsArray.map(r => r.html || r).join('')}</tbody>
                     </table>
-                    <div style="margin-top: 40px; display: flex; justify-content: space-between; padding: 0 30px;">
-                        <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">গ্রাহকের স্বাক্ষর</div>
-                        <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
+                    <div style="margin-top: 48px; display: flex; justify-content: space-between; padding: 0 30px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">গ্রাহকের স্বাক্ষর</div>
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
                 </div>
             </div>`;
@@ -415,7 +414,7 @@ window.printPublicStatement = async () => {
 
     const { rowsArray } = generateRowsArray(initialDue, docs);
     const { page1HeaderHtml, repeatHeaderHtml, page1ExtraHtml, tableColHeaderHtml, signatureHtml } = getSharedHtmlTemplates(
-        customer, `৳ ${formatAmountWithComma(billSum)}`, `৳ ${formatAmountWithComma(paidSum)}`, `৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '(Adv)' : ''}`, running, settings, 'STATEMENT SUMMARY', 'সকল লেনদেন', 'সকল লেনদেন'
+        customer, `৳ ${formatAmountWithComma(billSum)}`, `৳ ${formatAmountWithComma(paidSum)}`, `৳ ${formatAmountWithComma(Math.abs(running))} ${running < 0 ? '(Adv)' : ''}`, running, settings, 'গ্রাহক লেজার হিসাব বিবরণী', 'সকল লেনদেন', 'সকল লেনদেন'
     );
 
     const todayStr = getTodayLocalDateString();

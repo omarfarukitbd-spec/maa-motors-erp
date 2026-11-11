@@ -123,6 +123,10 @@ function renderBDExpenseView(container) {
                         <i class="fa-solid fa-ship text-indigo-400 text-xs"></i>
                         <span>পোর্ট ও ডিউটি বিল</span>
                     </button>
+                    <button type="button" id="btn-bd-to-lc" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="কন্টেইনার এলসি ও ব্যাংক খরচ খাতায় যান">
+                        <i class="fa-solid fa-file-contract text-cyan-400 text-xs"></i>
+                        <span>এলসি ও ব্যাংক হিসাব</span>
+                    </button>
                     <button type="button" id="btn-print-bd-expense" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
                         <i class="fa-solid fa-print text-slate-400 text-xs"></i>
                         <span>A4 প্রিন্ট / ভাউচার</span>
@@ -291,6 +295,12 @@ function bindBDExpenseEvents() {
     bind('btn-bd-to-port', () => {
         if (window.switchDubaiProcurementView) {
             window.switchDubaiProcurementView('port-duty');
+        }
+    });
+
+    bind('btn-bd-to-lc', () => {
+        if (window.switchDubaiProcurementView) {
+            window.switchDubaiProcurementView('lc-bills');
         }
     });
 

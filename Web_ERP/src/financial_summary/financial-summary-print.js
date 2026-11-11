@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, renderPrintHeader, formatAppDate, getDayOfWeekBangla, safeRound, getTodayLocalDateString, toDBDate } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, renderPrintHeader, renderRepeatHeader, formatAppDate, getDayOfWeekBangla, safeRound, getTodayLocalDateString, toDBDate } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
 import Swal from 'sweetalert2';
@@ -39,18 +39,17 @@ export async function printCustomerCollectionRegister(summaryData) {
 
     const page1HeaderHtml = `
         ${renderPrintHeader(settings, {
-            title: 'CUSTOMER COLLECTION REGISTER',
-            subtitle: `${reportTitle} • ${dateTitle}`
+            title: 'দৈনিক কালেকশন রেজিস্টার',
+            pageLabel: 'সময়কাল',
+            dateRangeStr: dateTitle
         })}
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid #0284c7; border-radius:4px; padding:4px 10px; margin-bottom:6px; font-family:'Anek Bangla','Hind Siliguri',sans-serif; font-size:10px; color:#0f172a;">
+            <strong>বিবরণ:</strong> ${reportTitle}
+        </div>
         ${bankSummaryHtml}
     `;
 
-    const repeatHeaderHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
-            <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">CUSTOMER COLLECTION REGISTER <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
-            <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${dateTitle}</div>
-        </div>
-    `;
+    const repeatHeaderHtml = renderRepeatHeader('দৈনিক কালেকশন রেজিস্টার', dateTitle);
 
     // Defensive chronological sort: earliest date first, latest date last
     const sortedCollections = [...customerCollections].sort((a, b) => {
@@ -129,15 +128,15 @@ export async function printCustomerCollectionRegister(summaryData) {
     `;
 
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 40px; page-break-inside: avoid; break-inside: avoid;">
+        <div class="signature-last-page-block" style="margin-top: 48px; page-break-inside: avoid; break-inside: avoid;">
             <div style="display: flex; justify-content: space-between; padding: 0 20px;">
-                <div style="border-top: 1.5px dashed #64748b; width: 140px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; padding-top: 4px; font-family: 'Hind Siliguri', sans-serif;">
+                <div style="border-top: 1.2px dashed #64748b; width: 150px; text-align: center; font-size: 10.5px; font-weight: 700; color: #1e293b; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                     ক্যাশিয়ারের স্বাক্ষর
                 </div>
-                <div style="border-top: 1.5px dashed #64748b; width: 140px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; padding-top: 4px; font-family: 'Hind Siliguri', sans-serif;">
+                <div style="border-top: 1.2px dashed #64748b; width: 150px; text-align: center; font-size: 10.5px; font-weight: 700; color: #1e293b; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                     ম্যানেজারের স্বাক্ষর
                 </div>
-                <div style="border-top: 1.5px dashed #64748b; width: 140px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; padding-top: 4px; font-family: 'Hind Siliguri', sans-serif;">
+                <div style="border-top: 1.2px dashed #64748b; width: 150px; text-align: center; font-size: 10.5px; font-weight: 700; color: #1e293b; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                     প্রোপ্রাইটরের স্বাক্ষর
                 </div>
             </div>
@@ -170,16 +169,12 @@ export async function printDayByDayMonthlyRegister(summaryData) {
     const dateTitle = `সময়কাল: ${formatAppDate(startDate)} থেকে ${formatAppDate(endDate)}`;
 
     const page1HeaderHtml = renderPrintHeader(settings, {
-        title: 'MONTHLY FINANCIAL SUMMARY & AUDIT',
-        subtitle: `তারিখভিত্তিক মাসিক আর্থিক বিবরণী • ${dateTitle}`
+        title: 'মাসিক আর্থিক সারসংক্ষেপ ও অডিট',
+        pageLabel: 'সময়কাল',
+        dateRangeStr: dateTitle
     });
 
-    const repeatHeaderHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
-            <div style="font-size:14px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">MONTHLY FINANCIAL AUDIT <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span></div>
-            <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">${dateTitle}</div>
-        </div>
-    `;
+    const repeatHeaderHtml = renderRepeatHeader('মাসিক আর্থিক সারসংক্ষেপ ও অডিট', dateTitle);
 
     // Defensive chronological sort: Day 1 to Day 30/31
     const sortedDayByDay = [...dayByDaySummary].sort((a, b) => 
@@ -243,15 +238,15 @@ export async function printDayByDayMonthlyRegister(summaryData) {
     `;
 
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 40px; page-break-inside: avoid; break-inside: avoid;">
+        <div class="signature-last-page-block" style="margin-top: 48px; page-break-inside: avoid; break-inside: avoid;">
             <div style="display: flex; justify-content: space-between; padding: 0 20px;">
-                <div style="border-top: 1.5px dashed #64748b; width: 140px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; padding-top: 4px; font-family: 'Hind Siliguri', sans-serif;">
+                <div style="border-top: 1.2px dashed #64748b; width: 150px; text-align: center; font-size: 10.5px; font-weight: 700; color: #1e293b; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                     হিসাবরক্ষকের স্বাক্ষর
                 </div>
-                <div style="border-top: 1.5px dashed #64748b; width: 140px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; padding-top: 4px; font-family: 'Hind Siliguri', sans-serif;">
+                <div style="border-top: 1.2px dashed #64748b; width: 150px; text-align: center; font-size: 10.5px; font-weight: 700; color: #1e293b; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                     ম্যানেজারের স্বাক্ষর
                 </div>
-                <div style="border-top: 1.5px dashed #64748b; width: 140px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; padding-top: 4px; font-family: 'Hind Siliguri', sans-serif;">
+                <div style="border-top: 1.2px dashed #64748b; width: 150px; text-align: center; font-size: 10.5px; font-weight: 700; color: #1e293b; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                     স্বত্বাধিকারীর স্বাক্ষর
                 </div>
             </div>
