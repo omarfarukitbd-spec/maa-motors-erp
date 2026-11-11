@@ -14,6 +14,7 @@ import { calculateConsignmentSummary } from './dubai-remittance-calc.js';
 import { calculatePortDutySummary } from './dubai-port-duty-calc.js';
 import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
 import { printDubaiLCBook } from './dubai-lc-print.js';
+import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
 import {
     openDeliveryDateModal,
     openAddPaymentLineModal,
@@ -134,55 +135,33 @@ function suggestNextContainerNumber() {
 }
 
 function renderLCView(container) {
+    const actionButtonsHtml = `
+        <button type="button" id="btn-print-lc-book" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-solid fa-print text-slate-400 text-xs"></i>
+            <span>A4 প্রিন্ট / ভাউচার</span>
+        </button>
+    `;
+
     container.innerHTML = `
         <div class="flex flex-col gap-4 font-bn w-full max-w-6xl mx-auto px-2 sm:px-4 pb-20">
-            <!-- Top View Switcher & Action Bar (Clean Bengali Header) -->
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-4 sm:p-5 rounded-3xl backdrop-blur-xl shadow-2xl">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl shadow-inner shrink-0">
-                        <i class="fa-solid fa-file-contract"></i>
-                    </div>
-                    <div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <h1 class="text-base sm:text-xl font-black text-white tracking-tight">কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার</h1>
-                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 whitespace-nowrap">খাতা পাতা: ০০০৩</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">USD & BDT</span>
-                        </div>
-                        <p class="text-xs text-slate-400">১ম কনসোলমেন্ট কন্টেইনার এলসি মার্জিন, আলাদা তারিখের ব্যাংক পেমেন্ট ও ডেলিভারি ট্র্যাকার</p>
-                    </div>
-                </div>
-
-                <!-- 5-Way Navigation Hub -->
-                <div class="flex flex-wrap items-center gap-2 shrink-0">
-                    <button type="button" id="btn-lc-to-audit" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="সাপ্তাহিক অডিট শিট">
-                        <i class="fa-solid fa-table-list text-sky-400 text-xs"></i>
-                        <span>অডিট শিট</span>
-                    </button>
-                    <button type="button" id="btn-lc-to-remittance" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="দুবাই রেমিট্যান্স বুক">
-                        <i class="fa-solid fa-money-bill-transfer text-emerald-400 text-xs"></i>
-                        <span>রেমিট্যান্স</span>
-                    </button>
-                    <button type="button" id="btn-lc-to-bd" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="বাংলাদেশ খরচ খাতা">
-                        <i class="fa-solid fa-file-invoice-dollar text-amber-400 text-xs"></i>
-                        <span>বাংলাদেশ খরচ</span>
-                    </button>
-                    <button type="button" id="btn-lc-to-port" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="পোর্ট ও ডিউটি বিল">
-                        <i class="fa-solid fa-ship text-indigo-400 text-xs"></i>
-                        <span>পোর্ট বিল</span>
-                    </button>
-                    <button type="button" id="btn-print-lc-book" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-print text-slate-400 text-xs"></i>
-                        <span>A4 প্রিন্ট</span>
-                    </button>
-                </div>
-            </div>
+            <!-- Top Unified 2-Tier Workspace Header -->
+            ${renderNothiSubBookHeader({
+                activeKey: 'lc-bills',
+                title: 'কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার',
+                subtitle: 'কন্টেইনারভিত্তিক আলাদা তারিখের ব্যাংক পেমেন্ট, USD ও ডেলিভারি ট্র্যাকার',
+                pageBadge: 'খাতা পাতা: ০০০৩',
+                currencyBadge: 'USD & BDT',
+                iconClass: 'fa-solid fa-file-contract',
+                accentColor: 'cyan',
+                actionButtonsHtml
+            })}
 
             <!-- Consignment Selector -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl">
                 <div class="flex items-center gap-2.5 flex-grow">
-                    <span class="text-xs font-bold text-slate-400 whitespace-nowrap"><i class="fa-solid fa-boxes-stacked text-cyan-400 mr-1"></i>কনসোলমেন্ট:</span>
+                    <span class="text-xs font-bold text-slate-400 whitespace-nowrap"><i class="fa-solid fa-boxes-stacked text-cyan-400 mr-1"></i>সেশন / খাতা:</span>
                     <select id="select-lc-consignment" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:border-cyan-500 outline-none max-w-md w-full">
-                        <option value="CONSIGNMENT-01">১ম কনসোলমেন্ট কন্টেইনার এলসি ও ব্যাংক ব্যয় (চলমান)</option>
+                        <option value="CONSIGNMENT-01">মূল হিসাব সেশন ০১ (চলমান)</option>
                     </select>
                 </div>
                 <div class="flex items-center gap-2">
@@ -297,19 +276,6 @@ function renderLCView(container) {
 
 function bindLCEvents() {
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-
-    bind('btn-lc-to-audit', () => {
-        if (window.switchDubaiProcurementView) window.switchDubaiProcurementView('audit');
-    });
-    bind('btn-lc-to-remittance', () => {
-        if (window.switchDubaiProcurementView) window.switchDubaiProcurementView('remittance');
-    });
-    bind('btn-lc-to-bd', () => {
-        if (window.switchDubaiProcurementView) window.switchDubaiProcurementView('bd-expense');
-    });
-    bind('btn-lc-to-port', () => {
-        if (window.switchDubaiProcurementView) window.switchDubaiProcurementView('port-duty');
-    });
 
     bind('btn-print-lc-book', () => {
         const dubaiSummary = calculateConsignmentSummary(activeConsignment, dubaiRemittancesList);

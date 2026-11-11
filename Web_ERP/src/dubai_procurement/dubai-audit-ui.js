@@ -14,6 +14,7 @@ import { initDubaiRemittanceModule, cleanupDubaiRemittance } from './dubai-remit
 import { initDubaiBDExpenseModule, cleanupDubaiBDExpense } from './dubai-bd-expense-ui.js';
 import { initDubaiPortDutyModule, cleanupDubaiPortDuty } from './dubai-port-duty-ui.js';
 import { initDubaiLCModule, cleanupDubaiLC } from './dubai-lc-ui.js';
+import { initNothiBookHub, cleanupNothiBookHub } from './dubai-nothi-hub.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
@@ -26,64 +27,53 @@ let auditHistory = [];
 let dynamicHoldings = [
     { desc: 'আলতাফ জাবেদ', amount: 0, op: '-' }
 ];
-let currentView = 'audit';
+let currentView = 'hub';
 let currentRootContainer = null;
 
 const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
 const getTxt = (id, def = '') => document.getElementById(id)?.value?.trim() || def;
 const setInp = (id, val = '') => { const el = document.getElementById(id); if (el) el.value = val; };
 
-export async function renderDubaiProcurement(container) {
+function cleanupAllNothiViews() {
+    DubaiActions.unsubscribe();
+    cleanupNothiBookHub();
+    cleanupDubaiRemittance();
+    cleanupDubaiBDExpense();
+    cleanupDubaiPortDuty();
+    cleanupDubaiLC();
+}
+
+function mountNothiView(view, container) {
+    if (!container) return;
+    currentView = view;
+    cleanupAllNothiViews();
+
+    if (view === 'remittance') {
+        initDubaiRemittanceModule(container);
+    } else if (view === 'bd-expense') {
+        initDubaiBDExpenseModule(container);
+    } else if (view === 'port-duty') {
+        initDubaiPortDutyModule(container);
+    } else if (view === 'lc-bills') {
+        initDubaiLCModule(container);
+    } else if (view === 'audit') {
+        renderDubaiAuditView(container);
+    } else {
+        currentView = 'hub';
+        initNothiBookHub(container);
+    }
+}
+
+export async function renderDubaiProcurement(container, params = {}) {
     if (!container) return;
     currentRootContainer = container;
 
     window.switchDubaiProcurementView = (view) => {
         hideGlobalAmountTooltip();
-        currentView = view;
-        if (view === 'remittance') {
-            unsubscribeDubaiAudits();
-            cleanupDubaiBDExpense();
-            cleanupDubaiPortDuty();
-            cleanupDubaiLC();
-            initDubaiRemittanceModule(currentRootContainer);
-        } else if (view === 'bd-expense') {
-            unsubscribeDubaiAudits();
-            cleanupDubaiRemittance();
-            cleanupDubaiPortDuty();
-            cleanupDubaiLC();
-            initDubaiBDExpenseModule(currentRootContainer);
-        } else if (view === 'port-duty') {
-            unsubscribeDubaiAudits();
-            cleanupDubaiRemittance();
-            cleanupDubaiBDExpense();
-            cleanupDubaiLC();
-            initDubaiPortDutyModule(currentRootContainer);
-        } else if (view === 'lc-bills') {
-            unsubscribeDubaiAudits();
-            cleanupDubaiRemittance();
-            cleanupDubaiBDExpense();
-            cleanupDubaiPortDuty();
-            initDubaiLCModule(currentRootContainer);
-        } else {
-            cleanupDubaiRemittance();
-            cleanupDubaiBDExpense();
-            cleanupDubaiPortDuty();
-            cleanupDubaiLC();
-            renderDubaiAuditView(currentRootContainer);
-        }
+        mountNothiView(view || 'hub', currentRootContainer);
     };
 
-    if (currentView === 'remittance') {
-        initDubaiRemittanceModule(container);
-    } else if (currentView === 'bd-expense') {
-        initDubaiBDExpenseModule(container);
-    } else if (currentView === 'port-duty') {
-        initDubaiPortDutyModule(container);
-    } else if (currentView === 'lc-bills') {
-        initDubaiLCModule(container);
-    } else {
-        renderDubaiAuditView(container);
-    }
+    mountNothiView(params?.view || 'hub', container);
 }
 
 function renderDubaiAuditView(container) {
@@ -742,6 +732,5 @@ window.syncRemittanceToDubaiAudit = async function() {
 };
 
 export function unsubscribeDubaiAudits() {
-    DubaiActions.unsubscribe();
-    cleanupDubaiRemittance();
+    cleanupAllNothiViews();
 }

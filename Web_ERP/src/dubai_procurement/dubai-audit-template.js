@@ -4,60 +4,41 @@
  */
 
 import { getTodayLocalDateString, formatAmountWithComma, parseAmount, safeRound, escapeHTML } from '../utils.js';
+import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
 
 export function getDubaiAuditMainTemplate() {
+    const actionButtonsHtml = `
+        <button type="button" id="btn-dubai-roll-forward" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="গত সপ্তাহের ব্যালেন্স নিজে নিজে নিয়ে আসবে">
+            <i class="fa-solid fa-arrows-rotate text-sky-400 text-xs"></i>
+            <span>রোল-ফরওয়ার্ড</span>
+        </button>
+        <button type="button" id="btn-dubai-print" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-solid fa-print text-slate-400 text-xs"></i>
+            <span>১-পাতা প্রিন্ট</span>
+        </button>
+        <button type="button" id="btn-dubai-save" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-sky-600/20">
+            <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+            <span>অডিট সেভ করুন</span>
+        </button>
+        <button type="button" id="btn-dubai-new" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>নতুন সপ্তাহ</span>
+        </button>
+    `;
+
     return `
         <div class="flex flex-col gap-5 font-bn w-full max-w-6xl mx-auto px-2 sm:px-4 pb-20">
-            <!-- Top Controls & Action Bar -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-4 sm:p-5 rounded-3xl backdrop-blur-xl shadow-2xl">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 text-xl shadow-inner shrink-0">
-                        <i class="fa-solid fa-ship"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h1 class="text-base sm:text-xl font-black text-white tracking-tight">দুবাই কনটেইনার ও সাপ্তাহিক অডিট খতিয়ান</h1>
-                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">AED (د.إ)</span>
-                        </div>
-                        <p class="text-xs text-slate-400">বৃহস্পতিবারের ধারাবাহিক বিয়োগফল ও ক্যাশ রিকনসিলিয়েশন শিট</p>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2 shrink-0">
-                    <button type="button" onclick="window.switchDubaiProcurementView('remittance')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="বাংলাদেশ থেকে টাকা পাঠানো ও রেমিট্যান্স রেজিস্টার খাতা খুলুন">
-                        <i class="fa-solid fa-money-bill-transfer text-emerald-400 text-xs"></i>
-                        <span>টাকা পাঠানোর খাতা</span>
-                    </button>
-                    <button type="button" onclick="window.switchDubaiProcurementView('bd-expense')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="বাংলাদেশ খরচ, মাল ক্রয়, গোডাউন ও কেরিং রেজিস্টার খাতা খুলুন">
-                        <i class="fa-solid fa-file-invoice-dollar text-amber-400 text-xs"></i>
-                        <span>বাংলাদেশ খরচ</span>
-                    </button>
-                    <button type="button" onclick="window.switchDubaiProcurementView('port-duty')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল রেজিস্টার খাতা খুলুন">
-                        <i class="fa-solid fa-ship text-indigo-400 text-xs"></i>
-                        <span>পোর্ট ও ডিউটি বিল</span>
-                    </button>
-                    <button type="button" onclick="window.switchDubaiProcurementView('lc-bills')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার খাতা (পাতা ০০০৩) খুলুন">
-                        <i class="fa-solid fa-file-contract text-cyan-400 text-xs"></i>
-                        <span>এলসি ও ব্যাংক হিসাব</span>
-                    </button>
-                    <button type="button" id="btn-dubai-roll-forward" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="গত সপ্তাহের ব্যালেন্স নিজে নিজে নিয়ে আসবে">
-                        <i class="fa-solid fa-arrows-rotate text-sky-400 text-xs"></i>
-                        <span>রোল-ফরওয়ার্ড</span>
-                    </button>
-                    <button type="button" id="btn-dubai-print" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-print text-slate-400 text-xs"></i>
-                        <span>১-পাতা প্রিন্ট</span>
-                    </button>
-                    <button type="button" id="btn-dubai-save" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-sky-600/20">
-                        <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
-                        <span>অডিট সেভ করুন</span>
-                    </button>
-                    <button type="button" id="btn-dubai-new" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-plus text-xs"></i>
-                        <span>নতুন সপ্তাহ</span>
-                    </button>
-                </div>
-            </div>
+            <!-- Top Unified 2-Tier Workspace Header -->
+            ${renderNothiSubBookHeader({
+                activeKey: 'audit',
+                title: 'সাপ্তাহিক ক্যাশ ও মেমো অডিট শিট',
+                subtitle: 'বৃহস্পতিবারের ধারাবাহিক বিয়োগফল, মেমো হিসাব ও ক্যাশ রিকনসিলিয়েশন শিট',
+                pageBadge: 'সাপ্তাহিক হিসাব',
+                currencyBadge: 'AED (د.إ)',
+                iconClass: 'fa-solid fa-table-list',
+                accentColor: 'sky',
+                actionButtonsHtml
+            })}
 
             <!-- Master Meta Bar -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl">

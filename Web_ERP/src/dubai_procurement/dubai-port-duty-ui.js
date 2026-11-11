@@ -12,6 +12,7 @@ import { calculatePortDutySummary, calculateMasterProjectCapEx } from './dubai-p
 import { calculateConsignmentSummary } from './dubai-remittance-calc.js';
 import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
 import { printDubaiPortDutyBook } from './dubai-port-duty-print.js';
+import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
 import {
     formatAmountWithComma,
     parseAmount,
@@ -107,52 +108,31 @@ function listenToActivePortDutyBills() {
 }
 
 function renderPortDutyView(container) {
+    const actionButtonsHtml = `
+        <button type="button" id="btn-print-port-duty" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-solid fa-print text-slate-400 text-xs"></i>
+            <span>A4 প্রিন্ট / ভাউচার</span>
+        </button>
+    `;
+
     container.innerHTML = `
         <div class="flex flex-col gap-4 font-bn w-full max-w-6xl mx-auto px-2 sm:px-4 pb-20">
-            <!-- Top View Switcher & Action Bar -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-4 sm:p-5 rounded-3xl backdrop-blur-xl shadow-2xl">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xl shadow-inner shrink-0">
-                        <i class="fa-solid fa-ship"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h1 class="text-base sm:text-xl font-black text-white tracking-tight">কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল রেজিস্টার</h1>
-                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 whitespace-nowrap">খাতা পাতা: ০০০৪</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">BDT</span>
-                        </div>
-                        <p class="text-xs text-slate-400">১ম কনসোলমেন্ট কন্টেইনার ক্লিয়ারেন্স, কাস্টমস শুল্ক, সিএন্ডএফ ও বন্দর খালাস ব্যয়</p>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2 shrink-0">
-                    <button type="button" id="btn-port-to-audit" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="বৃহস্পতিবার সাপ্তাহিক অডিট শিটে যান">
-                        <i class="fa-solid fa-table-list text-sky-400 text-xs"></i>
-                        <span>সাপ্তাহিক অডিট শিট</span>
-                    </button>
-                    <button type="button" id="btn-port-to-remittance" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="দুবাই রেমিট্যান্স মাস্টার বুকে যান">
-                        <i class="fa-solid fa-money-bill-transfer text-emerald-400 text-xs"></i>
-                        <span>রেমিট্যান্স বুক</span>
-                    </button>
-                    <button type="button" id="btn-port-to-bd" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="বাংলাদেশ খরচ মাস্টার খাতায় যান">
-                        <i class="fa-solid fa-file-invoice-dollar text-amber-400 text-xs"></i>
-                        <span>বাংলাদেশ খরচ</span>
-                    </button>
-                    <button type="button" id="btn-port-to-lc" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="কন্টেইনার এলসি ও ব্যাংক খরচ খাতায় যান">
-                        <i class="fa-solid fa-file-contract text-cyan-400 text-xs"></i>
-                        <span>এলসি ও ব্যাংক হিসাব</span>
-                    </button>
-                    <button type="button" id="btn-print-port-duty" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-print text-slate-400 text-xs"></i>
-                        <span>A4 প্রিন্ট / ভাউচার</span>
-                    </button>
-                </div>
-            </div>
+            <!-- Top Unified 2-Tier Workspace Header -->
+            ${renderNothiSubBookHeader({
+                activeKey: 'port-duty',
+                title: 'কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল রেজিস্টার',
+                subtitle: 'চট্টগ্রাম বন্দর ক্লিয়ারেন্স, কাস্টমস শুল্ক, সিএন্ডএফ ও বন্দর খালাস ব্যয়',
+                pageBadge: 'খাতা পাতা: ০০০৪',
+                currencyBadge: 'BDT',
+                iconClass: 'fa-solid fa-ship',
+                accentColor: 'indigo',
+                actionButtonsHtml
+            })}
 
             <!-- Consignment Selector & Active Status -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl">
                 <div class="flex items-center gap-2.5 flex-grow">
-                    <span class="text-xs font-bold text-slate-400 whitespace-nowrap"><i class="fa-solid fa-boxes-stacked text-indigo-400 mr-1"></i>কনসোলমেন্ট:</span>
+                    <span class="text-xs font-bold text-slate-400 whitespace-nowrap"><i class="fa-solid fa-boxes-stacked text-indigo-400 mr-1"></i>সেশন / খাতা:</span>
                     <select id="select-port-consignment" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:border-indigo-500 outline-none max-w-md w-full">
                         <option value="CONSIGNMENT-01">১ম কনসোলমেন্ট, কন্টেইনার ক্লিয়ারেন্স ও খালাস রেজিস্টার (চলমান)</option>
                     </select>
@@ -294,30 +274,6 @@ function renderPortDutyView(container) {
 
 function bindPortDutyEvents() {
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-
-    bind('btn-port-to-audit', () => {
-        if (window.switchDubaiProcurementView) {
-            window.switchDubaiProcurementView('audit');
-        }
-    });
-
-    bind('btn-port-to-remittance', () => {
-        if (window.switchDubaiProcurementView) {
-            window.switchDubaiProcurementView('remittance');
-        }
-    });
-
-    bind('btn-port-to-bd', () => {
-        if (window.switchDubaiProcurementView) {
-            window.switchDubaiProcurementView('bd-expense');
-        }
-    });
-
-    bind('btn-port-to-lc', () => {
-        if (window.switchDubaiProcurementView) {
-            window.switchDubaiProcurementView('lc-bills');
-        }
-    });
 
     bind('btn-print-port-duty', () => {
         const dubaiSummary = calculateConsignmentSummary(activeConsignment, dubaiRemittancesList);

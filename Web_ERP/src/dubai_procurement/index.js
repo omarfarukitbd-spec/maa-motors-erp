@@ -18,4 +18,6 @@ export { initDubaiLCModule, cleanupDubaiLC } from './dubai-lc-ui.js';
 export { DubaiLCDAO } from './dubai-lc-dao.js';
 export { printDubaiLCBook } from './dubai-lc-print.js';
 export { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx } from './dubai-lc-calc.js';
+export { initNothiBookHub, cleanupNothiBookHub } from './dubai-nothi-hub.js';
+export { renderNothiSubBookHeader, NOTHI_BOOK_CATEGORIES } from './dubai-subbook-header.js';
 
