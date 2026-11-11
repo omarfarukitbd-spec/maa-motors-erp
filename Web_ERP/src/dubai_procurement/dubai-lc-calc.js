@@ -27,6 +27,17 @@ export function calculateContainerLCTotals(payments = []) {
 }
 
 /**
+ * Pure helper to determine whether a container L/C cycle is closed/settled.
+ * True when explicitly marked settled (`isSettled: true`) or a deliveryDate is set.
+ * @param {Object} bill
+ * @returns {boolean}
+ */
+export function isContainerClosed(bill) {
+    if (!bill) return false;
+    return Boolean(bill.isSettled) || Boolean(bill.deliveryDate && String(bill.deliveryDate).trim() !== '');
+}
+
+/**
  * Calculates overall Container L/C Summary across all containers in the consignment.
  * @param {Object} consignment
  * @param {Array} lcBills
@@ -35,6 +46,12 @@ export function calculateContainerLCTotals(payments = []) {
 export function calculateLCSummary(consignment, lcBills = []) {
     let totalUSD = 0;
     let totalBDT = 0;
+    let closedCount = 0;
+    let openCount = 0;
+    let closedTotalUSD = 0;
+    let closedTotalBDT = 0;
+    let openTotalUSD = 0;
+    let openTotalBDT = 0;
     let deliveredCount = 0;
     let pendingDeliveryCount = 0;
     let totalPaymentsCount = 0;
@@ -53,6 +70,16 @@ export function calculateLCSummary(consignment, lcBills = []) {
         totalBDT = safeRound(totalBDT + containerTotals.totalBDT);
         totalPaymentsCount += containerTotals.paymentCount;
 
+        if (isContainerClosed(bill)) {
+            closedCount += 1;
+            closedTotalUSD = safeRound(closedTotalUSD + containerTotals.totalUSD);
+            closedTotalBDT = safeRound(closedTotalBDT + containerTotals.totalBDT);
+        } else {
+            openCount += 1;
+            openTotalUSD = safeRound(openTotalUSD + containerTotals.totalUSD);
+            openTotalBDT = safeRound(openTotalBDT + containerTotals.totalBDT);
+        }
+
         if (bill.deliveryDate && String(bill.deliveryDate).trim() !== '') {
             deliveredCount += 1;
         } else {
@@ -67,6 +94,12 @@ export function calculateLCSummary(consignment, lcBills = []) {
         containerCount,
         totalUSD,
         totalBDT,
+        closedCount,
+        openCount,
+        closedTotalUSD,
+        closedTotalBDT,
+        openTotalUSD,
+        openTotalBDT,
         deliveredCount,
         pendingDeliveryCount,
         totalPaymentsCount,

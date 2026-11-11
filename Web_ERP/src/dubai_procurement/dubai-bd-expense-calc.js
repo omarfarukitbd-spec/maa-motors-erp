@@ -3,7 +3,15 @@
  * Pure mathematical engine for calculating, aggregating, and verifying Consignment 1 Bangladesh expenses.
  */
 
-import { safeRound } from '../utils.js';
+import { safeRound, formatAppDate } from '../utils.js';
+
+function normalizeIsoDate(raw) {
+    const str = String(raw || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    const dmy = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+    return '';
+}
 
 export const DEFAULT_BD_BF = {
     amount: 30303773,
@@ -24,10 +32,13 @@ export function calculateBDExpenseSummary(consignment, expenses = []) {
     
     let runningTotal = 0;
     const categoryBreakdown = {};
+    const expIsoDates = [];
 
     for (const exp of expenses) {
         const amt = safeRound(Number(exp.amount) || 0);
         runningTotal = safeRound(runningTotal + amt);
+        const normDt = normalizeIsoDate(exp.date);
+        if (normDt) expIsoDates.push(normDt);
 
         const cat = (exp.category || 'অন্যান্য খরচ').trim();
         if (!categoryBreakdown[cat]) {
@@ -37,12 +48,27 @@ export function calculateBDExpenseSummary(consignment, expenses = []) {
         categoryBreakdown[cat].total = safeRound(categoryBreakdown[cat].total + amt);
     }
 
+    expIsoDates.sort();
+    const bfStartDate = consignment?.bfStartDate || DEFAULT_BD_BF.startDate;
+    const bfEndDate = consignment?.bfEndDate || DEFAULT_BD_BF.endDate;
+    const runningStartDate = expIsoDates[0] || '';
+    const runningEndDate = expIsoDates[expIsoDates.length - 1] || '';
+    const runningDates = runningStartDate
+        ? (runningStartDate === runningEndDate ? formatAppDate(runningStartDate) : `${formatAppDate(runningStartDate)} - ${formatAppDate(runningEndDate)}`)
+        : '';
+    const overallEnd = runningEndDate || bfEndDate;
+    const overallDates = `${formatAppDate(bfStartDate)} - ${formatAppDate(overallEnd)}`;
+
     const grandTotal = safeRound(bfAmount + runningTotal);
 
     return {
         bfAmount,
-        bfStartDate: consignment?.bfStartDate || DEFAULT_BD_BF.startDate,
-        bfEndDate: consignment?.bfEndDate || DEFAULT_BD_BF.endDate,
+        bfStartDate,
+        bfEndDate,
+        runningStartDate,
+        runningEndDate,
+        runningDates,
+        overallDates,
         runningTotal,
         grandTotal,
         count: expenses.length,

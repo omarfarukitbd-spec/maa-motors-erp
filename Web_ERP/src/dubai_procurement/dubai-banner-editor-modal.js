@@ -9,7 +9,7 @@ import {
     DEFAULT_SECTION_BANNERS,
     BANNER_TONE_PALETTES,
     resolveSectionBannerConfig,
-    renderNothiPrintBannerHtml,
+    renderNothiDualPreviewHtml,
     renderNothiScreenBannerBar
 } from './dubai-section-banner.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
@@ -94,6 +94,8 @@ export async function openNothiBannerEditorModal({
             dirtyKeys.add(cat.key);
         } else {
             drafts[cat.key] = {
+                motherTitle: resolved.motherTitle,
+                pageNo: resolved.pageNo,
                 prefixLabel: resolved.prefixLabel,
                 title: resolved.title,
                 statusText: resolved.statusText,
@@ -133,25 +135,25 @@ export async function openNothiBannerEditorModal({
     }).join('');
 
     const result = await Swal.fire({
-        title: '<span class="text-base sm:text-lg font-black text-white"><i class="fa-solid fa-pen-ruler text-sky-400 mr-2"></i>নথি বুক সেকশন ব্যানার কাস্টমাইজার</span>',
-        width: '740px',
+        title: '<span class="text-base sm:text-lg font-black text-white"><i class="fa-solid fa-pen-ruler text-sky-400 mr-2"></i>নথি বুক — PDF শিরোনাম ও ব্যানার কাস্টমাইজার</span>',
+        width: '760px',
         background: '#0f172a',
         color: '#f8fafc',
         html: `
-            <div class="text-left font-bn flex flex-col gap-3.5 text-xs">
+            <div class="text-left font-bn flex flex-col gap-3 text-xs">
                 <!-- Section Switcher Pills -->
                 <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-2.5 flex flex-col gap-2">
                     <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                        <span><i class="fa-solid fa-layer-group text-sky-400 mr-1"></i>যে সেকশনের ব্যানার লিখবেন তা বেছে নিন:</span>
+                        <span><i class="fa-solid fa-layer-group text-sky-400 mr-1"></i>যে সেকশনের PDF শিরোনাম ও ব্যানার লিখবেন তা বেছে নিন:</span>
                         <span class="font-mono text-slate-500">${escapeHTML(targetConsignment?.id || 'CONSIGNMENT-01')}</span>
                     </div>
                     <div id="banner-modal-tabs" class="flex flex-wrap gap-1.5">${buildTabsHtml()}</div>
                 </div>
 
-                <!-- Live Navy Print Banner Preview -->
+                <!-- Dual Live Print Preview: White Pill Mother Title + Navy Banner -->
                 <div class="bg-white rounded-2xl p-3 border border-slate-300 shadow-inner">
                     <div class="text-[10px] font-bold text-slate-500 mb-1.5 flex items-center justify-between">
-                        <span><i class="fa-solid fa-eye text-sky-600 mr-1"></i>প্রিন্ট ও স্ক্রিন লাইভ প্রিভিউ:</span>
+                        <span><i class="fa-solid fa-eye text-sky-600 mr-1"></i>প্রিন্ট PDF হেডার ও ব্যানার লাইভ প্রিভিউ:</span>
                         <span id="banner-modal-active-label" class="text-sky-700 font-black"></span>
                     </div>
                     <div id="nothi-banner-live-preview"></div>
@@ -159,6 +161,25 @@ export async function openNothiBannerEditorModal({
 
                 <!-- Form Inputs -->
                 <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col gap-3">
+                    <!-- 0. Mother Title (White Pill inside Blue Header) + Page No -->
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-blue-950/25 border border-blue-800/40 rounded-xl p-2.5">
+                        <div class="sm:col-span-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="text-[11px] font-bold text-sky-300">০. PDF হেডার মূল শিরোনাম (নীল অংশের সাদা পিল):</label>
+                                <button type="button" id="btn-reset-banner-default" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold cursor-pointer">
+                                    <i class="fa-solid fa-rotate-left mr-0.5"></i>ডিফল্টে ফেরান
+                                </button>
+                            </div>
+                            <input type="text" id="nothi-banner-mother-title" maxlength="90" placeholder="যেমন: কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার"
+                                class="w-full bg-slate-900 border border-sky-500/45 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-black focus:border-sky-400 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-300 mb-1">পাতা নং (ঐচ্ছিক):</label>
+                            <input type="text" id="nothi-banner-pageno" maxlength="12" placeholder="যেমন: ০০০৩"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-black font-mono text-center focus:border-sky-400 outline-none">
+                        </div>
+                    </div>
+
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="text-[11px] font-bold text-slate-300">১. বাম পাশের প্রিফিক্স লেবেল (ঐচ্ছিক):</label>
@@ -177,12 +198,7 @@ export async function openNothiBannerEditorModal({
                     </div>
 
                     <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="text-[11px] font-bold text-amber-300">২. ব্যানারের মূল লেখা / শিরোনাম (সোনালী রঙের অংশ):</label>
-                            <button type="button" id="btn-reset-banner-default" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold cursor-pointer">
-                                <i class="fa-solid fa-rotate-left mr-0.5"></i>ডিফল্ট লেখায় ফেরান
-                            </button>
-                        </div>
+                        <label class="block text-[11px] font-bold text-amber-300 mb-1">২. ব্যানারের মূল লেখা / শিরোনাম (সোনালী রঙের অংশ):</label>
                         <input type="text" id="nothi-banner-title" maxlength="120" placeholder="এই সেকশনের ব্যানারে যা লেখা থাকবে..."
                             class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-2 text-xs sm:text-sm text-amber-200 font-bold focus:border-amber-400 outline-none">
                     </div>
@@ -216,6 +232,8 @@ export async function openNothiBannerEditorModal({
         confirmButtonColor: '#0284c7',
         cancelButtonColor: '#334155',
         didOpen: () => {
+            const motherTitleEl = document.getElementById('nothi-banner-mother-title');
+            const pageNoEl = document.getElementById('nothi-banner-pageno');
             const prefixEl = document.getElementById('nothi-banner-prefix');
             const titleEl = document.getElementById('nothi-banner-title');
             const statusEl = document.getElementById('nothi-banner-status');
@@ -228,10 +246,10 @@ export async function openNothiBannerEditorModal({
                 const cur = drafts[activeTab];
                 const meta = NOTHI_BOOK_CATEGORIES.find(c => c.key === activeTab);
                 if (activeLabelEl && meta) {
-                    activeLabelEl.textContent = `${meta.title} (${meta.pageBadge})`;
+                    activeLabelEl.textContent = `${meta.title} (${cur.pageNo || meta.pageBadge})`;
                 }
                 if (previewEl) {
-                    previewEl.innerHTML = renderNothiPrintBannerHtml(cur, true);
+                    previewEl.innerHTML = renderNothiDualPreviewHtml(cur);
                 }
                 if (tabsEl) {
                     tabsEl.innerHTML = buildTabsHtml();
@@ -256,6 +274,8 @@ export async function openNothiBannerEditorModal({
 
             const loadActiveTabIntoInputs = () => {
                 const cur = drafts[activeTab];
+                if (motherTitleEl) motherTitleEl.value = cur.motherTitle || '';
+                if (pageNoEl) pageNoEl.value = cur.pageNo || '';
                 if (prefixEl) prefixEl.value = cur.prefixLabel || '';
                 if (titleEl) titleEl.value = cur.title || '';
                 if (statusEl) statusEl.value = cur.statusText || '';
@@ -263,6 +283,8 @@ export async function openNothiBannerEditorModal({
             };
 
             const handleFieldInput = () => {
+                drafts[activeTab].motherTitle = motherTitleEl?.value ?? '';
+                drafts[activeTab].pageNo = pageNoEl?.value ?? '';
                 drafts[activeTab].prefixLabel = prefixEl?.value ?? '';
                 drafts[activeTab].title = titleEl?.value ?? '';
                 drafts[activeTab].statusText = statusEl?.value ?? '';
@@ -270,6 +292,8 @@ export async function openNothiBannerEditorModal({
                 syncPreviewAndTabs();
             };
 
+            if (motherTitleEl) motherTitleEl.oninput = handleFieldInput;
+            if (pageNoEl) pageNoEl.oninput = handleFieldInput;
             if (prefixEl) prefixEl.oninput = handleFieldInput;
             if (titleEl) titleEl.oninput = handleFieldInput;
             if (statusEl) statusEl.oninput = handleFieldInput;
@@ -307,13 +331,20 @@ export async function openNothiBannerEditorModal({
             const updates = {};
             for (const key of dirtyKeys) {
                 const item = drafts[key];
+                const meta = NOTHI_BOOK_CATEGORIES.find(c => c.key === key);
+                const cleanMotherTitle = String(item?.motherTitle || '').trim();
                 const cleanTitle = String(item?.title || '').trim();
+                if (!cleanMotherTitle) {
+                    Swal.showValidationMessage(`${meta?.title || key}-এর PDF হেডার শিরোনাম (সাদা পিল) খালি রাখা যাবে না!`);
+                    return false;
+                }
                 if (!cleanTitle) {
-                    const meta = NOTHI_BOOK_CATEGORIES.find(c => c.key === key);
-                    Swal.showValidationMessage(`${meta?.title || key}-এর মূল শিরোনাম খালি রাখা যাবে না!`);
+                    Swal.showValidationMessage(`${meta?.title || key}-এর ব্যানারের মূল শিরোনাম খালি রাখা যাবে না!`);
                     return false;
                 }
                 updates[key] = {
+                    motherTitle: cleanMotherTitle,
+                    pageNo: String(item.pageNo || '').trim() || (DEFAULT_SECTION_BANNERS[key]?.pageNo || '০০০১'),
                     prefixLabel: String(item.prefixLabel || '').trim(),
                     title: cleanTitle,
                     statusText: String(item.statusText || '').trim(),

@@ -94,6 +94,10 @@ function listenToActiveRemittances() {
 
 function renderRemittanceView(container) {
     const actionButtonsHtml = `
+        <button type="button" id="btn-edit-stage-dates" class="px-3.5 py-2 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/35 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="পর্যায় ১ ও পর্যায় ২-এর তারিখ সময়সীমা সেট বা সংশোধন করুন">
+            <i class="fa-regular fa-calendar-days text-indigo-400 text-xs"></i>
+            <span>তারিখ সময়সীমা</span>
+        </button>
         <button type="button" id="btn-print-remittance" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i class="fa-solid fa-print text-slate-400 text-xs"></i>
             <span>A4 প্রিন্ট / ভাউচার</span>
@@ -242,6 +246,7 @@ function renderRemittanceView(container) {
 function bindRemittanceEvents() {
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
 
+    bind('btn-edit-stage-dates', openEditStageDatesModal);
     bind('btn-print-remittance', () => {
         printDubaiRemittanceBook(activeConsignment, remittancesList);
     });
@@ -306,29 +311,49 @@ function updateRemittanceKpis() {
 
     kpiContainer.innerHTML = `
         <div class="bg-slate-900/90 border border-slate-800 border-l-4 border-l-indigo-500 p-3.5 rounded-2xl shadow-xl flex flex-col gap-1">
-            <span class="text-[11px] font-bold text-slate-400">১. পর্যায় ১ (২০২৫ ইনভেস্ট)</span>
+            <div class="flex items-center justify-between gap-1">
+                <span class="text-[11px] font-bold text-slate-400">১. পর্যায় ১ (২০২৫ ইনভেস্ট)</span>
+                <button type="button" onclick="window.openRemStageDatesEditor && window.openRemStageDatesEditor()" class="text-[10px] text-indigo-400 hover:text-indigo-300 cursor-pointer" title="তারিখ এডিট করুন"><i class="fa-solid fa-pen"></i></button>
+            </div>
+            <div class="text-[10px] font-mono font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-md px-2 py-0.5 self-start">
+                <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.stage1.dates)}
+            </div>
             <div class="text-base font-black text-indigo-400 font-mono">${formatAmountWithComma(summary.stage1.aed)} AED</div>
             <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage1.bdt)} (রেট: ${summary.stage1.rate})</div>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 border-l-4 border-l-sky-500 p-3.5 rounded-2xl shadow-xl flex flex-col gap-1">
-            <span class="text-[11px] font-bold text-slate-400">২. পর্যায় ২ (২০২৬ সাবেক)</span>
+            <div class="flex items-center justify-between gap-1">
+                <span class="text-[11px] font-bold text-slate-400">২. পর্যায় ২ (২০২৬ সাবেক)</span>
+                <button type="button" onclick="window.openRemStageDatesEditor && window.openRemStageDatesEditor()" class="text-[10px] text-sky-400 hover:text-sky-300 cursor-pointer" title="তারিখ এডিট করুন"><i class="fa-solid fa-pen"></i></button>
+            </div>
+            <div class="text-[10px] font-mono font-bold text-sky-300 bg-sky-500/10 border border-sky-500/20 rounded-md px-2 py-0.5 self-start">
+                <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.stage2.dates)}
+            </div>
             <div class="text-base font-black text-sky-400 font-mono">${formatAmountWithComma(summary.stage2.aed)} AED</div>
             <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage2.bdt)} (রেট: ${summary.stage2.rate.toFixed(2)})</div>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 border-l-4 border-l-emerald-500 p-3.5 rounded-2xl shadow-xl flex flex-col gap-1">
             <span class="text-[11px] font-bold text-slate-400">৩. পর্যায় ৩ রানিং (${summary.stage3.count} কিস্তি)</span>
+            <div class="text-[10px] font-mono font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-0.5 self-start">
+                <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.stage3.dates)}
+            </div>
             <div class="text-base font-black text-emerald-400 font-mono">${formatAmountWithComma(summary.stage3.aed)} AED</div>
             <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage3.bdt)} (গড়: ${summary.stage3.rate.toFixed(2)})</div>
         </div>
 
         <div class="bg-amber-950/20 border border-amber-500/30 border-l-4 border-l-amber-500 p-3.5 rounded-2xl shadow-xl flex flex-col gap-1">
             <span class="text-[11px] font-black text-amber-400">৪. ১ম কনসোলমেন্ট সর্বমোট তহবিল</span>
+            <div class="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-0.5 self-start">
+                <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.grandTotal.dates)}
+            </div>
             <div class="text-base font-black text-amber-300 font-mono">${formatAmountWithComma(summary.grandTotal.aed)} AED</div>
             <div class="text-[11px] text-amber-200/80 font-bold">৳ ${formatAmountWithComma(summary.grandTotal.bdt)} (গড়: ${summary.grandTotal.rate.toFixed(2)})</div>
         </div>
     `;
+
+    window.openRemStageDatesEditor = openEditStageDatesModal;
 
     const countEl = document.getElementById('rem-records-count');
     if (countEl) countEl.innerText = `${remittancesList.length} টি`;
@@ -589,5 +614,93 @@ async function onCloseConsignmentClick() {
             console.error('Consignment closure error:', e);
             showToast('ক্লোজ করতে সমস্যা হয়েছে', 'error');
         }
+    }
+}
+
+async function openEditStageDatesModal() {
+    if (!activeConsignment) return;
+    const summary = calculateConsignmentSummary(activeConsignment, remittancesList);
+
+    const parsePair = (str) => {
+        const m = String(str || '').match(/\d{2}\/\d{2}\/\d{4}/g);
+        return { start: m?.[0] || '', end: m?.[1] || '' };
+    };
+    const s1 = parsePair(summary.stage1.dates);
+    const s2 = parsePair(summary.stage2.dates);
+
+    const res = await Swal.fire({
+        title: '<span class="font-bn text-lg font-black text-white"><i class="fa-regular fa-calendar-days text-indigo-400 mr-2"></i>পর্যায়ভিত্তিক তারিখ সময়সীমা সেট করুন</span>',
+        width: '560px',
+        background: '#0f172a',
+        color: '#f8fafc',
+        html: `
+            <div class="font-bn text-left space-y-3.5 text-xs mt-2">
+                <div class="bg-indigo-950/25 border border-indigo-500/30 rounded-xl p-3 space-y-2">
+                    <div class="font-black text-indigo-300">১. পর্যায় ১ (২০২৫ ইনভেস্ট) — কত তারিখ হতে কত তারিখ:</div>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">শুরুর তারিখ (হতে):</label>
+                            <input type="text" id="swal-s1-start" value="${escapeHTML(s1.start)}" placeholder="DD/MM/YYYY" class="datepicker w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold font-mono outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">শেষ তারিখ (পর্যন্ত):</label>
+                            <input type="text" id="swal-s1-end" value="${escapeHTML(s1.end)}" placeholder="DD/MM/YYYY" class="datepicker w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold font-mono outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-sky-950/25 border border-sky-500/30 rounded-xl p-3 space-y-2">
+                    <div class="font-black text-sky-300">২. পর্যায় ২ সাবেক (২০২৬ সাবেক) — কত তারিখ হতে কত তারিখ:</div>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">শুরুর তারিখ (হতে):</label>
+                            <input type="text" id="swal-s2-start" value="${escapeHTML(s2.start)}" placeholder="DD/MM/YYYY" class="datepicker w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold font-mono outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-1">শেষ তারিখ (পর্যন্ত):</label>
+                            <input type="text" id="swal-s2-end" value="${escapeHTML(s2.end)}" placeholder="DD/MM/YYYY" class="datepicker w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold font-mono outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-[11px] text-slate-400">
+                    <i class="fa-solid fa-wand-magic-sparkles text-emerald-400 mr-1"></i>
+                    পর্যায় ৩ রানিং (<strong class="text-emerald-300 font-mono">${escapeHTML(summary.stage3.dates)}</strong>) ও সর্বমোট তহবিলের তারিখ প্রকৃত এন্ট্রি থেকে স্বয়ংক্রিয়ভাবে হিসাব হয়।
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-check mr-1"></i> তারিখ সংরক্ষণ করুন',
+        cancelButtonText: 'বাতিল',
+        confirmButtonColor: '#4f46e5',
+        cancelButtonColor: '#334155',
+        preConfirm: () => {
+            const joinRange = (a, b) => (a && b ? `${a} - ${b}` : (a || b || ''));
+            const s1a = document.getElementById('swal-s1-start')?.value?.trim() || '';
+            const s1b = document.getElementById('swal-s1-end')?.value?.trim() || '';
+            const s2a = document.getElementById('swal-s2-start')?.value?.trim() || '';
+            const s2b = document.getElementById('swal-s2-end')?.value?.trim() || '';
+            const stage1Dates = joinRange(s1a, s1b);
+            const stage2Dates = joinRange(s2a, s2b);
+            if (!stage2Dates) {
+                Swal.showValidationMessage('পর্যায় ২-এর শুরুর ও শেষ তারিখ প্রদান করুন!');
+                return false;
+            }
+            return { stage1Dates: stage1Dates || '—', stage2Dates };
+        }
+    });
+
+    if (!res.isConfirmed || !res.value) return;
+    if (!ensureOnline()) return;
+
+    const pinOk = await promptSecurityPin('পর্যায়ের তারিখ সময়সীমা পরিবর্তনের জন্য পিন দিন');
+    if (!pinOk) return;
+
+    try {
+        await DubaiRemittanceDAO.updateStageDates(activeConsignment.id, res.value);
+        showToast('পর্যায়ভিত্তিক তারিখ সময়সীমা সফলভাবে আপডেট হয়েছে', 'success');
+    } catch (e) {
+        console.error('Update stage dates error:', e);
+        showToast('তারিখ সংরক্ষণ করতে সমস্যা হয়েছে!', 'error');
     }
 }

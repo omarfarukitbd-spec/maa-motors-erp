@@ -12,7 +12,7 @@ import {
 } from '../utils.js';
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
-import { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx } from './dubai-lc-calc.js';
+import { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx, isContainerClosed } from './dubai-lc-calc.js';
 import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
 export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary = null, portDutySummary = null, bdExpenseSummary = null) {
@@ -93,7 +93,16 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
             : [{ date: container.date, description: 'মূল এলসি পেমেন্ট', amountUSD: container.totalUSD || 0, amountBDT: container.totalBDT || 0 }];
 
         const cTotals = calculateContainerLCTotals(payments);
-        const deliveryDisplay = container.deliveryDate ? formatAppDate(container.deliveryDate) : '';
+        const isClosed = isContainerClosed(container);
+        const deliveryDisplay = container.deliveryDate
+            ? formatAppDate(container.deliveryDate)
+            : (isClosed ? 'সম্পন্ন' : 'অপেক্ষমাণ');
+        const deliveryColor = container.deliveryDate
+            ? '#047857'
+            : (isClosed ? '#059669' : '#b45309');
+        const statusPillHtml = isClosed
+            ? '<span style="background: #dcfce7; color: #166534; border: 1px solid #86efac; border-radius: 3px; padding: 1px 5px; font-size: 7px; font-weight: 800; display: inline-block;">শেষ</span>'
+            : '<span style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 3px; padding: 1px 5px; font-size: 7px; font-weight: 800; display: inline-block;">চলমান</span>';
         const bgGroup = cIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
 
         const lineRows = payments.map((pay, pIdx) => {
@@ -113,20 +122,20 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
                     <td style="padding: 3.5px 6px; font-size: 8px; color: #334155;">${escapeHTML(pay.description || 'এলসি পেমেন্ট')}</td>
                     <td style="padding: 3.5px 6px; text-align: right; font-size: 8.5px; font-weight: 700; color: #0f766e;" class="num-font">${usdText}</td>
                     <td style="padding: 3.5px 6px; text-align: right; font-size: 8.5px; font-weight: 700; color: #b91c1c;" class="num-font">${bdtText}</td>
-                    ${isFirst ? `<td rowspan="${payments.length}" style="padding: 4px; text-align: center; font-size: 8px; font-weight: 700; color: #047857; vertical-align: middle;">${escapeHTML(deliveryDisplay)}</td>` : ''}
+                    ${isFirst ? `<td rowspan="${payments.length}" style="padding: 4px; text-align: center; font-size: 7.5px; font-weight: 700; color: ${deliveryColor}; vertical-align: middle;">${escapeHTML(deliveryDisplay)}</td>` : ''}
                 </tr>
             `;
         }).join('');
 
-        // Always append a crisp Container Sub-Total footer line if there are multiple payments or for container-based completion
+        // Always append a crisp Container Sub-Total footer line reflecting true Open vs Closed lifecycle
         const subTotalRow = `
-            <tr style="background: #f1f5f9; border-bottom: 1.8px solid #475569;">
+            <tr style="background: ${isClosed ? '#f1f5f9' : '#fffbeb'}; border-bottom: 1.8px solid #475569;">
                 <td colspan="4" style="padding: 3px 6px; text-align: right; font-size: 8px; font-weight: 800; color: #334155;">
                     ${container.containerNo || cIdx + 1} নং কন্টেইনার এলসি সর্বমোট:
                 </td>
                 <td style="padding: 3px 6px; text-align: right; font-size: 8.5px; font-weight: 800; color: #0f766e;" class="num-font">${cTotals.totalUSD > 0 ? `$ ${formatAmountWithComma(cTotals.totalUSD)}` : '—'}</td>
                 <td style="padding: 3px 6px; text-align: right; font-size: 9px; font-weight: 900; color: #b91c1c;" class="num-font">৳ ${formatAmountWithComma(cTotals.totalBDT)}</td>
-                <td style="padding: 3px; text-align: center; font-size: 7.5px; color: #64748b;">শেষ</td>
+                <td style="padding: 3px; text-align: center;">${statusPillHtml}</td>
             </tr>
         `;
 
@@ -135,12 +144,15 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
 
     return `
         <div class="lc-print-sheet">
-            <!-- Mother Header (Clean Bengali Title) -->
-            ${renderPrintHeader(settings, {
-                title: 'কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার',
-                pageLabel: 'রেজিস্টার খাতা পাতা',
-                pageNo: '০০০৩'
-            })}
+            <!-- Mother Header (Dynamic Nothi Book Title) -->
+            ${(() => {
+                const bannerCfg = resolveSectionBannerConfig(consignment, 'lc-bills');
+                return renderPrintHeader(settings, {
+                    title: bannerCfg.motherTitle,
+                    pageLabel: 'রেজিস্টার খাতা পাতা',
+                    pageNo: bannerCfg.pageNo || '০০০৩'
+                });
+            })()}
 
             <!-- Customizable Per-Section Banner Bar -->
             ${renderNothiPrintSectionBanner(consignment, 'lc-bills')}
@@ -150,17 +162,20 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
                 <div style="background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 4px; padding: 4px 6px; text-align: center;">
                     <div style="font-size: 7.5px; font-weight: 700; color: #0369a1;">১. মোট কন্টেইনার সংখ্যা</div>
                     <div style="font-size: 11px; font-weight: 900; color: #0284c7;">${summary.containerCount} টি কন্টেইনার</div>
-                    <div style="font-size: 6.5px; color: #64748b;">ডেলিভারি সম্পন্ন: ${summary.deliveredCount} টি | পেন্ডিং: ${summary.pendingDeliveryCount} টি</div>
+                    <div style="font-size: 6.5px; font-weight: 700;">
+                        <span style="color: #047857;">সমাপ্ত (শেষ): ${summary.closedCount} টি</span> |
+                        <span style="color: #b45309;">চলমান (বাকি): ${summary.openCount} টি</span>
+                    </div>
                 </div>
                 <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 4px 6px; text-align: center;">
                     <div style="font-size: 7.5px; font-weight: 700; color: #15803d;">২. সর্বমোট বৈদেশিক মুদ্রা (ডলার)</div>
                     <div style="font-size: 11px; font-weight: 900; color: #059669;" class="num-font">$ ${totalUSDFormatted} ডলার</div>
-                    <div style="font-size: 6.5px; color: #64748b;">ব্যাংক এলসি ভ্যালু (আরিয়ান মোটর ও আরমান)</div>
+                    <div style="font-size: 6.5px; color: #475569;">সমাপ্ত: $ ${formatAmountWithComma(summary.closedTotalUSD)} | চলমান: $ ${formatAmountWithComma(summary.openTotalUSD)}</div>
                 </div>
                 <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 4px; padding: 4px 6px; text-align: center;">
                     <div style="font-size: 7.5px; font-weight: 800; color: #991b1b;">৩. সর্বমোট এলসি মার্জিন ও ব্যাংক খরচ</div>
                     <div style="font-size: 11.5px; font-weight: 900; color: #b91c1c;" class="num-font">৳ ${totalBDTFormatted}</div>
-                    <div style="font-size: 6.5px; color: #7f1d1d;">সর্বমোট কিস্তি/ভাউচার: ${summary.totalPaymentsCount} টি</div>
+                    <div style="font-size: 6.5px; color: #7f1d1d;">সমাপ্ত: ৳ ${formatAmountWithComma(summary.closedTotalBDT)} | চলমান: ৳ ${formatAmountWithComma(summary.openTotalBDT)}</div>
                 </div>
             </div>
 
@@ -174,7 +189,7 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
                         <th style="width: 140px; text-align: left;">খরচের বিবরণ</th>
                         <th style="width: 68px; text-align: right;">ডলার (USD)</th>
                         <th style="width: 85px; text-align: right;">টাকা (BDT)</th>
-                        <th style="width: 65px;">ডেলিভারি তারিখ</th>
+                        <th style="width: 65px;">স্ট্যাটাস / ডেলিভারি</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -78,6 +78,8 @@ export const DubaiRemittanceDAO = {
             Object.entries(bannersMap).forEach(([sectionKey, cfg]) => {
                 if (!sectionKey || !cfg || typeof cfg !== 'object') return;
                 cleanSectionBanners[sectionKey] = {
+                    motherTitle: String(cfg.motherTitle ?? '').trim(),
+                    pageNo: String(cfg.pageNo ?? '').trim(),
                     prefixLabel: String(cfg.prefixLabel ?? '').trim(),
                     title: String(cfg.title ?? '').trim(),
                     statusText: String(cfg.statusText ?? '').trim(),
@@ -106,6 +108,31 @@ export const DubaiRemittanceDAO = {
 
     async updateSectionBanner(consignmentId, sectionKey, bannerData) {
         return this.updateSectionBannersBatch(consignmentId, { [sectionKey]: bannerData });
+    },
+
+    /**
+     * Save or update custom date ranges for Stage 1 and Stage 2 inside a consignment document.
+     * Uses nested merge to keep AED/BDT/rate totals intact.
+     */
+    async updateStageDates(consignmentId, { stage1Dates, stage2Dates } = {}) {
+        try {
+            const id = consignmentId || 'CONSIGNMENT-01';
+            const docRef = db.collection(CONSIGNMENTS_COLLECTION).doc(id);
+            const patch = {
+                id,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if (stage1Dates !== undefined) {
+                patch.stage1 = { dates: String(stage1Dates || '').trim() };
+            }
+            if (stage2Dates !== undefined) {
+                patch.stage2 = { dates: String(stage2Dates || '').trim() };
+            }
+            await docRef.set(patch, { merge: true });
+        } catch (e) {
+            console.error('Error updating consignment stage dates:', e);
+            throw e;
+        }
     },
 
     /**

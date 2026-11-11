@@ -109,11 +109,14 @@ function generatePortDutyPrintHtml(consignment, bills, summary, capex, settings)
     return `
         <div class="port-print-sheet">
             <!-- Mother Header (Official Corporate Design) -->
-            ${renderPrintHeader(settings, {
-                title: 'কন্টেইনার ডিউটি ও পোর্ট বিল বুক',
-                pageLabel: 'রেজিস্টার খাতা পাতা',
-                pageNo: '০০০৪'
-            })}
+            ${(() => {
+                const bannerCfg = resolveSectionBannerConfig(consignment, 'port-duty');
+                return renderPrintHeader(settings, {
+                    title: bannerCfg.motherTitle,
+                    pageLabel: 'রেজিস্টার খাতা পাতা',
+                    pageNo: bannerCfg.pageNo || '০০০৪'
+                });
+            })()}
 
             <!-- Customizable Per-Section Banner Bar -->
             ${renderNothiPrintSectionBanner(consignment, 'port-duty')}

@@ -7,30 +7,40 @@ import { escapeHTML } from '../utils.js';
 
 export const DEFAULT_SECTION_BANNERS = {
     remittance: {
+        motherTitle: 'ডুবাই টাকা পাঠানোর হিসাব বুক',
+        pageNo: '০০০১',
         prefixLabel: 'কনসোলমেন্ট:',
         title: 'মূল হিসাব সেশন ০১ — টাকা পাঠানোর খাতা',
         statusText: 'চলমান কনসোলমেন্ট (Active)',
         statusTone: 'emerald'
     },
     'bd-expense': {
+        motherTitle: 'বাংলাদেশ লোকাল ক্লিয়ারেন্স ও ব্যয় বুক',
+        pageNo: '০০০২',
         prefixLabel: 'খাতার বিবরণ:',
         title: 'বাংলাদেশ দেশীয় মাল ক্রয়, গোডাউন ও আনুষঙ্গিক খরচ',
         statusText: 'চলমান রেজিস্টার (পাতা: ০০০২)',
         statusTone: 'emerald'
     },
     'lc-bills': {
+        motherTitle: 'কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার',
+        pageNo: '০০০৩',
         prefixLabel: 'হিসাবের ধরন:',
         title: 'কন্টেইনার এলসি মার্জিন ও ব্যাংক খরচ হিসাব',
         statusText: 'চলমান রেজিস্টার (পাতা: ০০০৩)',
         statusTone: 'emerald'
     },
     'port-duty': {
+        motherTitle: 'কন্টেইনার ডিউটি ও পোর্ট বিল বুক',
+        pageNo: '০০০৪',
         prefixLabel: 'খাতার বিবরণ:',
         title: 'চট্টগ্রাম বন্দর কন্টেইনার ডিউটি, সিএন্ডএফ ও খালাস ব্যয়',
         statusText: 'চলমান রেজিস্টার (পাতা: ০০০৪)',
         statusTone: 'emerald'
     },
     audit: {
+        motherTitle: 'দুবাই সাপ্তাহিক ক্যাশ অডিট শিট',
+        pageNo: '০০০৫',
         prefixLabel: 'অডিট সেশন:',
         title: 'বৃহস্পতিবারের সাপ্তাহিক ক্যাশ ও মেমো অডিট',
         statusText: 'সাপ্তাহিক রিকনসিলিয়েশন',
@@ -78,10 +88,15 @@ export function resolveSectionBannerConfig(consignment, sectionKey) {
     const saved = consignment?.sectionBanners?.[sectionKey];
     const isClosed = consignment?.status === 'closed';
 
-    if (saved && typeof saved === 'object' && typeof saved.title === 'string' && saved.title.trim()) {
+    if (saved && typeof saved === 'object' && (String(saved.title || '').trim() || String(saved.motherTitle || '').trim())) {
+        const fallbackTitle = sectionKey === 'remittance' && consignment?.name
+            ? String(consignment.name).trim()
+            : def.title;
         return {
+            motherTitle: String(saved.motherTitle || '').trim() || def.motherTitle,
+            pageNo: String(saved.pageNo || '').trim() || def.pageNo,
             prefixLabel: saved.prefixLabel !== undefined ? String(saved.prefixLabel).trim() : def.prefixLabel,
-            title: saved.title.trim(),
+            title: String(saved.title || '').trim() || fallbackTitle,
             statusText: saved.statusText ? String(saved.statusText).trim() : def.statusText,
             statusTone: BANNER_TONE_PALETTES[saved.statusTone] ? saved.statusTone : def.statusTone,
             isCustom: true
@@ -90,6 +105,8 @@ export function resolveSectionBannerConfig(consignment, sectionKey) {
 
     if (sectionKey === 'remittance' && consignment?.name) {
         return {
+            motherTitle: def.motherTitle,
+            pageNo: def.pageNo,
             prefixLabel: def.prefixLabel,
             title: String(consignment.name).trim(),
             statusText: isClosed ? 'সমাপ্ত কনসোলমেন্ট (Closed)' : def.statusText,
@@ -99,12 +116,65 @@ export function resolveSectionBannerConfig(consignment, sectionKey) {
     }
 
     return {
+        motherTitle: def.motherTitle,
+        pageNo: def.pageNo,
         prefixLabel: def.prefixLabel,
         title: def.title,
         statusText: isClosed ? 'সমাপ্ত রেজিস্টার (Closed)' : def.statusText,
         statusTone: isClosed ? 'amber' : def.statusTone,
         isCustom: false
     };
+}
+
+/**
+ * Generates compact dual-bar live WYSIWYG preview matching BOTH:
+ * 1) The Blue Mother Header White Pill (`motherTitle`)
+ * 2) The Navy Section Banner Strip (`prefixLabel` + `title` + `statusText`)
+ */
+export function renderNothiDualPreviewHtml(config = {}) {
+    const cleanMotherTitle = String(config.motherTitle || '').trim() || 'শিরোনাম নির্ধারিত নয়';
+    const cleanPageNo = String(config.pageNo || '').trim() || '০০০১';
+    return `
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="
+                background: linear-gradient(135deg, #0042a6 0%, #0356c2 60%, #0284c7 100%);
+                border-radius: 8px;
+                padding: 7px 10px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                box-shadow: 0 2px 5px rgba(2, 62, 138, 0.25);
+            ">
+                <div style="font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.85); white-space: nowrap;">
+                    <i class="fa-solid fa-building-columns" style="margin-right: 3px;"></i>PDF মূল শিরোনাম (সাদা পিল):
+                </div>
+                <div style="
+                    background: #ffffff;
+                    color: #012b6d;
+                    border: 1.5px solid #e2e8f0;
+                    border-radius: 999px;
+                    padding: 3px 16px;
+                    font-size: 12px;
+                    font-weight: 900;
+                    font-family: 'Anek Bangla', sans-serif;
+                    text-align: center;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+                ">${escapeHTML(cleanMotherTitle)}</div>
+                <div style="
+                    background: rgba(255,255,255,0.15);
+                    border: 1px solid rgba(255,255,255,0.3);
+                    border-radius: 6px;
+                    padding: 2px 7px;
+                    font-size: 9px;
+                    font-weight: 800;
+                    color: #ffffff;
+                    white-space: nowrap;
+                ">পাতা: ${escapeHTML(cleanPageNo)}</div>
+            </div>
+            ${renderNothiPrintBannerHtml(config, true)}
+        </div>
+    `;
 }
 
 /**
@@ -207,9 +277,13 @@ export function renderNothiScreenBannerBar({
                     ` : `
                         <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                             <i class="fa-solid fa-bookmark text-sky-400"></i>
-                            <span>সেকশন ব্যানার ও প্রিন্ট শিরোনাম</span>
+                            <span>PDF শিরোনাম ও সেকশন ব্যানার</span>
                         </span>
                     `}
+                    <span class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-950/80 text-blue-200 border border-blue-700/60 whitespace-nowrap" title="PDF হেডারের সাদা পিল শিরোনাম">
+                        <i class="fa-solid fa-file-pdf text-sky-400 text-[9px]"></i>
+                        <span>PDF শিরোনাম: ${escapeHTML(cfg.motherTitle)}</span>
+                    </span>
                     <span class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.isCustom ? 'bg-sky-500/10 text-sky-300 border border-sky-500/25' : 'bg-slate-800 text-slate-400 border border-slate-700'} whitespace-nowrap">
                         <i class="fa-solid ${cfg.isCustom ? 'fa-check-double' : 'fa-wand-magic-sparkles'} text-[9px]"></i>
                         <span>${cfg.isCustom ? 'কাস্টম সেট করা' : 'ডিফল্ট'}</span>
@@ -220,7 +294,7 @@ export function renderNothiScreenBannerBar({
                     <button type="button" data-edit-nothi-banner="${escapeHTML(sectionKey)}"
                         class="px-3 py-1.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 hover:text-white border border-sky-500/35 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95">
                         <i class="fa-solid fa-pen-to-square text-[11px]"></i>
-                        <span>ব্যানার লেখা সেট / এডিট করুন</span>
+                        <span>PDF শিরোনাম ও ব্যানার এডিট</span>
                     </button>
                 </div>
             </div>

@@ -131,11 +131,14 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
     return `
         <div class="remittance-print-sheet">
             <!-- Official Mother Header Banner -->
-            ${renderPrintHeader(settings, {
-                title: 'ডুবাই টাকা পাঠানোর হিসাব বুক',
-                pageLabel: 'রেজিস্টার খাতা পাতা',
-                pageNo: '০০০১'
-            })}
+            ${(() => {
+                const bannerCfg = resolveSectionBannerConfig(consignment, 'remittance');
+                return renderPrintHeader(settings, {
+                    title: bannerCfg.motherTitle,
+                    pageLabel: 'রেজিস্টার খাতা পাতা',
+                    pageNo: bannerCfg.pageNo || '০০০১'
+                });
+            })()}
 
             <!-- Customizable Per-Section Banner Bar -->
             ${renderNothiPrintSectionBanner(consignment, 'remittance')}
@@ -143,22 +146,26 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
             <!-- 4 Master KPI Grid -->
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 5px;">
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 2.5px solid #6366f1; border-radius: 4px; padding: 3px 5px; text-align: center;">
-                    <div style="font-size: 7.5px; font-weight: 700; color: #64748b; margin-bottom: 1px;">১. পর্যায় ১ (২০২৫ ইনভেস্ট)</div>
+                    <div style="font-size: 7.5px; font-weight: 700; color: #64748b;">১. পর্যায় ১ (২০২৫ ইনভেস্ট)</div>
+                    <div class="num-font" style="font-size: 6.5px; font-weight: 700; color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 3px; display: inline-block; padding: 0.5px 4px; margin: 1px 0;">${escapeHTML(summary.stage1.dates)}</div>
                     <div class="num-font" style="font-size: 10px; font-weight: 900; color: #4f46e5; line-height: 1.2;">${s1Aed} AED</div>
                     <div style="font-size: 7px; color: #475569; font-weight: 600;">৳ ${s1Bdt} (রেট: ${summary.stage1.rate})</div>
                 </div>
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 2.5px solid #0284c7; border-radius: 4px; padding: 3px 5px; text-align: center;">
-                    <div style="font-size: 7.5px; font-weight: 700; color: #64748b; margin-bottom: 1px;">২. পর্যায় ২ সাবেক (২০২৬ সাবেক)</div>
+                    <div style="font-size: 7.5px; font-weight: 700; color: #64748b;">২. পর্যায় ২ সাবেক (২০২৬ সাবেক)</div>
+                    <div class="num-font" style="font-size: 6.5px; font-weight: 700; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 3px; display: inline-block; padding: 0.5px 4px; margin: 1px 0;">${escapeHTML(summary.stage2.dates)}</div>
                     <div class="num-font" style="font-size: 10px; font-weight: 900; color: #0284c7; line-height: 1.2;">${s2Aed} AED</div>
                     <div style="font-size: 7px; color: #475569; font-weight: 600;">৳ ${s2Bdt} (রেট: ${summary.stage2.rate.toFixed(2)})</div>
                 </div>
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 2.5px solid #059669; border-radius: 4px; padding: 3px 5px; text-align: center;">
-                    <div style="font-size: 7.5px; font-weight: 700; color: #64748b; margin-bottom: 1px;">৩. পর্যায় ৩ রানিং (${summary.stage3.count} কিস্তি)</div>
+                    <div style="font-size: 7.5px; font-weight: 700; color: #64748b;">৩. পর্যায় ৩ রানিং (${summary.stage3.count} কিস্তি)</div>
+                    <div class="num-font" style="font-size: 6.5px; font-weight: 700; color: #047857; background: #d1fae5; border: 1px solid #a7f3d0; border-radius: 3px; display: inline-block; padding: 0.5px 4px; margin: 1px 0;">${escapeHTML(summary.stage3.dates)}</div>
                     <div class="num-font" style="font-size: 10px; font-weight: 900; color: #059669; line-height: 1.2;">${s3Aed} AED</div>
                     <div style="font-size: 7px; color: #475569; font-weight: 600;">৳ ${s3Bdt} (গড়: ${summary.stage3.rate.toFixed(2)})</div>
                 </div>
                 <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 2.5px solid #d97706; border-radius: 4px; padding: 3px 5px; text-align: center;">
-                    <div style="font-size: 7.5px; font-weight: 800; color: #b45309; margin-bottom: 1px;">৪. ১ম কনসোলমেন্ট সর্বমোট তহবিল</div>
+                    <div style="font-size: 7.5px; font-weight: 800; color: #b45309;">৪. ১ম কনসোলমেন্ট সর্বমোট তহবিল</div>
+                    <div class="num-font" style="font-size: 6.5px; font-weight: 800; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 3px; display: inline-block; padding: 0.5px 4px; margin: 1px 0;">${escapeHTML(summary.grandTotal.dates)}</div>
                     <div class="num-font" style="font-size: 10px; font-weight: 900; color: #b45309; line-height: 1.2;">${grandAed} AED</div>
                     <div style="font-size: 7px; color: #92400e; font-weight: 700;">৳ ${grandBdt} (গড়: ${summary.grandTotal.rate.toFixed(2)})</div>
                 </div>

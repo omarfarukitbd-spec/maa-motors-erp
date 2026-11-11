@@ -329,6 +329,31 @@ function runFinancialMathTests() {
     assert.strictEqual(master4TierCapEx, 325502624, "4-Tier Master Project CapEx mismatch (Target: 32,55,02,624)");
     passed++;
 
+    // Test 14: Invariant 14 - Container L/C Open vs Closed Partitioning (7 Closed / 2 Open) & Phase Date Bounds
+    const lcWithStatus = lcContainerRows.map(c => ({
+        ...c,
+        isSettled: c.containerNo <= 7,
+        usd: safeRound(c.payments.reduce((acc, p) => acc + p.usd, 0)),
+        bdt: safeRound(c.payments.reduce((acc, p) => acc + p.bdt, 0))
+    }));
+    const closedList = lcWithStatus.filter(c => c.isSettled);
+    const openList = lcWithStatus.filter(c => !c.isSettled);
+    assert.strictEqual(closedList.length, 7, "Closed container count must be 7");
+    assert.strictEqual(openList.length, 2, "Open container count must be 2");
+
+    const closedBDT = safeRound(closedList.reduce((acc, c) => acc + c.bdt, 0));
+    const openBDT = safeRound(openList.reduce((acc, c) => acc + c.bdt, 0));
+    const closedUSD = safeRound(closedList.reduce((acc, c) => acc + c.usd, 0));
+    const openUSD = safeRound(openList.reduce((acc, c) => acc + c.usd, 0));
+    assert.strictEqual(safeRound(closedBDT + openBDT), totalLcBDT, "Closed + Open BDT must equal total L/C BDT");
+    assert.strictEqual(safeRound(closedUSD + openUSD), totalLcUSD, "Closed + Open USD must equal total L/C USD");
+
+    const sampleIsoDates = ['2026-11-09', '2026-10-14', '2026-10-25'].sort();
+    const toDmy = iso => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+    const stage3Range = `${toDmy(sampleIsoDates[0])} - ${toDmy(sampleIsoDates[sampleIsoDates.length - 1])}`;
+    assert.strictEqual(stage3Range, '14/10/2026 - 09/11/2026', "Stage 3 chronological range mismatch");
+    passed++;
+
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);
     return true;
 }

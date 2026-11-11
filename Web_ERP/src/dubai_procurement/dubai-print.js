@@ -15,7 +15,7 @@ import {
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
-import { renderNothiPrintSectionBanner } from './dubai-section-banner.js';
+import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
 export async function printDubaiAuditSheet(auditData, memos = [], remittances = [], expenses = [], consignment = null) {
     if (!auditData) return;
@@ -146,10 +146,11 @@ function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
         `).join('');
     }
 
+    const auditBannerCfg = resolveSectionBannerConfig(consignment, 'audit');
     const headerHtml = renderPrintHeader(settings, {
-        title: 'দুবাই সাপ্তাহিক ক্যাশ অডিট শিট',
+        title: auditBannerCfg.motherTitle,
         pageLabel: 'রেজিস্টার খাতা পাতা',
-        pageNo: '০০০৫'
+        pageNo: auditBannerCfg.pageNo || '০০০৫'
     });
 
     const printTimeStr = new Date().toLocaleString('en-US', {

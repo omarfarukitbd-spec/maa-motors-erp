@@ -224,6 +224,62 @@ export const DubaiLCDAO = {
     },
 
     /**
+     * Update container lifecycle closing status (`isSettled`) and optional deliveryDate / closedDate.
+     * Supports marking a container "শেষ / সমাপ্ত" even without a specific delivery date.
+     * @param {string} containerId
+     * @param {Object} statusPayload
+     */
+    async updateContainerStatus(containerId, { isSettled = false, deliveryDate = '', closedDate = '' } = {}) {
+        try {
+            const dbDelivery = deliveryDate && String(deliveryDate).trim() !== '' ? toDBDate(deliveryDate) : '';
+            const finalSettled = Boolean(isSettled || dbDelivery !== '');
+            const dbClosed = finalSettled
+                ? (closedDate && String(closedDate).trim() !== '' ? toDBDate(closedDate) : dbDelivery)
+                : '';
+
+            await db.collection(LC_COLLECTION).doc(containerId).set({
+                isSettled: finalSettled,
+                deliveryDate: dbDelivery,
+                closedDate: dbClosed,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        } catch (e) {
+            console.error('Error updating container lifecycle status:', e);
+            throw e;
+        }
+    },
+
+    /**
+     * Batch-update open/closed lifecycle statuses across multiple containers in one atomic commit.
+     * @param {Array<{id: string, isSettled: boolean, deliveryDate?: string}>} updates
+     */
+    async batchSetContainersStatus(updates = []) {
+        if (!Array.isArray(updates) || updates.length === 0) return;
+        try {
+            const batch = db.batch();
+            updates.forEach(item => {
+                if (!item?.id) return;
+                const docRef = db.collection(LC_COLLECTION).doc(item.id);
+                const dbDelivery = item.deliveryDate && String(item.deliveryDate).trim() !== ''
+                    ? toDBDate(item.deliveryDate)
+                    : undefined;
+                const patch = {
+                    isSettled: Boolean(item.isSettled),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                if (dbDelivery !== undefined) {
+                    patch.deliveryDate = dbDelivery;
+                }
+                batch.set(docRef, patch, { merge: true });
+            });
+            await batch.commit();
+        } catch (e) {
+            console.error('Error in batch container status update:', e);
+            throw e;
+        }
+    },
+
+    /**
      * Delete an entire container L/C document
      * @param {string} containerId
      */
@@ -259,7 +315,7 @@ export const DubaiLCDAO = {
                     lcNo: '10541',
                     company: 'আরিয়ান মো: ওয়ার্কশপ',
                     deliveryDate: '',
-                    isSettled: false,
+                    isSettled: true,
                     notes: 'মালিক বেলাল হোসেন স্বাক্ষরিত ০৩/১১/২৫',
                     payments: [
                         { id: 'P1-1', date: '2025-10-21', description: 'মূল এলসি ওপেনিং পেমেন্ট', amountUSD: 4530, amountBDT: 350000 },
@@ -273,7 +329,7 @@ export const DubaiLCDAO = {
                     lcNo: '10602',
                     company: 'আরিয়ান মো: ওয়ার্কশপ',
                     deliveryDate: '',
-                    isSettled: false,
+                    isSettled: true,
                     notes: 'মালিক স্বাক্ষরিত ০৪/১১/২৫',
                     payments: [
                         { id: 'P2-1', date: '2025-10-30', description: 'মূল এলসি ওপেনিং পেমেন্ট', amountUSD: 4620, amountBDT: 550000 },
@@ -287,7 +343,7 @@ export const DubaiLCDAO = {
                     lcNo: '10641',
                     company: 'আরিয়ান মো: ওয়ার্কশপ (আরমান)',
                     deliveryDate: '',
-                    isSettled: false,
+                    isSettled: true,
                     notes: 'হলুদ হাইলাইট: আরিয়ান LC ১৫,০০০ টাকা আরমান',
                     payments: [
                         { id: 'P3-1', date: '2025-11-17', description: 'মূল এলসি ওপেনিং পেমেন্ট', amountUSD: 6110, amountBDT: 750000 },
@@ -301,7 +357,7 @@ export const DubaiLCDAO = {
                     lcNo: '10701',
                     company: 'আরিয়ান মো: ওয়ার্কশপ',
                     deliveryDate: '',
-                    isSettled: false,
+                    isSettled: true,
                     notes: 'সম্পূর্ণ হিসাব এলসি মার্টিনের সাথে কথা হয়েছে (Paid 26/01/26)',
                     payments: [
                         { id: 'P4-1', date: '2025-12-19', description: 'সম্পূর্ণ এলসি ও সেটেলমেন্ট (Paid 26/01/26)', amountUSD: 5725, amountBDT: 900000 }
@@ -314,7 +370,7 @@ export const DubaiLCDAO = {
                     lcNo: '10646',
                     company: 'আরিয়ান মোটর',
                     deliveryDate: '',
-                    isSettled: false,
+                    isSettled: true,
                     notes: 'Paid 03/03/26, মালিক স্বাক্ষরিত',
                     payments: [
                         { id: 'P5-1', date: '2026-01-22', description: 'এলসি ক্লিয়ারেন্স ও সেটেলমেন্ট (Paid 03/03/26)', amountUSD: 5780, amountBDT: 700000 }
@@ -327,7 +383,7 @@ export const DubaiLCDAO = {
                     lcNo: '10354',
                     company: 'আরিয়ান মোট: ওয়ার্কশপ',
                     deliveryDate: '',
-                    isSettled: false,
+                    isSettled: true,
                     notes: 'মালিক বেলাল হোসাইন স্বাক্ষরিত ০৩/০৭/২৬',
                     payments: [
                         { id: 'P6-1', date: '2026-06-23', description: 'মূল এলসি ওপেনিং পেমেন্ট', amountUSD: 5141, amountBDT: 600000 },
@@ -341,7 +397,7 @@ export const DubaiLCDAO = {
                     lcNo: '10395',
                     company: 'আরিয়ান মোটর ওয়ার্কশপ',
                     deliveryDate: '',
-                    isSettled: false,
+                    isSettled: true,
                     notes: 'M/S. MAA MOTORS Proprietor স্বাক্ষরিত',
                     payments: [
                         { id: 'P7-1', date: '2026-08-15', description: 'মূল এলসি ওপেনিং পেমেন্ট', amountUSD: 4805, amountBDT: 700000 },

@@ -112,11 +112,14 @@ function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary,
     return `
         <div class="bd-print-sheet">
             <!-- Mother Header (Official Corporate Design) -->
-            ${renderPrintHeader(settings, {
-                title: 'বাংলাদেশ লোকাল ক্লিয়ারেন্স ও ব্যয় বুক',
-                pageLabel: 'রেজিস্টার খাতা পাতা',
-                pageNo: '০০০২'
-            })}
+            ${(() => {
+                const bannerCfg = resolveSectionBannerConfig(consignment, 'bd-expense');
+                return renderPrintHeader(settings, {
+                    title: bannerCfg.motherTitle,
+                    pageLabel: 'রেজিস্টার খাতা পাতা',
+                    pageNo: bannerCfg.pageNo || '০০০২'
+                });
+            })()}
 
             <!-- Customizable Per-Section Banner Bar -->
             ${renderNothiPrintSectionBanner(consignment, 'bd-expense')}

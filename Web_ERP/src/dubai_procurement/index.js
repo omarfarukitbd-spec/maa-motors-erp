@@ -17,14 +17,16 @@ export { calculatePortDutySummary, calculateMasterProjectCapEx } from './dubai-p
 export { initDubaiLCModule, cleanupDubaiLC } from './dubai-lc-ui.js';
 export { DubaiLCDAO } from './dubai-lc-dao.js';
 export { printDubaiLCBook } from './dubai-lc-print.js';
-export { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx } from './dubai-lc-calc.js';
+export { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx, isContainerClosed } from './dubai-lc-calc.js';
+export { openBulkCloseContainersModal } from './dubai-lc-modals.js';
 export { initNothiBookHub, cleanupNothiBookHub } from './dubai-nothi-hub.js';
 export { renderNothiSubBookHeader, NOTHI_BOOK_CATEGORIES } from './dubai-subbook-header.js';
 export {
     DEFAULT_SECTION_BANNERS,
     resolveSectionBannerConfig,
     renderNothiPrintSectionBanner,
-    renderNothiScreenBannerBar
+    renderNothiScreenBannerBar,
+    renderNothiDualPreviewHtml
 } from './dubai-section-banner.js';
 export { openNothiBannerEditorModal, mountNothiBannerBar } from './dubai-banner-editor-modal.js';
 

@@ -141,7 +141,7 @@ function renderNothiHubSkeleton(container) {
                         <button type="button" id="btn-nothi-hub-banner-settings"
                             class="px-3.5 py-2.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 hover:text-white border border-sky-500/35 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm whitespace-nowrap">
                             <i class="fa-solid fa-pen-ruler text-sky-400"></i>
-                            <span>সেকশন ব্যানার সেটিংস</span>
+                            <span>PDF শিরোনাম ও ব্যানার সেটিংস</span>
                         </button>
                     </div>
                 </div>
