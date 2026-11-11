@@ -1,5 +1,6 @@
 import { escapeHTML, formatAmountWithComma } from '../../utils/formatters.js';
 import { formatAppDate } from '../../utils/date-logic/date-converter.js';
+import { renderSharedPrintHeader } from './print-header.js';
 
 /**
  * Universal Scanned Memo Print Page Generator
@@ -20,30 +21,16 @@ export function renderScannedMemoPrintPage(memo, meta = {}, settings = {}) {
     const customerName = escapeHTML((meta.customerName || '').replace(/^\[.*?\]\s*/, '').trim() || 'সম্মানিত গ্রাহক');
     const accountNo = escapeHTML(meta.accountNo || '');
 
-    const shopName = escapeHTML(settings.shopName || "M/S. MAA-MOTOR'S");
-    const shopPhone = escapeHTML(settings.shopPhone || "01819-397669, 01815-707934");
-    const shopLogo = settings.shopLogo || "/shop-official-logo.jpg";
-
     return `
-        <div class="print-page memo-print-page" style="page-break-before: always; break-before: page; min-height: 1123px; width: 794px; padding: 18px 24px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; margin: 0 auto; font-family: 'Inter', 'Kalpurush', 'Hind Siliguri', sans-serif;">
+        <div class="print-page memo-print-page" style="page-break-before: always; break-before: page; min-height: 1123px; width: 794px; padding: 18px 24px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; margin: 0 auto; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif;">
             
-            <!-- Compact Corporate Scanned Memo Header -->
-            <div style="width: 100%; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 12px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2); -webkit-print-color-adjust: exact; print-color-adjust: exact; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 40px; height: 40px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #ffffff; flex-shrink: 0; padding: 1px;">
-                        <img src="${shopLogo}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />
-                    </div>
-                    <div>
-                        <h2 style="font-size: 15px; font-weight: 900 !important; margin: 0; text-transform: uppercase; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', sans-serif;">${shopName}</h2>
-                        <p style="font-size: 9.5px; margin: 2px 0 0 0; opacity: 0.95; font-weight: 600 !important; color: #ffffff !important;">সংযুক্ত মূল মেমো • মুরাদপুর, চট্টগ্রাম | মোবাইল: ${shopPhone}</p>
-                    </div>
-                </div>
-                <div style="text-align: right; flex-shrink: 0;">
-                    <div style="display: inline-block; font-size: 12px; font-weight: 900 !important; text-transform: uppercase; background: rgba(255, 255, 255, 0.2) !important; border: 1px solid rgba(255, 255, 255, 0.4); padding: 4px 12px; border-radius: 8px; color: #ffffff !important; font-family: 'Inter', monospace;">
-                        ভাউচার ${cleanV}
-                    </div>
-                    <div style="font-size: 9px; font-weight: 700; margin-top: 3px; opacity: 0.95; color: #e0f2fe;">কপি ${currentIdx}/${totalMemos}</div>
-                </div>
+            <!-- Official Mother PDF Header -->
+            <div style="width: 100%;">
+                ${renderSharedPrintHeader(settings, {
+                    title: `সংযুক্ত স্ক্যান মেমো কপি (${currentIdx}/${totalMemos})`,
+                    pageLabel: 'ভাউচার নং',
+                    pageNo: cleanV
+                })}
             </div>
 
             <!-- Structured Metadata Strip -->
@@ -61,8 +48,8 @@ export function renderScannedMemoPrintPage(memo, meta = {}, settings = {}) {
             </div>
 
             <!-- Scanned Memo Image Display Canvas -->
-            <div style="width: 100%; flex-grow: 1; display: flex; align-items: center; justify-content: center; max-height: 980px; overflow: hidden;">
-                <img src="${memo.url}" style="max-width: 100%; max-height: 965px; object-fit: contain; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);" alt="Scanned Memo ${cleanV}">
+            <div style="width: 100%; flex-grow: 1; display: flex; align-items: center; justify-content: center; max-height: 935px; overflow: hidden;">
+                <img src="${memo.url}" style="max-width: 100%; max-height: 920px; object-fit: contain; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);" alt="Scanned Memo ${cleanV}">
             </div>
 
             <!-- Subtle Corporate Footer Line -->

@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, escapeHTML, renderPrintHeader, showToast, numberToBanglaWords } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getDayOfWeekBangla, escapeHTML, renderPrintHeader, renderRepeatHeader, showToast, numberToBanglaWords } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 
 /**
@@ -64,22 +64,18 @@ export async function printTreasuryReport(ledgerData, filterInfo = {}) {
     const openingDate = filterInfo.openingDate || ledgerData.openingDate || ledgerData.kpis?.openingDate || '2026-08-31';
     const formattedDate = formatAppDate(new Date());
 
-    const page1HeaderHtml = renderPrintHeader(settings, {
-        title: 'TREASURY FUND LEDGER',
-        subtitle: 'মাস্টার ট্রেজারি ও সেন্ট্রাল ফান্ড বহি (Master Fund Flow)',
-        dateRangeStr: periodLabel
-    });
-
-    const repeatHeaderHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #0284c7; padding-bottom:4px; margin-bottom:8px;">
-            <div style="font-size:13px; font-weight:900; color:#0f172a; font-family:'Inter',sans-serif;">
-                TREASURY FUND LEDGER <span style="font-size:10px; color:#475569; font-weight:normal;">(Continued)</span>
-            </div>
-            <div style="font-size:10px; color:#475569; font-family:'Hind Siliguri',sans-serif;">
-                মাস্টার ট্রেজারি ও সেন্ট্রাল ফান্ড বহি | সময়কাল: ${escapeHTML(periodLabel)}
-            </div>
+    const page1HeaderHtml = `
+        ${renderPrintHeader(settings, {
+            title: 'ট্রেজারি ফান্ড লেজার',
+            pageLabel: 'সময়কাল',
+            dateRangeStr: periodLabel
+        })}
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid #0284c7; border-radius:4px; padding:4px 10px; margin-bottom:8px; font-family:'Anek Bangla','Hind Siliguri',sans-serif; font-size:10px; color:#0f172a;">
+            মাস্টার ট্রেজারি ও সেন্ট্রাল ফান্ড বহি • সময়কাল: <strong>${escapeHTML(periodLabel)}</strong>
         </div>
     `;
+
+    const repeatHeaderHtml = renderRepeatHeader('ট্রেজারি ফান্ড লেজার', `সময়কাল: ${escapeHTML(periodLabel)}`);
 
     const tableColHeaderHtml = `
         <thead>
@@ -181,12 +177,12 @@ export async function printTreasuryReport(ledgerData, filterInfo = {}) {
     `;
 
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 35px; page-break-inside: avoid; break-inside: avoid;">
+        <div class="signature-last-page-block" style="margin-top: 48px; page-break-inside: avoid; break-inside: avoid;">
             <div style="display: flex; justify-content: space-between; padding: 0 40px;">
-                <div style="border-top: 1.5px dashed #64748b; width: 160px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; padding-top: 5px; font-family: 'Hind Siliguri', sans-serif;">
+                <div style="border-top: 1.2px dashed #64748b; width: 165px; text-align: center; font-size: 10.5px; font-weight: 700; color: #1e293b; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                     ক্যাশিয়ার / প্রস্তুতকারী<br><span style="font-size: 8.5px; font-weight: normal; color: #64748b;">Prepared By</span>
                 </div>
-                <div style="border-top: 1.5px dashed #64748b; width: 160px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; padding-top: 5px; font-family: 'Hind Siliguri', sans-serif;">
+                <div style="border-top: 1.2px dashed #64748b; width: 165px; text-align: center; font-size: 10.5px; font-weight: 700; color: #1e293b; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                     ব্যবস্থাপনা পরিচালক / মালিক<br><span style="font-size: 8.5px; font-weight: normal; color: #64748b;">Authorized Signature</span>
                 </div>
             </div>

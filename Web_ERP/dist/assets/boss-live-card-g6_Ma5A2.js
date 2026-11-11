@@ -1,4 +1,4 @@
-import{p as e}from"./dao-vTQ5Se06.js";import{_ as t,v as n}from"./print-header-Cd6Zst0y.js";import"./customer-state-DBHlIx5A.js";import{a as r,c as i,s as a}from"./customer-contact-export-helpers-CXFheqab.js";async function o(t,n){let r=document.getElementById(`login-screen`),a=document.getElementById(`app-container`);r&&(r.style.display=`none`),a&&a.classList.add(`hidden`);let o=document.getElementById(`boss-live-card-view`);if(o||(o=document.createElement(`div`),o.id=`boss-live-card-view`,o.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-4 sm:p-6 font-bn flex flex-col items-center justify-start min-h-screen`,document.body.appendChild(o)),!i(t,n)){o.innerHTML=`
+import{p as e}from"./dao-vTQ5Se06.js";import"./audit-CMKHXBN_.js";import{C as t,S as n}from"./ui-helpers-DUIaMlCO.js";import{a as r,c as i,s as a}from"./customer-contact-export-helpers-BAS51UGt.js";async function o(t,n){let r=document.getElementById(`login-screen`),a=document.getElementById(`app-container`);r&&(r.style.display=`none`),a&&a.classList.add(`hidden`);let o=document.getElementById(`boss-live-card-view`);if(o||(o=document.createElement(`div`),o.id=`boss-live-card-view`,o.className=`fixed inset-0 z-[9999] overflow-y-auto bg-slate-950 p-4 sm:p-6 font-bn flex flex-col items-center justify-start min-h-screen`,document.body.appendChild(o)),!i(t,n)){o.innerHTML=`
             <div class="w-full max-w-md bg-slate-900 border border-red-500/30 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl mt-12 space-y-4">
                 <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400">
                     <i class="fa-solid fa-shield-halved text-3xl"></i>
@@ -45,7 +45,7 @@ import{p as e}from"./dao-vTQ5Se06.js";import{_ as t,v as n}from"./print-header-C
                     <span>বর্তমান বকেয়া (Current Net Due)</span>
                 </div>
                 <div class="text-3xl sm:text-4xl font-black font-mono text-red-400 tracking-tight my-1">
-                    ৳ ${n(c)}
+                    ৳ ${t(c)}
                 </div>
                 <p class="text-[11px] text-red-300/80 font-bold">গ্রাহকের নিকট এই পরিমাণ টাকা পাওনা রয়েছে</p>
             </div>
@@ -56,7 +56,7 @@ import{p as e}from"./dao-vTQ5Se06.js";import{_ as t,v as n}from"./print-header-C
                     <span>অগ্রিম ব্যালেন্স (Advance Balance)</span>
                 </div>
                 <div class="text-3xl sm:text-4xl font-black font-mono text-emerald-400 tracking-tight my-1">
-                    ৳ ${n(Math.abs(c))}
+                    ৳ ${t(Math.abs(c))}
                 </div>
                 <p class="text-[11px] text-emerald-300/80 font-bold">গ্রাহকের কোনো বকেয়া নেই (টাকা জমা আছে)</p>
             </div>
@@ -116,11 +116,11 @@ import{p as e}from"./dao-vTQ5Se06.js";import{_ as t,v as n}from"./print-header-C
                 <div class="flex items-start justify-between gap-2">
                     <div>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">দোকানের নাম / গ্রাহক</span>
-                        <h2 class="text-base sm:text-lg font-black text-white leading-tight mt-0.5">${t(i.name||`নাম নেই`)}</h2>
+                        <h2 class="text-base sm:text-lg font-black text-white leading-tight mt-0.5">${n(i.name||`নাম নেই`)}</h2>
                     </div>
                     ${i.accountNo?`
                         <div class="px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-black font-mono text-indigo-300">
-                            #${t(i.accountNo)}
+                            #${n(i.accountNo)}
                         </div>
                     `:``}
                 </div>
@@ -128,12 +128,12 @@ import{p as e}from"./dao-vTQ5Se06.js";import{_ as t,v as n}from"./print-header-C
                 <div class="pt-2 border-t border-slate-800/80 space-y-1.5 text-xs">
                     <div class="flex items-center gap-2 text-slate-300">
                         <i class="fa-solid fa-location-dot text-slate-500 text-xs w-4 text-center"></i>
-                        <span>${t(i.address||`ঠিকানা দেওয়া নেই`)}</span>
+                        <span>${n(i.address||`ঠিকানা দেওয়া নেই`)}</span>
                     </div>
                     ${i.zone?`
                         <div class="flex items-center gap-2 text-slate-400 text-[11px]">
                             <i class="fa-solid fa-map-pin text-slate-500 text-xs w-4 text-center"></i>
-                            <span>জোন: <strong class="text-slate-200">${t(i.zone)}</strong></span>
+                            <span>জোন: <strong class="text-slate-200">${n(i.zone)}</strong></span>
                         </div>
                     `:``}
                 </div>

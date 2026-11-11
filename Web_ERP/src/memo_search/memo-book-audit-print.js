@@ -1,5 +1,5 @@
 import { SettingsDAO } from '../dao.js';
-import { formatAmountWithComma, escapeHTML, formatAppDate, getDayOfWeekBangla, safeRound } from '../utils.js';
+import { formatAmountWithComma, escapeHTML, formatAppDate, getDayOfWeekBangla, safeRound, renderPrintHeader, renderRepeatHeader } from '../utils.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { numberToBanglaWords } from '../utils/currency-words.js';
 
@@ -16,32 +16,18 @@ export async function printMemoBookAuditReport(summary, memos) {
         console.warn("Settings fetch error:", e);
     }
 
-    const shopName = escapeHTML(settings.shopName || "M/S. MAA-MOTOR'S");
-    const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");
-    const shopAddress = escapeHTML(settings.shopAddress || "Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road");
-    const shopPhone = escapeHTML(settings.shopPhone || "01819-397669, 01815-707934");
-    const shopLogo = settings.shopLogo || "/shop-official-logo.jpg";
     const reportDate = formatAppDate(new Date().toISOString().split('T')[0]);
 
-    // 1. Sleek Compact Master Header Banner (Smart PDF Design)
+    // 1. Official Mother PDF Header
     const masterHeaderHtml = `
-        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: #ffffff !important; border-radius: 10px; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2); margin-bottom: 6px; font-family: 'Hind Siliguri', 'Inter', sans-serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 44px; height: 44px; background: #ffffff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #ffffff; flex-shrink: 0; padding: 1px;">
-                    <img src="${shopLogo}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block;" />
-                </div>
-                <div>
-                    <h1 style="font-size: 16px; font-weight: 900 !important; margin: 0; text-transform: uppercase; line-height: 1.1; color: #ffffff !important; font-family: 'Inter', sans-serif !important;">${shopName}</h1>
-                    <p style="font-size: 8.5px; margin: 1px 0; font-weight: 700 !important; color: #e0f2fe !important;">Proprietor: ${shopOwner} • Mobile: ${shopPhone}</p>
-                    <p style="font-size: 8px; margin: 0; opacity: 0.9; font-weight: 600 !important; color: #f0f9ff !important; font-family: 'Hind Siliguri', 'Inter', sans-serif !important;">${shopAddress}</p>
-                </div>
-            </div>
-            <div style="text-align: right; flex-shrink: 0;">
-                <div style="display: inline-block; font-size: 11px; font-weight: 900 !important; text-transform: uppercase; background: rgba(255, 255, 255, 0.2) !important; border: 1px solid rgba(255, 255, 255, 0.4); padding: 3px 10px; border-radius: 6px; letter-spacing: 0.5px; color: #ffffff !important;">MEMO BOOK AUDIT & RECONCILIATION</div>
-                <div style="font-size: 8.5px; font-weight: 700 !important; margin-top: 2px; color: #e0f2fe !important; font-family: 'Hind Siliguri', sans-serif !important;">
-                    রেঞ্জ: <strong>#${summary.startNo} হতে #${summary.endNo}</strong> (${summary.totalFound}/${summary.totalExpected}টি মেমো)
-                </div>
-            </div>
+        ${renderPrintHeader(settings, {
+            title: 'মেমো বহি নিরীক্ষা ও মেলানো',
+            pageLabel: 'রেঞ্জ',
+            pageNo: `#${summary.startNo} - #${summary.endNo}`
+        })}
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid #0284c7; border-radius:4px; padding:4px 10px; margin-bottom:5px; font-family:'Anek Bangla','Hind Siliguri',sans-serif; font-size:9px; color:#0f172a;">
+            <span>মেমো রেঞ্জ: <strong>#${summary.startNo} হতে #${summary.endNo}</strong> (${summary.totalFound}/${summary.totalExpected}টি মেমো)</span>
+            <span>রিপোর্ট তারিখ: <strong>${reportDate}</strong></span>
         </div>
     `;
 
@@ -104,12 +90,10 @@ export async function printMemoBookAuditReport(summary, memos) {
     `;
 
     // 4. Compact Repeat Header for Pages 2+
-    const repeatHeaderHtml = `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px 8px; margin-bottom: 4px; font-family: 'Hind Siliguri', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-            <div style="font-size: 9px; font-weight: 800; color: #0f172a;">${shopName} • মেমো বুক অডিট (#${summary.startNo} - #${summary.endNo})</div>
-            <div style="font-size: 8.5px; font-weight: 700; color: #64748b;">রিপোর্ট তারিখ: ${reportDate}</div>
-        </div>
-    `;
+    const repeatHeaderHtml = renderRepeatHeader(
+        `মেমো বহি নিরীক্ষা ও মেলানো (#${summary.startNo} - #${summary.endNo})`,
+        `রিপোর্ট তারিখ: ${reportDate}`
+    );
 
     // 5. Table Rows Array for DOM measurement
     const rowsArray = memos.map((m, idx) => {
@@ -197,20 +181,20 @@ export async function printMemoBookAuditReport(summary, memos) {
 
     // 7. Exactly 2 Signatures: Left = Manager, Right = In-Charge / Office Boss with Offline Seal Boxes
     const signatureHtml = `
-        <div class="signature-last-page-block" style="margin-top: 24px; page-break-inside: avoid; break-inside: avoid; font-family: 'Hind Siliguri', sans-serif !important;">
+        <div class="signature-last-page-block" style="margin-top: 48px; page-break-inside: avoid; break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif !important;">
             <div style="display: flex; justify-content: space-between; padding: 0 45px;">
-                <div style="width: 170px; text-align: center; font-family: 'Hind Siliguri', sans-serif !important;">
+                <div style="width: 170px; text-align: center; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif !important;">
                     <div style="border: 1px dashed #94a3b8; height: 38px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
-                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
-                        <div style="font-size: 10px; font-weight: 900; color: #0f172a; font-family: 'Hind Siliguri', sans-serif !important;">ম্যানেজার</div>
-                        <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Hind Siliguri', sans-serif !important;">মেসার্স মা মোটরস</div>
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
+                        <div style="font-size: 10.5px; font-weight: 900; color: #0f172a; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif !important;">ম্যানেজার</div>
+                        <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif !important;">মেসার্স মা মোটরস</div>
                     </div>
                 </div>
-                <div style="width: 170px; text-align: center; font-family: 'Hind Siliguri', sans-serif !important;">
+                <div style="width: 170px; text-align: center; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif !important;">
                     <div style="border: 1px dashed #94a3b8; height: 38px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
-                    <div style="border-top: 1.5px dashed #475569; padding-top: 4px;">
-                        <div style="font-size: 10px; font-weight: 900; color: #0f172a; font-family: 'Hind Siliguri', sans-serif !important;">ইনচার্জ বা অফিস বস</div>
-                        <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Hind Siliguri', sans-serif !important;">অনুমোদন ও সিলমোহর</div>
+                    <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
+                        <div style="font-size: 10.5px; font-weight: 900; color: #0f172a; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif !important;">ইনচার্জ বা অফিস বস</div>
+                        <div style="font-size: 8px; font-weight: 600; color: #64748b; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif !important;">অনুমোদন ও সিলমোহর</div>
                     </div>
                 </div>
             </div>
@@ -231,7 +215,7 @@ export async function printMemoBookAuditReport(summary, memos) {
 
     const unifiedFontCss = `
         * {
-            font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
     `;
 

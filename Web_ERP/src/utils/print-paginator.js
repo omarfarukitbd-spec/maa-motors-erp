@@ -82,7 +82,7 @@ export function paginatePrintRows({
                     <tbody>${rows.join('')}</tbody>
                 </table>
                 ${isLast ? summaryHtml + signatureHtml : ''}
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#475569; font-weight:700; border-top:1px solid #cbd5e1; padding-top:6px; margin-top:8px; font-family:'Inter','Kalpurush',sans-serif;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#475569; font-weight:700; border-top:1px solid #cbd5e1; padding-top:6px; margin-top:8px; font-family:'Anek Bangla','Hind Siliguri','Inter',sans-serif;">
                     <span>তারিখ: ${formattedDate}</span>
                     <span>পৃষ্ঠা ${num} / ${total}</span>
                 </div>
@@ -153,7 +153,7 @@ export function paginateStatementRows({
                     <tbody style="font-size:10px;">${rows.join('')}</tbody>
                 </table>
                 ${isLast ? summaryHtml + signatureHtml : ''}
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#475569; font-weight:700; border-top:1px solid #cbd5e1; padding-top:6px; margin-top:8px; font-family:'Inter','Kalpurush',sans-serif;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#475569; font-weight:700; border-top:1px solid #cbd5e1; padding-top:6px; margin-top:8px; font-family:'Anek Bangla','Hind Siliguri','Inter',sans-serif;">
                     <span>তারিখ: ${formattedDate}</span>
                     <span>পৃষ্ঠা ${num} / ${total}</span>
                 </div>

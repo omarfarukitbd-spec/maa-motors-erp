@@ -19,11 +19,6 @@ export async function printPayrollMasterReport(state) {
     }
 
     const summary = calculatePayrollSummary(state.sections, state.aedRate);
-    const shopName = escapeHTML(settings.shopName || "M/S. MAA-MOTOR'S");
-    const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");
-    const shopAddress = escapeHTML(settings.shopAddress || "Shop No. 22, Rahman Tower, 1st Rail Gate, Muradpur, Hathazari Road");
-    const shopPhone = escapeHTML(settings.shopPhone || "01819-397669, 01815-707934");
-    const shopLogo = settings.shopLogo || "/shop-official-logo.jpg";
     const reportDate = formatAppDate(getTodayLocalDateString());
     const monthYear = state.monthYear || '২০২৬-১০';
 

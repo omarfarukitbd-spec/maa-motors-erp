@@ -162,16 +162,22 @@ export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos
         }
 
         if (layoutType === 'a4') {
+            const voucherNoClean = escapeHTML(txn.voucherNo || txnId.slice(-6).toUpperCase());
             const printHeader = renderPrintHeader({
-                title: 'INVOICE',
-                dateRangeStr: `ভাউচার #: #${escapeHTML(txn.voucherNo || txnId.slice(-6).toUpperCase())} • তারিখ: ${formatAppDate(txn.date)} (${getDayOfWeekBangla(txn.date)})`
+                title: 'ইনভয়েস / বিক্রয় চালান',
+                pageLabel: 'ভাউচার নং',
+                pageNo: `#${voucherNoClean}`
             }, settings);
 
             const hasAttachedMemos = Array.isArray(selectedMemos) && selectedMemos.length > 0;
             const totalDocPages = 1 + (hasAttachedMemos ? selectedMemos.length : 0);
             const a4WrapperHtml = `
-                <div class="a4-wrapper font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a; page-break-after: ${hasAttachedMemos ? 'always' : 'auto'}; break-after: ${hasAttachedMemos ? 'page' : 'auto'};">
+                <div class="a4-wrapper font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif; page-break-after: ${hasAttachedMemos ? 'always' : 'auto'}; break-after: ${hasAttachedMemos ? 'page' : 'auto'};">
                     ${printHeader}
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid #0284c7; border-radius:4px; padding:4px 10px; margin-bottom:8px; font-size:10px; color:#0f172a;">
+                        <span>ভাউচার নং: <strong class="font-mono">#${voucherNoClean}</strong></span>
+                        <span>তারিখ: <strong>${formatAppDate(txn.date)} (${getDayOfWeekBangla(txn.date)})</strong></span>
+                    </div>
 
                     <!-- Customer Details Box (Full Width) -->
                     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 18px;">
@@ -210,13 +216,13 @@ export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos
                         </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; margin-top: 40px; padding: 0 20px; page-break-inside: avoid;">
-                        <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; width: 140px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">গ্রাহকের স্বাক্ষর</div>
-                        <div style="border-top: 1.5px dashed #64748b; padding-top: 5px; width: 140px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 48px; padding: 0 20px; page-break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 155px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">গ্রাহকের স্বাক্ষর</div>
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 155px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
 
                     <!-- A4 Invoice Bottom Page Footer -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #64748b; font-weight: 700; border-top: 1px solid #cbd5e1; padding-top: 6px; margin-top: 24px; font-family: 'Inter', 'Kalpurush', sans-serif;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #64748b; font-weight: 700; border-top: 1px solid #cbd5e1; padding-top: 6px; margin-top: 24px; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif;">
                         <span>তারিখ: ${formatAppDate(txn.date)}</span>
                         <span style="font-family: monospace;">পৃষ্ঠা 1 / ${totalDocPages}</span>
                     </div>

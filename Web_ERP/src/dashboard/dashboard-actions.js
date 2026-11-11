@@ -172,8 +172,9 @@ export async function printExecutiveSummary() {
         }
 
         const headerHtml = renderPrintHeader({
-            title: 'EXECUTIVE REPORT',
-            dateRangeStr: `তারিখ: ${formatAppDate(today)} • সময়: ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+            title: 'দৈনিক এক্সিকিউটিভ রিপোর্ট',
+            pageLabel: 'তারিখ',
+            pageNo: formatAppDate(today)
         }, settings);
 
         let container = document.getElementById('print-receipt-container');
@@ -258,10 +259,10 @@ export async function printExecutiveSummary() {
                                     </tbody>
                                 </table>
 
-                                <div style="margin-top: 45px; page-break-inside: avoid;">
+                                <div style="margin-top: 48px; page-break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                                     <div style="display: flex; justify-content: space-between; padding: 0 40px;">
-                                        <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">প্রস্তুতকারীর স্বাক্ষর<br><span style="font-size:8px; font-weight:normal;">Prepared By</span></div>
-                                        <div style="border-top: 1.5px dashed #64748b; padding-top: 6px; width: 150px; text-align: center; font-size: 11px; font-weight: 700; color: #334155;">কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:8px; font-weight:normal;">Authorized Signature</span></div>
+                                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">প্রস্তুতকারীর স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Prepared By</span></div>
+                                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Authorized Signature</span></div>
                                     </div>
                                 </div>
                             </div>

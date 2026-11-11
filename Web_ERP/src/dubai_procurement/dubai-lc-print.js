@@ -252,7 +252,7 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
             </div>
 
             <!-- Signatures Section -->
-            <div class="print-sig-block" style="margin-top: 40px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
+            <div class="print-sig-block" style="margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
                 <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700;">
                     প্রস্তুতকারক (হিসাব বিভাগ)
                 </div>

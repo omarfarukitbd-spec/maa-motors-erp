@@ -62,10 +62,6 @@ export async function generateExpenseReport() {
 
 async function executePrintReport(data, start, end) {
     const settings = await SettingsDAO.getAppSettings();
-    const shopName = settings.shopName || "M/S. Maa Motors";
-    const shopOwner = settings.shopOwner || "Mohammed Amran";
-    const shopPhone = settings.shopPhone || "০১৮১৯-৩৯৭৬৬৯";
-    const shopAddress = settings.shopAddress || "চট্টগ্রাম।";
     const dateRangeStr = `${formatAppDate(start)} হতে ${formatAppDate(end)}`;
 
     // Sort ascending for chronological report
@@ -95,34 +91,7 @@ async function executePrintReport(data, start, end) {
     container.className = 'print-a4';
     container.innerHTML = `
         <style>
-            .a4-wrapper { padding: 0; color: #0f172a; font-family: 'Kalpurush', 'Hind Siliguri', sans-serif; }
-            .header-card {
-                background: #0369a1 !important;
-                color: white !important;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-radius: 12px;
-                margin-bottom: 20px;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-                padding: 15px 30px;
-                -webkit-print-color-adjust: exact;
-            }
-            .logo-box {
-                width: 85px; height: 85px; background: white; border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-                padding: 6px; flex-shrink: 0;
-            }
-            .shop-info h1 { font-size: 28px; font-weight: 900; margin: 0; letter-spacing: -0.5px; text-transform: uppercase; }
-            .shop-info p { font-size: 12px; margin: 4px 0 0 0; opacity: 0.9; font-weight: 500; }
-
-            .badge-box {
-                font-size: 22px; font-weight: 900; background: rgba(255,255,255,0.15);
-                padding: 8px 25px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.3);
-                text-align: center;
-            }
-            .date-range { font-size: 10px; font-weight: 700; margin-top: 8px; opacity: 0.8; text-align: right; }
+            .a4-wrapper { padding: 0; color: #0f172a; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif; }
 
             .summary-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 15px; margin-bottom: 20px; align-items: stretch; }
             .compact-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 18px; border-left: 5px solid #0f172a; }
@@ -139,12 +108,12 @@ async function executePrintReport(data, start, end) {
             .report-table th { background: #f1f5f9 !important; color: #0f172a !important; padding: 10px; text-align: left; font-weight: 900; text-transform: uppercase; border-bottom: 1.5px solid #0f172a; -webkit-print-color-adjust: exact; }
             .report-table td { border-bottom: 1px solid #e2e8f0; padding: 8px 12px; color: #0f172a; }
             .report-table .text-right { text-align: right; }
-            .footer-block { margin-top: 60px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #64748b; }
-            .sig-line { border-top: 1.5px dashed #64748b; padding-top: 6px; width: 160px; text-align: center; color: #0f172a; }
+            .footer-block { margin-top: 48px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #64748b; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif; }
+            .sig-line { border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; color: #1e293b; }
         </style>
 
         <div class="a4-wrapper font-bn">
-            ${renderSharedPrintHeader(settings, { title: 'EXPENSE STATEMENT', dateRangeStr })}
+            ${renderSharedPrintHeader(settings, { title: 'ব্যয় বিবরণী / খরচ স্টেটমেন্ট', pageLabel: 'সময়কাল', dateRangeStr })}
 
             <div class="summary-grid">
                 <!-- CATEGORY SUMMARY (Matches Column 1 style) -->
