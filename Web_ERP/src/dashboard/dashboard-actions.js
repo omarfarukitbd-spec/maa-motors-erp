@@ -1,7 +1,7 @@
 /**
  * --- DASHBOARD ACTIONS MODULE (Modular Architecture) ---
  */
-import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, renderPrintHeader, triggerUniversalPrint } from '../utils.js';
+import { formatAmountWithComma, formatAppDate, getTodayLocalDateString, renderPrintHeader, printViaIframe } from '../utils.js';
 import { getCustomerCache } from '../customer/index.js';
 import { SettingsDAO } from '../dao.js';
 import Swal from 'sweetalert2';
@@ -177,103 +177,85 @@ export async function printExecutiveSummary() {
             pageNo: formatAppDate(today)
         }, settings);
 
-        let container = document.getElementById('print-receipt-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'print-receipt-container';
-            document.body.appendChild(container);
-        }
+        const execHtml = `
+            <div class="spe-page a4-wrapper font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif;">
+                ${headerHtml}
 
-        container.className = 'print-a4';
-        container.innerHTML = `
-            <table class="print-layout-table" style="width: 100%; border-collapse: collapse;">
-                <thead><tr><td><div class="print-header-space"></div></td></tr></thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <div class="a4-wrapper font-bn">
-                                ${headerHtml}
+                <div style="font-size: 11px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 2px solid #0284c7; padding-bottom: 4px; margin-bottom: 10px; letter-spacing: 0.5px;">
+                    দৈনিক ব্যবসায়িক সারসংক্ষেপ (KEY PERFORMANCE METRICS)
+                </div>
 
-                                <div style="font-size: 11px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 2px solid #0284c7; padding-bottom: 4px; margin-bottom: 12px; letter-spacing: 0.5px;">
-                                    দৈনিক ব্যবসায়িক সারসংক্ষেপ (KEY PERFORMANCE METRICS)
-                                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;">
+                    <div style="background: #fdf2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; padding: 10px; border-radius: 10px;">
+                        <div style="font-size: 9px; font-weight: 900; color: #991b1b; text-transform: uppercase; margin-bottom: 4px;">মার্কেটে মোট বকেয়া</div>
+                        <strong style="font-size: 15px; font-weight: 900; color: #dc2626;">${dueEl}</strong>
+                    </div>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; padding: 10px; border-radius: 10px;">
+                        <div style="font-size: 9px; font-weight: 900; color: #166534; text-transform: uppercase; margin-bottom: 4px;">আজকের আদায় (Collection)</div>
+                        <strong style="font-size: 15px; font-weight: 900; color: #059669;">${colEl}</strong>
+                    </div>
+                    <div style="background: #fffbe6; border: 1px solid #ffe58f; border-left: 4px solid #d97706; padding: 10px; border-radius: 10px;">
+                        <div style="font-size: 9px; font-weight: 900; color: #856404; text-transform: uppercase; margin-bottom: 4px;">আজকের মোট খরচ</div>
+                        <strong style="font-size: 15px; font-weight: 900; color: #d97706;">${expEl}</strong>
+                    </div>
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; padding: 10px; border-radius: 10px;">
+                        <div style="font-size: 9px; font-weight: 900; color: #1e40af; text-transform: uppercase; margin-bottom: 4px;">মোট কাস্টমার সংখ্যা</div>
+                        <strong style="font-size: 15px; font-weight: 900; color: #2563eb;">${custEl}</strong>
+                    </div>
+                </div>
 
-                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
-                                    <div style="background: #fdf2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; padding: 12px; border-radius: 10px;">
-                                        <div style="font-size: 9px; font-weight: 900; color: #991b1b; text-transform: uppercase; margin-bottom: 4px;">মার্কেটে মোট বকেয়া</div>
-                                        <strong style="font-size: 15px; font-weight: 900; color: #dc2626;">${dueEl}</strong>
-                                    </div>
-                                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; padding: 12px; border-radius: 10px;">
-                                        <div style="font-size: 9px; font-weight: 900; color: #166534; text-transform: uppercase; margin-bottom: 4px;">আজকের আদায় (Collection)</div>
-                                        <strong style="font-size: 15px; font-weight: 900; color: #059669;">${colEl}</strong>
-                                    </div>
-                                    <div style="background: #fffbe6; border: 1px solid #ffe58f; border-left: 4px solid #d97706; padding: 12px; border-radius: 10px;">
-                                        <div style="font-size: 9px; font-weight: 900; color: #856404; text-transform: uppercase; margin-bottom: 4px;">আজকের মোট খরচ</div>
-                                        <strong style="font-size: 15px; font-weight: 900; color: #d97706;">${expEl}</strong>
-                                    </div>
-                                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; padding: 12px; border-radius: 10px;">
-                                        <div style="font-size: 9px; font-weight: 900; color: #1e40af; text-transform: uppercase; margin-bottom: 4px;">মোট কাস্টমার সংখ্যা</div>
-                                        <strong style="font-size: 15px; font-weight: 900; color: #2563eb;">${custEl}</strong>
-                                    </div>
-                                </div>
+                <div style="font-size: 11px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 2px solid #0284c7; padding-bottom: 4px; margin-bottom: 10px; letter-spacing: 0.5px;">
+                    দৈনিক ক্যাশ ফ্লো বিভাজন (DAILY CASH FLOW BREAKDOWN)
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;">
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; padding: 10px; border-radius: 10px;">
+                        <div style="font-size: 8px; font-weight: 900; color: #166534; text-transform: uppercase; margin-bottom: 3px;">ক্যাশ আদায়</div>
+                        <strong style="font-size: 13px; font-weight: 900; color: #059669;">${cashColEl}</strong>
+                    </div>
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; padding: 10px; border-radius: 10px;">
+                        <div style="font-size: 8px; font-weight: 900; color: #1e40af; text-transform: uppercase; margin-bottom: 3px;">ব্যাংক আদায়</div>
+                        <strong style="font-size: 13px; font-weight: 900; color: #2563eb;">${bankColEl}</strong>
+                    </div>
+                    <div style="background: #fffbe6; border: 1px solid #ffe58f; border-left: 4px solid #d97706; padding: 10px; border-radius: 10px;">
+                        <div style="font-size: 8px; font-weight: 900; color: #856404; text-transform: uppercase; margin-bottom: 3px;">মোট খরচ</div>
+                        <strong style="font-size: 13px; font-weight: 900; color: #d97706;">${expEl}</strong>
+                    </div>
+                    <div style="background: ${netCashColor === '#dc2626' ? '#fdf2f2' : '#f0fdf4'}; border: 1px solid ${netCashColor === '#dc2626' ? '#fecaca' : '#bbf7d0'}; border-left: 4px solid ${netCashColor}; padding: 10px; border-radius: 10px;">
+                        <div style="font-size: 8px; font-weight: 900; color: ${netCashColor}; text-transform: uppercase; margin-bottom: 3px;">নিট ক্যাশ · ${netCashLabel}</div>
+                        <strong style="font-size: 13px; font-weight: 900; color: ${netCashColor};">${netCashDisplay}</strong>
+                    </div>
+                </div>
 
-                                <div style="font-size: 11px; font-weight: 900; color: #0284c7; text-transform: uppercase; border-bottom: 2px solid #0284c7; padding-bottom: 4px; margin-bottom: 10px; letter-spacing: 0.5px; margin-top: 4px;">
-                                    দৈনিক ক্যাশ ফ্লো বিভাজন (DAILY CASH FLOW BREAKDOWN)
-                                </div>
-                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
-                                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #059669; padding: 10px; border-radius: 10px;">
-                                        <div style="font-size: 8px; font-weight: 900; color: #166534; text-transform: uppercase; margin-bottom: 3px;">ক্যাশ আদায়</div>
-                                        <strong style="font-size: 13px; font-weight: 900; color: #059669;">${cashColEl}</strong>
-                                    </div>
-                                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; padding: 10px; border-radius: 10px;">
-                                        <div style="font-size: 8px; font-weight: 900; color: #1e40af; text-transform: uppercase; margin-bottom: 3px;">ব্যাংক আদায়</div>
-                                        <strong style="font-size: 13px; font-weight: 900; color: #2563eb;">${bankColEl}</strong>
-                                    </div>
-                                    <div style="background: #fffbe6; border: 1px solid #ffe58f; border-left: 4px solid #d97706; padding: 10px; border-radius: 10px;">
-                                        <div style="font-size: 8px; font-weight: 900; color: #856404; text-transform: uppercase; margin-bottom: 3px;">মোট খরচ</div>
-                                        <strong style="font-size: 13px; font-weight: 900; color: #d97706;">${expEl}</strong>
-                                    </div>
-                                    <div style="background: ${netCashColor === '#dc2626' ? '#fdf2f2' : '#f0fdf4'}; border: 1px solid ${netCashColor === '#dc2626' ? '#fecaca' : '#bbf7d0'}; border-left: 4px solid ${netCashColor}; padding: 10px; border-radius: 10px;">
-                                        <div style="font-size: 8px; font-weight: 900; color: ${netCashColor}; text-transform: uppercase; margin-bottom: 3px;">নিট ক্যাশ · ${netCashLabel}</div>
-                                        <strong style="font-size: 13px; font-weight: 900; color: ${netCashColor};">${netCashDisplay}</strong>
-                                    </div>
-                                </div>
+                <div style="font-size: 11px; font-weight: 900; color: #0f172a; text-transform: uppercase; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 0.5px;">
+                    শীর্ষ ১০ জন সর্বাধিক বকেয়া কাস্টমার (TOP OUTSTANDING DUES)
+                </div>
 
-                                <div style="font-size: 11px; font-weight: 900; color: #0f172a; text-transform: uppercase; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-bottom: 10px; letter-spacing: 0.5px;">
-                                    শীর্ষ ১০ জন সর্বাধিক বকেয়া কাস্টমার (TOP OUTSTANDING DUES)
-                                </div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 11px;">
+                    <thead>
+                        <tr style="background: #f1f5f9; border-bottom: 1.5px solid #0f172a; font-size: 9px; font-weight: 900; text-transform: uppercase;">
+                            <th style="padding: 6px; width: 6%; text-align: center; border: 1px solid #cbd5e1;">SL</th>
+                            <th style="padding: 6px; text-align: left; border: 1px solid #cbd5e1;">কাস্টমারের নাম</th>
+                            <th style="padding: 6px; width: 12%; text-align: center; border: 1px solid #cbd5e1;">A/C NO</th>
+                            <th style="padding: 6px; width: 14%; text-align: center; border: 1px solid #cbd5e1;">জোন</th>
+                            <th style="padding: 6px; width: 16%; text-align: center; border: 1px solid #cbd5e1;">মোবাইল</th>
+                            <th style="padding: 6px; width: 20%; text-align: right; border: 1px solid #cbd5e1;">বর্তমান বকেয়া (৳)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topDuesHtml}
+                    </tbody>
+                </table>
 
-                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 11px;">
-                                    <thead>
-                                        <tr style="background: #f1f5f9; border-bottom: 1.5px solid #0f172a; font-size: 9px; font-weight: 900; text-transform: uppercase;">
-                                            <th style="padding: 6px; width: 6%; text-align: center; border: 1px solid #cbd5e1;">SL</th>
-                                            <th style="padding: 6px; text-align: left; border: 1px solid #cbd5e1;">কাস্টমারের নাম</th>
-                                            <th style="padding: 6px; width: 12%; text-align: center; border: 1px solid #cbd5e1;">A/C NO</th>
-                                            <th style="padding: 6px; width: 14%; text-align: center; border: 1px solid #cbd5e1;">জোন</th>
-                                            <th style="padding: 6px; width: 16%; text-align: center; border: 1px solid #cbd5e1;">মোবাইল</th>
-                                            <th style="padding: 6px; width: 20%; text-align: right; border: 1px solid #cbd5e1;">বর্তমান বকেয়া (৳)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${topDuesHtml}
-                                    </tbody>
-                                </table>
-
-                                <div style="margin-top: 48px; page-break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
-                                    <div style="display: flex; justify-content: space-between; padding: 0 40px;">
-                                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">প্রস্তুতকারীর স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Prepared By</span></div>
-                                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Authorized Signature</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-                <tfoot><tr><td><div class="print-footer-space"></div></td></tr></tfoot>
-            </table>
+                <div class="print-sig-block" style="margin-top: 30px; padding-top: 6px; page-break-inside: avoid; break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
+                    <div style="display: flex; justify-content: space-between; padding: 0 40px;">
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">প্রস্তুতকারীর স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Prepared By</span></div>
+                        <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 165px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">কর্তৃপক্ষের স্বাক্ষর<br><span style="font-size:8.5px; font-weight:normal; color:#64748b;">Authorized Signature</span></div>
+                    </div>
+                </div>
+            </div>
         `;
 
-        triggerUniversalPrint(container);
+        await printViaIframe(execHtml, '', `দৈনিক_এক্সিকিউটিভ_রিপোর্ট_${today}`);
 
     } catch (e) {
         console.error("Executive Print Error:", e);

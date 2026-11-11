@@ -22,7 +22,7 @@ export function renderScannedMemoPrintPage(memo, meta = {}, settings = {}) {
     const accountNo = escapeHTML(meta.accountNo || '');
 
     return `
-        <div class="print-page memo-print-page" style="page-break-before: always; break-before: page; min-height: 1123px; width: 794px; padding: 18px 24px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; margin: 0 auto; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif;">
+        <div class="print-page memo-print-page" style="page-break-before: always; break-before: page; min-height: 1070px; max-height: 1105px; width: 794px; padding: 16px 22px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; margin: 0 auto; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif;">
             
             <!-- Official Mother PDF Header -->
             <div style="width: 100%;">

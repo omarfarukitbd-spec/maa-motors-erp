@@ -132,27 +132,22 @@ async function printCashDenominationSlip({ totalCounted, noteCounts, systemCashA
         }
     });
 
+    const slipCss = `
+        body { font-family: 'Hind Siliguri', 'Inter', sans-serif; margin: 0; padding: 0; color: #0f172a; }
+        .card { width: 380px; margin: 0 auto; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 16px; }
+        .header { text-align: center; border-bottom: 2px solid #0284c7; padding-bottom: 8px; margin-bottom: 12px; }
+        .header h2 { margin: 0; font-size: 16px; font-weight: 900; }
+        .header p { margin: 2px 0 0 0; font-size: 11px; color: #64748b; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
+        th { background: #f1f5f9; padding: 5px; border: 1px solid #cbd5e1; font-weight: 800; }
+        .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; font-size: 11px; margin-bottom: 18px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .signatures { display: flex; justify-content: space-between; font-size: 10px; margin-top: 28px; padding-top: 6px; page-break-inside: avoid; break-inside: avoid; }
+        .sign-line { border-top: 1px dashed #64748b; width: 120px; text-align: center; padding-top: 6px; }
+    `;
+
     const slipHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>Cash Denomination Slip</title>
-            <style>
-                body { font-family: 'Hind Siliguri', 'Inter', sans-serif; margin: 0; padding: 20px; color: #0f172a; }
-                .card { width: 380px; margin: 0 auto; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 16px; }
-                .header { text-align: center; border-bottom: 2px solid #0284c7; padding-bottom: 8px; margin-bottom: 12px; }
-                .header h2 { margin: 0; font-size: 16px; font-weight: 900; }
-                .header p { margin: 2px 0 0 0; font-size: 11px; color: #64748b; }
-                table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
-                th { background: #f1f5f9; padding: 5px; border: 1px solid #cbd5e1; font-weight: 800; }
-                .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; font-size: 11px; margin-bottom: 20px; }
-                .summary-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-                .signatures { display: flex; justify-content: space-between; font-size: 10px; margin-top: 35px; }
-                .sign-line { border-top: 1px dashed #64748b; width: 120px; text-align: center; padding-top: 4px; }
-            </style>
-        </head>
-        <body>
+        <div class="spe-page" style="width: 100%; box-sizing: border-box; padding: 12mm 10mm; background: #ffffff; color: #0f172a; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif;">
             <div class="card">
                 <div class="header">
                     <h2>${settings.shopName || 'MAA MOTORS'}</h2>
@@ -175,14 +170,13 @@ async function printCashDenominationSlip({ totalCounted, noteCounts, systemCashA
                         <strong style="color: ${diff === 0 ? '#15803d' : (diff > 0 ? '#0284c7' : '#dc2626')};">${diff === 0 ? '১০০% মিলেছে (৳ ০)' : (diff > 0 ? `অতিরিক্ত ৳ ${formatAmountWithComma(diff)}` : `শর্ট ৳ ${formatAmountWithComma(Math.abs(diff))}`)}</strong>
                     </div>
                 </div>
-                <div class="signatures">
+                <div class="signatures print-sig-block">
                     <div class="sign-line">ক্যাশিয়ারের স্বাক্ষর</div>
                     <div class="sign-line">মালিকের স্বাক্ষর</div>
                 </div>
             </div>
-        </body>
-        </html>
+        </div>
     `;
 
-    printViaIframe(slipHtml);
+    await printViaIframe(slipHtml, slipCss, `Cash_Denomination_Slip_${today}`);
 }

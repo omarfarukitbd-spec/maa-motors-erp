@@ -22,6 +22,16 @@ table {
     width: 100% !important;
     table-layout: auto !important;
 }
+thead { display: table-header-group !important; }
+tfoot { display: table-footer-group !important; }
+tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+tbody.print-row-group {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
 .data-table { border: 1px solid #cbd5e1 !important; }
 .data-table th, .data-table td {
     border: 1px solid #cbd5e1 !important;
@@ -35,8 +45,20 @@ table {
     border: 1px solid #e2e8f0 !important;
     padding: 4px 5px !important;
 }
-.print-row-no-break, .signature-last-page-block {
+.print-row-no-break,
+.signature-last-page-block,
+.print-sig-block,
+.page-break-avoid,
+[data-print-keep-together] {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+}
+.spe-page {
+    width: 100%;
+    max-width: 794px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    background: #ffffff;
+    color: #0f172a;
 }
 `;

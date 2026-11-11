@@ -75,7 +75,7 @@ export async function printPayrollMasterReport(state) {
 
     const fullHtml = `
         <!-- PAGE 1: Commercial Operations -->
-        <div class="print-page" style="width: 100%; box-sizing: border-box; page-break-after: always; break-after: page; padding: 10mm 12mm; background: #ffffff;">
+        <div class="print-page spe-page" style="width: 100%; box-sizing: border-box; page-break-after: always; break-after: page; padding: 10mm 12mm; background: #ffffff;">
             ${renderPrintHeader(settings, { title: 'মাসিক সামগ্রিক ব্যয় ও বেতন রেজিস্টার', pageLabel: 'পৃষ্ঠা', pageNo: '০১/০২' })}
             <div style="font-size: 8.5px; color: #0f172a; font-weight: bold; margin-bottom: 6px; padding: 4px 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0284c7; border-radius: 4px; display: flex; justify-content: space-between;">
                 <span>বাণিজ্যিক শাখা: ডুবাই অপারেশন, শোরুম দোকান ও গোডাউন কর্মী বেতন ও ব্যয়</span>
@@ -85,7 +85,7 @@ export async function printPayrollMasterReport(state) {
         </div>
 
         <!-- PAGE 2: Residence & Other Expenses + Final Balance -->
-        <div class="print-page" style="width: 100%; box-sizing: border-box; padding: 10mm 12mm; background: #ffffff;">
+        <div class="print-page spe-page" style="width: 100%; box-sizing: border-box; padding: 10mm 12mm; background: #ffffff;">
             ${renderPrintHeader(settings, { title: 'মাসিক সামগ্রিক ব্যয় ও বেতন রেজিস্টার', pageLabel: 'পৃষ্ঠা', pageNo: '০২/০২' })}
             <div style="font-size: 8.5px; color: #0f172a; font-weight: bold; margin-bottom: 6px; padding: 4px 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0284c7; border-radius: 4px; display: flex; justify-content: space-between;">
                 <span>আবাসিক শাখা: নিজ বাড়ি, নতুন বাড়ি, গৃহকর্মী/শিক্ষক বেতন ও ব্যবসায়িক লভ্যাংশ</span>
@@ -119,7 +119,7 @@ export async function printPayrollMasterReport(state) {
             </div>
 
             <!-- Signatures with Empty Seal Boxes for Offline Stamping -->
-            <div style="display: flex; justify-content: space-between; padding: 0 45px; margin-top: 48px; break-inside: avoid; page-break-inside: avoid;">
+            <div class="print-sig-block" style="display: flex; justify-content: space-between; padding: 6px 45px 0 45px; margin-top: 30px; break-inside: avoid; page-break-inside: avoid;">
                 <div style="width: 170px; text-align: center;">
                     <div style="border: 1px dashed #94a3b8; height: 38px; border-radius: 4px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; font-size: 7.5px; color: #94a3b8;">
                         (ম্যানেজার সিলমোহর ও স্বাক্ষর)

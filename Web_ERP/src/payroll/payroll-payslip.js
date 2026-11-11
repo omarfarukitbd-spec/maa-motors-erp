@@ -35,7 +35,7 @@ export async function printEmployeePaySlip(sectionId, itemId) {
     const netWords = numberToBanglaWords(net);
 
     const slipHtml = `
-        <div style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 14mm; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important; color: #0f172a; background: #ffffff; box-sizing: border-box;">
+        <div class="spe-page" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 14mm; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important; color: #0f172a; background: #ffffff; box-sizing: border-box;">
             ${renderPrintHeader(settings, { title: 'কর্মী বেতন ভাউচার', pageLabel: 'মাস', pageNo: monthYear || today })}
             <div style="border: 1.5px solid #0f172a; border-radius: 8px; padding: 14px; background: #ffffff;">
             <div style="display:flex; justify-content:space-between; font-size:9px; color:#475569; margin-bottom:8px; padding-bottom:4px; border-bottom:1px dashed #cbd5e1;">
@@ -91,7 +91,7 @@ export async function printEmployeePaySlip(sectionId, itemId) {
             </div>
 
             <!-- Signatures with Empty Seal Boxes for Offline Stamping -->
-            <div style="display: flex; justify-content: space-between; padding: 0 24px; margin-top: 48px;">
+            <div class="print-sig-block" style="display: flex; justify-content: space-between; padding: 6px 24px 0 24px; margin-top: 28px; page-break-inside: avoid; break-inside: avoid;">
                 <div style="width: 170px; text-align: center;">
                     <div style="border: 1px dashed #94a3b8; height: 36px; border-radius: 4px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; font-size: 7.5px; color: #94a3b8;">
                         (কর্মীর স্বাক্ষর / টিপসহি)

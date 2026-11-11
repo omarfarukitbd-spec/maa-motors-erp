@@ -61,7 +61,7 @@ export async function printDubaiAuditSheet(auditData, memos = [], remittances = 
         }
     `;
 
-    printViaIframe(htmlBody, extraCss, title);
+    await printViaIframe(htmlBody, extraCss, title);
 }
 
 function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
@@ -163,7 +163,7 @@ function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
     });
 
     return `
-        <div class="dubai-print-sheet" style="width: 100%; max-width: 210mm; margin: 0 auto; box-sizing: border-box; padding: 10mm 15mm 8mm 15mm; font-size: 12.5px; line-height: 1.35; background: #ffffff;">
+        <div class="dubai-print-sheet spe-page" style="width: 100%; max-width: 210mm; margin: 0 auto; box-sizing: border-box; padding: 10mm 15mm 8mm 15mm; font-size: 12.5px; line-height: 1.35; background: #ffffff;">
             <!-- Official Corporate Gradient Header -->
             <div style="margin-bottom: 8px;">
                 ${headerHtml}
@@ -345,7 +345,7 @@ function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
 
             <!-- Attached Memos Section (if available) -->
             ${memosSummaryHtml ? `
-                <div style="margin-top: 10px; padding: 6px 10px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+                <div class="print-row-no-break" style="margin-top: 10px; padding: 6px 10px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 6px;">
                     <div style="font-size: 11px; font-weight: 800; color: #334155; margin-bottom: 4px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
                         <span>সংযুক্ত চলতি সপ্তাহের মেমো তালিকা (${memos.length}টি মেমো):</span>
                         <span style="color: #64748b;">এই সপ্তাহের মেমো মোট: <b class="num-font" style="color: #b45309;">${formatAED(runningPur > 0 ? runningPur : cumPur)} AED</b> (সর্বমোট ক্রয়: <b class="num-font" style="color: #0f172a;">${formatAED(cumPur)} AED</b>)</span>
@@ -357,7 +357,7 @@ function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
             ` : ''}
 
             <!-- Signature Footers -->
-            <div class="print-row-no-break" style="margin-top: 48px; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
+            <div class="print-sig-block print-row-no-break" style="margin-top: 30px; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                 <div style="display: flex; justify-content: space-between; padding: 0 16px; text-align: center;">
                     <div style="width: 180px;">
                         <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 11.5px; font-weight: 800; color: #1e293b;">

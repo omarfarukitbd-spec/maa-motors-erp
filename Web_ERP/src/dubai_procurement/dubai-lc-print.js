@@ -7,11 +7,13 @@ import {
     formatAmountWithComma,
     escapeHTML,
     formatAppDate,
+    getTodayLocalDateString,
     renderPrintHeader,
+    renderRepeatHeader,
     numberToBanglaWords
 } from '../utils.js';
 import { SettingsDAO } from '../dao.js';
-import { printViaIframe } from '../utils/smart-print-engine.js';
+import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx, isContainerClosed } from './dubai-lc-calc.js';
 import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
@@ -27,23 +29,13 @@ export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary =
     const title = `Container_LC_Register_${bannerCfg.title || 'Page_0003'}`;
     const summary = calculateLCSummary(consignment, lcBills);
     const capex = calculateMaster4TierCapEx(dubaiSummary, summary, portDutySummary, bdExpenseSummary);
-    const htmlBody = generateLCPrintHtml(consignment, lcBills, summary, capex, settings);
 
     const extraCss = `
-        @page { size: A4 portrait; margin: 0 !important; }
-        html, body {
-            font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif !important;
-            background: #fff !important;
-            color: #0f172a !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
         .num-font {
             font-family: 'Inter', 'Segoe UI', Arial, sans-serif !important;
             font-feature-settings: 'tnum' 1;
             font-variant-numeric: tabular-nums;
         }
-        table { border-collapse: collapse !important; width: 100% !important; }
         .lc-table {
             width: 100% !important;
             border-collapse: collapse !important;
@@ -63,31 +55,27 @@ export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary =
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
-        tr { page-break-inside: avoid !important; }
-        thead { display: table-header-group !important; }
-        .lc-print-sheet {
-            width: 100% !important;
-            max-width: 210mm !important;
-            margin: 0 auto !important;
-            box-sizing: border-box !important;
-            padding: 7mm 10mm 7mm 10mm !important;
-            background: #ffffff !important;
-        }
-        .print-sig-block {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
     `;
 
-    printViaIframe(htmlBody, extraCss, title);
+    const parts = generateLCPaginationParts(consignment, lcBills, summary, capex, settings, bannerCfg);
+    const paginatedHtml = await smartPaginatePrint({
+        ...parts,
+        extraCss,
+        tableClass: 'lc-table',
+        tableStyle: 'width:100%;border-collapse:collapse;border:1.5px solid #334155;',
+        sheetPadding: '7mm 10mm',
+        formattedDate: formatAppDate(getTodayLocalDateString())
+    });
+
+    await printViaIframe(paginatedHtml, extraCss, title);
 }
 
-function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
+function generateLCPaginationParts(consignment, lcBills, summary, capex, settings, bannerCfg) {
     const totalUSDFormatted = formatAmountWithComma(summary.totalUSD);
     const totalBDTFormatted = formatAmountWithComma(summary.totalBDT);
     const amountInWords = numberToBanglaWords(summary.totalBDT);
 
-    const groupedRowsHtml = lcBills.map((container, cIdx) => {
+    const rowsArray = lcBills.map((container, cIdx) => {
         const payments = Array.isArray(container.payments) && container.payments.length > 0
             ? container.payments
             : [{ date: container.date, description: 'মূল এলসি পেমেন্ট', amountUSD: container.totalUSD || 0, amountBDT: container.totalBDT || 0 }];
@@ -127,7 +115,6 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
             `;
         }).join('');
 
-        // Always append a crisp Container Sub-Total footer line reflecting true Open vs Closed lifecycle
         const subTotalRow = `
             <tr style="background: ${isClosed ? '#f1f5f9' : '#fffbeb'}; border-bottom: 1.8px solid #475569;">
                 <td colspan="4" style="padding: 3px 6px; text-align: right; font-size: 8px; font-weight: 800; color: #334155;">
@@ -139,78 +126,74 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
             </tr>
         `;
 
-        return lineRows + subTotalRow;
-    }).join('');
+        return { html: lineRows + subTotalRow, isGroup: true };
+    });
 
-    return `
-        <div class="lc-print-sheet">
-            <!-- Mother Header (Dynamic Nothi Book Title) -->
-            ${(() => {
-                const bannerCfg = resolveSectionBannerConfig(consignment, 'lc-bills');
-                return renderPrintHeader(settings, {
-                    title: bannerCfg.motherTitle,
-                    pageLabel: 'রেজিস্টার খাতা পাতা',
-                    pageNo: bannerCfg.pageNo || '০০০৩'
-                });
-            })()}
+    const page1HeaderHtml = `
+        ${renderPrintHeader(settings, {
+            title: bannerCfg.motherTitle,
+            pageLabel: 'রেজিস্টার খাতা পাতা',
+            pageNo: bannerCfg.pageNo || '০০০৩'
+        })}
+        ${renderNothiPrintSectionBanner(consignment, 'lc-bills')}
+    `;
 
-            <!-- Customizable Per-Section Banner Bar -->
-            ${renderNothiPrintSectionBanner(consignment, 'lc-bills')}
+    const repeatHeaderHtml = renderRepeatHeader(
+        bannerCfg.motherTitle || 'কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার',
+        `রেজিস্টার খাতা পাতা: ${bannerCfg.pageNo || '০০০৩'}`
+    );
 
-            <!-- 3 Master KPI Cards -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 6px;">
-                <div style="background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 4px; padding: 4px 6px; text-align: center;">
-                    <div style="font-size: 7.5px; font-weight: 700; color: #0369a1;">১. মোট কন্টেইনার সংখ্যা</div>
-                    <div style="font-size: 11px; font-weight: 900; color: #0284c7;">${summary.containerCount} টি কন্টেইনার</div>
-                    <div style="font-size: 6.5px; font-weight: 700;">
-                        <span style="color: #047857;">সমাপ্ত (শেষ): ${summary.closedCount} টি</span> |
-                        <span style="color: #b45309;">চলমান (বাকি): ${summary.openCount} টি</span>
-                    </div>
-                </div>
-                <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 4px 6px; text-align: center;">
-                    <div style="font-size: 7.5px; font-weight: 700; color: #15803d;">২. সর্বমোট বৈদেশিক মুদ্রা (ডলার)</div>
-                    <div style="font-size: 11px; font-weight: 900; color: #059669;" class="num-font">$ ${totalUSDFormatted} ডলার</div>
-                    <div style="font-size: 6.5px; color: #475569;">সমাপ্ত: $ ${formatAmountWithComma(summary.closedTotalUSD)} | চলমান: $ ${formatAmountWithComma(summary.openTotalUSD)}</div>
-                </div>
-                <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 4px; padding: 4px 6px; text-align: center;">
-                    <div style="font-size: 7.5px; font-weight: 800; color: #991b1b;">৩. সর্বমোট এলসি মার্জিন ও ব্যাংক খরচ</div>
-                    <div style="font-size: 11.5px; font-weight: 900; color: #b91c1c;" class="num-font">৳ ${totalBDTFormatted}</div>
-                    <div style="font-size: 6.5px; color: #7f1d1d;">সমাপ্ত: ৳ ${formatAmountWithComma(summary.closedTotalBDT)} | চলমান: ৳ ${formatAmountWithComma(summary.openTotalBDT)}</div>
+    const page1ExtraHtml = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 6px;">
+            <div style="background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 4px; padding: 4px 6px; text-align: center;">
+                <div style="font-size: 7.5px; font-weight: 700; color: #0369a1;">১. মোট কন্টেইনার সংখ্যা</div>
+                <div style="font-size: 11px; font-weight: 900; color: #0284c7;">${summary.containerCount} টি কন্টেইনার</div>
+                <div style="font-size: 6.5px; font-weight: 700;">
+                    <span style="color: #047857;">সমাপ্ত (শেষ): ${summary.closedCount} টি</span> |
+                    <span style="color: #b45309;">চলমান (বাকি): ${summary.openCount} টি</span>
                 </div>
             </div>
+            <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 4px 6px; text-align: center;">
+                <div style="font-size: 7.5px; font-weight: 700; color: #15803d;">২. সর্বমোট বৈদেশিক মুদ্রা (ডলার)</div>
+                <div style="font-size: 11px; font-weight: 900; color: #059669;" class="num-font">$ ${totalUSDFormatted} ডলার</div>
+                <div style="font-size: 6.5px; color: #475569;">সমাপ্ত: $ ${formatAmountWithComma(summary.closedTotalUSD)} | চলমান: $ ${formatAmountWithComma(summary.openTotalUSD)}</div>
+            </div>
+            <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 4px; padding: 4px 6px; text-align: center;">
+                <div style="font-size: 7.5px; font-weight: 800; color: #991b1b;">৩. সর্বমোট এলসি মার্জিন ও ব্যাংক খরচ</div>
+                <div style="font-size: 11.5px; font-weight: 900; color: #b91c1c;" class="num-font">৳ ${totalBDTFormatted}</div>
+                <div style="font-size: 6.5px; color: #7f1d1d;">সমাপ্ত: ৳ ${formatAmountWithComma(summary.closedTotalBDT)} | চলমান: ৳ ${formatAmountWithComma(summary.openTotalBDT)}</div>
+            </div>
+        </div>
+    `;
 
-            <!-- Container-Based Multi-Date Table -->
-            <table class="lc-table">
-                <thead>
-                    <tr>
-                        <th style="width: 24px;">নং</th>
-                        <th style="width: 60px;">তারিখ</th>
-                        <th style="width: 120px; text-align: left;">কোম্পানি ও এলসি নং</th>
-                        <th style="width: 140px; text-align: left;">খরচের বিবরণ</th>
-                        <th style="width: 68px; text-align: right;">ডলার (USD)</th>
-                        <th style="width: 85px; text-align: right;">টাকা (BDT)</th>
-                        <th style="width: 65px;">স্ট্যাটাস / ডেলিভারি</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${groupedRowsHtml}
+    const tableColHeaderHtml = `
+        <thead>
+            <tr>
+                <th style="width: 24px;">নং</th>
+                <th style="width: 60px;">তারিখ</th>
+                <th style="width: 120px; text-align: left;">কোম্পানি ও এলসি নং</th>
+                <th style="width: 140px; text-align: left;">খরচের বিবরণ</th>
+                <th style="width: 68px; text-align: right;">ডলার (USD)</th>
+                <th style="width: 85px; text-align: right;">টাকা (BDT)</th>
+                <th style="width: 65px;">স্ট্যাটাস / ডেলিভারি</th>
+            </tr>
+        </thead>
+    `;
 
-                    <!-- Grand Total Row -->
-                    <tr style="background: #0f172a; color: #ffffff; font-weight: 900;">
-                        <td colspan="4" style="padding: 5px 6px; text-align: right; font-size: 9px; color: #f8fafc;">সর্বমোট কন্টেইনার এলসি ও ব্যাংক খরচ (১ হতে ${summary.containerCount} নং):</td>
-                        <td style="padding: 5px 6px; text-align: right; font-size: 9.5px; color: #5eead4;" class="num-font">$ ${totalUSDFormatted}</td>
-                        <td style="padding: 5px 6px; text-align: right; font-size: 10px; color: #fca5a5;" class="num-font">৳ ${totalBDTFormatted}</td>
-                        <td style="padding: 5px 4px; text-align: center; font-size: 8px; color: #f8fafc;">সর্বমোট</td>
-                    </tr>
-                </tbody>
-            </table>
+    const tableFooterRowsHtml = `
+        <tr style="background: #0f172a; color: #ffffff; font-weight: 900;">
+            <td colspan="4" style="padding: 5px 6px; text-align: right; font-size: 9px; color: #f8fafc;">সর্বমোট কন্টেইনার এলসি ও ব্যাংক খরচ (১ হতে ${summary.containerCount} নং):</td>
+            <td style="padding: 5px 6px; text-align: right; font-size: 9.5px; color: #5eead4;" class="num-font">$ ${totalUSDFormatted}</td>
+            <td style="padding: 5px 6px; text-align: right; font-size: 10px; color: #fca5a5;" class="num-font">৳ ${totalBDTFormatted}</td>
+            <td style="padding: 5px 4px; text-align: center; font-size: 8px; color: #f8fafc;">সর্বমোট</td>
+        </tr>
+    `;
 
-            <!-- Words Representation -->
-            <div style="margin-top: 5px; font-size: 8.5px; color: #334155;">
+    const summaryHtml = `
+        <div class="page-break-avoid" style="margin-top: 5px;">
+            <div style="font-size: 8.5px; color: #334155;">
                 <strong>কথায়:</strong> <span style="color: #b91c1c; font-weight: bold;">${escapeHTML(amountInWords)}</span>
             </div>
-
-            <!-- 4-Tier Master Project CapEx Consolidation Box -->
             <div style="margin-top: 6px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 4px; padding: 4px 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #94a3b8; padding-bottom: 2px; margin-bottom: 3px;">
                     <div style="font-size: 8.5px; font-weight: 800; color: #0f172a;">
@@ -239,9 +222,12 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
                     </div>
                 </div>
             </div>
+        </div>
+    `;
 
-            <!-- Signatures Section -->
-            <div class="print-sig-block" style="margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
+    const signatureHtml = `
+        <div class="print-sig-block" style="margin-top: 30px; padding-top: 6px; page-break-inside: avoid; break-inside: avoid;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
                 <div style="text-align: center; border-top: 1.2px dashed #64748b; padding-top: 6px; font-size: 8px; color: #1e293b; font-weight: 700;">
                     প্রস্তুতকারক (হিসাব বিভাগ)
                 </div>
@@ -257,4 +243,15 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
             </div>
         </div>
     `;
+
+    return {
+        rowsArray,
+        page1HeaderHtml,
+        repeatHeaderHtml,
+        page1ExtraHtml,
+        tableColHeaderHtml,
+        tableFooterRowsHtml,
+        summaryHtml,
+        signatureHtml
+    };
 }

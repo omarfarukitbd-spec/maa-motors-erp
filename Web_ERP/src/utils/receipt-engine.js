@@ -172,7 +172,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos
             const hasAttachedMemos = Array.isArray(selectedMemos) && selectedMemos.length > 0;
             const totalDocPages = 1 + (hasAttachedMemos ? selectedMemos.length : 0);
             const a4WrapperHtml = `
-                <div class="a4-wrapper font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif; page-break-after: ${hasAttachedMemos ? 'always' : 'auto'}; break-after: ${hasAttachedMemos ? 'page' : 'auto'};">
+                <div class="a4-wrapper spe-page font-bn" style="width: 100%; max-width: 210mm; margin: 0 auto; padding: 10mm 12mm; box-sizing: border-box; background: #ffffff; color: #0f172a; font-family: 'Anek Bangla', 'Hind Siliguri', 'Inter', sans-serif; page-break-after: ${hasAttachedMemos ? 'always' : 'auto'}; break-after: ${hasAttachedMemos ? 'page' : 'auto'};">
                     ${printHeader}
                     <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid #0284c7; border-radius:4px; padding:4px 10px; margin-bottom:8px; font-size:10px; color:#0f172a;">
                         <span>ভাউচার নং: <strong class="font-mono">#${voucherNoClean}</strong></span>
@@ -216,7 +216,7 @@ export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos
                         </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; margin-top: 48px; padding: 0 20px; page-break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
+                    <div class="print-sig-block" style="display: flex; justify-content: space-between; margin-top: 32px; padding: 6px 20px 0 20px; page-break-inside: avoid; break-inside: avoid; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                         <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 155px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">গ্রাহকের স্বাক্ষর</div>
                         <div style="border-top: 1.2px dashed #64748b; padding-top: 6px; width: 155px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b;">কর্তৃপক্ষের স্বাক্ষর</div>
                     </div>
@@ -229,6 +229,15 @@ export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos
                 </div>
             `;
 
+            const a4ExtraCss = `
+                .print-items-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
+                .print-items-table th { background: #f1f5f9 !important; border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-weight: 900; color: #0f172a; }
+                .print-items-table td { border: 1px solid #e2e8f0; padding: 7px 10px; color: #334155; }
+                .print-items-table .text-left { text-align: left; }
+                .print-items-table .text-right { text-align: right; }
+            `;
+
+            let fullHtml = a4WrapperHtml;
             if (hasAttachedMemos) {
                 let memoPagesHtml = '';
                 selectedMemos.forEach((memo, idx) => {
@@ -242,23 +251,22 @@ export async function printReceiptEngine(txnId, layoutType = 'a4', selectedMemos
                         accountNo: cData.accountNo
                     }, settings);
                 });
-
-                printViaIframe(a4WrapperHtml + memoPagesHtml, '', `Maa_Motors_Invoice_${escapeHTML(txn.voucherNo || txnId.slice(-6))}`);
-                showToast(`মেমো সহ প্রিন্ট প্রস্তুত (${layoutType.toUpperCase()})!`, 'success', 'প্রিন্ট Engine');
-                return;
+                fullHtml += memoPagesHtml;
             }
 
-            container.className = 'print-a4';
-            container.innerHTML = `
-                <style>
-                    .print-items-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
-                    .print-items-table th { background: #f1f5f9 !important; border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-weight: 900; color: #0f172a; }
-                    .print-items-table td { border: 1px solid #e2e8f0; padding: 7px 10px; color: #334155; }
-                    .print-items-table .text-left { text-align: left; }
-                    .print-items-table .text-right { text-align: right; }
-                </style>
-                ${a4WrapperHtml}
-            `;
+            await printViaIframe(
+                fullHtml,
+                a4ExtraCss,
+                `Maa_Motors_Invoice_${escapeHTML(txn.voucherNo || txnId.slice(-6))}`
+            );
+            showToast(
+                hasAttachedMemos
+                    ? `মেমো সহ প্রিন্ট প্রস্তুত (${layoutType.toUpperCase()})!`
+                    : `প্রিন্ট পপ-আপ কমান্ড তৈরি সফল (${layoutType.toUpperCase()})!`,
+                'success',
+                'প্রিন্ট Engine'
+            );
+            return;
         } else {
             const shopOwner = escapeHTML(settings.shopOwner || "Mohammed Amran");
             container.className = 'print-pos';

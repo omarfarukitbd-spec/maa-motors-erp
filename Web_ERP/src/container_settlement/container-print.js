@@ -282,7 +282,7 @@ export async function printContainerSettlement(settlement) {
             ${customSectionsPrintHtml}
 
             <!-- Authentic 4-Partner Signature Block -->
-            <div class="page-break-avoid" style="margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding-top: 5px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
+            <div class="page-break-avoid print-sig-block" style="margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding-top: 6px; font-family: 'Anek Bangla', 'Hind Siliguri', sans-serif;">
                 <div style="text-align: center;">
                     <div style="border: 1px dashed #cbd5e1; height: 42px; margin-bottom: 6px; border-radius: 4px; background: rgba(248, 250, 252, 0.4);"></div>
                     <div style="border-top: 1.2px dashed #64748b; padding-top: 6px;">
