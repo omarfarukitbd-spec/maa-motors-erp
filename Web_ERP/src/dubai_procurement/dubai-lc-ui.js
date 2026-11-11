@@ -15,6 +15,7 @@ import { calculatePortDutySummary } from './dubai-port-duty-calc.js';
 import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
 import { printDubaiLCBook } from './dubai-lc-print.js';
 import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
+import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
 import {
     openDeliveryDateModal,
     openAddPaymentLineModal,
@@ -38,6 +39,7 @@ let lcBillsList = [];
 let dubaiRemittancesList = [];
 let portDutyBillsList = [];
 let bdExpensesList = [];
+let activeListenersConsId = null;
 
 let unsubscribeLC = null;
 let unsubscribeConsignments = null;
@@ -48,6 +50,7 @@ let unsubscribeBDExpenses = null;
 export function initDubaiLCModule(container) {
     if (!container) return;
 
+    activeListenersConsId = null;
     // Seed initial 9 containers if collection is empty
     DubaiLCDAO.seedInitialDataIfNeeded().catch(e => console.error('L/C seed error:', e));
 
@@ -58,6 +61,7 @@ export function initDubaiLCModule(container) {
 }
 
 export function cleanupDubaiLC() {
+    activeListenersConsId = null;
     if (unsubscribeLC) {
         unsubscribeLC();
         unsubscribeLC = null;
@@ -83,14 +87,41 @@ export function cleanupDubaiLC() {
 function setupLCListeners() {
     unsubscribeConsignments = DubaiRemittanceDAO.listenConsignments(consignments => {
         consignmentsList = consignments;
-        if (!activeConsignment && consignments.length > 0) {
-            activeConsignment = consignments.find(c => c.status === 'active') || consignments[0];
+        if (consignments.length > 0) {
+            if (activeConsignment?.id) {
+                activeConsignment = consignments.find(c => c.id === activeConsignment.id)
+                    || consignments.find(c => c.status === 'active')
+                    || consignments[0];
+            } else {
+                activeConsignment = consignments.find(c => c.status === 'active') || consignments[0];
+            }
         }
         updateConsignmentUI();
-        listenToActiveLCBills();
+        updateLCKpis();
+        const consId = activeConsignment?.id || 'CONSIGNMENT-01';
+        if (consId !== activeListenersConsId) {
+            listenToActiveConsignmentData();
+        }
     });
 
+    listenToActiveConsignmentData();
+}
+
+function listenToActiveConsignmentData() {
+    if (unsubscribeLC) { unsubscribeLC(); unsubscribeLC = null; }
+    if (unsubscribeRemittances) { unsubscribeRemittances(); unsubscribeRemittances = null; }
+    if (unsubscribePortDuty) { unsubscribePortDuty(); unsubscribePortDuty = null; }
+    if (unsubscribeBDExpenses) { unsubscribeBDExpenses(); unsubscribeBDExpenses = null; }
+
     const consId = activeConsignment?.id || 'CONSIGNMENT-01';
+    activeListenersConsId = consId;
+
+    unsubscribeLC = DubaiLCDAO.listenLCBills(consId, items => {
+        lcBillsList = items;
+        suggestNextContainerNumber();
+        renderLCContainersList();
+        updateLCKpis();
+    });
 
     unsubscribeRemittances = DubaiRemittanceDAO.listenRemittances(consId, items => {
         dubaiRemittancesList = items;
@@ -104,21 +135,6 @@ function setupLCListeners() {
 
     unsubscribeBDExpenses = DubaiBDExpenseDAO.listenBDExpenses(consId, items => {
         bdExpensesList = items;
-        updateLCKpis();
-    });
-}
-
-function listenToActiveLCBills() {
-    if (unsubscribeLC) {
-        unsubscribeLC();
-        unsubscribeLC = null;
-    }
-
-    const consId = activeConsignment?.id || 'CONSIGNMENT-01';
-    unsubscribeLC = DubaiLCDAO.listenLCBills(consId, items => {
-        lcBillsList = items;
-        suggestNextContainerNumber();
-        renderLCContainersList();
         updateLCKpis();
     });
 }
@@ -156,21 +172,8 @@ function renderLCView(container) {
                 actionButtonsHtml
             })}
 
-            <!-- Consignment Selector -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl">
-                <div class="flex items-center gap-2.5 flex-grow">
-                    <span class="text-xs font-bold text-slate-400 whitespace-nowrap"><i class="fa-solid fa-boxes-stacked text-cyan-400 mr-1"></i>সেশন / খাতা:</span>
-                    <select id="select-lc-consignment" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:border-cyan-500 outline-none max-w-md w-full">
-                        <option value="CONSIGNMENT-01">মূল হিসাব সেশন ০১ (চলমান)</option>
-                    </select>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle text-[7px] text-emerald-400"></i>
-                        <span>চলমান সাব-লেজার (Active)</span>
-                    </span>
-                </div>
-            </div>
+            <!-- Per-Section Consignment Selector & Customizable Print Banner -->
+            <div id="lc-banner-slot"></div>
 
             <!-- 3 Master KPI Summary Cards -->
             <div id="lc-kpi-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -272,6 +275,7 @@ function renderLCView(container) {
     `;
 
     bindLCEvents();
+    updateConsignmentUI();
 }
 
 function bindLCEvents() {
@@ -374,12 +378,19 @@ function bindLCEvents() {
 }
 
 function updateConsignmentUI() {
-    const select = document.getElementById('select-lc-consignment');
-    if (select && consignmentsList.length > 0) {
-        select.innerHTML = consignmentsList.map(c =>
-            `<option value="${c.id}" ${c.id === activeConsignment?.id ? 'selected' : ''}>${escapeHTML(c.name)} (${c.status === 'active' ? 'চলমান' : 'সমাপ্ত'})</option>`
-        ).join('');
-    }
+    mountNothiBannerBar({
+        slotId: 'lc-banner-slot',
+        sectionKey: 'lc-bills',
+        getConsignment: () => activeConsignment,
+        getAllConsignments: () => consignmentsList,
+        selectId: 'select-lc-consignment',
+        showSelector: true,
+        onConsignmentChange: (selectedId) => {
+            activeConsignment = consignmentsList.find(c => c.id === selectedId) || activeConsignment;
+            updateConsignmentUI();
+            listenToActiveConsignmentData();
+        }
+    });
 }
 
 async function onSaveNewContainerLC(e) {

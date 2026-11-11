@@ -14,8 +14,10 @@ import {
 } from '../utils.js';
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
+import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
+import { renderNothiPrintSectionBanner } from './dubai-section-banner.js';
 
-export async function printDubaiAuditSheet(auditData, memos = [], remittances = [], expenses = []) {
+export async function printDubaiAuditSheet(auditData, memos = [], remittances = [], expenses = [], consignment = null) {
     if (!auditData) return;
 
     let settings = {};
@@ -25,8 +27,17 @@ export async function printDubaiAuditSheet(auditData, memos = [], remittances = 
         console.error('Settings fetch error in dubai print:', e);
     }
 
+    let resolvedConsignment = consignment;
+    if (!resolvedConsignment) {
+        try {
+            resolvedConsignment = await DubaiRemittanceDAO.getActiveConsignment();
+        } catch (e) {
+            console.error('Consignment fetch error in dubai print:', e);
+        }
+    }
+
     const title = `Dubai_Audit_${auditData.weekEndDate || 'Weekly'}`;
-    const htmlBody = generateAuditPrintHtml(auditData, memos, settings);
+    const htmlBody = generateAuditPrintHtml(auditData, memos, settings, resolvedConsignment);
 
     const extraCss = `
         @page { size: A4 portrait; margin: 0 !important; }
@@ -53,7 +64,7 @@ export async function printDubaiAuditSheet(auditData, memos = [], remittances = 
     printViaIframe(htmlBody, extraCss, title);
 }
 
-function generateAuditPrintHtml(audit, memos, settings) {
+function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
     const formatAED = val => formatAmountWithComma(safeRound(parseAmount(val)));
     const desc = audit.descriptions || {};
 
@@ -138,7 +149,7 @@ function generateAuditPrintHtml(audit, memos, settings) {
     const headerHtml = renderPrintHeader(settings, {
         title: 'দুবাই সাপ্তাহিক ক্যাশ অডিট শিট',
         pageLabel: 'রেজিস্টার খাতা পাতা',
-        pageNo: '০০০২'
+        pageNo: '০০০৫'
     });
 
     const printTimeStr = new Date().toLocaleString('en-US', {
@@ -153,9 +164,12 @@ function generateAuditPrintHtml(audit, memos, settings) {
     return `
         <div class="dubai-print-sheet" style="width: 100%; max-width: 210mm; margin: 0 auto; box-sizing: border-box; padding: 10mm 15mm 8mm 15mm; font-size: 12.5px; line-height: 1.35; background: #ffffff;">
             <!-- Official Corporate Gradient Header -->
-            <div style="margin-bottom: 12px;">
+            <div style="margin-bottom: 8px;">
                 ${headerHtml}
             </div>
+
+            <!-- Customizable Per-Section Banner Bar -->
+            ${renderNothiPrintSectionBanner(consignment, 'audit')}
 
             <!-- Executive Metadata Bar (4-Column) -->
             <div style="display: grid; grid-template-columns: 1.2fr 1.3fr 1.1fr 1.2fr; gap: 8px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 14px; margin-bottom: 12px;">

@@ -40,6 +40,9 @@ export function getDubaiAuditMainTemplate() {
                 actionButtonsHtml
             })}
 
+            <!-- Per-Section Consignment & Print Banner Customizer -->
+            <div id="audit-banner-slot"></div>
+
             <!-- Master Meta Bar -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl">
                 <div>

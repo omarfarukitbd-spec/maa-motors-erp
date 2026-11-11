@@ -13,6 +13,7 @@ import {
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
 import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
+import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
 export async function printDubaiBDExpenseBook(consignment, entries = [], dubaiSummary = null) {
     let settings = {};
@@ -22,7 +23,8 @@ export async function printDubaiBDExpenseBook(consignment, entries = [], dubaiSu
         console.error('Settings fetch error in BD expense print:', e);
     }
 
-    const title = `Bangladesh_Expenses_${consignment?.name || 'Consignment_1'}_Page_0003`;
+    const bannerCfg = resolveSectionBannerConfig(consignment, 'bd-expense');
+    const title = `Bangladesh_Expenses_${bannerCfg.title || 'Page_0002'}`;
     const summary = calculateBDExpenseSummary(consignment, entries);
     const htmlBody = generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary, settings);
 
@@ -113,45 +115,11 @@ function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary,
             ${renderPrintHeader(settings, {
                 title: 'বাংলাদেশ লোকাল ক্লিয়ারেন্স ও ব্যয় বুক',
                 pageLabel: 'রেজিস্টার খাতা পাতা',
-                pageNo: '০০০৩'
+                pageNo: '০০০২'
             })}
 
-            <!-- Consignment Title Bar (Navy Blue) -->
-            <div style="
-                background: linear-gradient(90deg, #032b69 0%, #011b40 100%) !important;
-                border: 1px solid #1d4ed8;
-                box-shadow: 0 1px 3px rgba(3, 43, 105, 0.25);
-                color: #ffffff;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 4px 10px;
-                border-radius: 6px;
-                margin-bottom: 6px;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            ">
-                <h2 style="margin: 0; font-size: 11px; font-weight: 800; font-family: 'Anek Bangla', sans-serif !important; color: #ffffff; letter-spacing: 0.1px;">
-                    কনসোলমেন্ট: <span style="color: #ffd700;">${escapeHTML(consignment?.name || 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট')}</span>
-                </h2>
-                <span style="
-                    background: #047857 !important;
-                    color: #ffffff !important;
-                    border: 1px solid #34d399;
-                    font-size: 8px;
-                    font-weight: 800;
-                    font-family: 'Anek Bangla', sans-serif !important;
-                    padding: 2.5px 8px;
-                    border-radius: 12px;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 4.5px;
-                    white-space: nowrap;
-                ">
-                    <span style="width: 6px; height: 6px; background: #a7f3d0; border-radius: 50%; display: inline-block;"></span>
-                    চলমান কনসোলমেন্ট (Active)
-                </span>
-            </div>
+            <!-- Customizable Per-Section Banner Bar -->
+            ${renderNothiPrintSectionBanner(consignment, 'bd-expense')}
 
             <!-- 3 Master KPI Summary Cards -->
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 4px;">

@@ -9,6 +9,7 @@ import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { calculateConsignmentSummary, calcBDTfromAED, calcAEDfromBDT } from './dubai-remittance-calc.js';
 import { printDubaiRemittanceBook } from './dubai-remittance-print.js';
 import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
+import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
 import {
     formatAmountWithComma,
     parseAmount,
@@ -25,6 +26,7 @@ import {
 let activeConsignment = null;
 let consignmentsList = [];
 let remittancesList = [];
+let activeListenersConsId = null;
 let unsubscribeRemittances = null;
 let unsubscribeConsignments = null;
 let editingRemittanceId = null;
@@ -32,6 +34,7 @@ let editingRemittanceId = null;
 export function initDubaiRemittanceModule(container) {
     if (!container) return;
 
+    activeListenersConsId = null;
     // Seed initial data if first time
     DubaiRemittanceDAO.seedInitialDataIfNeeded().catch(e => console.error('Seed error:', e));
 
@@ -42,6 +45,7 @@ export function initDubaiRemittanceModule(container) {
 }
 
 export function cleanupDubaiRemittance() {
+    activeListenersConsId = null;
     if (unsubscribeRemittances) {
         unsubscribeRemittances();
         unsubscribeRemittances = null;
@@ -55,11 +59,21 @@ export function cleanupDubaiRemittance() {
 function setupRemittanceListeners() {
     unsubscribeConsignments = DubaiRemittanceDAO.listenConsignments(consignments => {
         consignmentsList = consignments;
-        if (!activeConsignment && consignments.length > 0) {
-            activeConsignment = consignments.find(c => c.status === 'active') || consignments[0];
+        if (consignments.length > 0) {
+            if (activeConsignment?.id) {
+                activeConsignment = consignments.find(c => c.id === activeConsignment.id)
+                    || consignments.find(c => c.status === 'active')
+                    || consignments[0];
+            } else {
+                activeConsignment = consignments.find(c => c.status === 'active') || consignments[0];
+            }
         }
         updateConsignmentUI();
-        listenToActiveRemittances();
+        updateRemittanceKpis();
+        const consId = activeConsignment?.id || 'CONSIGNMENT-01';
+        if (consId !== activeListenersConsId) {
+            listenToActiveRemittances();
+        }
     });
 }
 
@@ -70,6 +84,7 @@ function listenToActiveRemittances() {
     }
 
     const consId = activeConsignment?.id || 'CONSIGNMENT-01';
+    activeListenersConsId = consId;
     unsubscribeRemittances = DubaiRemittanceDAO.listenRemittances(consId, items => {
         remittancesList = items;
         renderRemittanceTable();
@@ -103,21 +118,8 @@ function renderRemittanceView(container) {
                 actionButtonsHtml
             })}
 
-            <!-- Consignment Selector & Status Banner -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl">
-                <div class="flex items-center gap-2.5 flex-grow">
-                    <span class="text-xs font-bold text-slate-400 whitespace-nowrap"><i class="fa-solid fa-boxes-stacked text-sky-400 mr-1"></i>সেশন / খাতা:</span>
-                    <select id="select-consignment" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:border-sky-500 outline-none max-w-md w-full">
-                        <option value="CONSIGNMENT-01">মূল হিসাব সেশন ০১ (চলমান)</option>
-                    </select>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span id="badge-consignment-status" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle text-[7px] text-emerald-400"></i>
-                        <span>চলমান কনসোলমেন্ট (Active)</span>
-                    </span>
-                </div>
-            </div>
+            <!-- Per-Section Consignment Selector & Customizable Print Banner -->
+            <div id="remittance-banner-slot"></div>
 
             <!-- 4 Master KPI Summary Cards -->
             <div id="remittance-kpi-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -234,6 +236,7 @@ function renderRemittanceView(container) {
     `;
 
     bindRemittanceEvents();
+    updateConsignmentUI();
 }
 
 function bindRemittanceEvents() {
@@ -280,31 +283,19 @@ function bindRemittanceEvents() {
 }
 
 function updateConsignmentUI() {
-    const select = document.getElementById('select-consignment');
-    if (!select) return;
-
-    select.innerHTML = consignmentsList.map(c => `
-        <option value="${c.id}" ${activeConsignment?.id === c.id ? 'selected' : ''}>
-            ${escapeHTML(c.name || 'কনসোলমেন্ট')} (${c.status === 'active' ? 'চলমান' : 'সমাপ্ত'})
-        </option>
-    `).join('');
-
-    select.onchange = (e) => {
-        activeConsignment = consignmentsList.find(c => c.id === e.target.value) || activeConsignment;
-        listenToActiveRemittances();
-    };
-
-    const badge = document.getElementById('badge-consignment-status');
-    if (badge && activeConsignment) {
-        const isActive = activeConsignment.status === 'active';
-        badge.className = `px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
-            isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-        }`;
-        badge.innerHTML = `
-            <i class="fa-solid fa-circle text-[7px] ${isActive ? 'text-emerald-400' : 'text-amber-400'}"></i>
-            <span>${isActive ? 'চলমান কনসোলমেন্ট (Active)' : 'সমাপ্ত কনসোলমেন্ট (Closed)'}</span>
-        `;
-    }
+    mountNothiBannerBar({
+        slotId: 'remittance-banner-slot',
+        sectionKey: 'remittance',
+        getConsignment: () => activeConsignment,
+        getAllConsignments: () => consignmentsList,
+        selectId: 'select-consignment',
+        showSelector: true,
+        onConsignmentChange: (selectedId) => {
+            activeConsignment = consignmentsList.find(c => c.id === selectedId) || activeConsignment;
+            updateConsignmentUI();
+            listenToActiveRemittances();
+        }
+    });
 }
 
 function updateRemittanceKpis() {
@@ -590,7 +581,7 @@ async function onCloseConsignmentClick() {
         try {
             await DubaiRemittanceDAO.closeConsignmentAndStartNext(
                 activeConsignment.id,
-                'এমরান ব্যক্তিগত ২য় কনসোলমেন্ট, ডুবাই মাল ক্রয় ইনভেস্ট',
+                '২য় কনসোলমেন্ট / মূল হিসাব সেশন ০২',
                 summary
             );
             showToast('১ম কনসোলমেন্ট ক্লোজ করে ২য় কনসোলমেন্ট সফলভাবে চালু করা হয়েছে', 'success');

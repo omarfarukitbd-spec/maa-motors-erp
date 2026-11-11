@@ -20,4 +20,11 @@ export { printDubaiLCBook } from './dubai-lc-print.js';
 export { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx } from './dubai-lc-calc.js';
 export { initNothiBookHub, cleanupNothiBookHub } from './dubai-nothi-hub.js';
 export { renderNothiSubBookHeader, NOTHI_BOOK_CATEGORIES } from './dubai-subbook-header.js';
+export {
+    DEFAULT_SECTION_BANNERS,
+    resolveSectionBannerConfig,
+    renderNothiPrintSectionBanner,
+    renderNothiScreenBannerBar
+} from './dubai-section-banner.js';
+export { openNothiBannerEditorModal, mountNothiBannerBar } from './dubai-banner-editor-modal.js';
 

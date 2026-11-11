@@ -67,6 +67,48 @@ export const DubaiRemittanceDAO = {
     },
 
     /**
+     * Save or update per-section banner metadata inside a consignment document
+     */
+    async updateSectionBannersBatch(consignmentId, bannersMap = {}) {
+        try {
+            const id = consignmentId || 'CONSIGNMENT-01';
+            const docRef = db.collection(CONSIGNMENTS_COLLECTION).doc(id);
+            const cleanSectionBanners = {};
+
+            Object.entries(bannersMap).forEach(([sectionKey, cfg]) => {
+                if (!sectionKey || !cfg || typeof cfg !== 'object') return;
+                cleanSectionBanners[sectionKey] = {
+                    prefixLabel: String(cfg.prefixLabel ?? '').trim(),
+                    title: String(cfg.title ?? '').trim(),
+                    statusText: String(cfg.statusText ?? '').trim(),
+                    statusTone: ['emerald', 'sky', 'amber', 'rose'].includes(cfg.statusTone)
+                        ? cfg.statusTone
+                        : 'emerald',
+                    isCustom: true,
+                    updatedAt: new Date().toISOString()
+                };
+            });
+
+            if (Object.keys(cleanSectionBanners).length === 0) return {};
+
+            await docRef.set({
+                id,
+                sectionBanners: cleanSectionBanners,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            return cleanSectionBanners;
+        } catch (e) {
+            console.error('Error updating section banners:', e);
+            throw e;
+        }
+    },
+
+    async updateSectionBanner(consignmentId, sectionKey, bannerData) {
+        return this.updateSectionBannersBatch(consignmentId, { [sectionKey]: bannerData });
+    },
+
+    /**
      * Officially close current consignment and automatically roll balance to next consignment
      */
     async closeConsignmentAndStartNext(currentId, nextName, closingSummary) {
@@ -86,7 +128,7 @@ export const DubaiRemittanceDAO = {
             const nextRef = db.collection(CONSIGNMENTS_COLLECTION).doc(nextId);
             batch.set(nextRef, {
                 id: nextId,
-                name: nextName || 'এমরান ব্যক্তিগত ২য় কনসোলমেন্ট, ডুবাই মাল ক্রয় ইনভেস্ট',
+                name: nextName || '২য় কনসোলমেন্ট / মূল হিসাব সেশন ০২',
                 status: 'active',
                 previousConsignmentId: currentId,
                 openingBalance: {

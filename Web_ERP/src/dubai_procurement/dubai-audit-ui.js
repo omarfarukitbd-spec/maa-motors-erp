@@ -15,6 +15,7 @@ import { initDubaiBDExpenseModule, cleanupDubaiBDExpense } from './dubai-bd-expe
 import { initDubaiPortDutyModule, cleanupDubaiPortDuty } from './dubai-port-duty-ui.js';
 import { initDubaiLCModule, cleanupDubaiLC } from './dubai-lc-ui.js';
 import { initNothiBookHub, cleanupNothiBookHub } from './dubai-nothi-hub.js';
+import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
@@ -29,6 +30,9 @@ let dynamicHoldings = [
 ];
 let currentView = 'hub';
 let currentRootContainer = null;
+let auditConsignments = [];
+let auditActiveConsignment = null;
+let unsubAuditConsignments = null;
 
 const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
 const getTxt = (id, def = '') => document.getElementById(id)?.value?.trim() || def;
@@ -36,6 +40,10 @@ const setInp = (id, val = '') => { const el = document.getElementById(id); if (e
 
 function cleanupAllNothiViews() {
     DubaiActions.unsubscribe();
+    if (unsubAuditConsignments) {
+        unsubAuditConsignments();
+        unsubAuditConsignments = null;
+    }
     cleanupNothiBookHub();
     cleanupDubaiRemittance();
     cleanupDubaiBDExpense();
@@ -96,10 +104,47 @@ function renderDubaiAuditView(container) {
     });
 
     setupActionButtons();
+    renderAuditBannerSlot();
+    listenAuditConsignments();
     renderDynamicHoldings();
     window.handleMemoRangeChange();
     updateLiveWaterfall();
     listenToHistory();
+}
+
+function renderAuditBannerSlot() {
+    mountNothiBannerBar({
+        slotId: 'audit-banner-slot',
+        sectionKey: 'audit',
+        getConsignment: () => auditActiveConsignment,
+        getAllConsignments: () => auditConsignments,
+        selectId: 'select-audit-consignment',
+        showSelector: true,
+        onConsignmentChange: (selectedId) => {
+            auditActiveConsignment = auditConsignments.find(c => c.id === selectedId) || auditActiveConsignment;
+            renderAuditBannerSlot();
+        }
+    });
+}
+
+function listenAuditConsignments() {
+    if (unsubAuditConsignments) {
+        unsubAuditConsignments();
+        unsubAuditConsignments = null;
+    }
+    unsubAuditConsignments = DubaiRemittanceDAO.listenConsignments(list => {
+        auditConsignments = list || [];
+        if (auditConsignments.length > 0) {
+            if (auditActiveConsignment?.id) {
+                auditActiveConsignment = auditConsignments.find(c => c.id === auditActiveConsignment.id)
+                    || auditConsignments.find(c => c.status === 'active')
+                    || auditConsignments[0];
+            } else {
+                auditActiveConsignment = auditConsignments.find(c => c.status === 'active') || auditConsignments[0];
+            }
+        }
+        renderAuditBannerSlot();
+    });
 }
 
 function setupActionButtons() {
@@ -499,7 +544,7 @@ async function onSaveAuditClick() {
 }
 
 function onPrintAuditClick() {
-    printDubaiAuditSheet(buildCurrentAuditObject(), DubaiMemoModal.getMemos(), [], []);
+    printDubaiAuditSheet(buildCurrentAuditObject(), DubaiMemoModal.getMemos(), [], [], auditActiveConsignment);
 }
 
 function buildCurrentAuditObject() {

@@ -13,6 +13,7 @@ import {
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
 import { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx } from './dubai-lc-calc.js';
+import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
 export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary = null, portDutySummary = null, bdExpenseSummary = null) {
     let settings = {};
@@ -22,7 +23,8 @@ export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary =
         console.error('Settings fetch error in L/C print:', e);
     }
 
-    const title = `Container_LC_Register_${consignment?.name || 'Consignment_1'}_Page_0003`;
+    const bannerCfg = resolveSectionBannerConfig(consignment, 'lc-bills');
+    const title = `Container_LC_Register_${bannerCfg.title || 'Page_0003'}`;
     const summary = calculateLCSummary(consignment, lcBills);
     const capex = calculateMaster4TierCapEx(dubaiSummary, summary, portDutySummary, bdExpenseSummary);
     const htmlBody = generateLCPrintHtml(consignment, lcBills, summary, capex, settings);
@@ -140,36 +142,8 @@ function generateLCPrintHtml(consignment, lcBills, summary, capex, settings) {
                 pageNo: '০০০৩'
             })}
 
-            <!-- Consignment Banner -->
-            <div style="
-                background: linear-gradient(90deg, #032b69 0%, #011b40 100%) !important;
-                border: 1px solid #1d4ed8;
-                color: #ffffff;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 4px 10px;
-                border-radius: 6px;
-                margin-bottom: 6px;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            ">
-                <h2 style="margin: 0; font-size: 11px; font-weight: 800; font-family: 'Anek Bangla', sans-serif !important; color: #ffffff;">
-                    কনসোলমেন্ট: <span style="color: #ffd700;">${escapeHTML(consignment?.name || '১ম কনসোলমেন্ট কন্টেইনার এলসি মার্জিন ও ব্যাংক ব্যয়')}</span>
-                </h2>
-                <span style="
-                    background: #047857 !important;
-                    color: #ffffff !important;
-                    border: 1px solid #34d399;
-                    font-size: 8px;
-                    font-weight: 800;
-                    padding: 2px 8px;
-                    border-radius: 12px;
-                    white-space: nowrap;
-                ">
-                    চলমান রেজিস্টার (পাতা: ০০০৩)
-                </span>
-            </div>
+            <!-- Customizable Per-Section Banner Bar -->
+            ${renderNothiPrintSectionBanner(consignment, 'lc-bills')}
 
             <!-- 3 Master KPI Cards -->
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 6px;">

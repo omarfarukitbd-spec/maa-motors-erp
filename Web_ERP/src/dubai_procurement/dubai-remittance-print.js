@@ -14,6 +14,7 @@ import {
 import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
 import { calculateConsignmentSummary } from './dubai-remittance-calc.js';
+import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
 export async function printDubaiRemittanceBook(consignment, entries = []) {
     let settings = {};
@@ -23,7 +24,8 @@ export async function printDubaiRemittanceBook(consignment, entries = []) {
         console.error('Settings fetch error in remittance print:', e);
     }
 
-    const title = `Dubai_Remittance_${consignment?.name || 'Consignment_1'}`;
+    const bannerCfg = resolveSectionBannerConfig(consignment, 'remittance');
+    const title = `Dubai_Remittance_${bannerCfg.title || consignment?.name || 'Consignment_1'}`;
     const summary = calculateConsignmentSummary(consignment, entries);
     const htmlBody = generateRemittancePrintHtml(consignment, entries, summary, settings);
 
@@ -81,9 +83,6 @@ export async function printDubaiRemittanceBook(consignment, entries = []) {
 }
 
 function generateRemittancePrintHtml(consignment, entries, summary, settings) {
-    const rawConsignmentName = consignment?.name || 'এমরান ব্যক্তিগত ১ম কনসোলমেন্ট, ডুবাই মাল ক্রয় ইনভেস্ট';
-    const cleanConsignmentName = rawConsignmentName.replace(/^ডুবাই টাকা পাঠা(?:নো|নার)\s*(?:এর)?\s*হিসাব\s*[-—:]*\s*/i, '').trim();
-
     const s1Aed = formatAmountWithComma(summary.stage1.aed);
     const s1Bdt = formatAmountWithComma(summary.stage1.bdt);
     const s2Aed = formatAmountWithComma(summary.stage2.aed);
@@ -138,41 +137,8 @@ function generateRemittancePrintHtml(consignment, entries, summary, settings) {
                 pageNo: '০০০১'
             })}
 
-            <!-- Title Bar with Consignment Status (Image 2 & 3 Match) -->
-            <div style="
-                background: linear-gradient(90deg, #032b69 0%, #011b40 100%) !important;
-                border: 1px solid #1d4ed8;
-                box-shadow: 0 1px 3px rgba(3, 43, 105, 0.25);
-                color: #ffffff;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 4px 10px;
-                border-radius: 6px;
-                margin-bottom: 6px;
-            ">
-                <h2 style="margin: 0; font-size: 11px; font-weight: 800; font-family: 'Anek Bangla', sans-serif !important; color: #ffffff; letter-spacing: 0.1px;">
-                    কনসোলমেন্ট: <span style="color: #ffd700;">${escapeHTML(cleanConsignmentName)}</span>
-                </h2>
-                <span style="
-                    background: #047857 !important;
-                    color: #ffffff !important;
-                    border: 1px solid #34d399;
-                    font-size: 8px;
-                    font-weight: 800;
-                    font-family: 'Anek Bangla', sans-serif !important;
-                    padding: 2.5px 8px;
-                    border-radius: 12px;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 4.5px;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
-                    white-space: nowrap;
-                ">
-                    <span style="width: 6px; height: 6px; background: #a7f3d0; border-radius: 50%; display: inline-block;"></span>
-                    চলমান কনসোলমেন্ট (Active)
-                </span>
-            </div>
+            <!-- Customizable Per-Section Banner Bar -->
+            ${renderNothiPrintSectionBanner(consignment, 'remittance')}
 
             <!-- 4 Master KPI Grid -->
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 5px;">

@@ -4,6 +4,8 @@
  */
 
 import { NOTHI_BOOK_CATEGORIES, getNothiTheme } from './dubai-subbook-header.js';
+import { resolveSectionBannerConfig } from './dubai-section-banner.js';
+import { openNothiBannerEditorModal } from './dubai-banner-editor-modal.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { DubaiBDExpenseDAO } from './dubai-bd-expense-dao.js';
 import { DubaiLCDAO } from './dubai-lc-dao.js';
@@ -16,6 +18,8 @@ import { calculatePortDutySummary } from './dubai-port-duty-calc.js';
 import { formatAmountWithComma, formatAppDate, escapeHTML, showToast } from '../utils.js';
 
 let activeConsignment = null;
+let consignmentsList = [];
+let currentListenersConsId = null;
 let remittancesList = [];
 let bdExpensesList = [];
 let lcBillsList = [];
@@ -32,6 +36,7 @@ let unsubAudits = null;
 export function initNothiBookHub(container) {
     if (!container) return;
 
+    currentListenersConsId = null;
     renderNothiHubSkeleton(container);
     attachHubListeners();
     refreshNothiHubCards();
@@ -45,17 +50,27 @@ export function cleanupNothiBookHub() {
     clean(unsubLcBills); unsubLcBills = null;
     clean(unsubPortDuty); unsubPortDuty = null;
     clean(unsubAudits); unsubAudits = null;
+    currentListenersConsId = null;
 }
 
 function attachHubListeners() {
     cleanupNothiBookHub();
 
     unsubConsignments = DubaiRemittanceDAO.listenConsignments(list => {
-        if (list.length > 0) {
-            activeConsignment = list.find(c => c.status === 'active') || list[0];
+        consignmentsList = list || [];
+        if (consignmentsList.length > 0) {
+            if (activeConsignment?.id) {
+                activeConsignment = consignmentsList.find(c => c.id === activeConsignment.id)
+                    || consignmentsList.find(c => c.status === 'active')
+                    || consignmentsList[0];
+            } else {
+                activeConsignment = consignmentsList.find(c => c.status === 'active') || consignmentsList[0];
+            }
         }
         const consId = activeConsignment?.id || 'CONSIGNMENT-01';
-        attachConsignmentBookListeners(consId);
+        if (consId !== currentListenersConsId) {
+            attachConsignmentBookListeners(consId);
+        }
         refreshNothiHubCards();
     });
 
@@ -68,6 +83,7 @@ function attachHubListeners() {
 }
 
 function attachConsignmentBookListeners(consId) {
+    currentListenersConsId = consId;
     if (unsubRemittances) unsubRemittances();
     if (unsubBdExpenses) unsubBdExpenses();
     if (unsubLcBills) unsubLcBills();
@@ -116,10 +132,17 @@ function renderNothiHubSkeleton(container) {
                         </div>
                     </div>
 
-                    <div class="relative w-full md:w-72 shrink-0">
-                        <input type="text" id="nothi-hub-search" placeholder="খাতা বা পাতা নম্বর খুঁজুন (যেমন: ০০০৩)..."
-                            class="w-full bg-slate-950/90 border border-slate-700/80 focus:border-sky-500 rounded-2xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none shadow-inner transition-all">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
+                        <div class="relative w-full sm:w-64">
+                            <input type="text" id="nothi-hub-search" placeholder="খাতা বা পাতা নম্বর খুঁজুন (যেমন: ০০০৩)..."
+                                class="w-full bg-slate-950/90 border border-slate-700/80 focus:border-sky-500 rounded-2xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none shadow-inner transition-all">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                        </div>
+                        <button type="button" id="btn-nothi-hub-banner-settings"
+                            class="px-3.5 py-2.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 hover:text-white border border-sky-500/35 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm whitespace-nowrap">
+                            <i class="fa-solid fa-pen-ruler text-sky-400"></i>
+                            <span>সেকশন ব্যানার সেটিংস</span>
+                        </button>
                     </div>
                 </div>
 
@@ -148,6 +171,17 @@ function renderNothiHubSkeleton(container) {
     const searchInp = document.getElementById('nothi-hub-search');
     if (searchInp) {
         searchInp.oninput = refreshNothiHubCards;
+    }
+
+    const bannerBtn = document.getElementById('btn-nothi-hub-banner-settings');
+    if (bannerBtn) {
+        bannerBtn.onclick = () => {
+            openNothiBannerEditorModal({
+                sectionKey: 'remittance',
+                consignment: activeConsignment,
+                allConsignments: consignmentsList
+            });
+        };
     }
 }
 
@@ -245,6 +279,7 @@ function refreshNothiHubCards() {
     const cardsHtml = filteredCats.map(cat => {
         const theme = getNothiTheme(cat.accent);
         const m = metrics[cat.key];
+        const bannerCfg = resolveSectionBannerConfig(activeConsignment, cat.key);
         return `
             <button type="button" onclick="window.switchDubaiProcurementView && window.switchDubaiProcurementView('${cat.key}')"
                 class="group text-left bg-slate-900/85 hover:bg-slate-900 border border-slate-800 ${theme.cardBorder} rounded-3xl p-5 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between gap-4 cursor-pointer">
@@ -260,7 +295,11 @@ function refreshNothiHubCards() {
                     </div>
 
                     <h3 class="text-lg font-black text-white leading-snug mb-1.5 group-hover:text-sky-200 transition-colors">${cat.title}</h3>
-                    <p class="text-xs text-slate-400 leading-relaxed">${cat.subtitle}</p>
+                    <p class="text-xs text-slate-400 leading-relaxed mb-2.5">${cat.subtitle}</p>
+                    <div class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#032b69]/90 to-[#011b40]/90 border border-blue-500/30 text-[11px] font-bold flex items-center gap-1.5 truncate">
+                        <i class="fa-solid fa-bookmark text-amber-300 text-[9px] shrink-0"></i>
+                        <span class="text-amber-300 truncate">${bannerCfg.prefixLabel ? `${escapeHTML(bannerCfg.prefixLabel)} ` : ''}${escapeHTML(bannerCfg.title)}</span>
+                    </div>
                 </div>
 
                 <div class="space-y-3 pt-2 border-t border-slate-800/80">

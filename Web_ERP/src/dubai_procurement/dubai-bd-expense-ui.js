@@ -11,6 +11,7 @@ import { calculateBDExpenseSummary, calculateConsolidatedCapEx } from './dubai-b
 import { calculateConsignmentSummary } from './dubai-remittance-calc.js';
 import { printDubaiBDExpenseBook } from './dubai-bd-expense-print.js';
 import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
+import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
 import {
     formatAmountWithComma,
     parseAmount,
@@ -28,6 +29,7 @@ let activeConsignment = null;
 let consignmentsList = [];
 let bdExpensesList = [];
 let dubaiRemittancesList = [];
+let activeListenersConsId = null;
 let unsubscribeBDExpenses = null;
 let unsubscribeConsignments = null;
 let unsubscribeRemittances = null;
@@ -36,6 +38,7 @@ let editingExpenseId = null;
 export function initDubaiBDExpenseModule(container) {
     if (!container) return;
 
+    activeListenersConsId = null;
     // Seed initial data if first time
     DubaiBDExpenseDAO.seedInitialDataIfNeeded().catch(e => console.error('BD expense seed error:', e));
 
@@ -46,6 +49,7 @@ export function initDubaiBDExpenseModule(container) {
 }
 
 export function cleanupDubaiBDExpense() {
+    activeListenersConsId = null;
     if (unsubscribeBDExpenses) {
         unsubscribeBDExpenses();
         unsubscribeBDExpenses = null;
@@ -63,31 +67,46 @@ export function cleanupDubaiBDExpense() {
 function setupBDExpenseListeners() {
     unsubscribeConsignments = DubaiRemittanceDAO.listenConsignments(consignments => {
         consignmentsList = consignments;
-        if (!activeConsignment && consignments.length > 0) {
-            activeConsignment = consignments.find(c => c.status === 'active') || consignments[0];
+        if (consignments.length > 0) {
+            if (activeConsignment?.id) {
+                activeConsignment = consignments.find(c => c.id === activeConsignment.id)
+                    || consignments.find(c => c.status === 'active')
+                    || consignments[0];
+            } else {
+                activeConsignment = consignments.find(c => c.status === 'active') || consignments[0];
+            }
         }
         updateConsignmentUI();
-        listenToActiveBDExpenses();
+        updateBDExpenseKpis();
+        const consId = activeConsignment?.id || 'CONSIGNMENT-01';
+        if (consId !== activeListenersConsId) {
+            listenToActiveConsignmentData();
+        }
     });
 
-    // Also fetch Dubai remittances to keep the master combined CapEx dynamically synced
-    const consId = activeConsignment?.id || 'CONSIGNMENT-01';
-    unsubscribeRemittances = DubaiRemittanceDAO.listenRemittances(consId, items => {
-        dubaiRemittancesList = items;
-        updateBDExpenseKpis();
-    });
+    listenToActiveConsignmentData();
 }
 
-function listenToActiveBDExpenses() {
+function listenToActiveConsignmentData() {
     if (unsubscribeBDExpenses) {
         unsubscribeBDExpenses();
         unsubscribeBDExpenses = null;
     }
+    if (unsubscribeRemittances) {
+        unsubscribeRemittances();
+        unsubscribeRemittances = null;
+    }
 
     const consId = activeConsignment?.id || 'CONSIGNMENT-01';
+    activeListenersConsId = consId;
     unsubscribeBDExpenses = DubaiBDExpenseDAO.listenBDExpenses(consId, items => {
         bdExpensesList = items;
         renderBDExpenseTable();
+        updateBDExpenseKpis();
+    });
+
+    unsubscribeRemittances = DubaiRemittanceDAO.listenRemittances(consId, items => {
+        dubaiRemittancesList = items;
         updateBDExpenseKpis();
     });
 }
@@ -114,21 +133,8 @@ function renderBDExpenseView(container) {
                 actionButtonsHtml
             })}
 
-            <!-- Consignment Selector & Active Status -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-2xl">
-                <div class="flex items-center gap-2.5 flex-grow">
-                    <span class="text-xs font-bold text-slate-400 whitespace-nowrap"><i class="fa-solid fa-boxes-stacked text-amber-400 mr-1"></i>সেশন / খাতা:</span>
-                    <select id="select-bd-consignment" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:border-amber-500 outline-none max-w-md w-full">
-                        <option value="CONSIGNMENT-01">এমরান ব্যক্তিগত ১ম কনসোলমেন্ট, দেশীয় ল্যান্ডেড খরচ (চলমান)</option>
-                    </select>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle text-[7px] text-emerald-400"></i>
-                        <span>চলমান রেজিস্টার (Active)</span>
-                    </span>
-                </div>
-            </div>
+            <!-- Per-Section Consignment Selector & Customizable Print Banner -->
+            <div id="bd-expense-banner-slot"></div>
 
             <!-- 3 Master KPI Summary Cards -->
             <div id="bd-expense-kpi-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -255,6 +261,7 @@ function renderBDExpenseView(container) {
     `;
 
     bindBDExpenseEvents();
+    updateConsignmentUI();
 }
 
 function bindBDExpenseEvents() {
@@ -284,12 +291,19 @@ function bindBDExpenseEvents() {
 }
 
 function updateConsignmentUI() {
-    const select = document.getElementById('select-bd-consignment');
-    if (select && consignmentsList.length > 0) {
-        select.innerHTML = consignmentsList.map(c => `
-            <option value="${c.id}" ${c.id === activeConsignment?.id ? 'selected' : ''}>${escapeHTML(c.name || c.id)}</option>
-        `).join('');
-    }
+    mountNothiBannerBar({
+        slotId: 'bd-expense-banner-slot',
+        sectionKey: 'bd-expense',
+        getConsignment: () => activeConsignment,
+        getAllConsignments: () => consignmentsList,
+        selectId: 'select-bd-consignment',
+        showSelector: true,
+        onConsignmentChange: (selectedId) => {
+            activeConsignment = consignmentsList.find(c => c.id === selectedId) || activeConsignment;
+            updateConsignmentUI();
+            listenToActiveConsignmentData();
+        }
+    });
 }
 
 function updateBDExpenseKpis() {
