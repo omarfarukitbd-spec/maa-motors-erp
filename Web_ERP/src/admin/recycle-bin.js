@@ -1,6 +1,6 @@
 import { db, firebase } from '../firebase-config.js';
 import { CustomerDAO, TransactionDAO, ExpenseDAO } from '../dao.js';
-import { safeRound, formatAmountWithComma, promptSecurityPin, showToast, formatAppDate } from '../utils.js';
+import { safeRound, formatAmountWithComma, promptSecurityPin, showToast, formatAppDate, escapeHTML } from '../utils.js';
 import Swal from 'sweetalert2';
 import { auditLog } from '../audit.js';
 import { getCustomerCache } from '../customer/index.js';
@@ -107,6 +107,7 @@ function loadRecycleBinData() {
                 const isCust = item.module === 'Customer';
                 const isExp = item.module === 'Expense';
                 const isTreasury = item.module === 'Treasury';
+                const isNothi = Boolean(item.collection && item.collection.startsWith('dubai_'));
 
                 let icon = '<i class="fa-solid fa-file-invoice text-emerald-400"></i>';
                 let typeName = 'সিঙ্গেল ভাউচার';
@@ -120,6 +121,9 @@ function loadRecycleBinData() {
                 } else if (isTreasury) {
                     icon = '<i class="fa-solid fa-vault text-purple-400"></i>';
                     typeName = 'ট্রেজারি লেনদেন';
+                } else if (isNothi) {
+                    icon = '<i class="fa-solid fa-book-bookmark text-sky-400"></i>';
+                    typeName = escapeHTML(item.module || 'নথি বুক');
                 }
                 
                 const dateStr = item.deletedAt ? new Date(item.deletedAt.toMillis()).toLocaleString('en-GB') : 'N/A';
@@ -147,6 +151,27 @@ function loadRecycleBinData() {
                     detailsHtml = `
                         <div class="font-bold text-white">${tr.title || 'ট্রেজারি এন্ট্রি'} <span class="text-[10px] text-purple-400 ml-1">[${trDate}]</span></div>
                         <div class="text-[10px] text-slate-400 mt-0.5">ধরন: <span class="${flowColor} font-bold">${flowText}</span> | পরিমাণ: ৳${formatAmountWithComma(tr.amount || 0)} | ক্যাটাগরি: ${tr.category || '-'}</div>
+                    `;
+                } else if (isNothi) {
+                    const n = item.data || {};
+                    const rawDate = n.date || n.weekEndDate || '';
+                    const nDate = rawDate ? formatAppDate(rawDate) : 'N/A';
+                    const titleText = escapeHTML(
+                        n.containerNo
+                            ? `কন্টেইনার ${n.containerNo}${n.lcNo ? ` (${n.lcNo})` : ''}`
+                            : (n.description || n.via || (n.weekEndDate ? `অডিট শিট (${nDate})` : item.docId || item.id))
+                    );
+                    const amountText = item.collection === 'dubai_remittances'
+                        ? `${formatAmountWithComma(n.aedAmount || 0)} AED / ৳${formatAmountWithComma(n.bdtAmount || 0)}`
+                        : (item.collection === 'dubai_weekly_audits'
+                            ? `${formatAmountWithComma(n.totalPhysicalAssets || 0)} AED`
+                            : (item.collection === 'dubai_lc_bills'
+                                ? `৳${formatAmountWithComma(n.totalPaidBDT || 0)}`
+                                : `৳${formatAmountWithComma(n.amount || n.totalAmount || 0)}`));
+                    const linkedMemoCount = Array.isArray(n._linkedMemos) ? n._linkedMemos.length : 0;
+                    detailsHtml = `
+                        <div class="font-bold text-white">${titleText} <span class="text-[10px] text-sky-400 ml-1">[${escapeHTML(nDate)}]</span></div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">পরিমাণ: ${escapeHTML(amountText)}${linkedMemoCount > 0 ? ` | মেমো: ${linkedMemoCount} টি` : ''} | সেশন: ${escapeHTML(n.consignmentId || 'CONSIGNMENT-01')}</div>
                     `;
                 } else {
                     const t = item.data || {};
@@ -255,6 +280,50 @@ export async function restoreRecycleItem(encodedItem) {
                 await batch.commit();
             }
             auditLog('RESTORE', 'Customers', item.id, item.data.name, { action: 'Restored Customer and ' + txnsSnap.size + ' Txns' });
+        } else if (item.collection && item.collection.startsWith('dubai_')) {
+            const ALLOWED_NOTHI_COLLECTIONS = [
+                'dubai_remittances',
+                'dubai_bd_expenses',
+                'dubai_lc_bills',
+                'dubai_port_duty_bills',
+                'dubai_weekly_audits',
+                'dubai_memos',
+                'dubai_expenses',
+                'dubai_consignments'
+            ];
+            if (!ALLOWED_NOTHI_COLLECTIONS.includes(item.collection)) {
+                throw new Error('অবৈধ নথি কালেকশন রিস্টোর অনুরোধ।');
+            }
+
+            const targetId = item.docId || item.id;
+            const { _linkedMemos, id: _ignoredDocId, ...restoredDoc } = (item.data || {});
+            const ops = [
+                b => b.set(db.collection(item.collection).doc(targetId), restoredDoc),
+                b => b.delete(db.collection('recycle_bin').doc(item.id))
+            ];
+
+            if (Array.isArray(_linkedMemos) && _linkedMemos.length > 0) {
+                _linkedMemos.forEach(memo => {
+                    const { id: memoId, ...memoFields } = (memo || {});
+                    const memoRef = memoId
+                        ? db.collection('dubai_memos').doc(memoId)
+                        : db.collection('dubai_memos').doc();
+                    ops.push(b => b.set(memoRef, { ...memoFields, auditId: memoFields.auditId || targetId }));
+                });
+            }
+
+            const CHUNK_SIZE = 400;
+            for (let i = 0; i < ops.length; i += CHUNK_SIZE) {
+                const batch = db.batch();
+                ops.slice(i, i + CHUNK_SIZE).forEach(op => op(batch));
+                await batch.commit();
+            }
+
+            const itemLabel = restoredDoc.containerNo || restoredDoc.description || restoredDoc.via || restoredDoc.weekEndDate || targetId;
+            auditLog('RESTORE', item.module || 'Nothi Khata', targetId, itemLabel, {
+                collection: item.collection,
+                restoredMemos: Array.isArray(_linkedMemos) ? _linkedMemos.length : 0
+            });
         }
 
         Swal.fire('সফল!', 'সফলভাবে রিস্টোর করা হয়েছে।', 'success');

@@ -9,14 +9,15 @@ import {
     formatAppDate,
     getTodayLocalDateString,
     renderPrintHeader,
-    renderRepeatHeader
+    renderRepeatHeader,
+    numberToBanglaWords
 } from '../utils.js';
 import { SettingsDAO } from '../dao.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
 import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
 import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
-export async function printDubaiBDExpenseBook(consignment, entries = [], dubaiSummary = null) {
+export async function printDubaiBDExpenseBook(consignment, entries = []) {
     let settings = {};
     try {
         settings = (await SettingsDAO.getAppSettings()) || {};
@@ -55,7 +56,7 @@ export async function printDubaiBDExpenseBook(consignment, entries = [], dubaiSu
         }
     `;
 
-    const parts = generateBDExpensePaginationParts(consignment, entries, summary, dubaiSummary, settings, bannerCfg);
+    const parts = generateBDExpensePaginationParts(consignment, entries, summary, settings, bannerCfg);
     const paginatedHtml = await smartPaginatePrint({
         ...parts,
         extraCss,
@@ -68,22 +69,22 @@ export async function printDubaiBDExpenseBook(consignment, entries = [], dubaiSu
     await printViaIframe(paginatedHtml, extraCss, title);
 }
 
-function generateBDExpensePaginationParts(consignment, entries, summary, dubaiSummary, settings, bannerCfg) {
+function generateBDExpensePaginationParts(consignment, entries, summary, settings, bannerCfg) {
     const bfFormatted = formatAmountWithComma(summary.bfAmount);
     const runningFormatted = formatAmountWithComma(summary.runningTotal);
     const grandFormatted = formatAmountWithComma(summary.grandTotal);
+    const grandWords = numberToBanglaWords(Math.round(summary.grandTotal || 0));
 
-    const dubaiBdt = dubaiSummary?.grandTotal?.bdt || 236437459;
-    const dubaiAed = dubaiSummary?.grandTotal?.aed || 6907319;
-    const totalCapEx = dubaiBdt + summary.grandTotal;
-    const remBannerCfg = resolveSectionBannerConfig(consignment, 'remittance');
+    const bfDateRange = (summary.bfStartDate && summary.bfEndDate)
+        ? `${formatAppDate(summary.bfStartDate)} - ${formatAppDate(summary.bfEndDate)}`
+        : (summary.bfStartDate ? formatAppDate(summary.bfStartDate) : 'প্রারম্ভিক ব্যালেন্স');
 
     const rowsArray = [];
     // Row 0: B/F Row
     rowsArray.push(`
         <tr style="background: #f0f9ff; font-weight: bold;">
             <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #0284c7;">০</td>
-            <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #0369a1;">০১/১১/২৫ - ০৬/০৮/২৬</td>
+            <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #0369a1;">${escapeHTML(bfDateRange)}</td>
             <td style="padding: 2.5px 6px; font-size: 8.5px; color: #0369a1;">B/F (পূর্ববর্তী স্থানান্তরিত কিউমুলেটিভ ব্যালেন্স)</td>
             <td style="padding: 2.5px 4px; font-size: 7.5px; color: #0284c7;">প্রারম্ভিক ব্যালেন্স</td>
             <td style="padding: 2.5px 4px; text-align: center; font-size: 8px; color: #64748b;">—</td>
@@ -129,17 +130,17 @@ function generateBDExpensePaginationParts(consignment, entries, summary, dubaiSu
             <div style="background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 4px; padding: 3px 6px; text-align: center;">
                 <div style="font-size: 7px; font-weight: 700; color: #0369a1;">১. সাবেক ব্যালেন্স (B/F)</div>
                 <div style="font-size: 10px; font-weight: 900; color: #0284c7;" class="num-font">৳ ${bfFormatted}</div>
-                <div style="font-size: 6.5px; color: #64748b;">০১/১১/২০২৫ - ০৬/০৮/২০২৬ সেশন</div>
+                <div style="font-size: 6.5px; color: #64748b;">${escapeHTML(bfDateRange)}</div>
             </div>
             <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 4px; padding: 3px 6px; text-align: center;">
                 <div style="font-size: 7px; font-weight: 700; color: #991b1b;">২. রানিং খাতার খরচ (${summary.count} কিস্তি)</div>
                 <div style="font-size: 10px; font-weight: 900; color: #dc2626;" class="num-font">৳ ${runningFormatted}</div>
-                <div style="font-size: 6.5px; color: #64748b;">${escapeHTML(summary.runningDates || '২৯/০৮/২০২৬ - ০৯/১১/২০২৬ সেশন')}</div>
+                <div style="font-size: 6.5px; color: #64748b;">${escapeHTML(summary.runningDates || 'রানিং এন্ট্রি')}</div>
             </div>
             <div style="background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 3px 6px; text-align: center;">
                 <div style="font-size: 7px; font-weight: 800; color: #92400e;">৩. সর্বমোট বাংলাদেশ খরচ</div>
                 <div style="font-size: 11px; font-weight: 900; color: #b45309;" class="num-font">৳ ${grandFormatted}</div>
-                <div style="font-size: 6.5px; color: #78350f;">${escapeHTML(summary.overallDates || '০১/১১/২০২৫ - ০৯/১১/২০২৬ সর্বমোট')}</div>
+                <div style="font-size: 6.5px; color: #78350f;">${escapeHTML(summary.overallDates || 'সর্বমোট সেশন')}</div>
             </div>
         </div>
     `;
@@ -172,19 +173,13 @@ function generateBDExpensePaginationParts(consignment, entries, summary, dubaiSu
     `;
 
     const summaryHtml = `
-        <div class="page-break-avoid" style="margin-top: 4px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 4px; padding: 4px 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #94a3b8; padding-bottom: 2px; margin-bottom: 2px;">
-                <div style="font-size: 8px; font-weight: 800; color: #0f172a;">
-                    <span style="color: #0284c7;">১ম কনসোলমেন্ট সমন্বিত পুঁজী বিবরণী:</span> দুবাই ক্রয় + বাংলাদেশ ল্যান্ডেড খরচ
-                </div>
-                <div style="font-size: 8px; font-weight: 800; color: #047857;">
-                    সর্বমোট পুঁজী: <span style="font-size: 10px;" class="num-font">৳ ${formatAmountWithComma(totalCapEx)}</span>
-                </div>
+        <div class="page-break-avoid" style="margin-top: 5px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 5px 8px;">
+            <div style="font-size: 8.5px; color: #334155; margin-bottom: 3px;">
+                <strong>কথায়:</strong> <span style="color: #92400e; font-weight: bold;">${escapeHTML(grandWords)} টাকা মাত্র</span>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; text-align: center; font-size: 7.5px;">
-                <div>• দুবাই পার্ট (পাতা ${escapeHTML(remBannerCfg.pageNo || '০০০১')}): <strong>${formatAmountWithComma(dubaiAed)} AED</strong> = <strong class="num-font">৳ ${formatAmountWithComma(dubaiBdt)}</strong></div>
-                <div>• বাংলাদেশ পার্ট (পাতা ${escapeHTML(bannerCfg.pageNo || '০০০২')}): <strong class="num-font">৳ ${grandFormatted}</strong> (${summary.count} কিস্তি + সাবেক)</div>
-                <div>• সর্বসাকুল্যে ক্যাপিটাল: <strong style="color: #047857;" class="num-font">৳ ${formatAmountWithComma(totalCapEx)}</strong> (১০০%)</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #cbd5e1; padding-top: 3px; font-size: 7.5px; color: #475569;">
+                <span>সাবেক (B/F): <strong class="num-font">৳ ${bfFormatted}</strong> + রানিং (${summary.count} টি): <strong class="num-font">৳ ${runningFormatted}</strong> = <strong style="color: #b45309;" class="num-font">৳ ${grandFormatted}</strong></span>
+                <span style="color: #6d28d9; font-weight: 800;">সমন্বিত ৪-স্তর হিসাবের জন্য পাতা ০০০৬ দেখুন</span>
             </div>
         </div>
     `;

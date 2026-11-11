@@ -3,7 +3,7 @@
  * Handles rapid batch generation and entry of overseas purchase memos.
  */
 
-import { formatAmountWithComma, parseAmount, safeRound, showToast } from '../utils.js';
+import { formatAmountWithComma, parseAmount, safeRound, escapeHTML, showToast } from '../utils.js';
 
 let modalMemos = [];
 let applyCallback = null;
@@ -51,9 +51,15 @@ export const DubaiMemoModal = {
             return;
         }
 
+        const existingByNo = new Map();
+        modalMemos.forEach(m => {
+            existingByNo.set(String(m.memoNo), safeRound(parseAmount(m.amount)));
+        });
+
         const newMemos = [];
         for (let i = startVal; i <= endVal; i++) {
-            newMemos.push({ memoNo: String(i), amount: 0 });
+            const key = String(i);
+            newMemos.push({ memoNo: key, amount: existingByNo.get(key) || 0 });
         }
         modalMemos = newMemos;
         this.renderList();
@@ -77,7 +83,7 @@ export const DubaiMemoModal = {
             total = safeRound(total + amt);
             html += `
                 <div class="flex items-center gap-2.5 p-2 bg-slate-950 border border-slate-800/90 rounded-xl">
-                    <span class="text-xs sm:text-sm font-bold text-slate-300 w-24 shrink-0">মেমো #${m.memoNo}:</span>
+                    <span class="text-xs sm:text-sm font-bold text-slate-300 w-24 shrink-0">মেমো #${escapeHTML(m.memoNo)}:</span>
                     <input type="text" value="${amt > 0 ? formatAmountWithComma(amt) : ''}" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleModalMemoAmtChange(${idx}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextMemoInp(${idx});}" class="modal-memo-inp flex-grow h-9 bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1 text-sm text-amber-400 font-mono font-black text-right outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30">
                 </div>
             `;

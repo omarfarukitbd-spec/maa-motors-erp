@@ -4,23 +4,39 @@
  */
 
 import { db, firebase } from '../firebase-config.js';
-import { toDBDate } from '../utils.js';
+import { toDBDate, safeRound, parseAmount } from '../utils.js';
+import { archiveNothiDocToRecycleBin, logNothiMutation } from './dubai-nothi-helpers.js';
 
 const AUDITS_COLLECTION = 'dubai_weekly_audits';
 const MEMOS_COLLECTION = 'dubai_memos';
 const REMITTANCES_COLLECTION = 'dubai_remittances';
 const EXPENSES_COLLECTION = 'dubai_expenses';
 
+async function commitDeletesInChunks(docRefs = []) {
+    const CHUNK_SIZE = 450;
+    for (let i = 0; i < docRefs.length; i += CHUNK_SIZE) {
+        const batch = db.batch();
+        docRefs.slice(i, i + CHUNK_SIZE).forEach(ref => batch.delete(ref));
+        await batch.commit();
+    }
+}
+
 export const DubaiDAO = {
     /**
-     * Real-time listener for weekly audits
+     * Real-time listener for weekly audits (optionally scoped by consignmentId)
      */
-    listenWeeklyAudits(callback) {
+    listenWeeklyAudits(callback, consignmentId = null) {
         return db.collection(AUDITS_COLLECTION)
             .orderBy('weekEndDate', 'desc')
             .onSnapshot(snap => {
                 const results = [];
-                snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const itemCons = data.consignmentId || 'CONSIGNMENT-01';
+                    if (!consignmentId || itemCons === consignmentId) {
+                        results.push({ id: doc.id, ...data });
+                    }
+                });
                 callback(results);
             }, err => {
                 console.error('Error listening to dubai weekly audits:', err);
@@ -30,13 +46,19 @@ export const DubaiDAO = {
     /**
      * Fetch all weekly audits (ordered by date desc)
      */
-    async getAllAudits() {
+    async getAllAudits(consignmentId = null) {
         try {
             const snap = await db.collection(AUDITS_COLLECTION)
                 .orderBy('weekEndDate', 'desc')
                 .get();
             const results = [];
-            snap.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+            snap.forEach(doc => {
+                const data = doc.data();
+                const itemCons = data.consignmentId || 'CONSIGNMENT-01';
+                if (!consignmentId || itemCons === consignmentId) {
+                    results.push({ id: doc.id, ...data });
+                }
+            });
             return results;
         } catch (e) {
             console.error('Error getting all audits:', e);
@@ -58,21 +80,15 @@ export const DubaiDAO = {
     },
 
     /**
-     * Get the most recent previous audit before a specific date or globally
+     * Get the most recent previous audit before a specific date or within a consignment
      */
-    async getPreviousAudit(beforeDate = null) {
+    async getPreviousAudit(beforeDate = null, consignmentId = null) {
         try {
-            let query = db.collection(AUDITS_COLLECTION);
-            if (beforeDate) {
-                const dbDate = toDBDate(beforeDate);
-                query = query.where('weekEndDate', '<', dbDate);
-            }
-            const snap = await query.orderBy('weekEndDate', 'desc').limit(1).get();
-            if (!snap.empty) {
-                const doc = snap.docs[0];
-                return { id: doc.id, ...doc.data() };
-            }
-            return null;
+            const audits = await this.getAllAudits(consignmentId);
+            if (!audits.length) return null;
+            if (!beforeDate) return audits[0];
+            const dbDate = toDBDate(beforeDate);
+            return audits.find(a => toDBDate(a.weekEndDate) < dbDate) || null;
         } catch (e) {
             console.error('Error getting previous audit:', e);
             return null;
@@ -84,17 +100,29 @@ export const DubaiDAO = {
      */
     async saveWeeklyAudit(auditData) {
         try {
-            const auditId = auditData.id || `AUDIT-${auditData.weekEndDate || Date.now()}`;
+            const isUpdate = Boolean(auditData.id);
+            const normalizedWeekDate = toDBDate(auditData.weekEndDate);
+            const auditId = auditData.id || `AUDIT-${normalizedWeekDate || Date.now()}`;
             const docRef = db.collection(AUDITS_COLLECTION).doc(auditId);
             const payload = {
                 ...auditData,
                 id: auditId,
+                consignmentId: auditData.consignmentId || 'CONSIGNMENT-01',
+                weekEndDate: normalizedWeekDate,
+                messBalance: safeRound(parseAmount(auditData.messBalance || 0)),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-            if (!auditData.id) {
+            if (!isUpdate) {
                 payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             }
             await docRef.set(payload, { merge: true });
+            await logNothiMutation({
+                action: isUpdate ? 'UPDATE' : 'CREATE',
+                moduleLabel: 'সাপ্তাহিক ক্যাশ ও মেমো অডিট (পাতা ০০০৫)',
+                entityId: auditId,
+                entityName: `${payload.containerNo || 'DXB'} (${normalizedWeekDate})`,
+                details: `${isUpdate ? 'Updated' : 'Saved'} weekly audit variance AED ${safeRound(payload.varianceAmount || 0)}`
+            });
             return auditId;
         } catch (e) {
             console.error('Error saving weekly audit:', e);
@@ -103,29 +131,51 @@ export const DubaiDAO = {
     },
 
     /**
-     * Delete weekly audit document and linked records
+     * Delete weekly audit document and linked records (deletes children first & archives parent)
      */
-    async deleteWeeklyAudit(auditId) {
+    async deleteWeeklyAudit(auditId, snapshotData = null) {
         try {
-            await db.collection(AUDITS_COLLECTION).doc(auditId).delete();
-            
-            // Delete linked memos
-            const memosSnap = await db.collection(MEMOS_COLLECTION).where('auditId', '==', auditId).get();
-            const batch1 = db.batch();
-            memosSnap.forEach(doc => batch1.delete(doc.ref));
-            await batch1.commit();
+            const docRef = db.collection(AUDITS_COLLECTION).doc(auditId);
+            let dataToArchive = snapshotData;
+            if (!dataToArchive) {
+                const snap = await docRef.get();
+                if (snap.exists) dataToArchive = { id: snap.id, ...snap.data() };
+            }
 
-            // Delete linked remittances
-            const remSnap = await db.collection(REMITTANCES_COLLECTION).where('auditId', '==', auditId).get();
-            const batch2 = db.batch();
-            remSnap.forEach(doc => batch2.delete(doc.ref));
-            await batch2.commit();
+            const [memosSnap, remSnap, expSnap] = await Promise.all([
+                db.collection(MEMOS_COLLECTION).where('auditId', '==', auditId).get(),
+                db.collection(REMITTANCES_COLLECTION).where('auditId', '==', auditId).get(),
+                db.collection(EXPENSES_COLLECTION).where('auditId', '==', auditId).get()
+            ]);
 
-            // Delete linked expenses
-            const expSnap = await db.collection(EXPENSES_COLLECTION).where('auditId', '==', auditId).get();
-            const batch3 = db.batch();
-            expSnap.forEach(doc => batch3.delete(doc.ref));
-            await batch3.commit();
+            const childMemos = [];
+            memosSnap.forEach(doc => childMemos.push({ id: doc.id, ...doc.data() }));
+
+            if (dataToArchive) {
+                await archiveNothiDocToRecycleBin({
+                    collectionName: AUDITS_COLLECTION,
+                    docId: auditId,
+                    moduleLabel: 'সাপ্তাহিক ক্যাশ ও মেমো অডিট (পাতা ০০০৫)',
+                    itemName: `${dataToArchive.containerNo || 'অডিট'} (${dataToArchive.weekEndDate || auditId})`,
+                    snapshotData: { ...dataToArchive, _linkedMemos: childMemos },
+                    extraDetails: { consignmentId: dataToArchive.consignmentId || 'CONSIGNMENT-01' }
+                });
+            }
+
+            const refsToDelete = [];
+            memosSnap.forEach(doc => refsToDelete.push(doc.ref));
+            remSnap.forEach(doc => refsToDelete.push(doc.ref));
+            expSnap.forEach(doc => refsToDelete.push(doc.ref));
+            await commitDeletesInChunks(refsToDelete);
+
+            await docRef.delete();
+            await logNothiMutation({
+                action: 'DELETE',
+                moduleLabel: 'সাপ্তাহিক ক্যাশ ও মেমো অডিট (পাতা ০০০৫)',
+                entityId: auditId,
+                entityName: dataToArchive?.weekEndDate || auditId,
+                details: `Deleted weekly audit and ${refsToDelete.length} linked child docs`
+            });
 
             return true;
         } catch (e) {
@@ -135,25 +185,30 @@ export const DubaiDAO = {
     },
 
     /**
-     * Batch save purchase memos for an audit
+     * Batch save purchase memos for an audit (safe against Firestore 500-op batch limit)
      */
     async saveMemos(auditId, memos) {
         try {
-            // Delete previous memos for this audit first
             const existingSnap = await db.collection(MEMOS_COLLECTION).where('auditId', '==', auditId).get();
-            const batch = db.batch();
-            existingSnap.forEach(doc => batch.delete(doc.ref));
+            const existingRefs = [];
+            existingSnap.forEach(doc => existingRefs.push(doc.ref));
+            await commitDeletesInChunks(existingRefs);
 
-            // Insert new memos
-            memos.forEach(m => {
-                const docRef = db.collection(MEMOS_COLLECTION).doc();
-                batch.set(docRef, {
-                    ...m,
-                    auditId,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            const cleanMemos = Array.isArray(memos) ? memos : [];
+            const CHUNK_SIZE = 450;
+            for (let i = 0; i < cleanMemos.length; i += CHUNK_SIZE) {
+                const batch = db.batch();
+                cleanMemos.slice(i, i + CHUNK_SIZE).forEach(m => {
+                    const docRef = db.collection(MEMOS_COLLECTION).doc();
+                    batch.set(docRef, {
+                        memoNo: String(m.memoNo ?? ''),
+                        amount: safeRound(parseAmount(m.amount || 0)),
+                        auditId,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                 });
-            });
-            await batch.commit();
+                await batch.commit();
+            }
             return true;
         } catch (e) {
             console.error('Error saving memos:', e);

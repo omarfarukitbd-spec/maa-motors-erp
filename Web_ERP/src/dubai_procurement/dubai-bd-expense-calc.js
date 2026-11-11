@@ -28,7 +28,9 @@ export const DEFAULT_BD_BF = {
  * @returns {Object}
  */
 export function calculateBDExpenseSummary(consignment, expenses = []) {
-    const bfAmount = safeRound(Number(consignment?.initialBfAmount ?? DEFAULT_BD_BF.amount));
+    const isConsignmentOne = !consignment?.id || consignment.id === 'CONSIGNMENT-01';
+    const rawBf = consignment?.initialBfAmount ?? (isConsignmentOne ? DEFAULT_BD_BF.amount : 0);
+    const bfAmount = safeRound(Number(rawBf) || 0);
     
     let runningTotal = 0;
     const categoryBreakdown = {};
@@ -49,15 +51,18 @@ export function calculateBDExpenseSummary(consignment, expenses = []) {
     }
 
     expIsoDates.sort();
-    const bfStartDate = consignment?.bfStartDate || DEFAULT_BD_BF.startDate;
-    const bfEndDate = consignment?.bfEndDate || DEFAULT_BD_BF.endDate;
+    const bfStartDate = consignment?.bfStartDate || (isConsignmentOne ? DEFAULT_BD_BF.startDate : '');
+    const bfEndDate = consignment?.bfEndDate || (isConsignmentOne ? DEFAULT_BD_BF.endDate : '');
     const runningStartDate = expIsoDates[0] || '';
     const runningEndDate = expIsoDates[expIsoDates.length - 1] || '';
     const runningDates = runningStartDate
         ? (runningStartDate === runningEndDate ? formatAppDate(runningStartDate) : `${formatAppDate(runningStartDate)} - ${formatAppDate(runningEndDate)}`)
         : '';
+    const overallStart = bfStartDate || runningStartDate;
     const overallEnd = runningEndDate || bfEndDate;
-    const overallDates = `${formatAppDate(bfStartDate)} - ${formatAppDate(overallEnd)}`;
+    const overallDates = (overallStart && overallEnd)
+        ? (overallStart === overallEnd ? formatAppDate(overallStart) : `${formatAppDate(overallStart)} - ${formatAppDate(overallEnd)}`)
+        : (runningDates || 'চলমান সেশন');
 
     const grandTotal = safeRound(bfAmount + runningTotal);
 

@@ -13,6 +13,7 @@ import {
     renderNothiScreenBannerBar
 } from './dubai-section-banner.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
+import { canManageNothiEntries } from './dubai-nothi-helpers.js';
 import { escapeHTML, showToast, promptSecurityPin, ensureOnline } from '../utils.js';
 
 const PREFIX_PRESETS = ['কনসোলমেন্ট:', 'খাতার বিবরণ:', 'প্রজেক্ট:', 'হিসাব:', ''];
@@ -79,6 +80,10 @@ export async function openNothiBannerEditorModal({
     onSaved = null,
     initialDrafts = null
 }) {
+    if (!canManageNothiEntries()) {
+        showToast('আপনার নথি ব্যানার বা শিরোনাম পরিবর্তনের অনুমতি নেই!', 'error', 'অনুমতি নেই');
+        return;
+    }
     const consList = Array.isArray(allConsignments) && allConsignments.length > 0
         ? allConsignments
         : (consignment ? [consignment] : [{ id: 'CONSIGNMENT-01', name: 'মূল হিসাব সেশন ০১', status: 'active' }]);

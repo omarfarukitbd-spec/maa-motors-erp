@@ -5,8 +5,12 @@
 
 import { safeRound } from '../utils.js';
 
+function normalizeSizeDigits(raw = '') {
+    return String(raw || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+}
+
 /**
- * Calculates Container Port & Duty summary: total bills, count, 20ft vs 40ft breakdown, and agent breakdown.
+ * Calculates Container Port & Duty summary: total bills, count, 20ft vs 40ft vs Standard breakdown, and agent breakdown.
  * @param {Object} consignment
  * @param {Array} bills
  * @returns {Object}
@@ -17,23 +21,29 @@ export function calculatePortDutySummary(consignment, bills = []) {
     let twentyFtTotal = 0;
     let fortyFtCount = 0;
     let fortyFtTotal = 0;
+    let standardCount = 0;
+    let standardTotal = 0;
     const agentBreakdown = {};
 
     for (const bill of bills) {
-        const amt = safeRound(Number(bill.amount) || 0);
+        const amt = safeRound(Number(bill.amount ?? bill.dutyAmount) || 0);
         totalDuty = safeRound(totalDuty + amt);
 
-        const size = (bill.size || bill.containerSize || '').toLowerCase();
-        const desc = (bill.containerNo || bill.description || '').toLowerCase();
-        if (size.includes('20') || desc.includes('২০') || size.includes('২০')) {
+        const normSize = normalizeSizeDigits(bill.size || bill.containerSize || '').toLowerCase();
+        const normDesc = normalizeSizeDigits(bill.description || '').toLowerCase();
+
+        if (normSize.includes('20') || (!normSize && /(?:^|\s)20\s*(?:ft|ফুট)/.test(normDesc))) {
             twentyFtCount += 1;
             twentyFtTotal = safeRound(twentyFtTotal + amt);
-        } else if (size.includes('40') || desc.includes('৪০') || size.includes('৪০')) {
+        } else if (normSize.includes('40') || (!normSize && /(?:^|\s)40\s*(?:ft|ফুট)/.test(normDesc))) {
             fortyFtCount += 1;
             fortyFtTotal = safeRound(fortyFtTotal + amt);
+        } else {
+            standardCount += 1;
+            standardTotal = safeRound(standardTotal + amt);
         }
 
-        const agent = (bill.agent || bill.vendor || 'আরমান ও মিতুল').trim();
+        const agent = (bill.agent || bill.vendor || 'অনির্ধারিত এজেন্ট').trim();
         if (!agentBreakdown[agent]) {
             agentBreakdown[agent] = { count: 0, total: 0 };
         }
@@ -48,22 +58,25 @@ export function calculatePortDutySummary(consignment, bills = []) {
         twentyFtTotal,
         fortyFtCount,
         fortyFtTotal,
+        standardCount,
+        standardTotal,
         agentBreakdown
     };
 }
 
 /**
  * Calculates 3-Tier Master Project CapEx across Dubai (AED->BDT), Port Duty (BDT), and BD Expenses (BDT).
+ * Strictly zero fallback defaults: missing or empty books evaluate to 0.
  * @param {Object} dubaiSummary
  * @param {Object} portDutySummary
  * @param {Object} bdExpenseSummary
  * @returns {Object}
  */
 export function calculateMasterProjectCapEx(dubaiSummary, portDutySummary, bdExpenseSummary) {
-    const dubaiAED = safeRound(Number(dubaiSummary?.grandTotal?.aed) || 6907319);
-    const dubaiBDT = safeRound(Number(dubaiSummary?.grandTotal?.bdt) || 236437459);
-    const portBDT = safeRound(Number(portDutySummary?.totalDuty) || 25150713);
-    const bdBDT = safeRound(Number(bdExpenseSummary?.grandTotal) || 57894052);
+    const dubaiAED = safeRound(Number(dubaiSummary?.grandTotal?.aed) || 0);
+    const dubaiBDT = safeRound(Number(dubaiSummary?.grandTotal?.bdt) || 0);
+    const portBDT = safeRound(Number(portDutySummary?.totalDuty) || 0);
+    const bdBDT = safeRound(Number(bdExpenseSummary?.grandTotal) || 0);
     const totalCapExBDT = safeRound(dubaiBDT + portBDT + bdBDT);
 
     const dubaiSharePct = totalCapExBDT > 0 ? safeRound((dubaiBDT / totalCapExBDT) * 100, 2) : 0;

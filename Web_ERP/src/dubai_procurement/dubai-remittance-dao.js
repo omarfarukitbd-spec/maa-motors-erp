@@ -4,7 +4,8 @@
  */
 
 import { db, firebase } from '../firebase-config.js';
-import { toDBDate } from '../utils.js';
+import { toDBDate, safeRound } from '../utils.js';
+import { archiveNothiDocToRecycleBin, logNothiMutation } from './dubai-nothi-helpers.js';
 
 const CONSIGNMENTS_COLLECTION = 'dubai_consignments';
 const REMITTANCES_COLLECTION = 'dubai_remittances';
@@ -140,35 +141,53 @@ export const DubaiRemittanceDAO = {
      */
     async closeConsignmentAndStartNext(currentId, nextName, closingSummary) {
         try {
+            const safeCurrentId = currentId || 'CONSIGNMENT-01';
             const batch = db.batch();
 
             // 1. Close current consignment
-            const currentRef = db.collection(CONSIGNMENTS_COLLECTION).doc(currentId);
-            batch.update(currentRef, {
+            const currentRef = db.collection(CONSIGNMENTS_COLLECTION).doc(safeCurrentId);
+            const currentSnap = await currentRef.get();
+            const closedData = {
+                id: safeCurrentId,
                 status: 'closed',
                 closingSummary,
-                closedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+                closedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if (currentSnap.exists) {
+                batch.update(currentRef, closedData);
+            } else {
+                batch.set(currentRef, closedData, { merge: true });
+            }
 
             // 2. Create next consignment with rolled-forward opening balance
             const nextId = `CONSIGNMENT-${Date.now()}`;
             const nextRef = db.collection(CONSIGNMENTS_COLLECTION).doc(nextId);
+            const nextTitle = String(nextName || '২য় কনসোলমেন্ট / মূল হিসাব সেশন ০২').trim();
             batch.set(nextRef, {
                 id: nextId,
-                name: nextName || '২য় কনসোলমেন্ট / মূল হিসাব সেশন ০২',
+                name: nextTitle,
                 status: 'active',
-                previousConsignmentId: currentId,
+                previousConsignmentId: safeCurrentId,
+                initialBfAmount: 0,
                 openingBalance: {
-                    aed: closingSummary?.grandTotal?.aed || 0,
-                    bdt: closingSummary?.grandTotal?.bdt || 0,
-                    rate: closingSummary?.grandTotal?.rate || 0,
-                    note: '১ম কনসোলমেন্ট সমাপ্তি সাপেক্ষে স্থানান্তরিত সমাপনী ব্যালেন্স'
+                    aed: safeRound(closingSummary?.grandTotal?.aed || 0),
+                    bdt: safeRound(closingSummary?.grandTotal?.bdt || 0),
+                    rate: safeRound(closingSummary?.grandTotal?.rate || 0),
+                    note: 'পূর্ববর্তী কনসোলমেন্ট সমাপ্তি সাপেক্ষে স্থানান্তরিত সমাপনী ব্যালেন্স'
                 },
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             await batch.commit();
+            await logNothiMutation({
+                action: 'CLOSE_SESSION',
+                moduleLabel: 'রেমিট্যান্স ও কনসোলমেন্ট (পাতা ০০০১)',
+                entityId: safeCurrentId,
+                entityName: nextTitle,
+                details: `Closed ${safeCurrentId} and rolled forward AED ${safeRound(closingSummary?.grandTotal?.aed || 0)} to ${nextId}`
+            });
             return nextId;
         } catch (e) {
             console.error('Error closing consignment and starting next:', e);
@@ -180,33 +199,43 @@ export const DubaiRemittanceDAO = {
      * Real-time listener for remittances of a specific consignment
      */
     listenRemittances(consignmentId, callback) {
-        return db.collection(REMITTANCES_COLLECTION)
-            .onSnapshot(snap => {
-                const results = [];
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    if (!consignmentId || data.consignmentId === consignmentId) {
-                        results.push({ id: doc.id, ...data });
-                    }
-                });
-                results.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-                callback(results);
-            }, err => {
-                console.error('Error listening to dubai remittances:', err);
+        let query = db.collection(REMITTANCES_COLLECTION);
+        if (consignmentId) {
+            query = query.where('consignmentId', '==', consignmentId);
+        }
+        return query.onSnapshot(snap => {
+            const results = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (!consignmentId || (data.consignmentId || 'CONSIGNMENT-01') === consignmentId) {
+                    results.push({ id: doc.id, ...data });
+                }
             });
+            results.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+            callback(results);
+        }, err => {
+            console.error('Error listening to dubai remittances:', err);
+        });
     },
 
     /**
      * Get remittances by date range (used for weekly audit sync)
      */
-    async getRemittancesByDateRange(startDate, endDate) {
+    async getRemittancesByDateRange(startDate, endDate, consignmentId = null) {
         try {
-            const snap = await db.collection(REMITTANCES_COLLECTION).get();
+            let query = db.collection(REMITTANCES_COLLECTION);
+            if (consignmentId) {
+                query = query.where('consignmentId', '==', consignmentId);
+            }
+            const snap = await query.get();
             const results = [];
             const sDate = startDate ? toDBDate(startDate) : null;
             const eDate = endDate ? toDBDate(endDate) : null;
             snap.forEach(doc => {
                 const data = doc.data();
+                if (consignmentId && (data.consignmentId || 'CONSIGNMENT-01') !== consignmentId) {
+                    return;
+                }
                 const d = data.date;
                 if ((!sDate || d > sDate) && (!eDate || d <= eDate)) {
                     results.push({ id: doc.id, ...data });
@@ -225,18 +254,30 @@ export const DubaiRemittanceDAO = {
      */
     async saveRemittance(data) {
         try {
+            const isUpdate = Boolean(data.id);
             const id = data.id || `REM-${Date.now()}`;
             const docRef = db.collection(REMITTANCES_COLLECTION).doc(id);
             const payload = {
                 ...data,
                 id,
+                consignmentId: data.consignmentId || 'CONSIGNMENT-01',
                 date: toDBDate(data.date),
+                rate: safeRound(data.rate || 0),
+                aedAmount: safeRound(data.aedAmount || 0),
+                bdtAmount: safeRound(data.bdtAmount || 0),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-            if (!data.id) {
+            if (!isUpdate) {
                 payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             }
             await docRef.set(payload, { merge: true });
+            await logNothiMutation({
+                action: isUpdate ? 'UPDATE' : 'CREATE',
+                moduleLabel: 'টাকা পাঠানোর খাতা (পাতা ০০০১)',
+                entityId: id,
+                entityName: payload.via || id,
+                details: `${isUpdate ? 'Updated' : 'Created'} remittance AED ${payload.aedAmount} / BDT ${payload.bdtAmount}`
+            });
             return id;
         } catch (e) {
             console.error('Error saving remittance entry:', e);
@@ -245,11 +286,34 @@ export const DubaiRemittanceDAO = {
     },
 
     /**
-     * Delete remittance entry
+     * Delete remittance entry (archives to Recycle Bin first)
      */
-    async deleteRemittance(id) {
+    async deleteRemittance(id, snapshotData = null) {
         try {
-            await db.collection(REMITTANCES_COLLECTION).doc(id).delete();
+            const docRef = db.collection(REMITTANCES_COLLECTION).doc(id);
+            let dataToArchive = snapshotData;
+            if (!dataToArchive) {
+                const snap = await docRef.get();
+                if (snap.exists) dataToArchive = { id: snap.id, ...snap.data() };
+            }
+            if (dataToArchive) {
+                await archiveNothiDocToRecycleBin({
+                    collectionName: REMITTANCES_COLLECTION,
+                    docId: id,
+                    moduleLabel: 'টাকা পাঠানোর খাতা (পাতা ০০০১)',
+                    itemName: `${dataToArchive.via || 'রেমিট্যান্স'} (${dataToArchive.aedAmount || 0} AED)`,
+                    snapshotData: dataToArchive,
+                    extraDetails: { consignmentId: dataToArchive.consignmentId || 'CONSIGNMENT-01' }
+                });
+            }
+            await docRef.delete();
+            await logNothiMutation({
+                action: 'DELETE',
+                moduleLabel: 'টাকা পাঠানোর খাতা (পাতা ০০০১)',
+                entityId: id,
+                entityName: dataToArchive?.via || id,
+                details: `Deleted remittance AED ${dataToArchive?.aedAmount || 0}`
+            });
             return true;
         } catch (e) {
             console.error('Error deleting remittance entry:', e);

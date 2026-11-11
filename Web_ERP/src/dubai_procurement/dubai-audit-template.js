@@ -5,22 +5,28 @@
 
 import { getTodayLocalDateString, formatAmountWithComma, parseAmount, safeRound, escapeHTML } from '../utils.js';
 import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
+import { renderNothiMasterLinkPill } from './dubai-nothi-helpers.js';
 
 export function getDubaiAuditMainTemplate() {
     const actionButtonsHtml = `
-        <button type="button" id="btn-dubai-roll-forward" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="গত সপ্তাহের ব্যালেন্স নিজে নিজে নিয়ে আসবে">
+        ${renderNothiMasterLinkPill('ক্যাশ ও মেমো অডিট')}
+        <button type="button" id="btn-dubai-roll-forward" data-perm="manageNothiEntries" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="গত সপ্তাহের ব্যালেন্স নিজে নিজে নিয়ে আসবে">
             <i class="fa-solid fa-arrows-rotate text-sky-400 text-xs"></i>
             <span>রোল-ফরওয়ার্ড</span>
+        </button>
+        <button type="button" id="btn-dubai-export-excel" class="px-3 py-2 bg-teal-600/20 hover:bg-teal-600/35 text-teal-300 border border-teal-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="অডিট শিট ও হিস্ট্রি Excel (.xlsx) ডাউনলোড">
+            <i class="fa-solid fa-file-excel text-teal-400 text-xs"></i>
+            <span>Excel</span>
         </button>
         <button type="button" id="btn-dubai-print" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i class="fa-solid fa-print text-slate-400 text-xs"></i>
             <span>১-পাতা প্রিন্ট</span>
         </button>
-        <button type="button" id="btn-dubai-save" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-sky-600/20">
+        <button type="button" id="btn-dubai-save" data-perm="manageNothiEntries" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-sky-600/20">
             <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
             <span>অডিট সেভ করুন</span>
         </button>
-        <button type="button" id="btn-dubai-new" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+        <button type="button" id="btn-dubai-new" data-perm="manageNothiEntries" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i class="fa-solid fa-plus text-xs"></i>
             <span>নতুন সপ্তাহ</span>
         </button>
@@ -253,19 +259,46 @@ export function getDubaiAuditMainTemplate() {
                         <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
                     </div>
 
-                    <!-- Row 6+: Dynamic Custody Holdings (আলতাফ, মেছ, এমরান ইত্যাদি) -->
+                    <!-- Row 6: মেছ ফান্ড / মেস ব্যালেন্স (সম্পূর্ণ আলাদা সারি - Rule 16) -->
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-900/40 hover:bg-slate-800/30 transition-colors items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-3 border-r border-slate-800 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-1.5 flex-grow">
+                                <i class="fa-solid fa-utensils text-xs text-amber-400/80" title="স্বতন্ত্র মেছ ফান্ড"></i>
+                                <input type="text" id="desc-mess" value="মেছ ফান্ড / মেস ব্যালেন্স (Mess Fund)" placeholder="বিবরণ" class="bg-transparent border-b border-dashed border-slate-700 hover:border-amber-400 text-amber-300 text-sm sm:text-base font-bold focus:border-amber-400 outline-none w-full">
+                            </div>
+                            <span class="text-slate-400 text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-minus text-amber-400 mr-0.5"></i> বিয়োগ</span>
+                        </div>
+                        <div class="col-span-3 p-3 border-r border-slate-800 flex items-center justify-end gap-2 pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-bold font-mono">AED:</span>
+                            <input type="text" id="val-mess-balance" value="" placeholder="০.০০" oninput="window.handleNumberInput(this); window.handleDubaiWaterfallChange()" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.focusNextDubaiTableInput(this.id);}" class="w-full max-w-[190px] sm:max-w-[210px] h-10 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm sm:text-base text-amber-400 font-mono text-right font-black focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none shadow-inner">
+                        </div>
+                        <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
+                    </div>
+
+                    <!-- Subtotal Mess: মেছ ফান্ড বিয়োগের পর অবশিষ্ট -->
+                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/70 font-bold items-center py-1 sm:py-1.5">
+                        <div class="col-span-6 p-2.5 sm:p-3 border-r border-slate-800 flex items-center text-amber-300 pl-3 sm:pl-4">
+                            <span class="text-xs sm:text-sm text-slate-300 font-bold">অবশিষ্ট ব্যালেন্স:</span>
+                        </div>
+                        <div class="col-span-3 p-2.5 sm:p-3 border-r border-slate-800 flex items-center justify-end gap-2 text-amber-400 font-mono text-base sm:text-lg pr-3 sm:pr-4">
+                            <span class="text-xs text-slate-400 font-normal">AED =</span>
+                            <span id="subtotal-mess" class="font-black">0</span>
+                        </div>
+                        <div class="col-span-3 p-2.5 sm:p-3 text-center text-slate-600 text-sm font-bold">—</div>
+                    </div>
+
+                    <!-- Row 7+: Dynamic Custody Holdings (আলতাফ, এমরান মামা, জাবেদ ইত্যাদি) -->
                     <div id="dubai-dynamic-holdings-container">
                         <!-- Rendered dynamically via dubai-audit-ui.js -->
                     </div>
 
                     <!-- Add Custody Item Button Row with Quick Preset Chips -->
-                    <div class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/40 p-2.5 sm:p-3 items-center">
+                    <div data-perm="manageNothiEntries" class="grid grid-cols-12 border-b border-slate-800 bg-slate-950/40 p-2.5 sm:p-3 items-center">
                         <div class="col-span-6 flex flex-wrap items-center gap-2 border-r border-slate-800 pr-2">
                             <span class="text-xs text-slate-400 font-bold mr-1">বিবরণ যোগ:</span>
                             <button type="button" onclick="window.addDubaiHoldingPreset('আলতাফ')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-colors">+ আলতাফ</button>
                             <button type="button" onclick="window.addDubaiHoldingPreset('এমরান মামা')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-colors">+ এমরান মামা</button>
                             <button type="button" onclick="window.addDubaiHoldingPreset('জাবেদ')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-colors">+ জাবেদ</button>
-                            <button type="button" onclick="window.addDubaiHoldingPreset('মেছ (মেস)')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-colors">+ মেছ</button>
                             <button type="button" id="btn-add-waterfall-holding" class="px-2.5 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-lg text-xs font-bold cursor-pointer transition-colors"><i class="fa-solid fa-plus text-xs"></i> নতুন</button>
                         </div>
                         <div class="col-span-6 text-slate-400 text-xs flex items-center justify-end pr-3">
@@ -307,11 +340,11 @@ export function getDubaiAuditMainTemplate() {
                 </div>
 
                 <div class="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
-                    <button type="button" id="btn-dubai-roll-forward-bottom" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="পূর্ববর্তী অডিটের ব্যালেন্স নিয়ে আসুন">
+                    <button type="button" id="btn-dubai-roll-forward-bottom" data-perm="manageNothiEntries" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="পূর্ববর্তী অডিটের ব্যালেন্স নিয়ে আসুন">
                         <i class="fa-solid fa-arrows-rotate text-sky-400 text-xs"></i>
                         <span>রোল-ফরওয়ার্ড</span>
                     </button>
-                    <button type="button" id="btn-dubai-new-bottom" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+                    <button type="button" id="btn-dubai-new-bottom" data-perm="manageNothiEntries" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
                         <i class="fa-solid fa-plus text-xs"></i>
                         <span>নতুন সপ্তাহ</span>
                     </button>
@@ -319,7 +352,7 @@ export function getDubaiAuditMainTemplate() {
                         <i class="fa-solid fa-print text-slate-400 text-xs"></i>
                         <span>১-পাতা প্রিন্ট</span>
                     </button>
-                    <button type="button" id="btn-dubai-save-bottom" class="px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-sky-600/30">
+                    <button type="button" id="btn-dubai-save-bottom" data-perm="manageNothiEntries" class="px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-sky-600/30">
                         <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
                         <span class="text-sm tracking-wide">অডিট সংরক্ষণ করুন</span>
                     </button>

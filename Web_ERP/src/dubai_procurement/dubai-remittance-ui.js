@@ -6,10 +6,15 @@
 
 import Swal from 'sweetalert2';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
-import { calculateConsignmentSummary, calcBDTfromAED, calcAEDfromBDT } from './dubai-remittance-calc.js';
+import { calculateConsignmentSummary, calcBDTfromAED, calcAEDfromBDT, calcWeightedRate } from './dubai-remittance-calc.js';
 import { printDubaiRemittanceBook } from './dubai-remittance-print.js';
 import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
 import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
+import {
+    exportNothiRowsToExcel,
+    confirmNothiAction,
+    renderNothiMasterLinkPill
+} from './dubai-nothi-helpers.js';
 import {
     formatAmountWithComma,
     parseAmount,
@@ -94,15 +99,20 @@ function listenToActiveRemittances() {
 
 function renderRemittanceView(container) {
     const actionButtonsHtml = `
-        <button type="button" id="btn-edit-stage-dates" class="px-3.5 py-2 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/35 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="পর্যায় ১ ও পর্যায় ২-এর তারিখ সময়সীমা সেট বা সংশোধন করুন">
+        ${renderNothiMasterLinkPill('টাকা পাঠানোর খাতা')}
+        <button type="button" id="btn-edit-stage-dates" data-perm="manageNothiEntries" class="px-3.5 py-2 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/35 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="পর্যায় ১ ও পর্যায় ২-এর তারিখ সময়সীমা সেট বা সংশোধন করুন">
             <i class="fa-regular fa-calendar-days text-indigo-400 text-xs"></i>
             <span>তারিখ সময়সীমা</span>
+        </button>
+        <button type="button" id="btn-export-rem-excel" class="px-3.5 py-2 bg-teal-600/20 hover:bg-teal-600/35 text-teal-300 border border-teal-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="Excel (.xlsx) ডাউনলোড">
+            <i class="fa-solid fa-file-excel text-teal-400 text-xs"></i>
+            <span>Excel</span>
         </button>
         <button type="button" id="btn-print-remittance" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i class="fa-solid fa-print text-slate-400 text-xs"></i>
             <span>A4 প্রিন্ট / ভাউচার</span>
         </button>
-        <button type="button" id="btn-close-consignment" class="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+        <button type="button" id="btn-close-consignment" data-perm="manageNothiEntries" class="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i class="fa-solid fa-lock text-xs"></i>
             <span>সেশন ক্লোজিং ও ২য় শুরু</span>
         </button>
@@ -131,7 +141,7 @@ function renderRemittanceView(container) {
             </div>
 
             <!-- Quick Entry Dock -->
-            <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+            <div data-perm="manageNothiEntries" class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <div class="text-xs font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-circle-plus text-emerald-400 text-sm"></i>
@@ -163,7 +173,7 @@ function renderRemittanceView(container) {
 
                     <div class="sm:col-span-2">
                         <label class="block text-[11px] font-bold text-slate-400 mb-1">এক্সচেঞ্জ রেট:</label>
-                        <input type="number" step="0.01" id="rem-input-rate" value="34.75" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold font-mono focus:border-sky-500 outline-none" required>
+                        <input type="number" step="0.01" id="rem-input-rate" value="34.75" oninput="window.handleRemRateChange()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold font-mono focus:border-sky-500 outline-none" required>
                     </div>
 
                     <div class="sm:col-span-2">
@@ -247,6 +257,24 @@ function bindRemittanceEvents() {
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
 
     bind('btn-edit-stage-dates', openEditStageDatesModal);
+    bind('btn-export-rem-excel', () => {
+        const rows = remittancesList.map((r, idx) => [
+            idx + 1,
+            formatAppDate(r.date),
+            r.via || '',
+            safeRound(r.rate || 0),
+            safeRound(r.aedAmount || 0),
+            safeRound(r.bdtAmount || 0),
+            r.status || 'পরিশোধিত'
+        ]);
+        const consTag = activeConsignment?.id || 'CONSIGNMENT-01';
+        exportNothiRowsToExcel({
+            sheetName: 'Dubai_Remittance_0001',
+            headers: ['ক্রমিক', 'তারিখ', 'বিবরণ / মারফত', 'এক্সচেঞ্জ রেট', 'দেরহাম (AED)', 'টাকা (BDT)', 'স্ট্যাটাস'],
+            rows,
+            filename: `Nothi_0001_Remittance_${consTag}.xlsx`
+        });
+    });
     bind('btn-print-remittance', () => {
         printDubaiRemittanceBook(activeConsignment, remittancesList);
     });
@@ -262,7 +290,7 @@ function bindRemittanceEvents() {
     const searchInput = document.getElementById('rem-search-input');
     if (searchInput) searchInput.oninput = renderRemittanceTable;
 
-    // Window helpers for conversion
+    // Window helpers for currency conversion
     window.handleRemAedChange = () => {
         const aed = parseAmount(document.getElementById('rem-input-aed')?.value || 0);
         const rate = parseAmount(document.getElementById('rem-input-rate')?.value || 0);
@@ -283,6 +311,18 @@ function bindRemittanceEvents() {
             const aed = calcAEDfromBDT(bdt, rate);
             const aedInp = document.getElementById('rem-input-aed');
             if (aedInp) aedInp.value = formatAmountWithComma(aed);
+        }
+    };
+
+    window.handleRemRateChange = () => {
+        const rate = parseAmount(document.getElementById('rem-input-rate')?.value || 0);
+        if (rate <= 0) return;
+        const aed = parseAmount(document.getElementById('rem-input-aed')?.value || 0);
+        const bdt = parseAmount(document.getElementById('rem-input-bdt')?.value || 0);
+        if (aed > 0) {
+            window.handleRemAedChange();
+        } else if (bdt > 0) {
+            window.handleRemBdtChange();
         }
     };
 }
@@ -308,30 +348,37 @@ function updateRemittanceKpis() {
     if (!kpiContainer) return;
 
     const summary = calculateConsignmentSummary(activeConsignment, remittancesList);
+    const isPrimarySession = (!activeConsignment?.id || activeConsignment.id === 'CONSIGNMENT-01') && !summary.isRollover;
+
+    const stage1Title = isPrimarySession ? '১. পর্যায় ১ (২০২৫ ইনভেস্ট)' : '১. পূর্ববর্তী স্থিতি / পর্যায় ১';
+    const stage2Title = isPrimarySession ? '২. পর্যায় ২ (২০২৬ সাবেক)' : '২. প্রারম্ভিক ব্যালেন্স (সাবেক B/F)';
+    const grandTitle = isPrimarySession
+        ? '৪. ১ম কনসোলমেন্ট সর্বমোট তহবিল'
+        : '৪. চলমান সেশন সর্বমোট তহবিল';
 
     kpiContainer.innerHTML = `
         <div class="bg-slate-900/90 border border-slate-800 border-l-4 border-l-indigo-500 p-3.5 rounded-2xl shadow-xl flex flex-col gap-1">
             <div class="flex items-center justify-between gap-1">
-                <span class="text-[11px] font-bold text-slate-400">১. পর্যায় ১ (২০২৫ ইনভেস্ট)</span>
-                <button type="button" onclick="window.openRemStageDatesEditor && window.openRemStageDatesEditor()" class="text-[10px] text-indigo-400 hover:text-indigo-300 cursor-pointer" title="তারিখ এডিট করুন"><i class="fa-solid fa-pen"></i></button>
+                <span class="text-[11px] font-bold text-slate-400">${stage1Title}</span>
+                <button type="button" onclick="window.openRemStageDatesEditor && window.openRemStageDatesEditor()" data-perm="manageNothiEntries" class="text-[10px] text-indigo-400 hover:text-indigo-300 cursor-pointer" title="তারিখ এডিট করুন"><i class="fa-solid fa-pen"></i></button>
             </div>
             <div class="text-[10px] font-mono font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-md px-2 py-0.5 self-start">
                 <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.stage1.dates)}
             </div>
             <div class="text-base font-black text-indigo-400 font-mono">${formatAmountWithComma(summary.stage1.aed)} AED</div>
-            <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage1.bdt)} (রেট: ${summary.stage1.rate})</div>
+            <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage1.bdt)} (রেট: ${Number(summary.stage1.rate || 0).toFixed(2)})</div>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 border-l-4 border-l-sky-500 p-3.5 rounded-2xl shadow-xl flex flex-col gap-1">
             <div class="flex items-center justify-between gap-1">
-                <span class="text-[11px] font-bold text-slate-400">২. পর্যায় ২ (২০২৬ সাবেক)</span>
-                <button type="button" onclick="window.openRemStageDatesEditor && window.openRemStageDatesEditor()" class="text-[10px] text-sky-400 hover:text-sky-300 cursor-pointer" title="তারিখ এডিট করুন"><i class="fa-solid fa-pen"></i></button>
+                <span class="text-[11px] font-bold text-slate-400">${stage2Title}</span>
+                <button type="button" onclick="window.openRemStageDatesEditor && window.openRemStageDatesEditor()" data-perm="manageNothiEntries" class="text-[10px] text-sky-400 hover:text-sky-300 cursor-pointer" title="তারিখ এডিট করুন"><i class="fa-solid fa-pen"></i></button>
             </div>
             <div class="text-[10px] font-mono font-bold text-sky-300 bg-sky-500/10 border border-sky-500/20 rounded-md px-2 py-0.5 self-start">
-                <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.stage2.dates)}
+                <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.stage2.dates || 'প্রারম্ভিক')}
             </div>
             <div class="text-base font-black text-sky-400 font-mono">${formatAmountWithComma(summary.stage2.aed)} AED</div>
-            <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage2.bdt)} (রেট: ${summary.stage2.rate.toFixed(2)})</div>
+            <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage2.bdt)} (রেট: ${Number(summary.stage2.rate || 0).toFixed(2)})</div>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 border-l-4 border-l-emerald-500 p-3.5 rounded-2xl shadow-xl flex flex-col gap-1">
@@ -340,16 +387,16 @@ function updateRemittanceKpis() {
                 <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.stage3.dates)}
             </div>
             <div class="text-base font-black text-emerald-400 font-mono">${formatAmountWithComma(summary.stage3.aed)} AED</div>
-            <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage3.bdt)} (গড়: ${summary.stage3.rate.toFixed(2)})</div>
+            <div class="text-[11px] text-slate-400 font-semibold">৳ ${formatAmountWithComma(summary.stage3.bdt)} (গড়: ${Number(summary.stage3.rate || 0).toFixed(2)})</div>
         </div>
 
         <div class="bg-amber-950/20 border border-amber-500/30 border-l-4 border-l-amber-500 p-3.5 rounded-2xl shadow-xl flex flex-col gap-1">
-            <span class="text-[11px] font-black text-amber-400">৪. ১ম কনসোলমেন্ট সর্বমোট তহবিল</span>
+            <span class="text-[11px] font-black text-amber-400">${grandTitle}</span>
             <div class="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-0.5 self-start">
                 <i class="fa-regular fa-calendar-days mr-1"></i>${escapeHTML(summary.grandTotal.dates)}
             </div>
             <div class="text-base font-black text-amber-300 font-mono">${formatAmountWithComma(summary.grandTotal.aed)} AED</div>
-            <div class="text-[11px] text-amber-200/80 font-bold">৳ ${formatAmountWithComma(summary.grandTotal.bdt)} (গড়: ${summary.grandTotal.rate.toFixed(2)})</div>
+            <div class="text-[11px] text-amber-200/80 font-bold">৳ ${formatAmountWithComma(summary.grandTotal.bdt)} (গড়: ${Number(summary.grandTotal.rate || 0).toFixed(2)})</div>
         </div>
     `;
 
@@ -371,14 +418,26 @@ function renderRemittanceTable() {
     });
 
     const summary = calculateConsignmentSummary(activeConsignment, remittancesList);
+    const isPrimarySession = (!activeConsignment?.id || activeConsignment.id === 'CONSIGNMENT-01') && !summary.isRollover;
+    const formerDateLabel = isPrimarySession ? '13/10/2026' : (summary.stage2.dates || 'প্রারম্ভিক');
+    const formerDescLabel = isPrimarySession
+        ? 'সাবেক (পূর্ববর্তী কিউমুলেটিভ ব্যালেন্স)'
+        : (summary.isRollover ? 'সাবেক (পূর্ববর্তী কনসোলমেন্ট থেকে স্থানান্তরিত ব্যালেন্স)' : 'প্রারম্ভিক ব্যালেন্স (B/F)');
+    const sessionSubtotalLabel = isPrimarySession
+        ? '২০২৬ সেশনের মোট তহবিল (সাবেক সহ):'
+        : 'চলমান সেশনের মোট তহবিল (সাবেক সহ):';
+    const sessionSubtotalBadge = isPrimarySession ? '২০২৬ মোট' : 'সেশন মোট';
+    const grandRowLabel = isPrimarySession
+        ? '১ম কনসোলমেন্টের সর্বমোট তহবিল (পর্যায় ১ + ২ + ৩):'
+        : `${escapeHTML(activeConsignment?.name || 'চলমান সেশন')} সর্বমোট তহবিল:`;
 
     // Row 0: Opening / Former Balance
     let rowsHtml = `
         <tr class="bg-sky-950/30 border-b border-sky-800/50 hover:bg-sky-950/50 transition-colors">
             <td class="p-3 text-center font-black text-sky-400 border-r border-slate-800">০</td>
-            <td class="p-3 text-center text-slate-300 font-mono font-bold border-r border-slate-800">13/10/2026</td>
-            <td class="p-3 font-black text-sky-300 border-r border-slate-800">সাবেক (পূর্ববর্তী কিউমুলেটিভ ব্যালেন্স)</td>
-            <td class="p-3 text-center font-mono font-bold text-slate-400 border-r border-slate-800">${summary.stage2.rate.toFixed(2)}</td>
+            <td class="p-3 text-center text-slate-300 font-mono font-bold border-r border-slate-800">${escapeHTML(formerDateLabel)}</td>
+            <td class="p-3 font-black text-sky-300 border-r border-slate-800">${formerDescLabel}</td>
+            <td class="p-3 text-center font-mono font-bold text-slate-400 border-r border-slate-800">${Number(summary.stage2.rate || 0).toFixed(2)}</td>
             <td class="p-3 text-right font-mono font-black text-emerald-400 border-r border-slate-800">${formatAmountWithComma(summary.stage2.aed)} AED</td>
             <td class="p-3 text-right font-mono font-black text-red-400 border-r border-slate-800">৳ ${formatAmountWithComma(summary.stage2.bdt)}</td>
             <td class="p-3 text-center border-r border-slate-800"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">সাবেক শুরু</span></td>
@@ -400,57 +459,78 @@ function renderRemittanceTable() {
                     <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${escapeHTML(r.status || 'পরিশোধিত')}</span>
                 </td>
                 <td class="p-3 text-center flex items-center justify-center gap-1.5">
-                    <button type="button" onclick="window.editRemittanceEntry('${r.id}')" class="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="সংশোধন"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-                    <button type="button" onclick="window.deleteRemittanceEntry('${r.id}')" class="p-1.5 text-red-400 hover:text-red-300 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="মুছে ফেলুন"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    <button type="button" onclick="window.editRemittanceEntry('${r.id}')" data-perm="manageNothiEntries" class="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="সংশোধন"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                    <button type="button" onclick="window.deleteRemittanceEntry('${r.id}')" data-perm="deleteNothiEntries" class="p-1.5 text-red-400 hover:text-red-300 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="মুছে ফেলুন"><i class="fa-solid fa-trash-can text-xs"></i></button>
                 </td>
             </tr>
         `;
     });
 
     if (filtered.length === 0) {
+        const emptyHtml = isPrimarySession && remittancesList.length === 0
+            ? `
+                <div class="flex flex-col items-center justify-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-down text-sky-400 text-2xl"></i>
+                    <span class="font-bold text-slate-300">ডাটাবেসে কোনো এন্ট্রি পাওয়া যায়নি অথবা লোড হচ্ছে</span>
+                    <p class="text-xs text-slate-500">পিডিএফ-এর ১৯টি কিস্তির এন্ট্রি ডাটাবেসে এক ক্লিকে লোড করতে নিচের বাটনে চাপ দিন:</p>
+                    <button type="button" onclick="window.forceSeedRemittances()" data-perm="manageNothiEntries" class="mt-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-database text-xs"></i>
+                        <span>পিডিএফ-এর খাতার ১৯টি এন্ট্রি ডাটাবেসে সেভ করুন</span>
+                    </button>
+                </div>
+            `
+            : `<span class="text-slate-400 font-semibold">${query ? 'অনুসন্ধান অনুযায়ী কোনো লেনদেন পাওয়া যায়নি।' : 'এই কনসোলমেন্টে এখনো কোনো রেমিট্যান্স এন্ট্রি যোগ করা হয়নি।'}</span>`;
+
         rowsHtml += `
             <tr class="border-b border-slate-800">
-                <td colspan="8" class="p-6 text-center text-slate-400">
-                    <div class="flex flex-col items-center justify-center gap-2">
-                        <i class="fa-solid fa-cloud-arrow-down text-sky-400 text-2xl"></i>
-                        <span class="font-bold text-slate-300">ডাটাবেসে কোনো এন্ট্রি পাওয়া যায়নি অথবা লোড হচ্ছে</span>
-                        <p class="text-xs text-slate-500">পিডিএফ-এর ১৯টি কিস্তির এন্ট্রি ডাটাবেসে এক ক্লিকে লোড করতে নিচের বাটনে চাপ দিন:</p>
-                        <button type="button" onclick="window.forceSeedRemittances()" class="mt-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2">
-                            <i class="fa-solid fa-database text-xs"></i>
-                            <span>পিডিএফ-এর খাতার ১৯টি এন্ট্রি ডাটাবেসে সেভ করুন</span>
-                        </button>
-                    </div>
-                </td>
+                <td colspan="8" class="p-6 text-center text-slate-400">${emptyHtml}</td>
             </tr>
         `;
     }
 
     tbody.innerHTML = rowsHtml;
 
+    let filteredSubtotalRow = '';
+    if (query) {
+        const fAed = safeRound(filtered.reduce((s, r) => s + parseAmount(r.aedAmount || 0), 0));
+        const fBdt = safeRound(filtered.reduce((s, r) => s + parseAmount(r.bdtAmount || 0), 0));
+        const fRate = calcWeightedRate(fBdt, fAed);
+        filteredSubtotalRow = `
+            <tr class="bg-amber-950/25 border-t border-amber-500/30 font-bold text-xs text-amber-300">
+                <td colspan="3" class="p-3 text-right border-r border-slate-800">সার্চ ফলাফল উপ-মোট (${filtered.length} টি লেনদেন):</td>
+                <td class="p-3 text-center font-mono border-r border-slate-800">${fRate.toFixed(2)}</td>
+                <td class="p-3 text-right font-mono font-black text-emerald-400 border-r border-slate-800">${formatAmountWithComma(fAed)} AED</td>
+                <td class="p-3 text-right font-mono font-black text-red-400 border-r border-slate-800">৳ ${formatAmountWithComma(fBdt)}</td>
+                <td colspan="2" class="p-3 text-center text-amber-400">ফিল্টার মোট</td>
+            </tr>
+        `;
+    }
+
     // Foot totals
     tfoot.innerHTML = `
+        ${filteredSubtotalRow}
         <!-- Subtotal -->
         <tr class="bg-slate-950/80 border-t-2 border-slate-700 font-bold text-xs text-slate-300">
             <td colspan="3" class="p-3 text-right border-r border-slate-800 font-bold">চলমান খাতার উপ-মোট (${summary.stage3.count} টি লেনদেন):</td>
-            <td class="p-3 text-center font-mono font-bold border-r border-slate-800">${summary.stage3.rate.toFixed(2)}</td>
+            <td class="p-3 text-center font-mono font-bold border-r border-slate-800">${Number(summary.stage3.rate || 0).toFixed(2)}</td>
             <td class="p-3 text-right font-mono font-black text-emerald-400 border-r border-slate-800">${formatAmountWithComma(summary.stage3.aed)} AED</td>
             <td class="p-3 text-right font-mono font-black text-red-400 border-r border-slate-800">৳ ${formatAmountWithComma(summary.stage3.bdt)}</td>
             <td colspan="2" class="p-3 text-center font-bold text-slate-400">উপ-মোট</td>
         </tr>
 
-        <!-- 2026 Session Total -->
+        <!-- Session Running + Stage 2 Total -->
         <tr class="bg-emerald-950/20 border-t border-emerald-800/40 font-bold text-xs text-emerald-400">
-            <td colspan="3" class="p-3 text-right border-r border-slate-800 font-black">২০২৬ সেশনের মোট তহবিল (সাবেক সহ):</td>
-            <td class="p-3 text-center font-mono font-black border-r border-slate-800">${summary.session2026.rate.toFixed(2)}</td>
+            <td colspan="3" class="p-3 text-right border-r border-slate-800 font-black">${sessionSubtotalLabel}</td>
+            <td class="p-3 text-center font-mono font-black border-r border-slate-800">${Number(summary.session2026.rate || 0).toFixed(2)}</td>
             <td class="p-3 text-right font-mono font-black text-emerald-400 border-r border-slate-800">${formatAmountWithComma(summary.session2026.aed)} AED</td>
             <td class="p-3 text-right font-mono font-black text-red-400 border-r border-slate-800">৳ ${formatAmountWithComma(summary.session2026.bdt)}</td>
-            <td colspan="2" class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">২০২৬ মোট</span></td>
+            <td colspan="2" class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">${sessionSubtotalBadge}</span></td>
         </tr>
 
         <!-- All-Time Grand Total -->
         <tr class="bg-sky-950/40 border-t-2 border-b-2 border-sky-500 font-black text-xs text-white">
-            <td colspan="3" class="p-3.5 text-right border-r border-slate-800 text-sm">১ম কনসোলমেন্টের সর্বমোট তহবিল (পর্যায় ১ + ২ + ৩):</td>
-            <td class="p-3.5 text-center font-mono font-black border-r border-slate-800 text-sky-400 text-sm">${summary.grandTotal.rate.toFixed(2)}</td>
+            <td colspan="3" class="p-3.5 text-right border-r border-slate-800 text-sm">${grandRowLabel}</td>
+            <td class="p-3.5 text-center font-mono font-black border-r border-slate-800 text-sky-400 text-sm">${Number(summary.grandTotal.rate || 0).toFixed(2)}</td>
             <td class="p-3.5 text-right font-mono font-black text-emerald-400 border-r border-slate-800 text-sm">${formatAmountWithComma(summary.grandTotal.aed)} AED</td>
             <td class="p-3.5 text-right font-mono font-black text-red-400 border-r border-slate-800 text-sm">৳ ${formatAmountWithComma(summary.grandTotal.bdt)}</td>
             <td colspan="2" class="p-3.5 text-center"><span class="px-2.5 py-1 rounded text-xs font-black bg-sky-600 text-white shadow-md">সর্বমোট</span></td>
@@ -459,7 +539,9 @@ function renderRemittanceTable() {
 
     // Global action helpers
     window.forceSeedRemittances = async () => {
-        ensureOnline();
+        if (!ensureOnline('ডাটাবেস সিড করা')) return;
+        const pinOk = await promptSecurityPin('প্রাথমিক ১৯টি এন্ট্রি ডাটাবেসে লোড করতে সিকিউরিটি পিন দিন');
+        if (!pinOk) return;
         try {
             showToast('ডাটাবেসে লোড করা হচ্ছে...', 'info');
             await DubaiRemittanceDAO.seedInitialDataIfNeeded(true);
@@ -470,9 +552,11 @@ function renderRemittanceTable() {
         }
     };
 
-    window.editRemittanceEntry = (id) => {
+    window.editRemittanceEntry = async (id) => {
         const item = remittancesList.find(r => r.id === id);
         if (!item) return;
+        const pinOk = await promptSecurityPin('রেমিট্যান্স এন্ট্রি সংশোধন করতে সিকিউরিটি পিন দিন');
+        if (!pinOk) return;
         editingRemittanceId = id;
         const dateInp = document.getElementById('rem-input-date');
         const appDt = formatAppDate(item.date);
@@ -493,25 +577,22 @@ function renderRemittanceTable() {
     };
 
     window.deleteRemittanceEntry = async (id) => {
-        ensureOnline();
-        const pinPassed = await promptSecurityPin();
+        if (!ensureOnline('রেমিট্যান্স এন্ট্রি মুছে ফেলা')) return;
+        const pinPassed = await promptSecurityPin('টাকা পাঠানোর রেকর্ড মুছে ফেলতে সিকিউরিটি পিন দিন');
         if (!pinPassed) return;
 
-        const res = await Swal.fire({
+        const confirmed = await confirmNothiAction({
             title: 'লেনদেন মুছে ফেলবেন?',
-            text: 'এই টাকা পাঠানোর রেকর্ডটি স্থায়ীভাবে মুছে ফেলা হবে।',
-            icon: 'warning',
-            showCancelButton: true,
+            text: 'এই টাকা পাঠানোর রেকর্ডটি রিসাইকেল বিনে সরানো হবে এবং বর্তমান খাতা থেকে মুছে যাবে।',
             confirmButtonText: 'হ্যাঁ, মুছুন',
-            cancelButtonText: 'বাতিল',
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#334155'
+            confirmButtonColor: '#ef4444'
         });
 
-        if (res.isConfirmed) {
+        if (confirmed) {
             try {
-                await DubaiRemittanceDAO.deleteRemittance(id);
-                showToast('লেনদেন সফলভাবে মুছে ফেলা হয়েছে', 'success');
+                const snapshot = remittancesList.find(r => r.id === id) || null;
+                await DubaiRemittanceDAO.deleteRemittance(id, snapshot);
+                showToast('লেনদেন রিসাইকেল বিনে সরানো হয়েছে', 'success');
             } catch (e) {
                 console.error('Delete error:', e);
                 showToast('মুছতে সমস্যা হয়েছে', 'error');
@@ -522,16 +603,16 @@ function renderRemittanceTable() {
 
 async function onSaveRemittanceSubmit(e) {
     e.preventDefault();
-    ensureOnline();
+    if (!ensureOnline('রেমিট্যান্স এন্ট্রি সংরক্ষণ')) return;
 
     const dateVal = document.getElementById('rem-input-date')?.value;
     const viaVal = document.getElementById('rem-input-via')?.value?.trim();
-    const rateVal = parseAmount(document.getElementById('rem-input-rate')?.value || 0);
-    const aedVal = parseAmount(document.getElementById('rem-input-aed')?.value || 0);
-    const bdtVal = parseAmount(document.getElementById('rem-input-bdt')?.value || 0);
+    const rateVal = safeRound(parseAmount(document.getElementById('rem-input-rate')?.value || 0));
+    const aedVal = safeRound(parseAmount(document.getElementById('rem-input-aed')?.value || 0));
+    const bdtVal = safeRound(parseAmount(document.getElementById('rem-input-bdt')?.value || 0));
 
-    if (!dateVal || !viaVal || aedVal <= 0 || bdtVal <= 0) {
-        showToast('তারিখ, মারফত, দেরহাম ও টাকার অঙ্ক সঠিকভাবে পূরণ করুন', 'error');
+    if (!dateVal || !viaVal || rateVal <= 0 || aedVal <= 0 || bdtVal <= 0) {
+        showToast('তারিখ, মারফত, রেট, দেরহাম ও টাকার অঙ্ক সঠিকভাবে পূরণ করুন', 'error');
         return;
     }
 
@@ -575,41 +656,58 @@ function resetRemittanceForm() {
 }
 
 async function onCloseConsignmentClick() {
-    ensureOnline();
-    const pinPassed = await promptSecurityPin();
+    if (!activeConsignment) return;
+    if (activeConsignment.status === 'closed') {
+        showToast('এই কনসোলমেন্টটি ইতিমধ্যেই সমাপ্ত (Closed) অবস্থায় রয়েছে', 'error');
+        return;
+    }
+    if (!ensureOnline('কনসোলমেন্ট ক্লোজ করা')) return;
+    const pinPassed = await promptSecurityPin('সেশন ক্লোজিং এবং পরবর্তী সেশন চালু করতে সিকিউরিটি পিন দিন');
     if (!pinPassed) return;
 
     const summary = calculateConsignmentSummary(activeConsignment, remittancesList);
+    const nextSessionNum = consignmentsList.length + 1;
+    const defaultNextName = `কনসোলমেন্ট / মূল হিসাব সেশন ০${nextSessionNum}`;
 
     const res = await Swal.fire({
-        title: '১ম কনসোলমেন্ট সমাপ্ত ও ২য় শুরু?',
+        title: `<span class="font-bn text-lg font-black text-white">বর্তমান সেশন সমাপ্ত ও নতুন সেশন শুরু?</span>`,
+        background: '#0f172a',
+        color: '#f8fafc',
         html: `
-            <div class="text-left text-xs font-bn text-slate-300 flex flex-col gap-2">
-                <p>আপনি কি <strong>${escapeHTML(activeConsignment?.name || '১ম কনসোলমেন্ট')}</strong> আনুষ্ঠানিকভাবে ক্লোজ করতে চান?</p>
-                <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-                    <div>• ১ম কনসোলমেন্ট সর্বমোট তহবিল: <strong class="text-emerald-400">${formatAmountWithComma(summary.grandTotal.aed)} AED</strong></div>
-                    <div>• সমমূল্যের বাংলাদেশি টাকা: <strong class="text-red-400">৳ ${formatAmountWithComma(summary.grandTotal.bdt)}</strong></div>
-                    <div>• চূড়ান্ত গড় রেট: <strong class="text-sky-400">${summary.grandTotal.rate.toFixed(2)}</strong></div>
+            <div class="text-left text-xs font-bn text-slate-300 flex flex-col gap-2.5">
+                <p>আপনি কি <strong>${escapeHTML(activeConsignment?.name || 'চলমান কনসোলমেন্ট')}</strong> আনুষ্ঠানিকভাবে ক্লোজ করতে চান?</p>
+                <div class="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 space-y-1">
+                    <div>• সমাপনী মোট তহবিল: <strong class="text-emerald-400 font-mono">${formatAmountWithComma(summary.grandTotal.aed)} AED</strong></div>
+                    <div>• সমমূল্যের বাংলাদেশি টাকা: <strong class="text-red-400 font-mono">৳ ${formatAmountWithComma(summary.grandTotal.bdt)}</strong></div>
+                    <div>• চূড়ান্ত গড় রেট: <strong class="text-sky-400 font-mono">${Number(summary.grandTotal.rate || 0).toFixed(2)}</strong></div>
                 </div>
-                <p class="text-amber-400 font-bold">এটি সম্পন্ন হলে ১ম কনসোলমেন্টের সমাপনী স্থিতি স্বয়ংক্রিয়ভাবে ২য় কনসোলমেন্টের প্রারম্ভিক মূলধন (Opening Balance) হিসেবে স্থানান্তরিত হবে।</p>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-300 mb-1">পরবর্তী নতুন সেশনের নাম:</label>
+                    <input type="text" id="swal-next-cons-name" value="${escapeHTML(defaultNextName)}" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold outline-none focus:border-sky-500">
+                </div>
+                <p class="text-amber-400 font-bold">এটি সম্পন্ন হলে সমাপনী স্থিতি স্বয়ংক্রিয়ভাবে নতুন সেশনের প্রারম্ভিক মূলধন (Opening Balance) হিসেবে স্থানান্তরিত হবে।</p>
             </div>
         `,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'হ্যাঁ, ক্লোজ করে ২য় শুরু করুন',
+        confirmButtonText: 'হ্যাঁ, ক্লোজ করে নতুন শুরু করুন',
         cancelButtonText: 'বাতিল',
         confirmButtonColor: '#0284c7',
-        cancelButtonColor: '#334155'
+        cancelButtonColor: '#334155',
+        preConfirm: () => {
+            const nameVal = document.getElementById('swal-next-cons-name')?.value?.trim();
+            return nameVal || defaultNextName;
+        }
     });
 
     if (res.isConfirmed) {
         try {
             await DubaiRemittanceDAO.closeConsignmentAndStartNext(
                 activeConsignment.id,
-                '২য় কনসোলমেন্ট / মূল হিসাব সেশন ০২',
+                res.value || defaultNextName,
                 summary
             );
-            showToast('১ম কনসোলমেন্ট ক্লোজ করে ২য় কনসোলমেন্ট সফলভাবে চালু করা হয়েছে', 'success');
+            showToast('বর্তমান সেশন ক্লোজ করে নতুন সেশন সফলভাবে চালু করা হয়েছে', 'success');
         } catch (e) {
             console.error('Consignment closure error:', e);
             showToast('ক্লোজ করতে সমস্যা হয়েছে', 'error');

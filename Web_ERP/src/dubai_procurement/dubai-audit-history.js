@@ -3,7 +3,8 @@
  * Renders the saved audits history table with load, print, and delete controls.
  */
 
-import { formatAmountWithComma, parseAmount, safeRound, formatAppDate } from '../utils.js';
+import { formatAmountWithComma, parseAmount, safeRound, formatAppDate, escapeHTML } from '../utils.js';
+import { computeAuditVarianceMetrics } from './dubai-capex-calc.js';
 
 export function renderDubaiHistoryTable(tbodyId, audits = []) {
     const tbody = document.getElementById(tbodyId);
@@ -16,27 +17,33 @@ export function renderDubaiHistoryTable(tbodyId, audits = []) {
 
     let html = '';
     audits.forEach(a => {
-        const vAmt = safeRound(parseAmount(a.varianceAmount));
-        const vClass = vAmt >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
-        let holdingsSum = 0;
+        const vm = computeAuditVarianceMetrics(a);
+        const vAmt = vm.variance;
+        const vClass = vm.statusKind === 'deficit'
+            ? 'text-red-400 font-bold'
+            : (vm.statusKind === 'surplus' ? 'text-emerald-400 font-bold' : 'text-sky-400 font-bold');
+
+        let otherHoldings = safeRound(parseAmount(a.messBalance || 0));
         if (Array.isArray(a.personalHoldings)) {
             a.personalHoldings.forEach(h => {
                 const amt = safeRound(parseAmount(h.amount));
                 const isPlus = h.op === '+';
-                holdingsSum = safeRound(isPlus ? holdingsSum - amt : holdingsSum + amt);
+                otherHoldings = safeRound(isPlus ? otherHoldings - amt : otherHoldings + amt);
             });
         }
+        const vDisplay = vAmt > 0 ? `+${formatAmountWithComma(vAmt)}` : formatAmountWithComma(vAmt);
+
         html += `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors">
                 <td class="p-2.5 font-bold font-mono text-white">${formatAppDate(a.weekEndDate)}</td>
-                <td class="p-2.5 text-slate-400">${a.containerNo || ''}</td>
+                <td class="p-2.5 text-slate-400">${escapeHTML(a.containerNo || '')}</td>
                 <td class="p-2.5 text-right font-mono text-emerald-400">${formatAmountWithComma(a.cumulativeRemittance)}</td>
                 <td class="p-2.5 text-right font-mono text-amber-400">${formatAmountWithComma(a.cumulativePurchaseTotal)}</td>
                 <td class="p-2.5 text-right font-mono text-red-400">${formatAmountWithComma(a.cumulativeExpenseTotal)}</td>
                 <td class="p-2.5 text-right font-mono text-cyan-400">${formatAmountWithComma(a.marketAdvance)}</td>
                 <td class="p-2.5 text-right font-mono text-emerald-400">${formatAmountWithComma(a.cashInHand)}</td>
-                <td class="p-2.5 text-right font-mono text-purple-400">${formatAmountWithComma(holdingsSum)}</td>
-                <td class="p-2.5 text-right font-mono ${vClass}">${formatAmountWithComma(vAmt)}</td>
+                <td class="p-2.5 text-right font-mono text-purple-400">${formatAmountWithComma(otherHoldings)}</td>
+                <td class="p-2.5 text-right font-mono ${vClass}" title="${escapeHTML(vm.statusLabel)}">${vDisplay}</td>
                 <td class="p-2.5 text-center">
                     <div class="flex items-center justify-center gap-1.5">
                         <button type="button" onclick="window.loadDubaiAuditHistory('${a.id}')" class="p-1 rounded hover:bg-slate-700 text-sky-400 cursor-pointer" title="লোড করুন">
@@ -45,7 +52,7 @@ export function renderDubaiHistoryTable(tbodyId, audits = []) {
                         <button type="button" onclick="window.printDubaiAuditHistory('${a.id}')" class="p-1 rounded hover:bg-slate-700 text-slate-300 cursor-pointer" title="প্রিন্ট করুন">
                             <i class="fa-solid fa-print text-xs"></i>
                         </button>
-                        <button type="button" onclick="window.deleteDubaiAuditHistory('${a.id}')" class="p-1 rounded hover:bg-red-500/20 text-red-400 cursor-pointer" title="মুছে ফেলুন">
+                        <button type="button" onclick="window.deleteDubaiAuditHistory('${a.id}')" data-perm="deleteNothiEntries" class="p-1 rounded hover:bg-red-500/20 text-red-400 cursor-pointer" title="মুছে ফেলুন">
                             <i class="fa-solid fa-trash-can text-xs"></i>
                         </button>
                     </div>

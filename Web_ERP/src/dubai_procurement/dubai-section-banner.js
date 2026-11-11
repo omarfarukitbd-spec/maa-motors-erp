@@ -45,6 +45,14 @@ export const DEFAULT_SECTION_BANNERS = {
         title: 'বৃহস্পতিবারের সাপ্তাহিক ক্যাশ ও মেমো অডিট',
         statusText: 'সাপ্তাহিক রিকনসিলিয়েশন',
         statusTone: 'sky'
+    },
+    'master-summary': {
+        motherTitle: 'সমন্বিত মোট হিসাব ও প্রজেক্ট পুঁজী',
+        pageNo: '০০০৬',
+        prefixLabel: 'মাস্টার লেজার:',
+        title: '৪-স্তরের সমন্বিত ল্যান্ডেড কস্ট ও নথি সারসংক্ষেপ',
+        statusText: 'সিঙ্গেল সোর্স অব ট্রুথ',
+        statusTone: 'purple'
     }
 };
 
@@ -64,6 +72,14 @@ export const BANNER_TONE_PALETTES = {
         dotHex: '#bae6fd',
         pillClass: 'bg-sky-600/90 text-white border-sky-400/70',
         dotClass: 'bg-sky-200'
+    },
+    purple: {
+        label: 'পার্পল (মাস্টার সারসংক্ষেপ)',
+        bgHex: '#6d28d9',
+        borderHex: '#a78bfa',
+        dotHex: '#ddd6fe',
+        pillClass: 'bg-purple-600/90 text-white border-purple-400/70',
+        dotClass: 'bg-purple-200'
     },
     amber: {
         label: 'অ্যাম্বার (প্রক্রিয়াধীন)',
@@ -291,7 +307,7 @@ export function renderNothiScreenBannerBar({
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" data-edit-nothi-banner="${escapeHTML(sectionKey)}"
+                    <button type="button" data-perm="manageNothiEntries" data-edit-nothi-banner="${escapeHTML(sectionKey)}"
                         class="px-3 py-1.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 hover:text-white border border-sky-500/35 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95">
                         <i class="fa-solid fa-pen-to-square text-[11px]"></i>
                         <span>PDF শিরোনাম ও ব্যানার এডিট</span>

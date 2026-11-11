@@ -144,6 +144,36 @@
 
 ---
 
+### 1.10 Dubai Procurement & Nothi Book (`পাতা ০০০১–০০০৬`) Collections (Isolated AED & Container CapEx Ledger)
+* **Strict Isolation:** Completely segregated from local BDT collections (`Customers`, `Transactions`, `Expenses`, `TreasuryTransactions`, `BankAccounts`, `BankTransactions`). Missing `consignmentId` on legacy audit docs is treated as `'CONSIGNMENT-01'`.
+* **`dubai_consignments`:**
+  - `id`: `"CONSIGNMENT-01"`, `"CONSIGNMENT-02"`, etc.
+  - `name`: Consignment session title string
+  - `status`: `'active'` | `'closed'`
+  - `initialBfAmount`, `bfStartDate`, `bfEndDate`: Page `0002` opening B/F override & date bounds (`CONSIGNMENT-02+` defaults to `0`)
+  - `stage1StartDate`, `stage1EndDate`, `stage2StartDate`, `stage2EndDate`: Page `0001` editable phase date ranges
+  - `openingBalance`: `{ aed, bdt, avgRate }` (rolled forward on new consignment)
+  - `closingBalance`: `{ aed, bdt, avgRate }`
+  - `sectionBanners`: Map keyed by `'remittance'` | `'bd-expense'` | `'lc-bills'` | `'port-duty'` | `'audit'` | `'master-summary'`, each with `{ motherTitle, pageNo, prefixLabel, title, statusText, statusTone }`
+  - `createdAt`, `updatedAt`: serverTimestamp
+* **`dubai_remittances` (Page `0001` — AED & BDT Remittance):**
+  - `id`, `consignmentId`, `date` (`YYYY-MM-DD`), `via`, `aedAmount` (`>= 0`), `exchangeRate` (`>= 0`), `bdtAmount` (`>= 0`), `note`, `auditId` (optional), `createdBy`, `createdAt`, `updatedAt`
+* **`dubai_bd_expenses` (Page `0002` — Bangladesh Landed & Local Costs in BDT):**
+  - `id`, `consignmentId`, `date` (`YYYY-MM-DD`), `category`, `description`, `amount` (BDT), `createdBy`, `createdAt`, `updatedAt`
+* **`dubai_lc_bills` (Page `0003` — Container L/C & Bank Expenses in USD & BDT):**
+  - `id`, `consignmentId`, `containerNo`, `lcNo`, `company`, `deliveryDate` (`YYYY-MM-DD` or `""`), `isSettled` (`boolean`), `payments` (`Array<{ id, date, method, note, amountUSD, amountBDT }>`), `totalUSD`, `totalBDT`, `paymentCount`, `createdBy`, `createdAt`, `updatedAt`
+* **`dubai_port_duty_bills` (Page `0004` — Container Port, Customs & C&F Bills in BDT):**
+  - `id`, `consignmentId`, `containerNo`, `date` (`YYYY-MM-DD`), `agent` (or `vendor`), `size` (`'Standard'` | `'20 FT'` | `'40 FT'`), `amount` (BDT), `description`, `createdBy`, `createdAt`, `updatedAt`
+* **`dubai_weekly_audits` (Page `0005` — Dubai Weekly Cash & Memo Reconciliation in AED):**
+  - `id`, `consignmentId`, `weekEndDate` (`YYYY-MM-DD`), `containerNo`, `openingTheoreticalBalance`, `runningRemittance`, `runningPurchase`, `runningExpense`, `calculatedCashBalance`
+  - **Disaggregated Physical Assets (NEVER combined):** `cashInHand` (AED), `marketAdvance` (AED), `personalHoldings` (`Array<{ name, amount }>`), `messBalance` (AED), `totalPhysicalAssets`
+  - **Canonical Variance:** `varianceAmount = safeRound(totalPhysicalAssets - calculatedCashBalance)` (`> 0` Surplus, `< 0` Deficit)
+  - `memoStart`, `memoEnd`, `createdBy`, `createdAt`, `updatedAt`
+* **`dubai_memos` & `dubai_expenses` (Weekly Audit Children linked via `auditId`):**
+  - Child line items linked to `dubai_weekly_audits.id`. Soft-delete archives `_linkedMemos` inside `recycle_bin` so Admin 1-click restore recovers both audit + memos atomically.
+
+---
+
 ## 2. Core Accounting & Financial Invariants (Universal Laws)
 
 Every financial calculation in the codebase **MUST strictly satisfy these 6 mathematical invariants**:
@@ -182,5 +212,14 @@ In JavaScript, `0.1 + 0.2 === 0.30000000000000004`. Therefore:
 For any treasury ledger transaction sequence $T_1, \dots, T_n$ starting from opening fund $B_0$:
 $$B_i = \text{safeRound}(B_{i-1} + (\text{amount}_i \text{ if inflow else } -\text{amount}_i))$$
 * Any change, edit, or deletion at index $k$ MUST automatically recalibrate the running balances $B_k, \dots, B_n$ across the entire chain.
+
+### Invariant 7: Dubai Nothi Book Isolation & Single Source of Truth CapEx Laws
+1. **Strict Isolation:** Local BDT collections MUST never mix with `dubai_*` collections. Consignment-2+ books (`id !== 'CONSIGNMENT-01'` or `openingBalance` present) MUST evaluate missing/empty books to `0` with zero Consignment-1 fallback leakage.
+2. **4-Tier Single Source of Truth (`calculateMaster4TierCapEx`, Page `0006`):**
+   $$\text{Total CapEx} = \text{safeRound}(\text{Dubai FOB}_{0001} + \text{L/C Bank}_{0003} + \text{Port Duty}_{0004} + \text{BD Expense}_{0002})$$
+   Sub-books `0001–0004` MUST stay strictly scoped to their own ledgers; only Page `0006` (`master-summary`) aggregates the 4 tiers & container landed-cost matrix.
+3. **Weekly Audit Canonical Variance (`computeAuditVarianceMetrics`, Page `0005`):**
+   $$\text{Variance} = \text{safeRound}(\text{totalPhysicalAssets} - \text{calculatedCashBalance})$$
+   Where $\text{totalPhysicalAssets} = \text{cashInHand} + \text{marketAdvance} + \sum \text{personalHoldings} + \text{messBalance}$ (`>0` = Surplus, `<0` = Deficit).
 
 <!-- Verified Security Standards -->

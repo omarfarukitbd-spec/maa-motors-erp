@@ -50,14 +50,25 @@ export const NOTHI_BOOK_CATEGORIES = [
     },
     {
         key: 'audit',
-        pageNo: 'অডিট',
-        pageBadge: 'সাপ্তাহিক হিসাব',
+        pageNo: '০০০৫',
+        pageBadge: 'খাতা পাতা: ০০০৫',
         shortLabel: 'সাপ্তাহিক অডিট শিট',
         title: 'সাপ্তাহিক ক্যাশ ও মেমো অডিট শিট',
         subtitle: 'বৃহস্পতিবারের ধারাবাহিক বিয়োগফল, মেমো হিসাব ও ক্যাশ রিকনসিলিয়েশন',
         currency: 'AED (د.إ)',
         icon: 'fa-table-list',
         accent: 'sky'
+    },
+    {
+        key: 'master-summary',
+        pageNo: '০০০৬',
+        pageBadge: 'খাতা পাতা: ০০০৬',
+        shortLabel: 'সমন্বিত মোট হিসাব',
+        title: 'সমন্বিত মোট হিসাব ও প্রজেক্ট পুঁজী',
+        subtitle: '০০০১–০০০৫ সব খাতার একীভূত ল্যান্ডেড কস্ট, কন্টেইনার ম্যাট্রিক্স ও দুবাই তারল্য',
+        currency: 'BDT & AED (সমন্বিত)',
+        icon: 'fa-chart-pie',
+        accent: 'purple'
     }
 ];
 
@@ -101,6 +112,14 @@ const THEME_STYLES = {
         cardBorder: 'hover:border-sky-500/50 hover:shadow-sky-950/40',
         kpiValue: 'text-sky-400',
         actionText: 'text-sky-400 group-hover:text-sky-300'
+    },
+    purple: {
+        iconBox: 'bg-purple-500/10 border-purple-500/25 text-purple-400',
+        badge: 'bg-purple-500/10 text-purple-400 border-purple-500/25',
+        activePill: 'bg-purple-500/15 text-purple-300 border-purple-500/40 shadow-sm',
+        cardBorder: 'hover:border-purple-500/50 hover:shadow-purple-950/40',
+        kpiValue: 'text-purple-400',
+        actionText: 'text-purple-400 group-hover:text-purple-300'
     }
 };
 

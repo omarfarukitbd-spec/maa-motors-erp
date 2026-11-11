@@ -88,7 +88,10 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 printBankLedger: false,
                 exportBankLedger: false,
                 deleteBankTransaction: false,
-                viewAuditLog: false
+                viewAuditLog: false,
+                viewNothiBook: false,
+                manageNothiEntries: false,
+                deleteNothiEntries: false
             } : {};
 
             await UserDAO.update(userId, { 

@@ -163,7 +163,8 @@ service cloud.firestore {
     // Recycle Bin Collection
     match /recycle_bin/{docId} {
       allow read: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true);
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('manageCustomers', false) == true || getPerms().get('manageExpenses', false) == true)));
+      allow create: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('manageCustomers', false) == true || getPerms().get('manageExpenses', false) == true || getPerms().get('deleteNothiEntries', false) == true)));
+      allow update, delete: if isAuthenticated() && (isAdmin() || (!isBoss() && (getPerms().get('manageLedger', false) == true || getPerms().get('manageCustomers', false) == true || getPerms().get('manageExpenses', false) == true)));
     }
 
     // Treasury Transactions (Master Fund Flow Ledger)
@@ -172,38 +173,58 @@ service cloud.firestore {
       allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('addLedgerEntry', false) == true);
     }
 
-    // Dubai Procurement & Weekly Audits (Isolated Overseas Ledger)
+    function canReadNothi() {
+      return isAuthenticated() && (isAdmin() || isBoss() || (isActiveUser() && getPerms().get('viewNothiBook', true) == true));
+    }
+
+    function canManageNothi() {
+      return isAuthenticated() && (isAdmin() || isBoss() || (isActiveUser() && getPerms().get('viewNothiBook', true) == true && getPerms().get('manageNothiEntries', true) == true));
+    }
+
+    function canDeleteNothi() {
+      return isAuthenticated() && (isAdmin() || (isActiveUser() && !isBoss() && getPerms().get('deleteNothiEntries', false) == true));
+    }
+
+    // Dubai Procurement & Nothi Book (Isolated Overseas Ledger — Pages 0001-0006)
     match /dubai_weekly_audits/{docId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+      allow read: if canReadNothi();
+      allow create, update: if canManageNothi();
+      allow delete: if canDeleteNothi();
     }
     match /dubai_memos/{docId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+      allow read: if canReadNothi();
+      allow create, update: if canManageNothi();
+      allow delete: if canDeleteNothi();
     }
     match /dubai_remittances/{docId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+      allow read: if canReadNothi();
+      allow create, update: if canManageNothi();
+      allow delete: if canDeleteNothi();
     }
     match /dubai_expenses/{docId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+      allow read: if canReadNothi();
+      allow create, update: if canManageNothi();
+      allow delete: if canDeleteNothi();
     }
     match /dubai_consignments/{docId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+      allow read: if canReadNothi();
+      allow create, update: if canManageNothi();
+      allow delete: if canDeleteNothi();
     }
     match /dubai_bd_expenses/{docId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+      allow read: if canReadNothi();
+      allow create, update: if canManageNothi();
+      allow delete: if canDeleteNothi();
     }
     match /dubai_port_duty_bills/{docId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+      allow read: if canReadNothi();
+      allow create, update: if canManageNothi();
+      allow delete: if canDeleteNothi();
     }
     match /dubai_lc_bills/{docId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAuthenticated() && (isAdmin() || isBoss() || getPerms().get('manageLedger', false) == true || getPerms().get('manageExpenses', false) == true);
+      allow read: if canReadNothi();
+      allow create, update: if canManageNothi();
+      allow delete: if canDeleteNothi();
     }
 
     // Jarvis AI Memory

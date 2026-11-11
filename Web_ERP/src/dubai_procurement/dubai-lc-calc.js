@@ -58,12 +58,14 @@ export function calculateLCSummary(consignment, lcBills = []) {
 
     for (const bill of lcBills) {
         const payments = Array.isArray(bill.payments) ? bill.payments : [];
+        const legacyUSD = safeRound(Number(bill.totalUSD ?? bill.amountUSD) || 0);
+        const legacyBDT = safeRound(Number(bill.totalBDT ?? bill.amountBDT) || 0);
         const containerTotals = payments.length > 0
             ? calculateContainerLCTotals(payments)
             : {
-                totalUSD: safeRound(Number(bill.totalUSD ?? bill.amountUSD) || 0),
-                totalBDT: safeRound(Number(bill.totalBDT ?? bill.amountBDT) || 0),
-                paymentCount: 1
+                totalUSD: legacyUSD,
+                totalBDT: legacyBDT,
+                paymentCount: (legacyUSD > 0 || legacyBDT > 0) ? 1 : 0
             };
 
         totalUSD = safeRound(totalUSD + containerTotals.totalUSD);
@@ -109,6 +111,7 @@ export function calculateLCSummary(consignment, lcBills = []) {
 
 /**
  * Calculates 4-Tier Master Project CapEx across Dubai FOB, Container L/C, Port Duty, and BD Landed Expenses.
+ * Strictly zero fallback defaults: missing or empty books evaluate to 0.
  * @param {Object} dubaiSummary
  * @param {Object} lcSummary
  * @param {Object} portDutySummary
@@ -116,19 +119,19 @@ export function calculateLCSummary(consignment, lcBills = []) {
  * @returns {Object}
  */
 export function calculateMaster4TierCapEx(dubaiSummary, lcSummary, portDutySummary, bdExpenseSummary) {
-    const dubaiAED = safeRound(Number(dubaiSummary?.grandTotal?.aed) || 6907319);
-    const dubaiBDT = safeRound(Number(dubaiSummary?.grandTotal?.bdt) || 236437459);
-    const lcUSD = safeRound(Number(lcSummary?.totalUSD) || 41880);
-    const lcBDT = safeRound(Number(lcSummary?.totalBDT) || 6020400);
-    const portBDT = safeRound(Number(portDutySummary?.totalDuty) || 25150713);
-    const bdBDT = safeRound(Number(bdExpenseSummary?.grandTotal) || 57894052);
+    const dubaiAED = safeRound(Number(dubaiSummary?.grandTotal?.aed) || 0);
+    const dubaiBDT = safeRound(Number(dubaiSummary?.grandTotal?.bdt) || 0);
+    const lcUSD = safeRound(Number(lcSummary?.totalUSD) || 0);
+    const lcBDT = safeRound(Number(lcSummary?.totalBDT) || 0);
+    const portBDT = safeRound(Number(portDutySummary?.totalDuty) || 0);
+    const bdBDT = safeRound(Number(bdExpenseSummary?.grandTotal) || 0);
 
     const totalCapExBDT = safeRound(dubaiBDT + lcBDT + portBDT + bdBDT);
 
-    const dubaiSharePct = totalCapExBDT > 0 ? safeRound((dubaiBDT / totalCapExBDT) * 100) : 0;
-    const lcSharePct = totalCapExBDT > 0 ? safeRound((lcBDT / totalCapExBDT) * 100) : 0;
-    const portSharePct = totalCapExBDT > 0 ? safeRound((portBDT / totalCapExBDT) * 100) : 0;
-    const bdSharePct = totalCapExBDT > 0 ? safeRound((bdBDT / totalCapExBDT) * 100) : 0;
+    const dubaiSharePct = totalCapExBDT > 0 ? safeRound((dubaiBDT / totalCapExBDT) * 100, 2) : 0;
+    const lcSharePct = totalCapExBDT > 0 ? safeRound((lcBDT / totalCapExBDT) * 100, 2) : 0;
+    const portSharePct = totalCapExBDT > 0 ? safeRound((portBDT / totalCapExBDT) * 100, 2) : 0;
+    const bdSharePct = totalCapExBDT > 0 ? safeRound((bdBDT / totalCapExBDT) * 100, 2) : 0;
 
     return {
         dubaiAED,

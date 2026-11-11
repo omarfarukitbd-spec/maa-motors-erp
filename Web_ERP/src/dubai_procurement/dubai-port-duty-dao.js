@@ -4,7 +4,8 @@
  */
 
 import { db, firebase } from '../firebase-config.js';
-import { toDBDate } from '../utils.js';
+import { toDBDate, safeRound } from '../utils.js';
+import { archiveNothiDocToRecycleBin, logNothiMutation } from './dubai-nothi-helpers.js';
 
 const PORT_DUTY_COLLECTION = 'dubai_port_duty_bills';
 
@@ -16,14 +17,14 @@ export const DubaiPortDutyDAO = {
      * @returns {Function} unsubscribe
      */
     listenPortDutyBills(consignmentId, callback) {
-        return db.collection(PORT_DUTY_COLLECTION)
-            .onSnapshot(snap => {
+        let query = db.collection(PORT_DUTY_COLLECTION);
+        if (consignmentId) {
+            query = query.where('consignmentId', '==', consignmentId);
+        }
+        return query.onSnapshot(snap => {
                 const results = [];
                 snap.forEach(doc => {
-                    const data = doc.data();
-                    if (!consignmentId || data.consignmentId === consignmentId) {
-                        results.push({ id: doc.id, ...data });
-                    }
+                    results.push({ id: doc.id, ...doc.data() });
                 });
                 results.sort((a, b) => {
                     if ((a.orderIndex || 0) !== (b.orderIndex || 0)) {
@@ -44,19 +45,28 @@ export const DubaiPortDutyDAO = {
      */
     async savePortDutyBill(data) {
         try {
+            const isUpdate = Boolean(data.id);
             const id = data.id || `CONT-DUTY-${Date.now()}`;
             const docRef = db.collection(PORT_DUTY_COLLECTION).doc(id);
             const payload = {
                 ...data,
                 id,
+                consignmentId: data.consignmentId || 'CONSIGNMENT-01',
                 date: toDBDate(data.date),
-                amount: Number(data.amount) || 0,
+                amount: safeRound(Number(data.amount) || 0),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-            if (!data.id) {
+            if (!isUpdate) {
                 payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             }
             await docRef.set(payload, { merge: true });
+            await logNothiMutation({
+                action: isUpdate ? 'UPDATE' : 'CREATE',
+                moduleLabel: 'Nothi 0004 (Port Duty)',
+                entityId: id,
+                entityName: `${payload.containerNo || id} (৳${payload.amount})`,
+                details: { consignmentId: payload.consignmentId, amount: payload.amount }
+            });
             return id;
         } catch (e) {
             console.error('Error saving container port duty bill:', e);
@@ -65,11 +75,19 @@ export const DubaiPortDutyDAO = {
     },
 
     /**
-     * Delete a container port duty bill
+     * Delete a container port duty bill (soft-archived to recycle_bin + audit trail)
      * @param {string} id
+     * @param {Object|null} snapshotData
      */
-    async deletePortDutyBill(id) {
+    async deletePortDutyBill(id, snapshotData = null) {
         try {
+            await archiveNothiDocToRecycleBin({
+                collectionName: PORT_DUTY_COLLECTION,
+                docId: id,
+                moduleLabel: 'Nothi 0004 (Port Duty)',
+                itemName: snapshotData?.containerNo || id,
+                snapshotData
+            });
             await db.collection(PORT_DUTY_COLLECTION).doc(id).delete();
         } catch (e) {
             console.error('Error deleting container port duty bill:', e);

@@ -76,6 +76,7 @@ export function calcWeightedRate(totalBDT, totalAED) {
  */
 export function calculateConsignmentSummary(consignment, entries = []) {
     const isRolloverConsignment = Boolean(consignment?.openingBalance);
+    const isConsignmentOne = !isRolloverConsignment && (!consignment?.id || consignment.id === 'CONSIGNMENT-01');
 
     let s1Aed = 0;
     let s1Bdt = 0;
@@ -99,18 +100,29 @@ export function calculateConsignmentSummary(consignment, entries = []) {
         s2Bdt = safeRound(parseAmount(consignment.openingBalance.bdt || 0));
         s2Rate = consignment.openingBalance.rate || calcWeightedRate(s2Bdt, s2Aed);
         s2Dates = String(consignment?.openingBalance?.dates || consignment?.stage2?.dates || 'পূর্ববর্তী সমাপ্তি হতে').trim();
-    } else {
-        // Stage 1: 2025 Historical Investment (Consignment 1)
+    } else if (isConsignmentOne) {
+        // Stage 1: 2025 Historical Investment (Consignment 1 only)
         s1Aed = consignment?.stage1?.aed ?? 4285350;
         s1Bdt = consignment?.stage1?.bdt ?? 145802430;
         s1Rate = consignment?.stage1?.rate ?? 34.02;
         s1Dates = String(consignment?.stage1?.dates || '29/08/2025 - 18/12/2025').trim();
 
-        // Stage 2: 2026 Early Former Balance (Consignment 1)
+        // Stage 2: 2026 Early Former Balance (Consignment 1 only)
         s2Aed = consignment?.stage2?.aed ?? 1692497;
         s2Bdt = consignment?.stage2?.bdt ?? 58421109;
         s2Rate = consignment?.stage2?.rate ?? 34.51;
         s2Dates = String(consignment?.stage2?.dates || '16/04/2026 - 13/10/2026').trim();
+    } else {
+        // Consignment 2+ without an explicit opening balance strictly starts from zero
+        s1Aed = safeRound(parseAmount(consignment?.stage1?.aed || 0));
+        s1Bdt = safeRound(parseAmount(consignment?.stage1?.bdt || 0));
+        s1Rate = calcWeightedRate(s1Bdt, s1Aed);
+        s1Dates = String(consignment?.stage1?.dates || '—').trim();
+
+        s2Aed = safeRound(parseAmount(consignment?.stage2?.aed || 0));
+        s2Bdt = safeRound(parseAmount(consignment?.stage2?.bdt || 0));
+        s2Rate = calcWeightedRate(s2Bdt, s2Aed);
+        s2Dates = String(consignment?.stage2?.dates || '').trim();
     }
 
     // Stage 3: Running Entries & chronological date bounds

@@ -6,6 +6,7 @@
 import { db, firebase } from '../firebase-config.js';
 import { toDBDate, safeRound } from '../utils.js';
 import { calculateContainerLCTotals } from './dubai-lc-calc.js';
+import { archiveNothiDocToRecycleBin, logNothiMutation } from './dubai-nothi-helpers.js';
 
 const LC_COLLECTION = 'dubai_lc_bills';
 
@@ -17,14 +18,14 @@ export const DubaiLCDAO = {
      * @returns {Function} unsubscribe
      */
     listenLCBills(consignmentId, callback) {
-        return db.collection(LC_COLLECTION)
-            .onSnapshot(snap => {
+        let query = db.collection(LC_COLLECTION);
+        if (consignmentId) {
+            query = query.where('consignmentId', '==', consignmentId);
+        }
+        return query.onSnapshot(snap => {
                 const results = [];
                 snap.forEach(doc => {
-                    const data = doc.data();
-                    if (!consignmentId || data.consignmentId === consignmentId) {
-                        results.push({ id: doc.id, ...data });
-                    }
+                    results.push({ id: doc.id, ...doc.data() });
                 });
                 results.sort((a, b) => {
                     const orderA = Number(a.containerNo || a.orderIndex || 0);
@@ -47,6 +48,7 @@ export const DubaiLCDAO = {
      */
     async saveContainerLC(data) {
         try {
+            const isUpdate = Boolean(data.id);
             const containerNo = Number(data.containerNo) || 1;
             const id = data.id || `LC-CONT-${String(containerNo).padStart(2, '0')}-${Date.now()}`;
             const docRef = db.collection(LC_COLLECTION).doc(id);
@@ -80,11 +82,18 @@ export const DubaiLCDAO = {
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            if (!data.id) {
+            if (!isUpdate) {
                 payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             }
 
             await docRef.set(payload, { merge: true });
+            await logNothiMutation({
+                action: isUpdate ? 'UPDATE' : 'CREATE',
+                moduleLabel: 'Nothi 0003 (Container L/C)',
+                entityId: id,
+                entityName: `কন্টেইনার #${containerNo} (L/C: ${payload.lcNo || '—'})`,
+                details: { consignmentId: payload.consignmentId, totalUSD: totals.totalUSD, totalBDT: totals.totalBDT }
+            });
             return id;
         } catch (e) {
             console.error('Error saving container L/C record:', e);
@@ -93,38 +102,47 @@ export const DubaiLCDAO = {
     },
 
     /**
-     * Add a new dated payment/expense line to an existing container L/C
+     * Add a new dated payment/expense line transactionally to avoid multi-tab overwrites
      * @param {string} containerId
      * @param {Object} paymentItem
      */
     async addPaymentLine(containerId, paymentItem) {
         try {
             const docRef = db.collection(LC_COLLECTION).doc(containerId);
-            const snap = await docRef.get();
-            if (!snap.exists) {
-                throw new Error('কন্টেইনার রেকর্ড পাওয়া যায়নি!');
-            }
+            await db.runTransaction(async tx => {
+                const snap = await tx.get(docRef);
+                if (!snap.exists) {
+                    throw new Error('কন্টেইনার রেকর্ড পাওয়া যায়নি!');
+                }
 
-            const data = snap.data();
-            const existingPayments = Array.isArray(data.payments) ? [...data.payments] : [];
-            const newLine = {
-                id: `PAY-${Date.now()}`,
-                date: toDBDate(paymentItem.date),
-                description: (paymentItem.description || 'অতিরিক্ত এলসি পেমেন্ট').trim(),
-                amountUSD: safeRound(Number(paymentItem.amountUSD) || 0),
-                amountBDT: safeRound(Number(paymentItem.amountBDT) || 0)
-            };
+                const data = snap.data();
+                const existingPayments = Array.isArray(data.payments) ? [...data.payments] : [];
+                const newLine = {
+                    id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    date: toDBDate(paymentItem.date),
+                    description: (paymentItem.description || 'অতিরিক্ত এলসি পেমেন্ট').trim(),
+                    amountUSD: safeRound(Number(paymentItem.amountUSD) || 0),
+                    amountBDT: safeRound(Number(paymentItem.amountBDT) || 0)
+                };
 
-            existingPayments.push(newLine);
-            existingPayments.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+                existingPayments.push(newLine);
+                existingPayments.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+                const totals = calculateContainerLCTotals(existingPayments);
 
-            const totals = calculateContainerLCTotals(existingPayments);
+                tx.update(docRef, {
+                    payments: existingPayments,
+                    totalUSD: totals.totalUSD,
+                    totalBDT: totals.totalBDT,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
 
-            await docRef.update({
-                payments: existingPayments,
-                totalUSD: totals.totalUSD,
-                totalBDT: totals.totalBDT,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            await logNothiMutation({
+                action: 'CREATE',
+                moduleLabel: 'Nothi 0003 (L/C Payment Line)',
+                entityId: containerId,
+                entityName: paymentItem.description || 'নতুন এলসি পেমেন্ট',
+                details: { amountUSD: safeRound(Number(paymentItem.amountUSD) || 0), amountBDT: safeRound(Number(paymentItem.amountBDT) || 0) }
             });
         } catch (e) {
             console.error('Error adding payment line to container L/C:', e);
@@ -133,7 +151,7 @@ export const DubaiLCDAO = {
     },
 
     /**
-     * Update a specific payment line inside a container L/C
+     * Update a specific payment line inside a container L/C transactionally
      * @param {string} containerId
      * @param {string} paymentId
      * @param {Object} updatedFields
@@ -141,33 +159,43 @@ export const DubaiLCDAO = {
     async updatePaymentLine(containerId, paymentId, updatedFields) {
         try {
             const docRef = db.collection(LC_COLLECTION).doc(containerId);
-            const snap = await docRef.get();
-            if (!snap.exists) {
-                throw new Error('কন্টেইনার রেকর্ড পাওয়া যায়নি!');
-            }
-
-            const data = snap.data();
-            const payments = (Array.isArray(data.payments) ? data.payments : []).map(p => {
-                if (p.id === paymentId) {
-                    return {
-                        ...p,
-                        date: toDBDate(updatedFields.date ?? p.date),
-                        description: (updatedFields.description ?? p.description).trim(),
-                        amountUSD: safeRound(Number(updatedFields.amountUSD ?? p.amountUSD) || 0),
-                        amountBDT: safeRound(Number(updatedFields.amountBDT ?? p.amountBDT) || 0)
-                    };
+            await db.runTransaction(async tx => {
+                const snap = await tx.get(docRef);
+                if (!snap.exists) {
+                    throw new Error('কন্টেইনার রেকর্ড পাওয়া যায়নি!');
                 }
-                return p;
+
+                const data = snap.data();
+                const payments = (Array.isArray(data.payments) ? data.payments : []).map(p => {
+                    if (p.id === paymentId) {
+                        return {
+                            ...p,
+                            date: toDBDate(updatedFields.date ?? p.date),
+                            description: (updatedFields.description ?? p.description).trim(),
+                            amountUSD: safeRound(Number(updatedFields.amountUSD ?? p.amountUSD) || 0),
+                            amountBDT: safeRound(Number(updatedFields.amountBDT ?? p.amountBDT) || 0)
+                        };
+                    }
+                    return p;
+                });
+
+                payments.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+                const totals = calculateContainerLCTotals(payments);
+
+                tx.update(docRef, {
+                    payments,
+                    totalUSD: totals.totalUSD,
+                    totalBDT: totals.totalBDT,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
             });
 
-            payments.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-            const totals = calculateContainerLCTotals(payments);
-
-            await docRef.update({
-                payments,
-                totalUSD: totals.totalUSD,
-                totalBDT: totals.totalBDT,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            await logNothiMutation({
+                action: 'UPDATE',
+                moduleLabel: 'Nothi 0003 (L/C Payment Line)',
+                entityId: `${containerId}/${paymentId}`,
+                entityName: updatedFields.description || 'এলসি পেমেন্ট সংশোধন',
+                details: { amountUSD: safeRound(Number(updatedFields.amountUSD) || 0), amountBDT: safeRound(Number(updatedFields.amountBDT) || 0) }
             });
         } catch (e) {
             console.error('Error updating container L/C payment line:', e);
@@ -176,27 +204,40 @@ export const DubaiLCDAO = {
     },
 
     /**
-     * Delete a specific payment line from a container L/C
+     * Delete a specific payment line transactionally from a container L/C
      * @param {string} containerId
      * @param {string} paymentId
      */
     async deletePaymentLine(containerId, paymentId) {
         try {
             const docRef = db.collection(LC_COLLECTION).doc(containerId);
-            const snap = await docRef.get();
-            if (!snap.exists) {
-                throw new Error('কন্টেইনার রেকর্ড পাওয়া যায়নি!');
-            }
+            let removedLine = null;
+            await db.runTransaction(async tx => {
+                const snap = await tx.get(docRef);
+                if (!snap.exists) {
+                    throw new Error('কন্টেইনার রেকর্ড পাওয়া যায়নি!');
+                }
 
-            const data = snap.data();
-            const payments = (Array.isArray(data.payments) ? data.payments : []).filter(p => p.id !== paymentId);
-            const totals = calculateContainerLCTotals(payments);
+                const data = snap.data();
+                const rawPayments = Array.isArray(data.payments) ? data.payments : [];
+                removedLine = rawPayments.find(p => p.id === paymentId) || null;
+                const payments = rawPayments.filter(p => p.id !== paymentId);
+                const totals = calculateContainerLCTotals(payments);
 
-            await docRef.update({
-                payments,
-                totalUSD: totals.totalUSD,
-                totalBDT: totals.totalBDT,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                tx.update(docRef, {
+                    payments,
+                    totalUSD: totals.totalUSD,
+                    totalBDT: totals.totalBDT,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            await logNothiMutation({
+                action: 'DELETE',
+                moduleLabel: 'Nothi 0003 (L/C Payment Line)',
+                entityId: `${containerId}/${paymentId}`,
+                entityName: removedLine?.description || paymentId,
+                details: { removedLine }
             });
         } catch (e) {
             console.error('Error deleting container L/C payment line:', e);
@@ -215,7 +256,15 @@ export const DubaiLCDAO = {
             await db.collection(LC_COLLECTION).doc(containerId).update({
                 deliveryDate: dbDate,
                 isSettled: dbDate !== '',
+                closedDate: dbDate,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await logNothiMutation({
+                action: 'UPDATE',
+                moduleLabel: 'Nothi 0003 (Delivery Date)',
+                entityId: containerId,
+                entityName: dbDate ? `ডেলিভারি: ${dbDate}` : 'পুনরায় চলমান (Reopened)',
+                details: { deliveryDate: dbDate }
             });
         } catch (e) {
             console.error('Error updating container delivery date:', e);
@@ -239,7 +288,7 @@ export const DubaiLCDAO = {
 
             await db.collection(LC_COLLECTION).doc(containerId).set({
                 isSettled: finalSettled,
-                deliveryDate: dbDelivery,
+                deliveryDate: finalSettled ? dbDelivery : '',
                 closedDate: dbClosed,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
@@ -251,6 +300,7 @@ export const DubaiLCDAO = {
 
     /**
      * Batch-update open/closed lifecycle statuses across multiple containers in one atomic commit.
+     * Clears deliveryDate & closedDate when reopening (`isSettled === false`) so `isContainerClosed` reflects accurately.
      * @param {Array<{id: string, isSettled: boolean, deliveryDate?: string}>} updates
      */
     async batchSetContainersStatus(updates = []) {
@@ -260,19 +310,30 @@ export const DubaiLCDAO = {
             updates.forEach(item => {
                 if (!item?.id) return;
                 const docRef = db.collection(LC_COLLECTION).doc(item.id);
+                const settled = Boolean(item.isSettled);
                 const dbDelivery = item.deliveryDate && String(item.deliveryDate).trim() !== ''
                     ? toDBDate(item.deliveryDate)
                     : undefined;
                 const patch = {
-                    isSettled: Boolean(item.isSettled),
+                    isSettled: settled,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
-                if (dbDelivery !== undefined) {
+                if (!settled) {
+                    patch.deliveryDate = '';
+                    patch.closedDate = '';
+                } else if (dbDelivery !== undefined) {
                     patch.deliveryDate = dbDelivery;
                 }
                 batch.set(docRef, patch, { merge: true });
             });
             await batch.commit();
+            await logNothiMutation({
+                action: 'UPDATE',
+                moduleLabel: 'Nothi 0003 (Bulk Status Sync)',
+                entityId: 'BULK_SYNC',
+                entityName: `${updates.length}টি কন্টেইনার স্ট্যাটাস আপডেট`,
+                details: { count: updates.length }
+            });
         } catch (e) {
             console.error('Error in batch container status update:', e);
             throw e;
@@ -280,12 +341,36 @@ export const DubaiLCDAO = {
     },
 
     /**
-     * Delete an entire container L/C document
+     * Delete an entire container L/C document (archives to Recycle Bin first)
      * @param {string} containerId
+     * @param {Object|null} snapshotData
      */
-    async deleteContainerLC(containerId) {
+    async deleteContainerLC(containerId, snapshotData = null) {
         try {
-            await db.collection(LC_COLLECTION).doc(containerId).delete();
+            const docRef = db.collection(LC_COLLECTION).doc(containerId);
+            let dataToArchive = snapshotData;
+            if (!dataToArchive) {
+                const snap = await docRef.get();
+                if (snap.exists) dataToArchive = { id: snap.id, ...snap.data() };
+            }
+            if (dataToArchive) {
+                await archiveNothiDocToRecycleBin({
+                    collectionName: LC_COLLECTION,
+                    docId: containerId,
+                    moduleLabel: 'কন্টেইনার এলসি ও ব্যাংক খরচ (পাতা ০০০৩)',
+                    itemName: `কন্টেইনার ${dataToArchive.containerNo || '—'} (${dataToArchive.lcNo || 'এলসি'})`,
+                    snapshotData: dataToArchive,
+                    extraDetails: { consignmentId: dataToArchive.consignmentId || 'CONSIGNMENT-01' }
+                });
+            }
+            await docRef.delete();
+            await logNothiMutation({
+                action: 'DELETE',
+                moduleLabel: 'কন্টেইনার এলসি (পাতা ০০০৩)',
+                entityId: containerId,
+                entityName: dataToArchive?.containerNo || containerId,
+                details: `Deleted container L/C sub-ledger (${dataToArchive?.lcNo || containerId})`
+            });
         } catch (e) {
             console.error('Error deleting container L/C bill:', e);
             throw e;

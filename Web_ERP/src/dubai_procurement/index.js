@@ -17,7 +17,16 @@ export { calculatePortDutySummary, calculateMasterProjectCapEx } from './dubai-p
 export { initDubaiLCModule, cleanupDubaiLC } from './dubai-lc-ui.js';
 export { DubaiLCDAO } from './dubai-lc-dao.js';
 export { printDubaiLCBook } from './dubai-lc-print.js';
-export { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx, isContainerClosed } from './dubai-lc-calc.js';
+export { calculateLCSummary, calculateContainerLCTotals, isContainerClosed } from './dubai-lc-calc.js';
+export {
+    calculateMaster4TierCapEx,
+    buildContainerLandedCostMatrix,
+    computeAuditVarianceMetrics,
+    calculateDubaiLiquiditySummary,
+    parseContainerNumericNo
+} from './dubai-capex-calc.js';
+export { initDubaiMasterSummaryModule, cleanupDubaiMasterSummary } from './dubai-master-summary-ui.js';
+export { printDubaiMasterSummary } from './dubai-master-summary-print.js';
 export { openBulkCloseContainersModal } from './dubai-lc-modals.js';
 export { initNothiBookHub, cleanupNothiBookHub } from './dubai-nothi-hub.js';
 export { renderNothiSubBookHeader, NOTHI_BOOK_CATEGORIES } from './dubai-subbook-header.js';

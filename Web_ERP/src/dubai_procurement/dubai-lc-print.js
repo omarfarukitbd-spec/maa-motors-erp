@@ -14,10 +14,10 @@ import {
 } from '../utils.js';
 import { SettingsDAO } from '../dao.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
-import { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx, isContainerClosed } from './dubai-lc-calc.js';
+import { calculateLCSummary, calculateContainerLCTotals, isContainerClosed } from './dubai-lc-calc.js';
 import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
-export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary = null, portDutySummary = null, bdExpenseSummary = null) {
+export async function printDubaiLCBook(consignment, lcBills = []) {
     let settings = {};
     try {
         settings = (await SettingsDAO.getAppSettings()) || {};
@@ -28,7 +28,6 @@ export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary =
     const bannerCfg = resolveSectionBannerConfig(consignment, 'lc-bills');
     const title = `Container_LC_Register_${bannerCfg.title || 'Page_0003'}`;
     const summary = calculateLCSummary(consignment, lcBills);
-    const capex = calculateMaster4TierCapEx(dubaiSummary, summary, portDutySummary, bdExpenseSummary);
 
     const extraCss = `
         .num-font {
@@ -57,7 +56,7 @@ export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary =
         }
     `;
 
-    const parts = generateLCPaginationParts(consignment, lcBills, summary, capex, settings, bannerCfg);
+    const parts = generateLCPaginationParts(consignment, lcBills, summary, settings, bannerCfg);
     const paginatedHtml = await smartPaginatePrint({
         ...parts,
         extraCss,
@@ -70,10 +69,10 @@ export async function printDubaiLCBook(consignment, lcBills = [], dubaiSummary =
     await printViaIframe(paginatedHtml, extraCss, title);
 }
 
-function generateLCPaginationParts(consignment, lcBills, summary, capex, settings, bannerCfg) {
+function generateLCPaginationParts(consignment, lcBills, summary, settings, bannerCfg) {
     const totalUSDFormatted = formatAmountWithComma(summary.totalUSD);
     const totalBDTFormatted = formatAmountWithComma(summary.totalBDT);
-    const amountInWords = numberToBanglaWords(summary.totalBDT);
+    const amountInWords = numberToBanglaWords(Math.round(summary.totalBDT || 0));
 
     const rowsArray = lcBills.map((container, cIdx) => {
         const payments = Array.isArray(container.payments) && container.payments.length > 0
@@ -190,37 +189,13 @@ function generateLCPaginationParts(consignment, lcBills, summary, capex, setting
     `;
 
     const summaryHtml = `
-        <div class="page-break-avoid" style="margin-top: 5px;">
-            <div style="font-size: 8.5px; color: #334155;">
-                <strong>কথায়:</strong> <span style="color: #b91c1c; font-weight: bold;">${escapeHTML(amountInWords)}</span>
+        <div class="page-break-avoid" style="margin-top: 6px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 5px 8px;">
+            <div style="font-size: 8.5px; color: #334155; margin-bottom: 3px;">
+                <strong>কথায়:</strong> <span style="color: #b91c1c; font-weight: bold;">${escapeHTML(amountInWords)} টাকা মাত্র</span>
             </div>
-            <div style="margin-top: 6px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 4px; padding: 4px 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #94a3b8; padding-bottom: 2px; margin-bottom: 3px;">
-                    <div style="font-size: 8.5px; font-weight: 800; color: #0f172a;">
-                        <span style="color: #0284c7;">১ম কনসোলমেন্টের সামগ্রিক মূলধন ও পুঁজী:</span> ৪-স্তরের সমন্বিত হিসাব
-                    </div>
-                    <div style="font-size: 8.5px; font-weight: 800; color: #047857;">
-                        সর্বমোট পুঁজী: <span style="font-size: 10px;" class="num-font">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</span>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; font-size: 7px;">
-                    <div style="background: #f0f9ff; padding: 2px; border-radius: 3px;">
-                        ১. দুবাই ক্রয় (পাতা ০০০১)<br>
-                        <strong class="num-font">৳ ${formatAmountWithComma(capex.dubaiBDT)}</strong> (${capex.dubaiSharePct}%)
-                    </div>
-                    <div style="background: #fef2f2; padding: 2px; border-radius: 3px; border: 1px solid #fecaca;">
-                        ২. এলসি খরচ (পাতা ০০০৩)<br>
-                        <strong class="num-font">৳ ${totalBDTFormatted}</strong> (${capex.lcSharePct}%)
-                    </div>
-                    <div style="background: #eef2ff; padding: 2px; border-radius: 3px;">
-                        ৩. পোর্ট ও ডিউটি (পাতা ০০০৪)<br>
-                        <strong class="num-font">৳ ${formatAmountWithComma(capex.portBDT)}</strong> (${capex.portSharePct}%)
-                    </div>
-                    <div style="background: #fffbeb; padding: 2px; border-radius: 3px;">
-                        ৪. বাংলাদেশ খরচ (পাতা ০০০২)<br>
-                        <strong class="num-font">৳ ${formatAmountWithComma(capex.bdBDT)}</strong> (${capex.bdSharePct}%)
-                    </div>
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #cbd5e1; padding-top: 3px; font-size: 7.5px; color: #475569;">
+                <span>সমাপ্ত (${summary.closedCount}টি): <strong class="num-font">৳ ${formatAmountWithComma(summary.closedTotalBDT)}</strong> · চলমান (${summary.openCount}টি): <strong class="num-font">৳ ${formatAmountWithComma(summary.openTotalBDT)}</strong> · মোট কিস্তি: <strong class="num-font">${summary.totalPaymentsCount} টি</strong></span>
+                <span style="color: #6d28d9; font-weight: 800;">সমন্বিত ৪-স্তর হিসাবের জন্য পাতা ০০০৬ দেখুন</span>
             </div>
         </div>
     `;

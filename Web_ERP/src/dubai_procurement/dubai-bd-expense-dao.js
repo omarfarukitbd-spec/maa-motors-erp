@@ -4,7 +4,8 @@
  */
 
 import { db, firebase } from '../firebase-config.js';
-import { toDBDate } from '../utils.js';
+import { toDBDate, safeRound } from '../utils.js';
+import { archiveNothiDocToRecycleBin, logNothiMutation } from './dubai-nothi-helpers.js';
 
 const BD_EXPENSES_COLLECTION = 'dubai_bd_expenses';
 const CONSIGNMENTS_COLLECTION = 'dubai_consignments';
@@ -17,14 +18,14 @@ export const DubaiBDExpenseDAO = {
      * @returns {Function} unsubscribe
      */
     listenBDExpenses(consignmentId, callback) {
-        return db.collection(BD_EXPENSES_COLLECTION)
-            .onSnapshot(snap => {
+        let query = db.collection(BD_EXPENSES_COLLECTION);
+        if (consignmentId) {
+            query = query.where('consignmentId', '==', consignmentId);
+        }
+        return query.onSnapshot(snap => {
                 const results = [];
                 snap.forEach(doc => {
-                    const data = doc.data();
-                    if (!consignmentId || data.consignmentId === consignmentId) {
-                        results.push({ id: doc.id, ...data });
-                    }
+                    results.push({ id: doc.id, ...doc.data() });
                 });
                 results.sort((a, b) => {
                     const dateDiff = (a.date || '').localeCompare(b.date || '');
@@ -44,19 +45,28 @@ export const DubaiBDExpenseDAO = {
      */
     async saveBDExpense(data) {
         try {
+            const isUpdate = Boolean(data.id);
             const id = data.id || `BD-EXP-${Date.now()}`;
             const docRef = db.collection(BD_EXPENSES_COLLECTION).doc(id);
             const payload = {
                 ...data,
                 id,
+                consignmentId: data.consignmentId || 'CONSIGNMENT-01',
                 date: toDBDate(data.date),
-                amount: Number(data.amount) || 0,
+                amount: safeRound(Number(data.amount) || 0),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-            if (!data.id) {
+            if (!isUpdate) {
                 payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             }
             await docRef.set(payload, { merge: true });
+            await logNothiMutation({
+                action: isUpdate ? 'UPDATE' : 'CREATE',
+                moduleLabel: 'Nothi 0002 (BD Expense)',
+                entityId: id,
+                entityName: `${payload.description || id} (৳${payload.amount})`,
+                details: { consignmentId: payload.consignmentId, category: payload.category, amount: payload.amount }
+            });
             return id;
         } catch (e) {
             console.error('Error saving BD expense entry:', e);
@@ -65,11 +75,19 @@ export const DubaiBDExpenseDAO = {
     },
 
     /**
-     * Delete an expense entry
+     * Delete an expense entry (soft-archived to recycle_bin + audit trail)
      * @param {string} id
+     * @param {Object|null} snapshotData
      */
-    async deleteBDExpense(id) {
+    async deleteBDExpense(id, snapshotData = null) {
         try {
+            await archiveNothiDocToRecycleBin({
+                collectionName: BD_EXPENSES_COLLECTION,
+                docId: id,
+                moduleLabel: 'Nothi 0002 (BD Expense)',
+                itemName: snapshotData?.description || id,
+                snapshotData
+            });
             await db.collection(BD_EXPENSES_COLLECTION).doc(id).delete();
         } catch (e) {
             console.error('Error deleting BD expense entry:', e);
@@ -81,14 +99,28 @@ export const DubaiBDExpenseDAO = {
      * Update Consignment B/F metadata
      * @param {string} consignmentId
      * @param {number} bfAmount
+     * @param {string} [bfStartDate]
+     * @param {string} [bfEndDate]
      */
-    async updateConsignmentBf(consignmentId, bfAmount) {
+    async updateConsignmentBf(consignmentId, bfAmount, bfStartDate = '', bfEndDate = '') {
         try {
-            const docRef = db.collection(CONSIGNMENTS_COLLECTION).doc(consignmentId);
-            await docRef.set({
-                initialBfAmount: Number(bfAmount) || 0,
+            const targetId = consignmentId || 'CONSIGNMENT-01';
+            const docRef = db.collection(CONSIGNMENTS_COLLECTION).doc(targetId);
+            const patch = {
+                initialBfAmount: safeRound(Number(bfAmount) || 0),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            };
+            if (bfStartDate) patch.bfStartDate = toDBDate(bfStartDate);
+            if (bfEndDate) patch.bfEndDate = toDBDate(bfEndDate);
+
+            await docRef.set(patch, { merge: true });
+            await logNothiMutation({
+                action: 'UPDATE',
+                moduleLabel: 'Nothi 0002 (BD B/F)',
+                entityId: targetId,
+                entityName: `B/F ব্যালেন্স: ৳${patch.initialBfAmount}`,
+                details: patch
+            });
         } catch (e) {
             console.error('Error updating consignment B/F:', e);
             throw e;
@@ -102,8 +134,14 @@ export const DubaiBDExpenseDAO = {
     async seedInitialDataIfNeeded(force = false) {
         try {
             const consId = 'CONSIGNMENT-01';
-            
-            // Ensure consignment document has B/F configured
+
+            if (!force) {
+                const snap = await db.collection(BD_EXPENSES_COLLECTION).limit(1).get();
+                if (!snap.empty) {
+                    return; // Already seeded - never overwrite customized B/F!
+                }
+            }
+
             const consRef = db.collection(CONSIGNMENTS_COLLECTION).doc(consId);
             await consRef.set({
                 initialBfAmount: 30303773,
@@ -111,13 +149,6 @@ export const DubaiBDExpenseDAO = {
                 bfEndDate: '2026-08-06',
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
-
-            if (!force) {
-                const snap = await db.collection(BD_EXPENSES_COLLECTION).limit(1).get();
-                if (!snap.empty) {
-                    return; // Already seeded!
-                }
-            }
 
             const initialBDExpenses = [
                 { orderIndex: 1, date: '2026-08-29', description: 'আলতাফ চালানী ৬ নং', category: 'চালানি কেরিং', memo: 'চালান-৬', amount: 1223000, status: 'চূড়ান্ত পরিশোধিত' },

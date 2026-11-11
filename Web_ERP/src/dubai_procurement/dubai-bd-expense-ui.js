@@ -7,11 +7,15 @@
 import Swal from 'sweetalert2';
 import { DubaiBDExpenseDAO } from './dubai-bd-expense-dao.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
-import { calculateBDExpenseSummary, calculateConsolidatedCapEx } from './dubai-bd-expense-calc.js';
-import { calculateConsignmentSummary } from './dubai-remittance-calc.js';
+import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
 import { printDubaiBDExpenseBook } from './dubai-bd-expense-print.js';
 import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
 import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
+import {
+    exportNothiRowsToExcel,
+    confirmNothiAction,
+    renderNothiMasterLinkPill
+} from './dubai-nothi-helpers.js';
 import {
     formatAmountWithComma,
     parseAmount,
@@ -28,18 +32,15 @@ import {
 let activeConsignment = null;
 let consignmentsList = [];
 let bdExpensesList = [];
-let dubaiRemittancesList = [];
 let activeListenersConsId = null;
 let unsubscribeBDExpenses = null;
 let unsubscribeConsignments = null;
-let unsubscribeRemittances = null;
 let editingExpenseId = null;
 
 export function initDubaiBDExpenseModule(container) {
     if (!container) return;
 
     activeListenersConsId = null;
-    // Seed initial data if first time
     DubaiBDExpenseDAO.seedInitialDataIfNeeded().catch(e => console.error('BD expense seed error:', e));
 
     renderBDExpenseView(container);
@@ -57,10 +58,6 @@ export function cleanupDubaiBDExpense() {
     if (unsubscribeConsignments) {
         unsubscribeConsignments();
         unsubscribeConsignments = null;
-    }
-    if (unsubscribeRemittances) {
-        unsubscribeRemittances();
-        unsubscribeRemittances = null;
     }
 }
 
@@ -92,10 +89,6 @@ function listenToActiveConsignmentData() {
         unsubscribeBDExpenses();
         unsubscribeBDExpenses = null;
     }
-    if (unsubscribeRemittances) {
-        unsubscribeRemittances();
-        unsubscribeRemittances = null;
-    }
 
     const consId = activeConsignment?.id || 'CONSIGNMENT-01';
     activeListenersConsId = consId;
@@ -104,15 +97,15 @@ function listenToActiveConsignmentData() {
         renderBDExpenseTable();
         updateBDExpenseKpis();
     });
-
-    unsubscribeRemittances = DubaiRemittanceDAO.listenRemittances(consId, items => {
-        dubaiRemittancesList = items;
-        updateBDExpenseKpis();
-    });
 }
 
 function renderBDExpenseView(container) {
     const actionButtonsHtml = `
+        ${renderNothiMasterLinkPill()}
+        <button type="button" id="btn-export-bd-excel" class="px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/35 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-solid fa-file-excel text-emerald-400 text-xs"></i>
+            <span>এক্সেল</span>
+        </button>
         <button type="button" id="btn-print-bd-expense" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i class="fa-solid fa-print text-slate-400 text-xs"></i>
             <span>A4 প্রিন্ট / ভাউচার</span>
@@ -141,13 +134,8 @@ function renderBDExpenseView(container) {
                 <!-- Dynamically populated -->
             </div>
 
-            <!-- Consolidated Master CapEx Banner (Dubai + BD) -->
-            <div id="bd-consolidated-capex-container" class="bg-gradient-to-r from-slate-900 via-sky-950/40 to-slate-900 border border-sky-500/30 rounded-2xl p-4 shadow-xl">
-                <!-- Dynamically populated -->
-            </div>
-
             <!-- Quick Entry Dock -->
-            <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+            <div data-perm="manageNothiEntries" class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <div class="text-xs font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-circle-plus text-emerald-400 text-sm"></i>
@@ -229,6 +217,7 @@ function renderBDExpenseView(container) {
                         <option value="গোডাউন খরচ">গোডাউন খরচ</option>
                         <option value="কন্টেইনার খরচ">কন্টেইনার খরচ</option>
                         <option value="শিপিং খরচ">শিপিং খরচ</option>
+                        <option value="অন্যান্য খরচ">অন্যান্য খরচ</option>
                     </select>
                     <div class="relative w-full sm:w-64">
                         <input type="text" id="bd-search-input" placeholder="বিক্রেতা, মেমো বা বিবরণ খুঁজুন..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-amber-500 outline-none">
@@ -268,8 +257,32 @@ function bindBDExpenseEvents() {
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
 
     bind('btn-print-bd-expense', () => {
-        const dubaiSummary = calculateConsignmentSummary(activeConsignment, dubaiRemittancesList);
-        printDubaiBDExpenseBook(activeConsignment, bdExpensesList, dubaiSummary);
+        printDubaiBDExpenseBook(activeConsignment, bdExpensesList);
+    });
+
+    bind('btn-export-bd-excel', () => {
+        const headers = ['নং', 'তারিখ', 'বিবরণ / বিক্রেতা', 'ক্যাটাগরি', 'মেমো / চালান', 'টাকা (BDT)', 'স্ট্যাটাস'];
+        const summary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
+        const rows = [
+            ['০', summary.bfStartDate ? formatAppDate(summary.bfStartDate) : 'প্রারম্ভিক', 'B/F (পূর্ববর্তী স্থানান্তরিত ব্যালেন্স)', 'প্রারম্ভিক ব্যালেন্স', '—', summary.bfAmount, 'সাবেক ব্যালেন্স']
+        ];
+        bdExpensesList.forEach((b, i) => {
+            rows.push([
+                i + 1,
+                formatAppDate(b.date),
+                b.description || b.vendor || '—',
+                b.category || 'অন্যান্য খরচ',
+                b.memo || '—',
+                safeRound(Number(b.amount) || 0),
+                b.status || 'চূড়ান্ত পরিশোধিত'
+            ]);
+        });
+        exportNothiRowsToExcel({
+            sheetName: 'Nothi_0002_BD_Expense',
+            headers,
+            rows,
+            filename: `Nothi_0002_BD_Expense_${activeConsignment?.id || 'CONSIGNMENT'}.xlsx`
+        });
     });
 
     const form = document.getElementById('form-bd-expense');
@@ -308,24 +321,26 @@ function updateConsignmentUI() {
 
 function updateBDExpenseKpis() {
     const kpiContainer = document.getElementById('bd-expense-kpi-container');
-    const capexContainer = document.getElementById('bd-consolidated-capex-container');
     if (!kpiContainer) return;
 
     const summary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
-    const dubaiSummary = calculateConsignmentSummary(activeConsignment, dubaiRemittancesList);
-    const capex = calculateConsolidatedCapEx(dubaiSummary, summary);
+    const bfPeriodLabel = (summary.bfStartDate && summary.bfEndDate)
+        ? `${formatAppDate(summary.bfStartDate)} হতে ${formatAppDate(summary.bfEndDate)}`
+        : 'প্রারম্ভিক সেশন';
 
-    // 1. Render 3 Master BD KPI Cards
+    // Render 3 Master BD KPI Cards strictly scoped to Book 0002
     kpiContainer.innerHTML = `
         <!-- Card 1: B/F -->
         <div class="bg-gradient-to-br from-slate-900/90 to-sky-950/40 border border-sky-500/20 p-4 rounded-2xl flex flex-col justify-between shadow-lg">
             <div class="flex items-center justify-between text-slate-400 text-xs mb-2">
                 <span class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-sky-400"></i>১. সাবেক ব্যালেন্স (B/F)</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">পূর্ববর্তী সেশন</span>
+                <button type="button" data-perm="manageNothiEntries" onclick="window.editBDBfBalance()" class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 cursor-pointer transition-all">
+                    <i class="fa-solid fa-pen text-[9px] mr-1"></i>B/F এডিট
+                </button>
             </div>
             <div class="text-xl sm:text-2xl font-mono font-black text-sky-400 tracking-tight">৳ ${formatAmountWithComma(summary.bfAmount)}</div>
             <div class="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>সময়কাল: ০১/১১/২০২৫ হতে ০৬/০৮/২০২৬</span>
+                <span>সময়কাল: ${escapeHTML(bfPeriodLabel)}</span>
                 <span class="font-bold text-sky-300">প্রারম্ভিক ব্যালেন্স</span>
             </div>
         </div>
@@ -338,7 +353,7 @@ function updateBDExpenseKpis() {
             </div>
             <div class="text-xl sm:text-2xl font-mono font-black text-red-400 tracking-tight">৳ ${formatAmountWithComma(summary.runningTotal)}</div>
             <div class="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>সময়কাল: ২৯/০৮/২০২৬ হতে ০৯/১১/২০২৬</span>
+                <span>সময়কাল: ${escapeHTML(summary.runningDates || 'কোনো রানিং এন্ট্রি নেই')}</span>
                 <span class="font-bold text-red-300">${summary.count} টি ভাউচার পরিশোধিত</span>
             </div>
         </div>
@@ -351,52 +366,11 @@ function updateBDExpenseKpis() {
             </div>
             <div class="text-xl sm:text-2xl font-mono font-black text-amber-400 tracking-tight">৳ ${formatAmountWithComma(summary.grandTotal)}</div>
             <div class="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>০১/১১/২০২৫ হতে ০৯/১১/২০২৬ পর্যন্ত</span>
+                <span>${escapeHTML(summary.overallDates || 'চলমান সেশন')}</span>
                 <span class="font-bold text-amber-300">B/F + রানিং খাতা</span>
             </div>
         </div>
     `;
-
-    // 2. Render Consolidated CapEx Box
-    if (capexContainer) {
-        capexContainer.innerHTML = `
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-sky-800/40 pb-3 mb-3">
-                <div class="flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 text-sm">
-                        <i class="fa-solid fa-chart-pie"></i>
-                    </span>
-                    <div>
-                        <div class="text-xs sm:text-sm font-black text-white">১ম কনসোলমেন্টের সামগ্রিক পুঁজী ও হিসাব (Consolidated Master CapEx)</div>
-                        <div class="text-[11px] text-slate-400">দুবাই বৈদেশিক ক্রয় + বাংলাদেশ ল্যান্ডেড খরচের একীভূত পুঁজী কাঠামো</div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-sky-500/30">
-                    <span class="text-[11px] text-slate-400 font-bold">সর্বমোট প্রজেক্ট ক্যাপিটাল:</span>
-                    <span class="text-sm sm:text-base font-mono font-black text-emerald-400">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                    <div class="text-[11px] text-slate-400 font-bold mb-1">দুবাই ক্রয় পার্ট (পাতা ০০০১)</div>
-                    <div class="text-sm font-mono font-black text-emerald-400">${formatAmountWithComma(capex.dubaiAED)} AED</div>
-                    <div class="text-xs font-mono font-bold text-slate-300">৳ ${formatAmountWithComma(capex.dubaiBDT)} <span class="text-[10px] text-slate-400">(${capex.dubaiSharePct}%)</span></div>
-                </div>
-
-                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                    <div class="text-[11px] text-slate-400 font-bold mb-1">বাংলাদেশ খরচ পার্ট (পাতা ০০০২)</div>
-                    <div class="text-sm font-mono font-black text-red-400">৳ ${formatAmountWithComma(capex.bdBDT)}</div>
-                    <div class="text-xs text-slate-400">${summary.count} কিস্তি + সাবেক <span class="font-bold text-slate-300">(${capex.bdSharePct}%)</span></div>
-                </div>
-
-                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-emerald-500/30">
-                    <div class="text-[11px] text-emerald-400 font-bold mb-1">১ম কনসোলমেন্ট সর্বমোট পুঁজী</div>
-                    <div class="text-base font-mono font-black text-emerald-300">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</div>
-                    <div class="text-[10px] text-slate-400">দুবাই + বাংলাদেশ একীভূত (১০০%)</div>
-                </div>
-            </div>
-        `;
-    }
 }
 
 function renderBDExpenseTable() {
@@ -421,11 +395,15 @@ function renderBDExpenseTable() {
 
     const summary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
 
+    const bfRowDates = (summary.bfStartDate && summary.bfEndDate)
+        ? `${formatAppDate(summary.bfStartDate)} - ${formatAppDate(summary.bfEndDate)}`
+        : (summary.bfStartDate ? formatAppDate(summary.bfStartDate) : 'প্রারম্ভিক ব্যালেন্স');
+
     // B/F Row
     const bfRowHtml = `
         <tr class="bg-sky-950/20 hover:bg-sky-950/30 transition-colors font-bold border-b border-sky-800/40">
             <td class="p-3 text-center border-r border-slate-800 text-sky-400">০</td>
-            <td class="p-3 text-center border-r border-slate-800 font-mono text-sky-300 whitespace-nowrap">০১/১১/২৫ - ০৬/০৮/২৬</td>
+            <td class="p-3 text-center border-r border-slate-800 font-mono text-sky-300 whitespace-nowrap">${escapeHTML(bfRowDates)}</td>
             <td class="p-3 border-r border-slate-800 text-sky-200">
                 <div class="font-bold">B/F (পূর্ববর্তী স্থানান্তরিত কিউমুলেটিভ ব্যালেন্স)</div>
                 <div class="text-[10px] text-slate-400">পূর্ববর্তী সেশনের সর্বমোট জমা খরচ স্থিতি</div>
@@ -438,7 +416,11 @@ function renderBDExpenseTable() {
             <td class="p-3 text-center border-r border-slate-800">
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300">সাবেক ব্যালেন্স শুরু</span>
             </td>
-            <td class="p-3 text-center text-slate-600">—</td>
+            <td class="p-3 text-center">
+                <button type="button" data-perm="manageNothiEntries" onclick="window.editBDBfBalance()" class="p-1 hover:text-sky-300 text-sky-400 transition-colors cursor-pointer" title="B/F ব্যালেন্স সংশোধন করুন">
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                </button>
+            </td>
         </tr>
     `;
 
@@ -469,10 +451,10 @@ function renderBDExpenseTable() {
                 </td>
                 <td class="p-3 text-center">
                     <div class="flex items-center justify-center gap-1.5">
-                        <button type="button" onclick="window.editBDExpenseEntry('${item.id}')" class="p-1 hover:text-sky-400 text-slate-400 transition-colors" title="সংশোধন করুন">
+                        <button type="button" data-perm="manageNothiEntries" onclick="window.editBDExpenseEntry('${item.id}')" class="p-1 hover:text-sky-400 text-slate-400 transition-colors" title="সংশোধন করুন">
                             <i class="fa-solid fa-pen-to-square text-xs"></i>
                         </button>
-                        <button type="button" onclick="window.deleteBDExpenseEntry('${item.id}')" class="p-1 hover:text-red-400 text-slate-400 transition-colors" title="মুছে ফেলুন">
+                        <button type="button" data-perm="deleteNothiEntries" onclick="window.deleteBDExpenseEntry('${item.id}')" class="p-1 hover:text-red-400 text-slate-400 transition-colors" title="মুছে ফেলুন">
                             <i class="fa-solid fa-trash text-xs"></i>
                         </button>
                     </div>
@@ -481,9 +463,20 @@ function renderBDExpenseTable() {
         `;
     }).join('');
 
+    const isFiltered = filtered.length !== bdExpensesList.length;
+    const filteredTotal = safeRound(filtered.reduce((acc, item) => safeRound(acc + (Number(item.amount) || 0)), 0));
+    const filteredSubtotalRow = isFiltered ? `
+        <tr class="bg-amber-950/20 border-t border-amber-500/40 font-black text-xs text-amber-200">
+            <td colspan="5" class="p-3 text-right border-r border-slate-800">ফিল্টারকৃত উপ-মোট (${filtered.length} টি এন্ট্রি):</td>
+            <td class="p-3 text-right font-mono text-amber-300 border-r border-slate-800">৳ ${formatAmountWithComma(filteredTotal)}</td>
+            <td colspan="2" class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] bg-amber-600/30 text-amber-200">ফিল্টার</span></td>
+        </tr>
+    ` : '';
+
     tbody.innerHTML = `
         ${bfRowHtml}
         ${rowsHtml}
+        ${filteredSubtotalRow}
 
         <!-- Running Subtotal Row -->
         <tr class="bg-slate-950/80 border-t-2 border-slate-700 font-bold text-xs text-slate-300">
@@ -528,26 +521,89 @@ function renderBDExpenseTable() {
         document.getElementById('form-bd-expense').scrollIntoView({ behavior: 'smooth' });
     };
 
+    window.editBDBfBalance = async () => {
+        if (!ensureOnline('B/F ব্যালেন্স সংশোধন')) return;
+        const pinOk = await promptSecurityPin();
+        if (!pinOk) return;
+
+        const summary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
+        const startVal = summary.bfStartDate ? formatAppDate(summary.bfStartDate) : '';
+        const endVal = summary.bfEndDate ? formatAppDate(summary.bfEndDate) : '';
+
+        const { value: formVals } = await Swal.fire({
+            title: 'সাবেক ব্যালেন্স (B/F) সংশোধন',
+            html: `
+                <div class="text-left font-bn text-xs space-y-3">
+                    <div>
+                        <label class="block text-slate-300 font-bold mb-1">সাবেক টাকার পরিমাণ (BDT):</label>
+                        <input id="swal-bd-bf-amount" type="text" value="${escapeHTML(formatAmountWithComma(summary.bfAmount))}"
+                            oninput="window.handleNumberInput(this); window.updateLiveWords(this, 'swal-bd-bf-words');"
+                            class="w-full bg-slate-950 border border-sky-500/50 rounded-xl px-3 py-2 text-sm text-sky-400 font-mono font-black text-right outline-none">
+                        <div id="swal-bd-bf-words" class="text-[11px] text-amber-400 font-bold mt-1"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-300 font-bold mb-1">শুরুর তারিখ:</label>
+                            <input id="swal-bd-bf-start" type="text" value="${escapeHTML(startVal)}" placeholder="DD/MM/YYYY" class="datepicker w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 font-bold mb-1">শেষ তারিখ:</label>
+                            <input id="swal-bd-bf-end" type="text" value="${escapeHTML(endVal)}" placeholder="DD/MM/YYYY" class="datepicker w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                        </div>
+                    </div>
+                </div>
+            `,
+            background: '#0f172a',
+            color: '#f8fafc',
+            showCancelButton: true,
+            confirmButtonText: 'আপডেট করুন',
+            cancelButtonText: 'বাতিল',
+            confirmButtonColor: '#0284c7',
+            didOpen: () => {
+                const amtEl = document.getElementById('swal-bd-bf-amount');
+                if (amtEl && window.updateLiveWords) window.updateLiveWords(amtEl, 'swal-bd-bf-words');
+            },
+            preConfirm: () => {
+                const amount = parseAmount(document.getElementById('swal-bd-bf-amount')?.value || 0);
+                if (amount < 0) {
+                    Swal.showValidationMessage('সঠিক টাকার অঙ্ক দিন');
+                    return false;
+                }
+                return {
+                    amount: safeRound(amount),
+                    start: document.getElementById('swal-bd-bf-start')?.value?.trim() || '',
+                    end: document.getElementById('swal-bd-bf-end')?.value?.trim() || ''
+                };
+            }
+        });
+
+        if (formVals) {
+            try {
+                await DubaiBDExpenseDAO.updateConsignmentBf(activeConsignment?.id || 'CONSIGNMENT-01', formVals.amount, formVals.start, formVals.end);
+                showToast('B/F ব্যালেন্স সফলভাবে আপডেট হয়েছে', 'success');
+            } catch (err) {
+                console.error('Update B/F error:', err);
+                showToast('B/F আপডেট করতে সমস্যা হয়েছে', 'error');
+            }
+        }
+    };
+
     window.deleteBDExpenseEntry = async (id) => {
-        ensureOnline();
+        if (!ensureOnline('খরচ এন্ট্রি মুছে ফেলা')) return;
         const pinPassed = await promptSecurityPin();
         if (!pinPassed) return;
 
-        const res = await Swal.fire({
+        const targetItem = bdExpensesList.find(b => b.id === id) || null;
+        const confirmed = await confirmNothiAction({
             title: 'এন্ট্রি মুছে ফেলতে চান?',
-            text: 'এই খরচ এন্ট্রিটি তালিকা থেকে মুছে ফেলা হবে।',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'হ্যাঁ, মুছুন',
-            cancelButtonText: 'বাতিল',
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#334155'
+            text: `${targetItem?.description || 'এই খরচ এন্ট্রি'} রিসাইকেল বিনে সংরক্ষণ করে তালিকা থেকে সরানো হবে।`,
+            confirmButtonText: 'হ্যাঁ, মুছুন'
         });
 
-        if (res.isConfirmed) {
+        if (confirmed) {
             try {
-                await DubaiBDExpenseDAO.deleteBDExpense(id);
-                showToast('এন্ট্রি সফলভাবে মুছে ফেলা হয়েছে', 'success');
+                await DubaiBDExpenseDAO.deleteBDExpense(id, targetItem);
+                showToast('এন্ট্রি সফলভাবে রিসাইকেল বিনে সরানো হয়েছে', 'success');
             } catch (err) {
                 console.error('Delete expense error:', err);
                 showToast('মুছে ফেলতে সমস্যা হয়েছে', 'error');
@@ -558,7 +614,7 @@ function renderBDExpenseTable() {
 
 async function onSaveBDExpenseSubmit(e) {
     e.preventDefault();
-    ensureOnline();
+    if (!ensureOnline('বাংলাদেশ খরচ সংরক্ষণ')) return;
 
     const dateVal = document.getElementById('bd-input-date').value.trim();
     const descVal = document.getElementById('bd-input-desc').value.trim();
@@ -571,13 +627,18 @@ async function onSaveBDExpenseSubmit(e) {
         return;
     }
 
+    if (editingExpenseId) {
+        const pinOk = await promptSecurityPin();
+        if (!pinOk) return;
+    }
+
     const payload = {
         consignmentId: activeConsignment?.id || 'CONSIGNMENT-01',
         date: toDBDate(dateVal),
         description: descVal,
         category: catVal,
         memo: memoVal || '—',
-        amount: amtVal,
+        amount: safeRound(amtVal),
         status: 'চূড়ান্ত পরিশোধিত'
     };
 

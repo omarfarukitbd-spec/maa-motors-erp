@@ -122,6 +122,11 @@ export async function managePermissions(userId, email, skipPin = false) {
                         <input type="checkbox" id="perm-sendSMS" class="w-5 h-5 rounded bg-slate-950 border-slate-700 text-purple-500 focus:ring-purple-500" ${perms.sendSMS !== false ? 'checked' : ''}>
                         <span class="leading-tight text-purple-300">কাস্টমারকে SMS পাঠানোর অনুমতি<br><span class="text-[11px] text-slate-400 font-bold">Send SMS Reminders</span></span>
                     </label>
+
+                    <div class="text-xs font-black text-sky-400 uppercase tracking-widest border-b border-slate-800 pb-1.5 mt-4 mb-2"><i class="fa-solid fa-book-bookmark mr-1.5"></i>নথি বুক ও দুবাই হিসাব (Nothi Book):</div>
+                    ${createToggle('perm-viewNothiBook', 'নথি বুক দেখার অনুমতি (পাতা ০০০১-০০০৬)', 'View Nothi Book', perms.viewNothiBook !== false)}
+                    ${createToggle('perm-manageNothiEntries', 'নথি এন্ট্রি যোগ/সংশোধন ও ব্যানার এডিট', 'Add & Edit Nothi Entries', perms.manageNothiEntries !== false)}
+                    ${createToggle('perm-deleteNothiEntries', 'নথি এন্ট্রি ডিলিট (Delete) করার অনুমতি', 'Delete Nothi Entries', perms.deleteNothiEntries === true)}
                 </div>
             `,
             focusConfirm: false,
@@ -206,7 +211,10 @@ export async function managePermissions(userId, email, skipPin = false) {
 
                     viewStatement: document.getElementById('perm-viewStatement').checked,
                     sendSMS: document.getElementById('perm-sendSMS').checked,
-                    viewAuditLog: document.getElementById('perm-viewAuditLog').checked
+                    viewAuditLog: document.getElementById('perm-viewAuditLog').checked,
+                    viewNothiBook: document.getElementById('perm-viewNothiBook')?.checked !== false,
+                    manageNothiEntries: document.getElementById('perm-manageNothiEntries')?.checked !== false,
+                    deleteNothiEntries: document.getElementById('perm-deleteNothiEntries')?.checked === true
                 };
             }
         });

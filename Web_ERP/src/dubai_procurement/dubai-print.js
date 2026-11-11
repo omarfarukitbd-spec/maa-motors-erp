@@ -16,6 +16,7 @@ import { SettingsDAO } from '../dao.js';
 import { printViaIframe } from '../utils/smart-print-engine.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
+import { computeAuditVarianceMetrics } from './dubai-capex-calc.js';
 
 export async function printDubaiAuditSheet(auditData, memos = [], remittances = [], expenses = [], consignment = null) {
     if (!auditData) return;
@@ -83,31 +84,25 @@ function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
 
     const marketAd = safeRound(parseAmount(audit.marketAdvance));
     const cashInHand = safeRound(parseAmount(audit.cashInHand));
+    const messBal = safeRound(parseAmount(audit.messBalance));
     const sub2_5 = safeRound(sub2 - marketAd);
     const sub3 = safeRound(sub2_5 - cashInHand);
+    const subMess = safeRound(sub3 - messBal);
 
     const labelAd = escapeHTML(desc.ad || 'মার্কেট এডভান্স (AD)');
     const labelCash = escapeHTML(desc.cash || 'নগদ ক্যাশ আছে (Cash in Hand)');
+    const labelMess = escapeHTML(desc.mess || 'মেছ ফান্ড / মেস ব্যালেন্স (Mess Fund)');
 
-    const isAdActuallyCash = labelAd.includes('নগদ') || labelAd.toLowerCase().includes('cash');
-    const defaultNoteAd = isAdActuallyCash ? 'ক্যাশ বাক্সে নগদ দেরহাম' : 'সাপ্লায়ারদের অগ্রিম';
-    const noteAd = escapeHTML(desc.noteAd || defaultNoteAd);
-
-    const isCashActuallyAd = labelCash.includes('এডভান্স') || labelCash.toLowerCase().includes('ad') || labelCash.includes('অগ্রিম');
-    const defaultNoteCash = isCashActuallyAd ? 'সাপ্লায়ারদের অগ্রিম' : 'ক্যাশ বাক্সে নগদ দেরহাম';
-    const noteCash = escapeHTML(desc.noteCash || defaultNoteCash);
-
-    const finalVariance = safeRound(parseAmount(audit.varianceAmount));
-    const isSurplus = finalVariance >= 0;
-
-    // Dynamic holdings rows with intermediate equals and clean dashes (—)
-    let currentBal = sub3;
+    // Dynamic holdings rows starting after Mess Fund
+    let currentBal = subMess;
+    let holdingsNetSubtracted = 0;
     let holdingsHtml = '';
     const holdingsList = Array.isArray(audit.personalHoldings) ? audit.personalHoldings : [];
     holdingsList.forEach(h => {
         const amt = safeRound(parseAmount(h.amount));
         const isPlus = h.op === '+';
         currentBal = safeRound(isPlus ? currentBal + amt : currentBal - amt);
+        holdingsNetSubtracted = safeRound(isPlus ? holdingsNetSubtracted - amt : holdingsNetSubtracted + amt);
         const signText = isPlus ? '(+) AED:' : '(-) AED:';
         const signColor = isPlus ? '#059669' : '#6b21a8';
         const itemTitle = escapeHTML(h.desc || h.name || 'হিসাব');
@@ -135,6 +130,21 @@ function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
             </tr>
         `;
     });
+
+    const computedPhysical = safeRound(marketAd + cashInHand + messBal + holdingsNetSubtracted);
+    const varianceMetrics = computeAuditVarianceMetrics({
+        ...audit,
+        calculatedCashBalance: sub2,
+        totalPhysicalAssets: audit.totalPhysicalAssets ?? computedPhysical
+    });
+    const finalVariance = varianceMetrics.variance;
+    const isDeficit = varianceMetrics.statusKind === 'deficit';
+    const isBalanced = varianceMetrics.statusKind === 'balanced';
+    const autoStatuses = new Set(['(ক্যাশ বাড়তি)', '(ক্যাশ ঘাটতি)', '(ক্যাশ ঘাটতি / বাকি)', '(হিসাবের অপেক্ষায়)', '(সম্পূর্ণ মিল / সমান)', '(ক্যাশ সমাপনী স্থিতি — অডিট সমন্বয় সফল)']);
+    const finalStatusText = (!desc.status || autoStatuses.has(desc.status))
+        ? varianceMetrics.statusLabel
+        : desc.status;
+    const finalVarianceFormatted = finalVariance > 0 ? `+${formatAED(finalVariance)}` : formatAED(finalVariance);
 
     // Memos compact list
     let memosSummaryHtml = '';
@@ -321,23 +331,47 @@ function generateAuditPrintHtml(audit, memos, settings, consignment = null) {
                         <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 11px; font-weight: bold;">—</td>
                     </tr>
 
+                    <!-- Row 6: মেছ ফান্ড / মেস ব্যালেন্স (সম্পূর্ণ আলাদা সারি) -->
+                    <tr class="print-row-no-break" style="background: #ffffff;">
+                        <td style="padding: 7px 10px; border: 1px solid #cbd5e1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 13px; color: #0f172a;">${labelMess}</strong>
+                                <span style="color: #b45309; font-size: 12px;">(-) AED: <b class="num-font" style="font-size: 14px;">${formatAED(messBal)}</b></span>
+                            </div>
+                        </td>
+                        <td style="text-align: center; color: #94a3b8; font-size: 11px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">
+                            —
+                        </td>
+                    </tr>
+
+                    <!-- Subtotal Mess (মেছ ফান্ড বাদে অবশিষ্ট) -->
+                    <tr class="print-row-no-break" style="background: #fffbeb; font-weight: 800;">
+                        <td style="padding: 6px 10px; border: 1px solid #fcd34d; border-left: 3px solid #d97706; color: #92400e;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 12.5px;">অবশিষ্ট ব্যালেন্স:</span>
+                                <span style="font-size: 12px;">AED = <b class="num-font" style="font-size: 14px;">${formatAED(subMess)}</b></span>
+                            </div>
+                        </td>
+                        <td style="background: #f8fafc; border: 1px solid #cbd5e1; text-align: center; color: #94a3b8; font-size: 11px; font-weight: bold;">—</td>
+                    </tr>
+
                     <!-- Dynamic Holdings Rows -->
                     ${holdingsHtml}
 
-                    <!-- Final Variance Row: ক্যাশ সমাপনী স্থিতি / ক্যাশ ঘাটতি -->
-                    <tr class="print-row-no-break" style="background: ${isSurplus ? '#f0fdf4' : '#fef2f2'}; font-weight: 900;">
-                        <td style="padding: 9px 10px; border: 2px solid ${isSurplus ? '#16a34a' : '#dc2626'};">
+                    <!-- Final Variance Row: ক্যাশ সমন্বয় (Surplus / Deficit / Balanced) -->
+                    <tr class="print-row-no-break" style="background: ${!isDeficit ? '#f0fdf4' : '#fef2f2'}; font-weight: 900;">
+                        <td style="padding: 9px 10px; border: 2px solid ${!isDeficit ? '#16a34a' : '#dc2626'};">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 14px; color: ${isSurplus ? '#15803d' : '#b91c1c'};">
-                                    ${escapeHTML(desc.status || (isSurplus ? '(ক্যাশ সমাপনী স্থিতি — অডিট সমন্বয় সফল)' : '(ক্যাশ ঘাটতি)'))}
+                                <span style="font-size: 14px; color: ${!isDeficit ? '#15803d' : '#b91c1c'};">
+                                    ${escapeHTML(finalStatusText)}
                                 </span>
-                                <span style="font-size: 14px; color: ${isSurplus ? '#15803d' : '#b91c1c'};">
-                                    AED = <span class="num-font" style="font-size: 18px;">${formatAED(finalVariance)}</span>
+                                <span style="font-size: 14px; color: ${!isDeficit ? '#15803d' : '#b91c1c'};">
+                                    AED = <span class="num-font" style="font-size: 18px;">${finalVarianceFormatted}</span>
                                 </span>
                             </div>
                         </td>
-                        <td style="text-align: center; font-weight: 800; font-size: 12px; color: ${isSurplus ? '#15803d' : '#b91c1c'}; border: 2px solid ${isSurplus ? '#16a34a' : '#dc2626'};">
-                            ${isSurplus ? 'অডিট সমন্বয় সফল (SURPLUS)' : 'ক্যাশ ঘাটতি (DEFICIT)'}
+                        <td style="text-align: center; font-weight: 800; font-size: 12px; color: ${!isDeficit ? '#15803d' : '#b91c1c'}; border: 2px solid ${!isDeficit ? '#16a34a' : '#dc2626'};">
+                            ${isBalanced ? 'সম্পূর্ণ মিল (BALANCED)' : (!isDeficit ? 'ক্যাশ বাড়তি (SURPLUS)' : 'ক্যাশ ঘাটতি (DEFICIT)')}
                         </td>
                     </tr>
                 </tbody>

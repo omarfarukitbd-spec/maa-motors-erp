@@ -13,8 +13,9 @@ import { DubaiPortDutyDAO } from './dubai-port-duty-dao.js';
 import { DubaiDAO } from './dubai-dao.js';
 import { calculateConsignmentSummary } from './dubai-remittance-calc.js';
 import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
-import { calculateLCSummary, calculateMaster4TierCapEx } from './dubai-lc-calc.js';
+import { calculateLCSummary } from './dubai-lc-calc.js';
 import { calculatePortDutySummary } from './dubai-port-duty-calc.js';
+import { calculateMaster4TierCapEx, computeAuditVarianceMetrics } from './dubai-capex-calc.js';
 import { formatAmountWithComma, formatAppDate, escapeHTML, showToast } from '../utils.js';
 
 let activeConsignment = null;
@@ -74,7 +75,9 @@ function attachHubListeners() {
         refreshNothiHubCards();
     });
 
-    attachConsignmentBookListeners('CONSIGNMENT-01');
+    if (!currentListenersConsId) {
+        attachConsignmentBookListeners('CONSIGNMENT-01');
+    }
 
     unsubAudits = DubaiDAO.listenWeeklyAudits(items => {
         weeklyAuditsList = items || [];
@@ -125,7 +128,7 @@ function renderNothiHubSkeleton(container) {
                                 <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">নথি বুক</h1>
                                 <span class="px-3 py-1 rounded-full text-[11px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center gap-1.5">
                                     <i class="fa-solid fa-layer-group text-[10px]"></i>
-                                    <span>৫টি স্বতন্ত্র রেজিস্টার খাতা</span>
+                                    <span>৬টি স্বতন্ত্র নথি খাতা</span>
                                 </span>
                             </div>
                             <p class="text-xs sm:text-sm text-slate-400 mt-1">প্রতিটি খাতা নিজস্ব হিসাব ও প্রিন্ট ভাউচার হিসেবে আলাদা কাজ করে — প্রয়োজনীয় ক্যাটাগরিতে ক্লিক করে খাতা খুলুন</p>
@@ -138,7 +141,7 @@ function renderNothiHubSkeleton(container) {
                                 class="w-full bg-slate-950/90 border border-slate-700/80 focus:border-sky-500 rounded-2xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none shadow-inner transition-all">
                             <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
                         </div>
-                        <button type="button" id="btn-nothi-hub-banner-settings"
+                        <button type="button" id="btn-nothi-hub-banner-settings" data-perm="manageNothiEntries"
                             class="px-3.5 py-2.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 hover:text-white border border-sky-500/35 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm whitespace-nowrap">
                             <i class="fa-solid fa-pen-ruler text-sky-400"></i>
                             <span>PDF শিরোনাম ও ব্যানার সেটিংস</span>
@@ -147,7 +150,7 @@ function renderNothiHubSkeleton(container) {
                 </div>
 
                 <!-- Minimal Consolidated Overview Strip -->
-                <div id="nothi-hub-summary-strip" class="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div id="nothi-hub-summary-strip" class="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                     <!-- Dynamically populated -->
                 </div>
             </div>
@@ -186,45 +189,60 @@ function renderNothiHubSkeleton(container) {
 }
 
 function buildCategoryLiveMetrics() {
+    const consId = activeConsignment?.id || 'CONSIGNMENT-01';
     const dubaiSummary = calculateConsignmentSummary(activeConsignment, remittancesList);
     const bdSummary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
     const lcSummary = calculateLCSummary(activeConsignment, lcBillsList);
     const portSummary = calculatePortDutySummary(activeConsignment, portDutyBillsList);
     const capex = calculateMaster4TierCapEx(dubaiSummary, lcSummary, portSummary, bdSummary);
-    const latestAudit = weeklyAuditsList[0] || null;
+    const scopedAudits = weeklyAuditsList
+        .filter(a => (a.consignmentId || 'CONSIGNMENT-01') === consId)
+        .sort((a, b) => String(b.weekEndDate || '').localeCompare(String(a.weekEndDate || '')));
+    const latestAudit = scopedAudits[0] || null;
+    const auditMetrics = computeAuditVarianceMetrics(latestAudit);
+    const varSign = auditMetrics.variance > 0 ? '+' : '';
 
     return {
         capex,
+        auditMetrics,
+        scopedAudits,
+        latestAudit,
         metrics: {
             remittance: {
-                countText: remittancesList.length > 0 ? `${remittancesList.length}টি কিস্তি ও সাবেক` : 'স্বয়ংক্রিয় সিড',
+                countText: remittancesList.length > 0 ? `${remittancesList.length}টি কিস্তি ও সাবেক` : 'চলমান খাতা',
                 primaryValue: `৳ ${formatAmountWithComma(capex.dubaiBDT)}`,
                 secondaryValue: `${formatAmountWithComma(capex.dubaiAED)} AED`,
                 lastDate: remittancesList[remittancesList.length - 1]?.date ? formatAppDate(remittancesList[remittancesList.length - 1].date) : 'চলমান খাতা'
             },
             'bd-expense': {
-                countText: bdExpensesList.length > 0 ? `${bdExpensesList.length}টি এন্ট্রি ও সাবেক` : 'স্বয়ংক্রিয় সিড',
+                countText: bdExpensesList.length > 0 ? `${bdExpensesList.length}টি এন্ট্রি ও সাবেক` : 'চলমান খাতা',
                 primaryValue: `৳ ${formatAmountWithComma(capex.bdBDT)}`,
                 secondaryValue: `${capex.bdSharePct}% মোট তহবিলের`,
                 lastDate: bdExpensesList[bdExpensesList.length - 1]?.date ? formatAppDate(bdExpensesList[bdExpensesList.length - 1].date) : 'চলমান খাতা'
             },
             'lc-bills': {
-                countText: lcBillsList.length > 0 ? `${lcBillsList.length}টি কন্টেইনার (${lcSummary.totalPaymentsCount} কিস্তি)` : '৯টি কন্টেইনার',
+                countText: lcBillsList.length > 0 ? `${lcBillsList.length}টি কন্টেইনার (${lcSummary.totalPaymentsCount} কিস্তি)` : '০টি কন্টেইনার',
                 primaryValue: `৳ ${formatAmountWithComma(capex.lcBDT)}`,
                 secondaryValue: `$${formatAmountWithComma(capex.lcUSD)} USD`,
                 lastDate: `${lcSummary.deliveredCount} ডেলিভারি / ${lcSummary.pendingDeliveryCount} অপেক্ষমাণ`
             },
             'port-duty': {
-                countText: portDutyBillsList.length > 0 ? `${portDutyBillsList.length}টি কন্টেইনার বিল` : '৭টি কন্টেইনার',
+                countText: portDutyBillsList.length > 0 ? `${portDutyBillsList.length}টি কন্টেইনার বিল` : '০টি কন্টেইনার',
                 primaryValue: `৳ ${formatAmountWithComma(capex.portBDT)}`,
                 secondaryValue: `${capex.portSharePct}% মোট তহবিলের`,
                 lastDate: portDutyBillsList[portDutyBillsList.length - 1]?.date ? formatAppDate(portDutyBillsList[portDutyBillsList.length - 1].date) : 'চলমান খাতা'
             },
             audit: {
-                countText: weeklyAuditsList.length > 0 ? `${weeklyAuditsList.length} সপ্তাহের রেকর্ড` : 'বৃহস্পতিবার রিকনসিলিয়েশন',
-                primaryValue: latestAudit ? `${formatAmountWithComma(latestAudit.physicalAssets?.totalPhysical || 0)} AED` : 'সাপ্তাহিক শিট',
-                secondaryValue: latestAudit ? `তফাত: ${formatAmountWithComma(latestAudit.variance || 0)} AED` : 'মেমো ও ক্যাশ হিসাব',
+                countText: scopedAudits.length > 0 ? `${scopedAudits.length} সপ্তাহের রেকর্ড` : 'বৃহস্পতিবার রিকনসিলিয়েশন',
+                primaryValue: latestAudit ? `${formatAmountWithComma(auditMetrics.totalPhysical)} AED` : 'সাপ্তাহিক শিট',
+                secondaryValue: latestAudit ? `তফাত: ${varSign}${formatAmountWithComma(auditMetrics.variance)} AED` : 'মেমো ও ক্যাশ হিসাব',
                 lastDate: latestAudit?.weekEndDate ? formatAppDate(latestAudit.weekEndDate) : 'সর্বশেষ অডিট'
+            },
+            'master-summary': {
+                countText: '৪-স্তর + দুবাই তারল্য সারসংক্ষেপ',
+                primaryValue: `৳ ${formatAmountWithComma(capex.totalCapExBDT)}`,
+                secondaryValue: `কার্যকর রেট: ${capex.landedEffectiveRate.toFixed(2)}`,
+                lastDate: activeConsignment?.name || 'সমন্বিত হিসাব'
             }
         }
     };
@@ -235,7 +253,7 @@ function refreshNothiHubCards() {
     const gridEl = document.getElementById('nothi-hub-cards-grid');
     if (!stripEl || !gridEl) return;
 
-    const { capex, metrics } = buildCategoryLiveMetrics();
+    const { capex, auditMetrics, latestAudit, metrics } = buildCategoryLiveMetrics();
     const q = (document.getElementById('nothi-hub-search')?.value || '').trim().toLowerCase();
 
     stripEl.innerHTML = `
@@ -255,10 +273,14 @@ function refreshNothiHubCards() {
             <div class="text-[10px] font-bold text-slate-400">পাতা ০০০৪ (পোর্ট ও ডিউটি)</div>
             <div class="text-sm font-black font-mono text-indigo-400 mt-0.5">৳ ${formatAmountWithComma(capex.portBDT)}</div>
         </div>
-        <div class="col-span-2 sm:col-span-1 bg-gradient-to-br from-sky-950/60 to-slate-950 border border-sky-500/30 rounded-2xl p-3">
-            <div class="text-[10px] font-black text-sky-400">সর্বমোট সমন্বিত হিসাব (৪ খাতা)</div>
-            <div class="text-sm font-black font-mono text-white mt-0.5">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</div>
+        <div class="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3">
+            <div class="text-[10px] font-bold text-slate-400">পাতা ০০০৫ (দুবাই অডিট)</div>
+            <div class="text-sm font-black font-mono text-sky-400 mt-0.5">${latestAudit ? `${formatAmountWithComma(auditMetrics.totalPhysical)} AED` : '—'}</div>
         </div>
+        <button type="button" onclick="window.switchDubaiProcurementView && window.switchDubaiProcurementView('master-summary')" class="text-left bg-gradient-to-br from-purple-950/70 to-slate-950 border border-purple-500/35 hover:border-purple-400/60 rounded-2xl p-3 transition-all cursor-pointer">
+            <div class="text-[10px] font-black text-purple-300">পাতা ০০০৬ (সর্বমোট ৪ খাতা)</div>
+            <div class="text-sm font-black font-mono text-white mt-0.5">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</div>
+        </button>
     `;
 
     const filteredCats = NOTHI_BOOK_CATEGORIES.filter(cat => {
@@ -329,7 +351,7 @@ function refreshNothiHubCards() {
             <div class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:text-sky-400 group-hover:border-sky-500/30 transition-colors text-lg">
                 <i class="fa-solid fa-plus"></i>
             </div>
-            <div class="text-sm font-black text-slate-300 group-hover:text-white transition-colors">নতুন নথি বুক ক্যাটাগরি (০০০৫+)</div>
+            <div class="text-sm font-black text-slate-300 group-hover:text-white transition-colors">নতুন নথি বুক ক্যাটাগরি (০০০৭+)</div>
             <p class="text-xs text-slate-500 max-w-[230px]">পরবর্তীতে নতুন কোনো নথি খাতা বা হিসাব যুক্ত করতে চাইলে এখান থেকেই নতুন কার্ড হিসেবে যোগ করা হবে</p>
         </button>
     ` : '';
@@ -339,7 +361,7 @@ function refreshNothiHubCards() {
     const futureBtn = document.getElementById('btn-nothi-future-slot');
     if (futureBtn) {
         futureBtn.onclick = () => {
-            showToast('পরবর্তী নথি খাতার ছবি বা তথ্য দিলে পাতা ০০০৫+ হিসেবে এখানে যুক্ত করে দেওয়া হবে', 'info');
+            showToast('পরবর্তী নথি খাতার ছবি বা তথ্য দিলে পাতা ০০০৭+ হিসেবে এখানে যুক্ত করে দেওয়া হবে', 'info');
         };
     }
 }

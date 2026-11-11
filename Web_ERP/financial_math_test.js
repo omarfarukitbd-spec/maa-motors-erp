@@ -3,9 +3,66 @@
  * এই টেস্ট স্যুটটি প্রতিটি বিল্ডে গাণিতিক ও অ্যাকাউন্টিং সূত্রের নির্ভুলতা স্বয়ংক্রিয়ভাবে যাচাই করে।
  */
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
 
-function safeRound(num) {
-    return Math.round((Number(num) || 0) * 100) / 100;
+function safeRound(value, decimals = 2) {
+    if (value === null || value === undefined || isNaN(value)) return 0;
+    const factor = Math.pow(10, decimals);
+    return Math.round((Number(value) + Number.EPSILON) * factor) / factor;
+}
+
+function loadDubaiCalcModules() {
+    const parseAmount = (str) => (!str ? 0 : (parseFloat(str.toString().replace(/,/g, '')) || 0));
+    const formatAmountWithComma = (amt) => (amt === null || amt === undefined || amt === '' || isNaN(amt) ? '' : Number(amt).toLocaleString('en-IN'));
+    const formatAppDate = (dStr) => {
+        if (!dStr) return '';
+        const s = String(dStr).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+            const [y, m, d] = s.split('-');
+            return `${d}/${m}/${y}`;
+        }
+        return s;
+    };
+
+    const mockUtils = { safeRound, parseAmount, formatAmountWithComma, formatAppDate };
+    const cache = {};
+    const calcDir = path.join(__dirname, 'src', 'dubai_procurement');
+
+    const loadModule = (filename) => {
+        if (cache[filename]) return cache[filename];
+        const raw = fs.readFileSync(path.join(calcDir, filename), 'utf8');
+        const exportsObj = {};
+        const transformed = raw
+            .replace(/import\s+\{([^}]+)\}\s+from\s+['"]\.\.\/utils\.js['"];?/g, (_, names) => `const {${names}} = __mockUtils;`)
+            .replace(/import\s+\{([^}]+)\}\s+from\s+['"]\.\/([^'"]+)['"];?/g, (_, names, dep) => `const {${names}} = __load('${dep}');`)
+            .replace(/export\s+const\s+([A-Za-z0-9_]+)\s*=/g, 'const $1 =')
+            .replace(/export\s+function\s+([A-Za-z0-9_]+)\s*\(/g, 'function $1(');
+
+        const exportNames = [];
+        const fnMatches = raw.matchAll(/export\s+(?:const|function)\s+([A-Za-z0-9_]+)/g);
+        for (const m of fnMatches) exportNames.push(m[1]);
+
+        const wrapped = `${transformed}\n${exportNames.map(n => `exports.${n} = ${n};`).join('\n')}`;
+        const context = {
+            __mockUtils: mockUtils,
+            __load: loadModule,
+            exports: exportsObj,
+            Math, Number, String, Array, Object, Boolean, Map, Set, RegExp, console
+        };
+        vm.runInNewContext(wrapped, context, { filename });
+        cache[filename] = exportsObj;
+        return exportsObj;
+    };
+
+    return {
+        remCalc: loadModule('dubai-remittance-calc.js'),
+        bdCalc: loadModule('dubai-bd-expense-calc.js'),
+        lcCalc: loadModule('dubai-lc-calc.js'),
+        portCalc: loadModule('dubai-port-duty-calc.js'),
+        capexCalc: loadModule('dubai-capex-calc.js')
+    };
 }
 
 function runFinancialMathTests() {
@@ -352,6 +409,138 @@ function runFinancialMathTests() {
     const toDmy = iso => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
     const stage3Range = `${toDmy(sampleIsoDates[0])} - ${toDmy(sampleIsoDates[sampleIsoDates.length - 1])}`;
     assert.strictEqual(stage3Range, '14/10/2026 - 09/11/2026', "Stage 3 chronological range mismatch");
+    passed++;
+
+    // Production Engine Integration Tests (Loads real src/dubai_procurement/*-calc.js)
+    const { remCalc, bdCalc, lcCalc, portCalc, capexCalc } = loadDubaiCalcModules();
+
+    // Test 15: Production 4-Tier Master CapEx Engine (Book 0001-0004 -> Page 0006 Single Source of Truth)
+    const cons1 = { id: 'CONSIGNMENT-01', name: 'Consignment 1', status: 'active' };
+    const cons1Stage3Remittances = [
+        { id: 'r1', date: '2026-10-14', aedAmount: 929472, bdtAmount: 32213920, exchangeRate: 34.66 }
+    ];
+    const cons1BdRunning = bdRunningRows.map((amt, idx) => ({
+        id: `bd_${idx + 1}`,
+        date: `2026-09-${String((idx % 28) + 1).padStart(2, '0')}`,
+        category: 'পরিবহন',
+        amount: amt
+    }));
+    const cons1LcDocs = lcContainerRows.map(c => ({
+        id: `lc_${c.containerNo}`,
+        containerNo: c.containerNo,
+        lcNo: c.lcNo,
+        company: c.company,
+        isSettled: c.containerNo <= 7,
+        payments: c.payments.map((p, idx) => ({
+            id: `p_${c.containerNo}_${idx}`,
+            amountUSD: p.usd,
+            amountBDT: p.bdt
+        }))
+    }));
+    const cons1PortDocs = containerDutyRows.map((d, idx) => ({
+        id: `pd_${idx + 1}`,
+        containerNo: d.containerNo,
+        date: d.date,
+        agent: d.vendor,
+        size: d.size,
+        amount: d.amount
+    }));
+
+    const liveRemSummary = remCalc.calculateConsignmentSummary(cons1, cons1Stage3Remittances);
+    const liveBdSummary = bdCalc.calculateBDExpenseSummary(cons1, cons1BdRunning);
+    const liveLcSummary = lcCalc.calculateLCSummary(cons1, cons1LcDocs);
+    const livePortSummary = portCalc.calculatePortDutySummary(cons1, cons1PortDocs);
+    const liveMaster4Tier = capexCalc.calculateMaster4TierCapEx(liveRemSummary, liveLcSummary, livePortSummary, liveBdSummary);
+
+    assert.strictEqual(liveMaster4Tier.dubaiAED, 6907319, "Prod calculateConsignmentSummary AED mismatch");
+    assert.strictEqual(liveMaster4Tier.dubaiBDT, 236437459, "Prod calculateConsignmentSummary BDT mismatch");
+    assert.strictEqual(liveMaster4Tier.bdBDT, 57894052, "Prod calculateBDExpenseSummary BDT mismatch");
+    assert.strictEqual(liveMaster4Tier.lcUSD, 41880, "Prod calculateLCSummary USD mismatch");
+    assert.strictEqual(liveMaster4Tier.lcBDT, 6020400, "Prod calculateLCSummary BDT mismatch");
+    assert.strictEqual(liveMaster4Tier.portBDT, 25150713, "Prod calculatePortDutySummary BDT mismatch");
+    assert.strictEqual(liveMaster4Tier.twoTierBDT, 294331511, "Prod 2-tier total mismatch");
+    assert.strictEqual(liveMaster4Tier.threeTierBDT, 319482224, "Prod 3-tier total mismatch");
+    assert.strictEqual(liveMaster4Tier.totalCapExBDT, 325502624, "Prod 4-tier totalCapExBDT mismatch");
+    assert.ok(liveMaster4Tier.landedEffectiveRate > 47, "Effective landed rate per AED should exceed purchase rate");
+    passed++;
+
+    // Test 16: Consignment-2+ Zero-Fallback Isolation Law (No Consignment-1 Leakage)
+    const cons2 = { id: 'CONSIGNMENT-02', name: 'Consignment 2', status: 'active' };
+    const cons2Rem = remCalc.calculateConsignmentSummary(cons2, []);
+    const cons2Bd = bdCalc.calculateBDExpenseSummary(cons2, []);
+    const cons2Lc = lcCalc.calculateLCSummary(cons2, []);
+    const cons2Port = portCalc.calculatePortDutySummary(cons2, []);
+    const cons2CapEx = capexCalc.calculateMaster4TierCapEx(cons2Rem, cons2Lc, cons2Port, cons2Bd);
+    assert.strictEqual(cons2CapEx.dubaiBDT, 0, "Empty Consignment 2 Dubai BDT must be 0");
+    assert.strictEqual(cons2CapEx.bdBDT, 0, "Empty Consignment 2 BD Expense BDT must be 0");
+    assert.strictEqual(cons2CapEx.lcBDT, 0, "Empty Consignment 2 L/C BDT must be 0");
+    assert.strictEqual(cons2CapEx.portBDT, 0, "Empty Consignment 2 Port Duty BDT must be 0");
+    assert.strictEqual(cons2CapEx.totalCapExBDT, 0, "Empty Consignment 2 4-Tier Total must be 0");
+    passed++;
+
+    // Test 17: Container Size Parser (20 FT vs 40 FT vs Standard + Bengali Digits) & Matrix Reconciliation
+    const mixedSizePortBills = [
+        { containerNo: '২০ নং', size: '40 FT', amount: 1500000, agent: 'A' },
+        { containerNo: '21', size: '২০ ফিট', amount: 900000, agent: 'B' },
+        { containerNo: '22', size: '', description: 'Standard container duty', amount: 500000, agent: 'C' },
+        { containerNo: '23', size: '40FT HC', amount: 1100000, agent: 'A' }
+    ];
+    const mixedPortSummary = portCalc.calculatePortDutySummary(cons2, mixedSizePortBills);
+    assert.strictEqual(mixedPortSummary.twentyFtCount, 1, "20 FT Bengali digit size must count under twentyFtCount, not fortyFtCount");
+    assert.strictEqual(mixedPortSummary.fortyFtCount, 2, "40 FT containers count mismatch");
+    assert.strictEqual(mixedPortSummary.standardCount, 1, "Standard container count mismatch");
+    assert.strictEqual(mixedPortSummary.twentyFtTotal, 900000, "20 FT total mismatch");
+    assert.strictEqual(mixedPortSummary.fortyFtTotal, 2600000, "40 FT total mismatch");
+    assert.strictEqual(mixedPortSummary.totalDuty, 4000000, "Mixed port duty total mismatch");
+
+    const matrixResult = capexCalc.buildContainerLandedCostMatrix(cons1LcDocs, cons1PortDocs);
+    assert.strictEqual(matrixResult.rows.length, 9, "Container landed matrix must match all 9 unique containers");
+    assert.strictEqual(matrixResult.totals.lcUSD, 41880, "Matrix L/C USD total mismatch");
+    assert.strictEqual(matrixResult.totals.lcBDT, 6020400, "Matrix L/C BDT total mismatch");
+    assert.strictEqual(matrixResult.totals.portTotalBDT, 25150713, "Matrix Port Duty BDT total mismatch");
+    assert.strictEqual(matrixResult.totals.combinedAllBDT, safeRound(6020400 + 25150713), "Matrix combinedAllBDT mismatch");
+    passed++;
+
+    // Test 18: Canonical Audit Variance Sign & Legacy Correction + Mess Fund Separation
+    const surplusMetrics = capexCalc.computeAuditVarianceMetrics({
+        calculatedCashBalance: 10000,
+        cashInHand: 4000,
+        marketAdvance: 3000,
+        personalHoldings: [{ name: 'Emran', amount: 3000 }],
+        messBalance: 500,
+        totalPhysicalAssets: 10500
+    });
+    assert.strictEqual(surplusMetrics.totalPhysical, 10500, "Surplus physical total mismatch");
+    assert.strictEqual(surplusMetrics.variance, 500, "Surplus variance must be positive (+500)");
+    assert.strictEqual(surplusMetrics.statusKind, 'surplus', "StatusKind must be surplus");
+
+    // Legacy inverted audit doc (varianceAmount stored as +800 even though physical < theoretical)
+    const legacyDeficitAudit = capexCalc.computeAuditVarianceMetrics({
+        calculatedCashBalance: 10000,
+        cashInHand: 5000,
+        marketAdvance: 2200,
+        personalHoldings: [{ name: 'Altaf', amount: 1500 }],
+        messBalance: 500,
+        totalPhysicalAssets: 9200,
+        varianceAmount: 800
+    });
+    assert.strictEqual(legacyDeficitAudit.totalPhysical, 9200, "Legacy audit physical sum mismatch");
+    assert.strictEqual(legacyDeficitAudit.variance, -800, "Canonical recomputed variance must correct inverted legacy sign to -800");
+    assert.strictEqual(legacyDeficitAudit.statusKind, 'deficit', "StatusKind must be deficit");
+
+    const liqSummary = capexCalc.calculateDubaiLiquiditySummary(liveRemSummary, {
+        weekEndDate: '2026-11-05',
+        calculatedCashBalance: 10000,
+        cashInHand: 5000,
+        marketAdvance: 2200,
+        personalHoldings: [{ name: 'Altaf', amount: 1500 }],
+        messBalance: 500,
+        totalPhysicalAssets: 9200
+    });
+    assert.strictEqual(liqSummary.messBalanceAED, 500, "Liquidity summary must preserve messBalanceAED separately");
+    assert.strictEqual(liqSummary.holdingsTotalAED, 1500, "holdingsTotalAED must sum personalHoldings");
+    assert.strictEqual(liqSummary.totalPhysicalAED, 9200, "Liquidity totalPhysicalAED mismatch");
+    assert.strictEqual(liqSummary.varianceMetrics.variance, -800, "Liquidity variance must obey canonical sign");
     passed++;
 
     console.log(`✅ [অ্যাকাউন্টিং টেস্ট] সফল! সর্বমোট ${passed} টি মৌলিক অ্যাকাউন্টিং ইনভ্যারিয়েন্ট ১০০% পাস করেছে।\n`);

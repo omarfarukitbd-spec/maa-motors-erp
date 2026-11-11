@@ -4,7 +4,6 @@
  */
 // ALLOW_LARGE_FILE (Critical Dubai Waterfall Accounting UI)
 
-import Swal from 'sweetalert2';
 import { DubaiActions } from './dubai-audit-actions.js';
 import { printDubaiAuditSheet } from './dubai-print.js';
 import { getDubaiAuditMainTemplate, getDynamicHoldingRowHtml } from './dubai-audit-template.js';
@@ -14,9 +13,12 @@ import { initDubaiRemittanceModule, cleanupDubaiRemittance } from './dubai-remit
 import { initDubaiBDExpenseModule, cleanupDubaiBDExpense } from './dubai-bd-expense-ui.js';
 import { initDubaiPortDutyModule, cleanupDubaiPortDuty } from './dubai-port-duty-ui.js';
 import { initDubaiLCModule, cleanupDubaiLC } from './dubai-lc-ui.js';
+import { initDubaiMasterSummaryModule, cleanupDubaiMasterSummary } from './dubai-master-summary-ui.js';
 import { initNothiBookHub, cleanupNothiBookHub } from './dubai-nothi-hub.js';
 import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
+import { computeAuditVarianceMetrics } from './dubai-capex-calc.js';
+import { exportNothiRowsToExcel, confirmNothiAction, canViewNothiBook } from './dubai-nothi-helpers.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
     toDBDate, showToast, promptSecurityPin, getDayOfWeekBangla, formatAppDate,
@@ -24,6 +26,7 @@ import {
 } from '../utils.js';
 
 let currentAuditId = null;
+let hasAutoLoadedDb = false;
 let auditHistory = [];
 let dynamicHoldings = [
     { desc: 'আলতাফ জাবেদ', amount: 0, op: '-' }
@@ -33,12 +36,16 @@ let currentRootContainer = null;
 let auditConsignments = [];
 let auditActiveConsignment = null;
 let unsubAuditConsignments = null;
+let activeAuditListenersConsId = null;
 
 const getVal = id => safeRound(parseAmount(document.getElementById(id)?.value || 0));
 const getTxt = (id, def = '') => document.getElementById(id)?.value?.trim() || def;
 const setInp = (id, val = '') => { const el = document.getElementById(id); if (el) el.value = val; };
 
 function cleanupAllNothiViews() {
+    activeAuditListenersConsId = null;
+    hasAutoLoadedDb = false;
+    currentAuditId = null;
     DubaiActions.unsubscribe();
     if (unsubAuditConsignments) {
         unsubAuditConsignments();
@@ -49,6 +56,7 @@ function cleanupAllNothiViews() {
     cleanupDubaiBDExpense();
     cleanupDubaiPortDuty();
     cleanupDubaiLC();
+    cleanupDubaiMasterSummary();
 }
 
 function mountNothiView(view, container) {
@@ -66,6 +74,8 @@ function mountNothiView(view, container) {
         initDubaiLCModule(container);
     } else if (view === 'audit') {
         renderDubaiAuditView(container);
+    } else if (view === 'master-summary') {
+        initDubaiMasterSummaryModule(container);
     } else {
         currentView = 'hub';
         initNothiBookHub(container);
@@ -74,9 +84,18 @@ function mountNothiView(view, container) {
 
 export async function renderDubaiProcurement(container, params = {}) {
     if (!container) return;
+    if (!canViewNothiBook()) {
+        cleanupAllNothiViews();
+        container.innerHTML = `<div class="m3-card text-center font-bn py-12"><h2 class="text-xl font-bold text-red-500">অ্যাক্সেস ডিনাইড! আপনার নথি বুক দেখার অনুমতি নেই।</h2></div>`;
+        return;
+    }
     currentRootContainer = container;
 
     window.switchDubaiProcurementView = (view) => {
+        if (!canViewNothiBook()) {
+            showToast('আপনার নথি বুক দেখার অনুমতি নেই!', 'error', 'অনুমতি নেই');
+            return;
+        }
         hideGlobalAmountTooltip();
         mountNothiView(view || 'hub', currentRootContainer);
     };
@@ -85,6 +104,9 @@ export async function renderDubaiProcurement(container, params = {}) {
 }
 
 function renderDubaiAuditView(container) {
+    currentAuditId = null;
+    hasAutoLoadedDb = false;
+    activeAuditListenersConsId = null;
     container.innerHTML = getDubaiAuditMainTemplate();
 
     DubaiMemoModal.init((total, memoRangeText) => {
@@ -99,8 +121,7 @@ function renderDubaiAuditView(container) {
         if (mStart) document.getElementById('memo-range-start').value = mStart;
         if (mEnd) document.getElementById('memo-range-end').value = mEnd;
         window.handleMemoRangeChange();
-
-        updateLiveWaterfall();
+        window.handleRunningChange('purchase');
     });
 
     setupActionButtons();
@@ -122,7 +143,16 @@ function renderAuditBannerSlot() {
         showSelector: true,
         onConsignmentChange: (selectedId) => {
             auditActiveConsignment = auditConsignments.find(c => c.id === selectedId) || auditActiveConsignment;
+            currentAuditId = null;
+            hasAutoLoadedDb = false;
+            clearNewWeekFields();
+            ['dubai-prev-rem-input', 'dubai-prev-pur-input', 'dubai-prev-exp-input', 'memo-range-start', 'memo-range-end', 'desc-memos'].forEach(id => setInp(id, ''));
+            dynamicHoldings = [{ desc: 'আলতাফ জাবেদ', amount: 0, op: '-' }];
+            DubaiMemoModal.setMemos([]);
+            renderDynamicHoldings();
+            updateLiveWaterfall();
             renderAuditBannerSlot();
+            listenToHistory();
         }
     });
 }
@@ -144,14 +174,65 @@ function listenAuditConsignments() {
             }
         }
         renderAuditBannerSlot();
+        const consId = auditActiveConsignment?.id || 'CONSIGNMENT-01';
+        if (consId !== activeAuditListenersConsId) {
+            listenToHistory();
+        }
     });
 }
 
 function setupActionButtons() {
     const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-    [['save', onSaveAuditClick], ['print', onPrintAuditClick], ['new', onNewAuditClick], ['roll-forward', onRollForwardClick]].forEach(([k, fn]) => {
+    [
+        ['save', onSaveAuditClick],
+        ['print', onPrintAuditClick],
+        ['new', onNewAuditClick],
+        ['roll-forward', () => onRollForwardClick(false)]
+    ].forEach(([k, fn]) => {
         bindClick(`btn-dubai-${k}`, fn);
         bindClick(`btn-dubai-${k}-bottom`, fn);
+    });
+
+    bindClick('btn-dubai-export-excel', () => {
+        const rows = auditHistory.map((a, idx) => {
+            const vm = computeAuditVarianceMetrics(a);
+            let custSum = 0;
+            if (Array.isArray(a.personalHoldings)) {
+                a.personalHoldings.forEach(h => {
+                    const amt = safeRound(parseAmount(h.amount));
+                    custSum = safeRound(h.op === '+' ? custSum - amt : custSum + amt);
+                });
+            }
+            return [
+                idx + 1,
+                formatAppDate(a.weekEndDate),
+                a.containerNo || '',
+                safeRound(a.cumulativeRemittance || 0),
+                safeRound(a.cumulativePurchaseTotal || 0),
+                safeRound(a.cumulativeExpenseTotal || 0),
+                vm.theoreticalCash,
+                safeRound(a.marketAdvance || 0),
+                safeRound(a.cashInHand || 0),
+                safeRound(a.messBalance || 0),
+                custSum,
+                vm.totalPhysical,
+                vm.variance,
+                vm.statusLabel
+            ];
+        });
+        const consTag = auditActiveConsignment?.id || 'CONSIGNMENT-01';
+        exportNothiRowsToExcel({
+            sheetName: 'Dubai_Weekly_Audit_0005',
+            headers: [
+                'নং', 'তারিখ', 'কনটেইনার আইডি', 'মোট টাকা পাঠানো (AED)',
+                'মোট ক্রয় (AED)', 'মোট খরচ (AED)', 'থিওরিটিক্যাল ক্যাশ (AED)',
+                'মার্কেট AD (AED)', 'নগদ ক্যাশ (AED)', 'মেছ ফান্ড (AED)',
+                'কাস্টডিয়ান হিসাব (AED)', 'মোট বাস্তব সম্পদ (AED)',
+                'পার্থক্য / ভ্যারিয়েন্স (+/- AED)', 'অডিট স্ট্যাটাস'
+            ],
+            rows,
+            filename: `Nothi_0005_Dubai_Audit_${consTag}.xlsx`
+        });
     });
 
     bindClick('btn-add-waterfall-holding', () => {
@@ -225,9 +306,13 @@ export function updateLiveWaterfall() {
     const prevRem = getVal('dubai-prev-rem-input'), prevPur = getVal('dubai-prev-pur-input'), prevExp = getVal('dubai-prev-exp-input');
     const cumSent = getVal('input-cum-sent'), cumPur = getVal('input-cum-purchase'), cumExp = getVal('input-cum-expense');
     const runSent = getVal('input-running-sent'), runPur = getVal('input-running-purchase'), runExp = getVal('input-running-expense');
-    const mAd = getVal('val-market-ad'), cHand = getVal('val-cash-in-hand');
+    const mAd = getVal('val-market-ad'), cHand = getVal('val-cash-in-hand'), messBal = getVal('val-mess-balance');
 
-    const hasNewEntries = (cumSent > 0 || runSent > 0 || cumPur > 0 || runPur > 0 || cumExp > 0 || runExp > 0 || mAd > 0 || cHand > 0);
+    const hasNewEntries = (
+        cumSent > 0 || runSent > 0 || cumPur > 0 || runPur > 0 ||
+        cumExp > 0 || runExp > 0 || mAd > 0 || cHand > 0 || messBal > 0 ||
+        dynamicHoldings.some(h => parseAmount(h.amount) > 0)
+    );
 
     const effSent = cumSent > 0 ? cumSent : (runSent > 0 ? safeRound(prevRem + runSent) : prevRem);
     const effPur = cumPur > 0 ? cumPur : (runPur > 0 ? safeRound(prevPur + runPur) : prevPur);
@@ -237,18 +322,22 @@ export function updateLiveWaterfall() {
     const sub2 = safeRound(sub1 - effExp);
     const sub2_5 = safeRound(sub2 - mAd);
     const sub3 = safeRound(sub2_5 - cHand);
+    const subMess = safeRound(sub3 - messBal);
 
-    let runningBal = sub3;
-    dynamicHoldings.forEach((h, idx) => {
+    let holdingsNetSubtracted = 0;
+    dynamicHoldings.forEach(h => {
         const amt = safeRound(parseAmount(h.amount));
-        const isPlus = h.op === '+';
-        runningBal = safeRound(isPlus ? runningBal + amt : runningBal - amt);
+        holdingsNetSubtracted = safeRound(h.op === '+' ? holdingsNetSubtracted - amt : holdingsNetSubtracted + amt);
     });
-    const finalVariance = runningBal;
+    const totalPhysical = safeRound(mAd + cHand + messBal + holdingsNetSubtracted);
+    const vm = computeAuditVarianceMetrics({
+        calculatedCashBalance: sub2,
+        totalPhysicalAssets: totalPhysical
+    });
 
-    const setTxt = (id, val) => { 
-        const el = document.getElementById(id); 
-        if (el) el.textContent = val !== 0 ? formatAmountWithComma(val) : '0'; 
+    const setTxt = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val !== 0 ? formatAmountWithComma(val) : '0';
     };
 
     const badgeEl = document.getElementById('final-variance-badge');
@@ -256,10 +345,10 @@ export function updateLiveWaterfall() {
     const valFinalEl = document.getElementById('val-final-variance');
 
     if (!hasNewEntries) {
-        ['subtotal-1', 'subtotal-2', 'subtotal-ad', 'subtotal-3', 'val-final-variance'].forEach(id => setTxt(id, 0));
+        ['subtotal-1', 'subtotal-2', 'subtotal-ad', 'subtotal-3', 'subtotal-mess', 'val-final-variance'].forEach(id => setTxt(id, 0));
         dynamicHoldings.forEach((_, idx) => setTxt(`dubai-holding-subtotal-${idx}`, 0));
         if (badgeEl) {
-            badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700';
+            badgeEl.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-slate-800 text-slate-400 border border-slate-700';
             badgeEl.textContent = 'হিসাবের অপেক্ষায়';
         }
         if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(হিসাবের অপেক্ষায়)';
@@ -269,8 +358,9 @@ export function updateLiveWaterfall() {
         setTxt('subtotal-2', sub2);
         setTxt('subtotal-ad', sub2_5);
         setTxt('subtotal-3', sub3);
+        setTxt('subtotal-mess', subMess);
 
-        let stepBal = sub3;
+        let stepBal = subMess;
         dynamicHoldings.forEach((h, idx) => {
             const amt = safeRound(parseAmount(h.amount));
             const isPlus = h.op === '+';
@@ -286,15 +376,26 @@ export function updateLiveWaterfall() {
             }
         });
 
-        setTxt('val-final-variance', finalVariance);
-
-        const isSurplus = finalVariance >= 0;
-        if (badgeEl) {
-            badgeEl.className = `px-2.5 py-0.5 rounded-full text-xs font-black ${isSurplus ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-red-500/20 text-red-400 border border-red-500/40'}`;
-            badgeEl.textContent = isSurplus ? 'ক্যাশ বাড়তি' : 'ক্যাশ ঘাটতি';
+        const isDeficit = vm.statusKind === 'deficit';
+        const isBalanced = vm.statusKind === 'balanced';
+        if (valFinalEl) {
+            valFinalEl.textContent = vm.variance > 0
+                ? `+${formatAmountWithComma(vm.variance)}`
+                : (vm.variance < 0 ? formatAmountWithComma(vm.variance) : '0');
+            valFinalEl.className = `${isDeficit ? 'text-red-400' : 'text-emerald-400'} font-black`;
         }
-        if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = isSurplus ? '(ক্যাশ বাড়তি)' : '(ক্যাশ ঘাটতি)';
-        if (valFinalEl) valFinalEl.className = `${isSurplus ? 'text-emerald-400' : 'text-red-400'} font-bold`;
+
+        if (badgeEl) {
+            badgeEl.className = `px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black ${
+                isDeficit
+                    ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                    : (isBalanced ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40')
+            }`;
+            badgeEl.textContent = isBalanced ? 'সম্পূর্ণ মিল' : (isDeficit ? 'ক্যাশ ঘাটতি' : 'ক্যাশ বাড়তি');
+        }
+        if (statusDescEl && !statusDescEl.dataset.custom) {
+            statusDescEl.value = vm.statusLabel;
+        }
     }
 
     const dateVal = getTxt('dubai-week-date');
@@ -434,9 +535,10 @@ window.toggleDubaiHoldingOp = function(idx) {
 function clearNewWeekFields() {
     ['input-cum-sent', 'input-cum-purchase', 'input-cum-expense',
      'input-running-sent', 'input-running-purchase', 'input-running-expense',
-     'val-market-ad', 'val-cash-in-hand'].forEach(id => setInp(id, ''));
+     'val-market-ad', 'val-cash-in-hand', 'val-mess-balance'].forEach(id => setInp(id, ''));
     setInp('desc-ad', 'মার্কেট এডভান্স (AD)');
     setInp('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)');
+    setInp('desc-mess', 'মেছ ফান্ড / মেস ব্যালেন্স (Mess Fund)');
 }
 
 function renderDynamicHoldings() {
@@ -476,13 +578,14 @@ window.removeDubaiHoldingRow = async function(idx) {
 async function onRollForwardClick(silent = false) {
     const curDateVal = getTxt('dubai-week-date');
     const targetDbDate = curDateVal ? toDBDate(curDateVal) : null;
+    const consId = auditActiveConsignment?.id || 'CONSIGNMENT-01';
 
     let latest = null;
     if (targetDbDate && auditHistory.length > 0) {
         latest = auditHistory.find(a => toDBDate(a.weekEndDate) < targetDbDate);
     }
     if (!latest) {
-        latest = await DubaiActions.rollForward(targetDbDate);
+        latest = await DubaiActions.rollForward(targetDbDate, consId);
     }
     if (!latest) return;
     currentAuditId = null;
@@ -565,31 +668,31 @@ function buildCurrentAuditObject() {
 
     const marketAd = getVal('val-market-ad');
     const cashInHand = getVal('val-cash-in-hand');
+    const messBal = getVal('val-mess-balance');
 
-    let holdingsEffect = 0;
+    let holdingsNetSubtracted = 0;
     dynamicHoldings.forEach(h => {
         const amt = safeRound(parseAmount(h.amount));
-        if (h.op === '+') {
-            holdingsEffect = safeRound(holdingsEffect + amt);
-        } else {
-            holdingsEffect = safeRound(holdingsEffect - amt);
-        }
+        holdingsNetSubtracted = safeRound(h.op === '+' ? holdingsNetSubtracted - amt : holdingsNetSubtracted + amt);
     });
 
     const theoreticalCash = safeRound(cumSent - cumPur - cumExp);
-    const sub3 = safeRound(theoreticalCash - marketAd - cashInHand);
-    const finalVariance = safeRound(sub3 + holdingsEffect);
-    const totalPhysical = safeRound(theoreticalCash - finalVariance);
+    const totalPhysical = safeRound(marketAd + cashInHand + messBal + holdingsNetSubtracted);
+    const vm = computeAuditVarianceMetrics({
+        calculatedCashBalance: theoreticalCash,
+        totalPhysicalAssets: totalPhysical
+    });
 
     const mStart = getTxt('memo-range-start');
     const mEnd = getTxt('memo-range-end');
     const mStartNum = parseInt(mStart, 10);
     const mEndNum = parseInt(mEnd, 10);
-    const memoCount = (!isNaN(mStartNum) && !isNaN(mEndNum) && mEndNum >= mStartNum) 
-        ? (mEndNum - mStartNum + 1) 
+    const memoCount = (!isNaN(mStartNum) && !isNaN(mEndNum) && mEndNum >= mStartNum)
+        ? (mEndNum - mStartNum + 1)
         : (!isNaN(mStartNum) ? 1 : 0);
 
     return {
+        consignmentId: auditActiveConsignment?.id || 'CONSIGNMENT-01',
         containerNo: getTxt('dubai-container-no', 'CT-2026-DXB-01'),
         weekEndDate: toDBDate(getTxt('dubai-week-date', getTodayLocalDateString())),
         note: getTxt('dubai-audit-note'),
@@ -597,35 +700,36 @@ function buildCurrentAuditObject() {
             sent: getTxt('desc-sent', 'বৃহস্পতিবার পর্যন্ত টাকা পাঠানো'), purchase: getTxt('desc-purchase', 'সর্বমোট মাল ক্রয়'),
             memos: getTxt('desc-memos'), expense: getTxt('desc-expense', 'সর্বমোট খরচ'),
             ad: getTxt('desc-ad', 'মার্কেট এডভান্স (AD)'), cash: getTxt('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)'),
-            status: getTxt('desc-final-status', '(ক্যাশ বাড়তি)')
+            mess: getTxt('desc-mess', 'মেছ ফান্ড / মেস ব্যালেন্স (Mess Fund)'),
+            status: getTxt('desc-final-status', vm.statusLabel)
         },
         memoRangeStart: mStart, memoRangeEnd: mEnd, memoCount,
         prevRemittance: prevRem, weeklyRemittanceTotal: runningSent, cumulativeRemittance: cumSent,
         prevPurchaseTotal: prevPur, weeklyPurchaseTotal: runningPur, cumulativePurchaseTotal: cumPur,
         prevExpenseTotal: prevExp, weeklyExpenseTotal: runningExp, cumulativeExpenseTotal: cumExp,
-        marketAdvance: marketAd, cashInHand: cashInHand, personalHoldings: dynamicHoldings.map(h => ({
+        marketAdvance: marketAd, cashInHand: cashInHand, messBalance: messBal,
+        personalHoldings: dynamicHoldings.map(h => ({
             desc: h.desc || h.name || '',
             name: h.name || h.desc || '',
             amount: safeRound(parseAmount(h.amount)),
             op: h.op === '+' ? '+' : '-'
         })),
         totalPhysicalAssets: totalPhysical, calculatedCashBalance: theoreticalCash,
-        varianceAmount: finalVariance, status: 'CLOSED'
+        varianceAmount: vm.variance, status: 'CLOSED'
     };
 }
 
 async function onNewAuditClick() {
     const hasUnsaved = (getVal('input-cum-sent') > 0 || getVal('input-running-sent') > 0 || getVal('input-cum-purchase') > 0 || getVal('input-running-purchase') > 0);
     if (hasUnsaved && !currentAuditId) {
-        const res = await Swal.fire({
+        const confirmed = await confirmNothiAction({
             title: 'নতুন ব্ল্যাঙ্ক অডিট?',
             text: 'চলতি অডিটের ডাটা মুছে নতুন ফাঁকা ফরম তৈরি হবে। আপনি কি নিশ্চিত?',
-            icon: 'warning',
-            showCancelButton: true,
             confirmButtonText: 'হ্যাঁ, নতুন ফরম',
-            cancelButtonText: 'না, বাতিল'
+            cancelButtonText: 'না, বাতিল',
+            confirmButtonColor: '#0284c7'
         });
-        if (!res.isConfirmed) return;
+        if (!confirmed) return;
     }
     currentAuditId = null;
     const todayStr = getTodayLocalDateString();
@@ -646,8 +750,9 @@ async function onNewAuditClick() {
     showToast('নতুন সপ্তাহের অডিট প্রস্তুত (পূর্ববর্তী ব্যালেন্স রোল-ফরওয়ার্ড সহ)', 'info');
 }
 
-let hasAutoLoadedDb = false;
 function listenToHistory() {
+    const consId = auditActiveConsignment?.id || 'CONSIGNMENT-01';
+    activeAuditListenersConsId = consId;
     DubaiActions.listenAudits(audits => {
         auditHistory = audits;
         renderDubaiHistoryTable('dubai-history-tbody', auditHistory);
@@ -655,7 +760,7 @@ function listenToHistory() {
             hasAutoLoadedDb = true;
             onRollForwardClick(true);
         }
-    });
+    }, consId);
 }
 
 window.loadDubaiAuditHistory = async function(id) {
@@ -672,7 +777,7 @@ window.loadDubaiAuditHistory = async function(id) {
     setInp('dubai-audit-note', audit.note || '');
 
     if (audit.descriptions) {
-        ['sent', 'purchase', 'memos', 'expense', 'ad', 'cash', 'status'].forEach(k => {
+        ['sent', 'purchase', 'memos', 'expense', 'ad', 'cash', 'mess', 'status'].forEach(k => {
             if (audit.descriptions[k]) setInp(`desc-${k}`, audit.descriptions[k]);
         });
         if (window.handleAssetDescChange) {
@@ -682,6 +787,7 @@ window.loadDubaiAuditHistory = async function(id) {
     } else {
         setInp('desc-ad', 'মার্কেট এডভান্স (AD)');
         setInp('desc-cash', 'নগদ ক্যাশ আছে (Cash in Hand)');
+        setInp('desc-mess', 'মেছ ফান্ড / মেস ব্যালেন্স (Mess Fund)');
     }
 
     setInp('memo-range-start', audit.memoRangeStart || '');
@@ -691,10 +797,10 @@ window.loadDubaiAuditHistory = async function(id) {
     [['dubai-prev-rem-input', audit.prevRemittance], ['dubai-prev-pur-input', audit.prevPurchaseTotal], ['dubai-prev-exp-input', audit.prevExpenseTotal],
      ['input-cum-sent', audit.cumulativeRemittance], ['input-cum-purchase', audit.cumulativePurchaseTotal], ['input-cum-expense', audit.cumulativeExpenseTotal],
      ['input-running-sent', audit.weeklyRemittanceTotal], ['input-running-purchase', audit.weeklyPurchaseTotal], ['input-running-expense', audit.weeklyExpenseTotal],
-     ['val-market-ad', audit.marketAdvance], ['val-cash-in-hand', audit.cashInHand]
+     ['val-market-ad', audit.marketAdvance], ['val-cash-in-hand', audit.cashInHand], ['val-mess-balance', audit.messBalance]
     ].forEach(([id, val]) => setInp(id, formatAmountWithComma(val || 0)));
 
-    dynamicHoldings = Array.isArray(audit.personalHoldings) && audit.personalHoldings.length > 0 
+    dynamicHoldings = Array.isArray(audit.personalHoldings) && audit.personalHoldings.length > 0
         ? audit.personalHoldings.map(h => ({
             desc: h.desc || h.name || '',
             name: h.name || h.desc || '',
@@ -713,22 +819,24 @@ window.loadDubaiAuditHistory = async function(id) {
 window.printDubaiAuditHistory = async function(id) {
     const data = await DubaiActions.loadAudit(id);
     if (!data) return;
-    printDubaiAuditSheet(data.audit, data.memos || [], [], []);
+    const matchedCons = auditConsignments.find(c => c.id === (data.audit.consignmentId || 'CONSIGNMENT-01')) || auditActiveConsignment;
+    printDubaiAuditSheet(data.audit, data.memos || [], [], [], matchedCons);
 };
 
 window.deleteDubaiAuditHistory = async function(id) {
-    const deleted = await DubaiActions.deleteAudit(id);
+    const snapshot = auditHistory.find(a => a.id === id) || null;
+    const deleted = await DubaiActions.deleteAudit(id, snapshot);
     if (deleted && currentAuditId === id) onNewAuditClick();
 };
 
 window.focusNextDubaiTableInput = function(currentId) {
-    const seq = ['input-running-sent', 'input-running-purchase', 'input-running-expense', 'val-market-ad', 'val-cash-in-hand'];
+    const seq = ['input-running-sent', 'input-running-purchase', 'input-running-expense', 'val-market-ad', 'val-cash-in-hand', 'val-mess-balance'];
     const idx = seq.indexOf(currentId);
     if (idx !== -1 && idx < seq.length - 1) {
         const nextEl = document.getElementById(seq[idx + 1]);
         if (nextEl) { nextEl.focus(); if (nextEl.select) nextEl.select(); return; }
     }
-    if (currentId === 'val-cash-in-hand') {
+    if (currentId === 'val-mess-balance') {
         const firstHold = document.getElementById('dubai-holding-amt-0') || document.querySelector('#dubai-dynamic-holdings-container input[type="text"]:not([readonly])');
         if (firstHold) { firstHold.focus(); if (firstHold.select) firstHold.select(); return; }
         document.getElementById('btn-dubai-save')?.focus();
@@ -746,9 +854,10 @@ window.focusNextHoldingInput = function(idx) {
 };
 
 window.syncRemittanceToDubaiAudit = async function() {
-    ensureOnline();
+    if (!ensureOnline('রেমিট্যান্স বুক সিঙ্ক')) return;
     const curDateVal = getTxt('dubai-week-date');
     const targetDbDate = curDateVal ? toDBDate(curDateVal) : toDBDate(getTodayLocalDateString());
+    const consId = auditActiveConsignment?.id || 'CONSIGNMENT-01';
 
     let prevAuditDate = null;
     if (auditHistory.length > 0) {
@@ -759,7 +868,7 @@ window.syncRemittanceToDubaiAudit = async function() {
     }
 
     try {
-        const items = await DubaiRemittanceDAO.getRemittancesByDateRange(prevAuditDate, targetDbDate);
+        const items = await DubaiRemittanceDAO.getRemittancesByDateRange(prevAuditDate, targetDbDate, consId);
         if (!items || items.length === 0) {
             showToast('এই অডিট সময়কালের জন্য রেমিট্যান্স বুকে কোনো নতুন লেনদেন পাওয়া যায়নি', 'info');
             return;
@@ -767,7 +876,7 @@ window.syncRemittanceToDubaiAudit = async function() {
 
         const totalAed = items.reduce((sum, item) => safeRound(sum + parseAmount(item.aedAmount || 0)), 0);
         setInp('input-running-sent', formatAmountWithComma(totalAed));
-        updateLiveWaterfall();
+        window.handleRunningChange('sent');
 
         showToast(`রেমিট্যান্স বুক থেকে ${items.length} টি কিস্তির মোট ${formatAmountWithComma(totalAed)} AED সফলভাবে সিঙ্ক হয়েছে`, 'success');
     } catch (e) {

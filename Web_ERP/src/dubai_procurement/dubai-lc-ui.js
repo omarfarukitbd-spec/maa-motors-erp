@@ -1,21 +1,22 @@
 /**
  * Dubai Procurement - Container L/C Margin & Bank Expense UI Controller
- * Manages the Container-Based Multi-Date Sub-Ledger for Page 0003, Delivery Date tracking, and 4-Tier CapEx.
+ * Manages the Container-Based Multi-Date Sub-Ledger for Page 0003 and Delivery Date tracking.
  */
 // ALLOW_LARGE_FILE (Corporate Container L/C Sub-Ledger UI Controller)
 
-import Swal from 'sweetalert2';
 import { DubaiLCDAO } from './dubai-lc-dao.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { DubaiPortDutyDAO } from './dubai-port-duty-dao.js';
-import { DubaiBDExpenseDAO } from './dubai-bd-expense-dao.js';
-import { calculateLCSummary, calculateContainerLCTotals, calculateMaster4TierCapEx, isContainerClosed } from './dubai-lc-calc.js';
-import { calculateConsignmentSummary } from './dubai-remittance-calc.js';
-import { calculatePortDutySummary } from './dubai-port-duty-calc.js';
-import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
+import { calculateLCSummary, calculateContainerLCTotals, isContainerClosed } from './dubai-lc-calc.js';
+import { parseContainerNumericNo } from './dubai-capex-calc.js';
 import { printDubaiLCBook } from './dubai-lc-print.js';
 import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
 import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
+import {
+    exportNothiRowsToExcel,
+    confirmNothiAction,
+    renderNothiMasterLinkPill
+} from './dubai-nothi-helpers.js';
 import {
     openDeliveryDateModal,
     openAddPaymentLineModal,
@@ -26,6 +27,7 @@ import {
 import {
     formatAmountWithComma,
     parseAmount,
+    safeRound,
     getTodayLocalDateString,
     formatAppDate,
     escapeHTML,
@@ -37,16 +39,10 @@ import {
 let activeConsignment = null;
 let consignmentsList = [];
 let lcBillsList = [];
-let dubaiRemittancesList = [];
-let portDutyBillsList = [];
-let bdExpensesList = [];
 let activeListenersConsId = null;
 
 let unsubscribeLC = null;
 let unsubscribeConsignments = null;
-let unsubscribeRemittances = null;
-let unsubscribePortDuty = null;
-let unsubscribeBDExpenses = null;
 
 export function initDubaiLCModule(container) {
     if (!container) return;
@@ -70,18 +66,6 @@ export function cleanupDubaiLC() {
     if (unsubscribeConsignments) {
         unsubscribeConsignments();
         unsubscribeConsignments = null;
-    }
-    if (unsubscribeRemittances) {
-        unsubscribeRemittances();
-        unsubscribeRemittances = null;
-    }
-    if (unsubscribePortDuty) {
-        unsubscribePortDuty();
-        unsubscribePortDuty = null;
-    }
-    if (unsubscribeBDExpenses) {
-        unsubscribeBDExpenses();
-        unsubscribeBDExpenses = null;
     }
 }
 
@@ -110,12 +94,12 @@ function setupLCListeners() {
 
 function listenToActiveConsignmentData() {
     if (unsubscribeLC) { unsubscribeLC(); unsubscribeLC = null; }
-    if (unsubscribeRemittances) { unsubscribeRemittances(); unsubscribeRemittances = null; }
-    if (unsubscribePortDuty) { unsubscribePortDuty(); unsubscribePortDuty = null; }
-    if (unsubscribeBDExpenses) { unsubscribeBDExpenses(); unsubscribeBDExpenses = null; }
 
     const consId = activeConsignment?.id || 'CONSIGNMENT-01';
     activeListenersConsId = consId;
+    lcBillsList = [];
+    renderLCContainersList();
+    updateLCKpis();
 
     unsubscribeLC = DubaiLCDAO.listenLCBills(consId, items => {
         lcBillsList = items;
@@ -123,39 +107,32 @@ function listenToActiveConsignmentData() {
         renderLCContainersList();
         updateLCKpis();
     });
-
-    unsubscribeRemittances = DubaiRemittanceDAO.listenRemittances(consId, items => {
-        dubaiRemittancesList = items;
-        updateLCKpis();
-    });
-
-    unsubscribePortDuty = DubaiPortDutyDAO.listenPortDutyBills(consId, items => {
-        portDutyBillsList = items;
-        updateLCKpis();
-    });
-
-    unsubscribeBDExpenses = DubaiBDExpenseDAO.listenBDExpenses(consId, items => {
-        bdExpensesList = items;
-        updateLCKpis();
-    });
 }
 
-function suggestNextContainerNumber() {
+function suggestNextContainerNumber(forceReset = false) {
     const input = document.getElementById('lc-input-cont-no');
-    if (!input || input.value) return;
+    if (!input) return;
+    if (!forceReset && input.value && input.value !== input.dataset.autoValue) return;
     let maxNo = 0;
     for (const c of lcBillsList) {
-        const num = Number(c.containerNo || 0);
+        const num = parseContainerNumericNo(c.containerNo) || 0;
         if (num > maxNo) maxNo = num;
     }
-    input.value = String(maxNo + 1);
+    const nextVal = String(maxNo + 1);
+    input.value = nextVal;
+    input.dataset.autoValue = nextVal;
 }
 
 function renderLCView(container) {
     const actionButtonsHtml = `
-        <button type="button" id="btn-lc-bulk-sync" class="px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="কোন কন্টেইনারগুলো শেষ ও কোনগুলো চলমান তা এক ক্লিকে সেট করুন">
+        ${renderNothiMasterLinkPill('এলসি ও ব্যাংক খরচ')}
+        <button type="button" id="btn-lc-bulk-sync" data-perm="manageNothiEntries" class="px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="কোন কন্টেইনারগুলো শেষ ও কোনগুলো চলমান তা এক ক্লিকে সেট করুন">
             <i class="fa-solid fa-list-check text-emerald-400 text-xs"></i>
             <span>ক্লোজিং ও সিঙ্ক</span>
+        </button>
+        <button type="button" id="btn-export-lc-excel" class="px-3.5 py-2 bg-teal-600/20 hover:bg-teal-600/35 text-teal-300 border border-teal-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="Excel (.xlsx) ডাউনলোড">
+            <i class="fa-solid fa-file-excel text-teal-400 text-xs"></i>
+            <span>Excel</span>
         </button>
         <button type="button" id="btn-print-lc-book" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i class="fa-solid fa-print text-slate-400 text-xs"></i>
@@ -185,13 +162,8 @@ function renderLCView(container) {
                 <!-- Dynamically updated -->
             </div>
 
-            <!-- 4-Tier Consolidated Master CapEx Banner -->
-            <div id="lc-consolidated-capex-container" class="bg-gradient-to-r from-slate-900 via-cyan-950/30 to-slate-900 border border-cyan-500/30 rounded-2xl p-4 shadow-xl">
-                <!-- Dynamically updated -->
-            </div>
-
             <!-- Quick Open New Container L/C Dock -->
-            <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+            <div data-perm="manageNothiEntries" class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <div class="text-xs font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-circle-plus text-emerald-400 text-sm"></i>
@@ -286,15 +258,79 @@ function renderLCView(container) {
 function bindLCEvents() {
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
 
-    bind('btn-lc-bulk-sync', () => {
-        openBulkCloseContainersModal(lcBillsList, portDutyBillsList);
+    bind('btn-lc-bulk-sync', async () => {
+        const consId = activeConsignment?.id || 'CONSIGNMENT-01';
+        let portItems = [];
+        try {
+            portItems = await new Promise((resolve) => {
+                let unsub = null;
+                let settled = false;
+                unsub = DubaiPortDutyDAO.listenPortDutyBills(consId, items => {
+                    if (settled) return;
+                    settled = true;
+                    resolve(Array.isArray(items) ? items : []);
+                    setTimeout(() => { if (typeof unsub === 'function') unsub(); }, 0);
+                });
+                setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
+                    if (typeof unsub === 'function') unsub();
+                    resolve([]);
+                }, 2500);
+            });
+        } catch (err) {
+            console.error('Port bills sync lookup error:', err);
+        }
+        openBulkCloseContainersModal(lcBillsList, portItems);
+    });
+
+    bind('btn-export-lc-excel', () => {
+        const rows = [];
+        lcBillsList.forEach(c => {
+            const payments = Array.isArray(c.payments) ? c.payments : [];
+            const statusText = isContainerClosed(c) ? 'সমাপ্ত (শেষ)' : 'চলমান (বাকি)';
+            const delDate = c.deliveryDate ? formatAppDate(c.deliveryDate) : '—';
+            if (payments.length === 0) {
+                rows.push([
+                    `#${c.containerNo || c.orderIndex || ''}`,
+                    c.lcNo || '',
+                    c.company || '',
+                    statusText,
+                    delDate,
+                    '—',
+                    '—',
+                    safeRound(c.totalUSD || 0),
+                    safeRound(c.totalBDT || 0),
+                    c.notes || ''
+                ]);
+                return;
+            }
+            payments.forEach(p => {
+                rows.push([
+                    `#${c.containerNo || c.orderIndex || ''}`,
+                    c.lcNo || '',
+                    c.company || '',
+                    statusText,
+                    delDate,
+                    formatAppDate(p.date),
+                    p.description || 'এলসি পেমেন্ট',
+                    safeRound(p.amountUSD || 0),
+                    safeRound(p.amountBDT || 0),
+                    c.notes || ''
+                ]);
+            });
+        });
+        const consTag = activeConsignment?.id || 'CONSIGNMENT-01';
+        exportNothiRowsToExcel({
+            sheetName: 'LC_Bills_0003',
+            headers: ['কন্টেইনার নং', 'এলসি নং', 'কোম্পানি / বেনিফিশিয়ারি', 'অবস্থা', 'ডেলিভারি তারিখ', 'খরচের তারিখ', 'খরচের বিবরণ', 'ডলার (USD)', 'টাকা (BDT)', 'নোট'],
+            rows,
+            filename: `Nothi_0003_LC_Bills_${consTag}.xlsx`
+        });
     });
 
     bind('btn-print-lc-book', () => {
-        const dubaiSummary = calculateConsignmentSummary(activeConsignment, dubaiRemittancesList);
-        const portSummary = calculatePortDutySummary(activeConsignment, portDutyBillsList);
-        const bdSummary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
-        printDubaiLCBook(activeConsignment, lcBillsList, dubaiSummary, portSummary, bdSummary);
+        printDubaiLCBook(activeConsignment, lcBillsList);
     });
 
     const form = document.getElementById('form-new-container-lc');
@@ -344,23 +380,18 @@ function bindLCEvents() {
             showToast('এই কন্টেইনারটি "শেষ (Closed)" অবস্থায় লক করা আছে — মুছতে আগে পুনরায় চালু করুন', 'error');
             return;
         }
+        if (!ensureOnline('এলসি পেমেন্ট লাইন মুছে ফেলা')) return;
         const pinOk = await promptSecurityPin('এলসি পেমেন্ট লাইন মুছতে সিকিউরিটি পিন দিন');
         if (!pinOk) return;
-        if (!ensureOnline()) return;
 
-        const conf = await Swal.fire({
+        const confirmed = await confirmNothiAction({
             title: 'পেমেন্ট লাইন মুছবেন?',
             text: 'এই নির্দিষ্ট তারিখের খরচটি মুছে দিলে কন্টেইনারের মোট হিসাব কমে যাবে।',
-            icon: 'warning',
-            background: '#0f172a',
-            color: '#f8fafc',
-            showCancelButton: true,
             confirmButtonText: 'হ্যাঁ, মুছে ফেলুন',
-            cancelButtonText: 'না',
             confirmButtonColor: '#dc2626'
         });
 
-        if (conf.isConfirmed) {
+        if (confirmed) {
             try {
                 await DubaiLCDAO.deletePaymentLine(containerId, paymentId);
                 showToast('পেমেন্ট লাইন মুছে ফেলা হয়েছে', 'success');
@@ -372,26 +403,26 @@ function bindLCEvents() {
     };
 
     window.deleteLCContainerAction = async (containerId) => {
-        const pinOk = await promptSecurityPin('সম্পূর্ণ কন্টেইনার এলসি রেকর্ড মুছতে পিন দিন');
+        const obj = lcBillsList.find(c => c.id === containerId);
+        if (obj && isContainerClosed(obj)) {
+            showToast('এই কন্টেইনারটি "শেষ (Closed)" অবস্থায় লক করা আছে — মুছতে আগে পুনরায় চালু করুন', 'error');
+            return;
+        }
+        if (!ensureOnline('কন্টেইনার এলসি মুছে ফেলা')) return;
+        const pinOk = await promptSecurityPin('সম্পূর্ণ কন্টেইনার এলসি রেকর্ড মুছতে সিকিউরিটি পিন দিন');
         if (!pinOk) return;
-        if (!ensureOnline()) return;
 
-        const conf = await Swal.fire({
+        const confirmed = await confirmNothiAction({
             title: 'কন্টেইনার এলসি মুছবেন?',
-            text: 'সম্পূর্ণ কন্টেইনারটি ও এর সব তারিখের পেমেন্ট মুছে যাবে!',
-            icon: 'warning',
-            background: '#0f172a',
-            color: '#f8fafc',
-            showCancelButton: true,
+            text: 'সম্পূর্ণ কন্টেইনারটি রিসাইকেল বিনে সরানো হবে এবং এর সব পেমেন্ট বর্তমান তালিকা থেকে মুছে যাবে।',
             confirmButtonText: 'হ্যাঁ, মুছুন',
-            cancelButtonText: 'বাতিল',
             confirmButtonColor: '#dc2626'
         });
 
-        if (conf.isConfirmed) {
+        if (confirmed) {
             try {
-                await DubaiLCDAO.deleteContainerLC(containerId);
-                showToast('কন্টেইনার এলসি মুছে ফেলা হয়েছে', 'success');
+                await DubaiLCDAO.deleteContainerLC(containerId, obj || null);
+                showToast('কন্টেইনার এলসি রিসাইকেল বিনে সরানো হয়েছে', 'success');
             } catch (e) {
                 console.error('Delete container LC error:', e);
                 showToast('মুছতে সমস্যা হয়েছে!', 'error');
@@ -418,19 +449,37 @@ function updateConsignmentUI() {
 
 async function onSaveNewContainerLC(e) {
     e.preventDefault();
-    if (!ensureOnline()) return;
+    if (!ensureOnline('নতুন কন্টেইনার এলসি সংরক্ষণ')) return;
 
     const containerNo = Number(document.getElementById('lc-input-cont-no')?.value);
     const date = document.getElementById('lc-input-date')?.value?.trim();
     const lcNo = document.getElementById('lc-input-lcno')?.value?.trim();
     const company = document.getElementById('lc-input-company')?.value?.trim();
     const description = document.getElementById('lc-input-desc')?.value?.trim();
-    const amountUSD = parseAmount(document.getElementById('lc-input-usd')?.value || 0);
-    const amountBDT = parseAmount(document.getElementById('lc-input-bdt')?.value || 0);
+    const amountUSD = safeRound(parseAmount(document.getElementById('lc-input-usd')?.value || 0));
+    const amountBDT = safeRound(parseAmount(document.getElementById('lc-input-bdt')?.value || 0));
 
-    if (!containerNo || !date || !lcNo || !company || (amountBDT <= 0 && amountUSD <= 0)) {
+    if (!containerNo || containerNo <= 0 || !date || !lcNo || !company || (amountBDT <= 0 && amountUSD <= 0)) {
         showToast('অনুগ্রহ করে সকল সঠিক তথ্য, এলসি নং ও টাকার পরিমাণ দিন!', 'error');
         return;
+    }
+
+    const dupContainer = lcBillsList.find(c => (parseContainerNumericNo(c.containerNo) || Number(c.containerNo)) === containerNo);
+    if (dupContainer) {
+        showToast(`#${containerNo} নং কন্টেইনার ইতিমধ্যেই আছে — নতুন কিস্তি যোগ করতে তালিকা থেকে "+ নতুন তারিখের খরচ যোগ" ব্যবহার করুন`, 'error');
+        return;
+    }
+
+    const normLcNo = lcNo.toLowerCase();
+    const dupLc = lcBillsList.find(c => String(c.lcNo || '').trim().toLowerCase() === normLcNo);
+    if (dupLc) {
+        const proceed = await confirmNothiAction({
+            title: 'একই এলসি নং পাওয়া গেছে!',
+            text: `এলসি নং "${lcNo}" ইতিমধ্যেই কন্টেইনার #${dupLc.containerNo}-এ আছে। আপনি কি তবুও নতুন কন্টেইনার হিসেবে খুলতে চান?`,
+            confirmButtonText: 'হ্যাঁ, তবুও খুলুন',
+            confirmButtonColor: '#059669'
+        });
+        if (!proceed) return;
     }
 
     const consId = activeConsignment?.id || 'CONSIGNMENT-01';
@@ -458,7 +507,7 @@ async function onSaveNewContainerLC(e) {
         const wordsEl = document.getElementById('lc-live-words');
         if (wordsEl) wordsEl.textContent = 'শূন্য টাকা মাত্র';
         document.getElementById('lc-input-cont-no').value = '';
-        suggestNextContainerNumber();
+        suggestNextContainerNumber(true);
     } catch (err) {
         console.error('Error creating container L/C:', err);
         showToast('কন্টেইনার এলসি সেভ করতে সমস্যা হয়েছে!', 'error');
@@ -467,20 +516,16 @@ async function onSaveNewContainerLC(e) {
 
 function updateLCKpis() {
     const kpiBox = document.getElementById('lc-kpi-container');
-    const capexBox = document.getElementById('lc-consolidated-capex-container');
-    if (!kpiBox || !capexBox) return;
+    if (!kpiBox) return;
 
     const summary = calculateLCSummary(activeConsignment, lcBillsList);
-    const dubaiSummary = calculateConsignmentSummary(activeConsignment, dubaiRemittancesList);
-    const portSummary = calculatePortDutySummary(activeConsignment, portDutyBillsList);
-    const bdSummary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
-    const capex = calculateMaster4TierCapEx(dubaiSummary, summary, portSummary, bdSummary);
+    const rangeLabel = summary.containerCount > 0 ? `১ হতে ${summary.containerCount} নং` : '০ টি';
 
     kpiBox.innerHTML = `
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-bold text-slate-400">১. মোট কন্টেইনার সংখ্যা</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">১ হতে ${summary.containerCount} নং</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">${rangeLabel}</span>
             </div>
             <div class="text-2xl font-black text-sky-400 font-mono">${summary.containerCount} টি কন্টেইনার</div>
             <div class="text-[11px] text-slate-400 mt-1 flex flex-wrap items-center gap-3">
@@ -511,45 +556,6 @@ function updateLCKpis() {
             </div>
         </div>
     `;
-
-    capexBox.innerHTML = `
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase">Master 4-Tier CapEx</span>
-                    <h3 class="text-sm sm:text-base font-black text-white">১ম কনসোলমেন্ট সর্বমোট সামগ্রিক মেগা পুঁজী (৪-স্তরের সমন্বিত হিসাব)</h3>
-                </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-[11px]">
-                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-2">
-                        <div class="text-slate-400">১. দুবাই এফওবি (পাতা ০০০১)</div>
-                        <div class="text-sky-400 font-black font-mono mt-0.5">৳ ${formatAmountWithComma(capex.dubaiBDT)}</div>
-                        <div class="text-[10px] text-slate-500">${capex.dubaiSharePct}% (${formatAmountWithComma(capex.dubaiAED)} AED)</div>
-                    </div>
-                    <div class="bg-cyan-950/40 border border-cyan-500/40 rounded-xl p-2">
-                        <div class="text-cyan-300 font-bold">২. এলসি খরচ (পাতা ০০০৩)</div>
-                        <div class="text-red-400 font-black font-mono mt-0.5">৳ ${formatAmountWithComma(capex.lcBDT)}</div>
-                        <div class="text-[10px] text-cyan-400/80">${capex.lcSharePct}% ($${formatAmountWithComma(capex.lcUSD)} USD)</div>
-                    </div>
-                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-2">
-                        <div class="text-slate-400">৩. পোর্ট ও ডিউটি (পাতা ০০০৪)</div>
-                        <div class="text-indigo-400 font-black font-mono mt-0.5">৳ ${formatAmountWithComma(capex.portBDT)}</div>
-                        <div class="text-[10px] text-slate-500">${capex.portSharePct}%</div>
-                    </div>
-                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-2">
-                        <div class="text-slate-400">৪. বাংলাদেশ খরচ (পাতা ০০০২)</div>
-                        <div class="text-amber-400 font-black font-mono mt-0.5">৳ ${formatAmountWithComma(capex.bdBDT)}</div>
-                        <div class="text-[10px] text-slate-500">${capex.bdSharePct}%</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slate-950/90 border border-emerald-500/40 rounded-2xl p-3.5 text-center shrink-0 min-w-[230px] shadow-inner">
-                <div class="text-[11px] font-bold text-slate-400">সর্বমোট মেগা প্রজেক্ট পুঁজী</div>
-                <div class="text-xl sm:text-2xl font-black text-emerald-400 font-mono mt-1">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</div>
-                <div class="text-[10px] text-emerald-500 font-bold mt-1"><i class="fa-solid fa-shield-halved mr-1"></i>১০০% অডিট ও ব্যালেন্সড</div>
-            </div>
-        </div>
-    `;
 }
 
 function renderLCContainersList() {
@@ -570,7 +576,11 @@ function renderLCContainersList() {
         return searchable.includes(query);
     });
 
-    if (countBadge) countBadge.textContent = `${filtered.length}টি কন্টেইনার`;
+    const filteredUSD = safeRound(filtered.reduce((s, c) => s + Number(calculateContainerLCTotals(c.payments || []).totalUSD || 0), 0));
+    const filteredBDT = safeRound(filtered.reduce((s, c) => s + Number(calculateContainerLCTotals(c.payments || []).totalBDT || 0), 0));
+    if (countBadge) {
+        countBadge.textContent = `${filtered.length}টি কন্টেইনার • $${formatAmountWithComma(filteredUSD)} | ৳${formatAmountWithComma(filteredBDT)}`;
+    }
 
     if (filtered.length === 0) {
         listContainer.innerHTML = `
@@ -589,22 +599,22 @@ function renderLCContainersList() {
         const isClosed = isContainerClosed(c);
 
         const deliveryHtml = isClosed
-            ? `<button type="button" onclick="window.promptLCDeliveryDate('${c.id}')" class="px-3 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 flex items-center gap-1.5 cursor-pointer transition-all" title="ক্লোজিং স্ট্যাটাস বা ডেলিভারি তারিখ পরিবর্তন করুন">
+            ? `<button type="button" onclick="window.promptLCDeliveryDate('${c.id}')" data-perm="manageNothiEntries" class="px-3 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 flex items-center gap-1.5 cursor-pointer transition-all" title="ক্লোজিং স্ট্যাটাস বা ডেলিভারি তারিখ পরিবর্তন করুন">
                     <i class="fa-solid fa-circle-check text-emerald-400"></i>
                     <span>সমাপ্ত (শেষ)${hasDelivery ? ` • ${formatAppDate(c.deliveryDate)}` : ''}</span>
                     <i class="fa-solid fa-pen text-[10px] opacity-70 ml-0.5"></i>
                </button>`
-            : `<button type="button" onclick="window.promptLCDeliveryDate('${c.id}')" class="px-3 py-1 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 flex items-center gap-1.5 cursor-pointer transition-all" title="কন্টেইনারটি শেষ / ক্লোজ করুন অথবা ডেলিভারি তারিখ দিন">
+            : `<button type="button" onclick="window.promptLCDeliveryDate('${c.id}')" data-perm="manageNothiEntries" class="px-3 py-1 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 flex items-center gap-1.5 cursor-pointer transition-all" title="কন্টেইনারটি শেষ / ক্লোজ করুন অথবা ডেলিভারি তারিখ দিন">
                     <i class="fa-solid fa-clock text-amber-400"></i>
                     <span>চলমান (বাকি) • ক্লোজ/তারিখ দিন</span>
                </button>`;
 
         const addOrLockBtn = isClosed
-            ? `<button type="button" onclick="window.promptLCDeliveryDate('${c.id}')" class="px-3 py-1 bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="এই কন্টেইনার সমাপ্ত ও লকড — এডিট করতে পুনরায় চালু করুন">
+            ? `<button type="button" onclick="window.promptLCDeliveryDate('${c.id}')" data-perm="manageNothiEntries" class="px-3 py-1 bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all" title="এই কন্টেইনার সমাপ্ত ও লকড — এডিট করতে পুনরায় চালু করুন">
                     <i class="fa-solid fa-lock text-amber-400 text-[10px]"></i>
                     <span>লকড (রি-ওপেন)</span>
                </button>`
-            : `<button type="button" onclick="window.openAddLCPaymentModal('${c.id}')" class="px-3 py-1 bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all">
+            : `<button type="button" onclick="window.openAddLCPaymentModal('${c.id}')" data-perm="manageNothiEntries" class="px-3 py-1 bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all">
                     <i class="fa-solid fa-plus text-[10px]"></i>
                     <span>নতুন তারিখের খরচ যোগ</span>
                </button>`;
@@ -622,10 +632,10 @@ function renderLCContainersList() {
                 </td>
                 <td class="py-2.5 px-3 text-right whitespace-nowrap w-20">
                     ${isClosed ? `<span class="text-slate-600 text-[10px] font-bold" title="সংশোধনের আগে কন্টেইনার রি-ওপেন করুন"><i class="fa-solid fa-lock"></i></span>` : `
-                        <button type="button" onclick="window.openEditLCPaymentModal('${c.id}', '${p.id}')" class="p-1.5 text-slate-400 hover:text-sky-400 transition-colors cursor-pointer" title="এডিট">
+                        <button type="button" onclick="window.openEditLCPaymentModal('${c.id}', '${p.id}')" data-perm="manageNothiEntries" class="p-1.5 text-slate-400 hover:text-sky-400 transition-colors cursor-pointer" title="এডিট">
                             <i class="fa-solid fa-pen-to-square text-xs"></i>
                         </button>
-                        <button type="button" onclick="window.deleteLCPaymentLineAction('${c.id}', '${p.id}')" class="p-1.5 text-slate-400 hover:text-red-400 transition-colors cursor-pointer" title="মুছুন">
+                        <button type="button" onclick="window.deleteLCPaymentLineAction('${c.id}', '${p.id}')" data-perm="deleteNothiEntries" class="p-1.5 text-slate-400 hover:text-red-400 transition-colors cursor-pointer" title="মুছুন">
                             <i class="fa-solid fa-trash-can text-xs"></i>
                         </button>
                     `}
@@ -650,12 +660,14 @@ function renderLCContainersList() {
                     <div class="flex flex-wrap items-center gap-2">
                         ${deliveryHtml}
                         ${addOrLockBtn}
-                        <button type="button" onclick="window.openEditLCContainerMetaModal('${c.id}')" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer" title="কন্টেইনার তথ্য এডিট">
-                            <i class="fa-solid fa-gear text-xs"></i>
-                        </button>
-                        <button type="button" onclick="window.deleteLCContainerAction('${c.id}')" class="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 cursor-pointer" title="সম্পূর্ণ কন্টেইনার মুছুন">
-                            <i class="fa-solid fa-trash text-xs"></i>
-                        </button>
+                        ${!isClosed ? `
+                            <button type="button" onclick="window.openEditLCContainerMetaModal('${c.id}')" data-perm="manageNothiEntries" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer" title="কন্টেইনার তথ্য এডিট">
+                                <i class="fa-solid fa-gear text-xs"></i>
+                            </button>
+                            <button type="button" onclick="window.deleteLCContainerAction('${c.id}')" data-perm="deleteNothiEntries" class="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 cursor-pointer" title="সম্পূর্ণ কন্টেইনার মুছুন">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
 

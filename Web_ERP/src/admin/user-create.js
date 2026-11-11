@@ -97,7 +97,10 @@ export async function createNewUser() {
                 printBankLedger: false,
                 exportBankLedger: false,
                 deleteBankTransaction: false,
-                viewAuditLog: false
+                viewAuditLog: false,
+                viewNothiBook: false,
+                manageNothiEntries: false,
+                deleteNothiEntries: false
             } : {};
 
             await UserDAO.getRef(newUid).set({

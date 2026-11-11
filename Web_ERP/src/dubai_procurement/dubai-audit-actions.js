@@ -24,8 +24,8 @@ export const DubaiActions = {
         }
     },
 
-    async rollForward(beforeDate = null) {
-        const latest = await DubaiDAO.getPreviousAudit(beforeDate);
+    async rollForward(beforeDate = null, consignmentId = null) {
+        const latest = await DubaiDAO.getPreviousAudit(beforeDate, consignmentId);
         if (!latest) {
             showToast('কোনো পূর্ববর্তী সংরক্ষিত অডিট রেকর্ড পাওয়া যায়নি', 'error');
             return null;
@@ -46,25 +46,25 @@ export const DubaiActions = {
         }
     },
 
-    async printAudit(id) {
+    async printAudit(id, consignment = null) {
         try {
             const audit = await DubaiDAO.getAuditById(id);
             if (!audit) return;
             const memos = await DubaiDAO.getMemosByAuditId(id);
-            printDubaiAuditSheet(audit, memos, [], []);
+            printDubaiAuditSheet(audit, memos, [], [], consignment);
         } catch (e) {
             console.error('Error printing audit:', e);
         }
     },
 
-    async deleteAudit(id) {
+    async deleteAudit(id, snapshotData = null) {
         if (!ensureOnline('দুবাই অডিট রেকর্ড ডিলিট')) return false;
         const pinOk = await promptSecurityPin('দুবাই অডিট রেকর্ড ডিলিট');
         if (!pinOk) return false;
 
         try {
-            await DubaiDAO.deleteWeeklyAudit(id);
-            showToast('অডিট রেকর্ড মুছে ফেলা হয়েছে', 'success');
+            await DubaiDAO.deleteWeeklyAudit(id, snapshotData);
+            showToast('অডিট রেকর্ড রিসাইকেল বিনে সরানো হয়েছে', 'success');
             return true;
         } catch (e) {
             console.error('Delete audit error:', e);
@@ -73,9 +73,9 @@ export const DubaiActions = {
         }
     },
 
-    listenAudits(callback) {
+    listenAudits(callback, consignmentId = null) {
         if (unsubscribeAudits) unsubscribeAudits();
-        unsubscribeAudits = DubaiDAO.listenWeeklyAudits(callback);
+        unsubscribeAudits = DubaiDAO.listenWeeklyAudits(callback, consignmentId);
     },
 
     unsubscribe() {

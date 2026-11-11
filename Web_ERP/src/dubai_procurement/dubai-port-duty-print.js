@@ -14,10 +14,10 @@ import {
 } from '../utils.js';
 import { SettingsDAO } from '../dao.js';
 import { smartPaginatePrint, printViaIframe } from '../utils/smart-print-engine.js';
-import { calculatePortDutySummary, calculateMasterProjectCapEx } from './dubai-port-duty-calc.js';
+import { calculatePortDutySummary } from './dubai-port-duty-calc.js';
 import { renderNothiPrintSectionBanner, resolveSectionBannerConfig } from './dubai-section-banner.js';
 
-export async function printDubaiPortDutyBook(consignment, bills = [], dubaiSummary = null, bdExpenseSummary = null) {
+export async function printDubaiPortDutyBook(consignment, bills = []) {
     let settings = {};
     try {
         settings = (await SettingsDAO.getAppSettings()) || {};
@@ -28,7 +28,6 @@ export async function printDubaiPortDutyBook(consignment, bills = [], dubaiSumma
     const bannerCfg = resolveSectionBannerConfig(consignment, 'port-duty');
     const title = `Container_Port_Duty_${bannerCfg.title || 'Page_0004'}`;
     const summary = calculatePortDutySummary(consignment, bills);
-    const capex = calculateMasterProjectCapEx(dubaiSummary, summary, bdExpenseSummary);
 
     const extraCss = `
         .num-font {
@@ -57,7 +56,7 @@ export async function printDubaiPortDutyBook(consignment, bills = [], dubaiSumma
         }
     `;
 
-    const parts = generatePortDutyPaginationParts(consignment, bills, summary, capex, settings, bannerCfg);
+    const parts = generatePortDutyPaginationParts(consignment, bills, summary, settings, bannerCfg);
     const paginatedHtml = await smartPaginatePrint({
         ...parts,
         extraCss,
@@ -70,9 +69,10 @@ export async function printDubaiPortDutyBook(consignment, bills = [], dubaiSumma
     await printViaIframe(paginatedHtml, extraCss, title);
 }
 
-function generatePortDutyPaginationParts(consignment, bills, summary, capex, settings, bannerCfg) {
+function generatePortDutyPaginationParts(consignment, bills, summary, settings, bannerCfg) {
     const totalDutyFormatted = formatAmountWithComma(summary.totalDuty);
     const dutyWords = numberToBanglaWords(summary.totalDuty);
+    const topAgents = Object.keys(summary.agentBreakdown || {}).slice(0, 2).join(', ') || 'অনির্ধারিত';
 
     const rowsArray = bills.map((item, idx) => {
         const amtStr = formatAmountWithComma(item.amount);
@@ -112,13 +112,13 @@ function generatePortDutyPaginationParts(consignment, bills, summary, capex, set
     const page1ExtraHtml = `
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 6px;">
             <div style="background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 4px; padding: 4px 6px; text-align: center;">
-                <div style="font-size: 7.5px; font-weight: 700; color: #0369a1;">১. মোট কন্টেইনার সংখ্যা</div>
+                <div style="font-size: 7.5px; font-weight: 700; color: #0369a1;">১. মোট কন্টেইনার ও সাইজ বিশ্লেষণ</div>
                 <div style="font-size: 11px; font-weight: 900; color: #0284c7;">${summary.count} টি কন্টেইনার</div>
-                <div style="font-size: 6.5px; color: #64748b;">১ নং হতে ${summary.count} নং কন্টেইনার খালাস</div>
+                <div style="font-size: 6.5px; color: #64748b;">৪০FT: ${summary.fortyFtCount}টি · ২০FT: ${summary.twentyFtCount}টি · সাধারণ: ${summary.standardCount || 0}টি</div>
             </div>
             <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 4px 6px; text-align: center;">
                 <div style="font-size: 7.5px; font-weight: 700; color: #15803d;">২. প্রধান সিএন্ডএফ / মারফত</div>
-                <div style="font-size: 11px; font-weight: 900; color: #059669;">আরমান ও মিতুল</div>
+                <div style="font-size: 11px; font-weight: 900; color: #059669;">${escapeHTML(topAgents)}</div>
                 <div style="font-size: 6.5px; color: #64748b;">চট্টগ্রাম বন্দর ক্লিয়ারিং ও ফরওয়ার্ডিং</div>
             </div>
             <div style="background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 4px 6px; text-align: center;">
@@ -152,37 +152,13 @@ function generatePortDutyPaginationParts(consignment, bills, summary, capex, set
     `;
 
     const summaryHtml = `
-        <div class="page-break-avoid" style="margin-top: 5px;">
+        <div class="page-break-avoid" style="margin-top: 6px;">
             <div style="font-size: 8.5px; color: #334155;">
                 <strong>কথায়:</strong> <span style="color: #92400e; font-weight: bold;">${escapeHTML(dutyWords)}</span>
             </div>
-            <div style="margin-top: 6px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 4px; padding: 4px 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #94a3b8; padding-bottom: 2px; margin-bottom: 3px;">
-                    <div style="font-size: 8.5px; font-weight: 800; color: #0f172a;">
-                        <span style="color: #0284c7;">১ম কনসোলমেন্টের সামগ্রিক মূলধন ও পুঁজী (Master CapEx):</span> ৩-স্তরের সমন্বিত হিসাব
-                    </div>
-                    <div style="font-size: 8.5px; font-weight: 800; color: #047857;">
-                        সর্বমোট পুঁজী: <span style="font-size: 10.5px;" class="num-font">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</span>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; text-align: center; font-size: 7.5px;">
-                    <div style="background: #f0f9ff; padding: 2px; border-radius: 3px;">
-                        ১. দুবাই ক্রয়: <strong>${formatAmountWithComma(capex.dubaiAED)} AED</strong><br>
-                        <span class="num-font">৳ ${formatAmountWithComma(capex.dubaiBDT)}</span> (${capex.dubaiSharePct}%)
-                    </div>
-                    <div style="background: #fef2f2; padding: 2px; border-radius: 3px;">
-                        ২. পোর্ট ও ডিউটি: <strong>${summary.count}টি কন্টেইনার</strong><br>
-                        <span class="num-font">৳ ${totalDutyFormatted}</span> (${capex.portSharePct}%)
-                    </div>
-                    <div style="background: #fffbeb; padding: 2px; border-radius: 3px;">
-                        ৩. বাংলাদেশ খরচ: <strong>সাবেক + রানিং</strong><br>
-                        <span class="num-font">৳ ${formatAmountWithComma(capex.bdBDT)}</span> (${capex.bdSharePct}%)
-                    </div>
-                    <div style="background: #ecfdf5; padding: 2px; border-radius: 3px; font-weight: bold; color: #047857;">
-                        সর্বমোট সামগ্রিক পুঁজী<br>
-                        <span style="font-size: 9px;" class="num-font">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</span> (১০০%)
-                    </div>
-                </div>
+            <div style="margin-top: 5px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 7.5px; color: #334155;">
+                <span><strong>সাইজ ভিত্তিক ব্যয়:</strong> ৪০ ফুট (${summary.fortyFtCount}টি): <strong class="num-font">৳ ${formatAmountWithComma(summary.fortyFtTotal)}</strong> · ২০ ফুট (${summary.twentyFtCount}টি): <strong class="num-font">৳ ${formatAmountWithComma(summary.twentyFtTotal)}</strong> · সাধারণ (${summary.standardCount || 0}টি): <strong class="num-font">৳ ${formatAmountWithComma(summary.standardTotal || 0)}</strong></span>
+                <span style="color: #4f46e5; font-weight: 800;">সর্বমোট সমন্বিত হিসাবের জন্য পাতা ০০০৬ দেখুন</span>
             </div>
         </div>
     `;

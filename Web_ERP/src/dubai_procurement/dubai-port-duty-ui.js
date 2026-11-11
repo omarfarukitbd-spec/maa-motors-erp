@@ -7,13 +7,15 @@
 import Swal from 'sweetalert2';
 import { DubaiPortDutyDAO } from './dubai-port-duty-dao.js';
 import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
-import { DubaiBDExpenseDAO } from './dubai-bd-expense-dao.js';
-import { calculatePortDutySummary, calculateMasterProjectCapEx } from './dubai-port-duty-calc.js';
-import { calculateConsignmentSummary } from './dubai-remittance-calc.js';
-import { calculateBDExpenseSummary } from './dubai-bd-expense-calc.js';
+import { calculatePortDutySummary } from './dubai-port-duty-calc.js';
 import { printDubaiPortDutyBook } from './dubai-port-duty-print.js';
 import { renderNothiSubBookHeader } from './dubai-subbook-header.js';
 import { mountNothiBannerBar } from './dubai-banner-editor-modal.js';
+import {
+    exportNothiRowsToExcel,
+    confirmNothiAction,
+    renderNothiMasterLinkPill
+} from './dubai-nothi-helpers.js';
 import {
     formatAmountWithComma,
     parseAmount,
@@ -30,20 +32,15 @@ import {
 let activeConsignment = null;
 let consignmentsList = [];
 let portDutyBillsList = [];
-let dubaiRemittancesList = [];
-let bdExpensesList = [];
 let activeListenersConsId = null;
 let unsubscribePortDuty = null;
 let unsubscribeConsignments = null;
-let unsubscribeRemittances = null;
-let unsubscribeBDExpenses = null;
 let editingBillId = null;
 
 export function initDubaiPortDutyModule(container) {
     if (!container) return;
 
     activeListenersConsId = null;
-    // Seed initial data if first time
     DubaiPortDutyDAO.seedInitialDataIfNeeded().catch(e => console.error('Port duty seed error:', e));
 
     renderPortDutyView(container);
@@ -61,14 +58,6 @@ export function cleanupDubaiPortDuty() {
     if (unsubscribeConsignments) {
         unsubscribeConsignments();
         unsubscribeConsignments = null;
-    }
-    if (unsubscribeRemittances) {
-        unsubscribeRemittances();
-        unsubscribeRemittances = null;
-    }
-    if (unsubscribeBDExpenses) {
-        unsubscribeBDExpenses();
-        unsubscribeBDExpenses = null;
     }
 }
 
@@ -97,8 +86,6 @@ function setupPortDutyListeners() {
 
 function listenToActiveConsignmentData() {
     if (unsubscribePortDuty) { unsubscribePortDuty(); unsubscribePortDuty = null; }
-    if (unsubscribeRemittances) { unsubscribeRemittances(); unsubscribeRemittances = null; }
-    if (unsubscribeBDExpenses) { unsubscribeBDExpenses(); unsubscribeBDExpenses = null; }
 
     const consId = activeConsignment?.id || 'CONSIGNMENT-01';
     activeListenersConsId = consId;
@@ -108,20 +95,15 @@ function listenToActiveConsignmentData() {
         renderPortDutyTable();
         updatePortDutyKpis();
     });
-
-    unsubscribeRemittances = DubaiRemittanceDAO.listenRemittances(consId, items => {
-        dubaiRemittancesList = items;
-        updatePortDutyKpis();
-    });
-
-    unsubscribeBDExpenses = DubaiBDExpenseDAO.listenBDExpenses(consId, items => {
-        bdExpensesList = items;
-        updatePortDutyKpis();
-    });
 }
 
 function renderPortDutyView(container) {
     const actionButtonsHtml = `
+        ${renderNothiMasterLinkPill()}
+        <button type="button" id="btn-export-port-duty-excel" class="px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/35 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i class="fa-solid fa-file-excel text-emerald-400 text-xs"></i>
+            <span>এক্সেল</span>
+        </button>
         <button type="button" id="btn-print-port-duty" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i class="fa-solid fa-print text-slate-400 text-xs"></i>
             <span>A4 প্রিন্ট / ভাউচার</span>
@@ -150,13 +132,8 @@ function renderPortDutyView(container) {
                 <!-- Dynamically populated -->
             </div>
 
-            <!-- 4-Tier Master Project CapEx Banner -->
-            <div id="port-consolidated-capex-container" class="bg-gradient-to-r from-slate-900 via-sky-950/40 to-slate-900 border border-sky-500/30 rounded-2xl p-4 shadow-xl">
-                <!-- Dynamically populated -->
-            </div>
-
             <!-- Quick Entry Dock -->
-            <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+            <div data-perm="manageNothiEntries" class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <div class="text-xs font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-circle-plus text-emerald-400 text-sm"></i>
@@ -238,6 +215,7 @@ function renderPortDutyView(container) {
                         <option value="all">সকল সাইজ</option>
                         <option value="40 FT">৪০ ফুট (40 FT)</option>
                         <option value="20 FT">২০ ফুট (20 FT)</option>
+                        <option value="—">সাধারণ / অনির্ধারিত (—)</option>
                     </select>
                     <div class="relative w-full sm:w-64">
                         <input type="text" id="port-search-input" placeholder="কন্টেইনার, এজেন্ট বা বিবরণ খুঁজুন..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 outline-none">
@@ -277,9 +255,27 @@ function bindPortDutyEvents() {
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
 
     bind('btn-print-port-duty', () => {
-        const dubaiSummary = calculateConsignmentSummary(activeConsignment, dubaiRemittancesList);
-        const bdSummary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
-        printDubaiPortDutyBook(activeConsignment, portDutyBillsList, dubaiSummary, bdSummary);
+        printDubaiPortDutyBook(activeConsignment, portDutyBillsList);
+    });
+
+    bind('btn-export-port-duty-excel', () => {
+        const headers = ['নং', 'তারিখ', 'কন্টেইনার নং', 'সাইজ', 'সিএন্ডএফ এজেন্ট', 'বিবরণ', 'টাকা (BDT)', 'স্ট্যাটাস'];
+        const rows = portDutyBillsList.map((b, i) => [
+            i + 1,
+            formatAppDate(b.date),
+            b.containerNo || '—',
+            b.size || '—',
+            b.agent || '—',
+            b.description || '',
+            safeRound(Number(b.amount) || 0),
+            b.status || 'চূড়ান্ত পরিশোধিত'
+        ]);
+        exportNothiRowsToExcel({
+            sheetName: 'Nothi_0004_Port_Duty',
+            headers,
+            rows,
+            filename: `Nothi_0004_Port_Duty_${activeConsignment?.id || 'CONSIGNMENT'}.xlsx`
+        });
     });
 
     const form = document.getElementById('form-port-duty');
@@ -318,17 +314,15 @@ function updateConsignmentUI() {
 
 function updatePortDutyKpis() {
     const kpiContainer = document.getElementById('port-duty-kpi-container');
-    const capexContainer = document.getElementById('port-consolidated-capex-container');
     if (!kpiContainer) return;
 
     const summary = calculatePortDutySummary(activeConsignment, portDutyBillsList);
-    const dubaiSummary = calculateConsignmentSummary(activeConsignment, dubaiRemittancesList);
-    const bdSummary = calculateBDExpenseSummary(activeConsignment, bdExpensesList);
-    const capex = calculateMasterProjectCapEx(dubaiSummary, summary, bdSummary);
+    const agentNames = Object.keys(summary.agentBreakdown || {});
+    const primaryAgentLabel = agentNames.length > 0 ? agentNames.slice(0, 2).join(', ') : 'অনির্ধারিত';
 
-    // 1. Render 3 Master KPI Cards
+    // Render 3 Master KPI Cards strictly scoped to Port & Duty Book (0004)
     kpiContainer.innerHTML = `
-        <!-- Card 1: Count -->
+        <!-- Card 1: Count & Sizes -->
         <div class="bg-gradient-to-br from-slate-900/90 to-indigo-950/40 border border-indigo-500/20 p-4 rounded-2xl flex flex-col justify-between shadow-lg">
             <div class="flex items-center justify-between text-slate-400 text-xs mb-2">
                 <span class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-boxes-packing text-indigo-400"></i>১. মোট কন্টেইনার সংখ্যা</span>
@@ -336,8 +330,8 @@ function updatePortDutyKpis() {
             </div>
             <div class="text-xl sm:text-2xl font-mono font-black text-indigo-400 tracking-tight">${summary.count} টি কন্টেইনার</div>
             <div class="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>১ নং হতে ৭ নং কন্টেইনার খালাস</span>
-                <span class="font-bold text-indigo-300">৪০ ফুট ও ২০ ফুট</span>
+                <span>৪০FT: ${summary.fortyFtCount}টি · ২০FT: ${summary.twentyFtCount}টি</span>
+                <span class="font-bold text-indigo-300">সাধারণ: ${summary.standardCount || 0}টি</span>
             </div>
         </div>
 
@@ -347,7 +341,7 @@ function updatePortDutyKpis() {
                 <span class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-handshake text-emerald-400"></i>২. প্রধান সিএন্ডএফ / মারফত</span>
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">চট্টগ্রাম বন্দর</span>
             </div>
-            <div class="text-xl sm:text-2xl font-mono font-black text-emerald-400 tracking-tight">আরমান ও মিতুল</div>
+            <div class="text-xl sm:text-2xl font-mono font-black text-emerald-400 tracking-tight truncate">${escapeHTML(primaryAgentLabel)}</div>
             <div class="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
                 <span>সিএন্ডএফ ও ক্লিয়ারেন্স সমন্বয়</span>
                 <span class="font-bold text-emerald-300">${summary.count} কিস্তির বিল পরিশোধ</span>
@@ -362,58 +356,11 @@ function updatePortDutyKpis() {
             </div>
             <div class="text-xl sm:text-2xl font-mono font-black text-amber-400 tracking-tight">৳ ${formatAmountWithComma(summary.totalDuty)}</div>
             <div class="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>১ হতে ৭ নং কন্টেইনার সর্বমোট বিল</span>
-                <span class="font-bold text-amber-300">১০০% চূড়ান্ত পরিশোধিত</span>
+                <span>${escapeHTML(activeConsignment?.name || 'সক্রিয় কনসোলমেন্ট')} · ${summary.count}টি বিল</span>
+                <span class="font-bold text-amber-300">৪০FT: ৳ ${formatAmountWithComma(summary.fortyFtTotal)}</span>
             </div>
         </div>
     `;
-
-    // 2. Render 4-Tier Master Project CapEx Banner
-    if (capexContainer) {
-        capexContainer.innerHTML = `
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-sky-800/40 pb-3 mb-3">
-                <div class="flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 text-sm">
-                        <i class="fa-solid fa-chart-pie"></i>
-                    </span>
-                    <div>
-                        <div class="text-xs sm:text-sm font-black text-white">১ম কনসোলমেন্টের সামগ্রিক মূলধন ও পুঁজী (Master CapEx Hierarchy)</div>
-                        <div class="text-[11px] text-slate-400">দুবাই বৈদেশিক ক্রয় + বন্দর খালাস ও কাস্টমস ডিউটি + বাংলাদেশ দেশীয় অভ্যন্তরীণ খরচের একীভূত পুঁজী কাঠামো</div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-sky-500/30">
-                    <span class="text-[11px] text-slate-400 font-bold">সর্বমোট প্রজেক্ট ক্যাপিটাল:</span>
-                    <span class="text-sm sm:text-base font-mono font-black text-emerald-400">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
-                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                    <div class="text-[11px] text-slate-400 font-bold mb-1">১. দুবাই ক্রয় (পাতা ০০০১)</div>
-                    <div class="text-sm font-mono font-black text-emerald-400">${formatAmountWithComma(capex.dubaiAED)} AED</div>
-                    <div class="text-xs font-mono font-bold text-slate-300">৳ ${formatAmountWithComma(capex.dubaiBDT)} <span class="text-[10px] text-slate-400">(${capex.dubaiSharePct}%)</span></div>
-                </div>
-
-                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-indigo-500/30">
-                    <div class="text-[11px] text-indigo-400 font-bold mb-1">২. পোর্ট ও ডিউটি (পাতা ০০০৪)</div>
-                    <div class="text-sm font-mono font-black text-red-400">৳ ${formatAmountWithComma(capex.portBDT)}</div>
-                    <div class="text-xs text-slate-400">${summary.count}টি কন্টেইনার <span class="font-bold text-slate-300">(${capex.portSharePct}%)</span></div>
-                </div>
-
-                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                    <div class="text-[11px] text-slate-400 font-bold mb-1">৩. বাংলাদেশ খরচ (পাতা ০০০২)</div>
-                    <div class="text-sm font-mono font-black text-amber-400">৳ ${formatAmountWithComma(capex.bdBDT)}</div>
-                    <div class="text-xs text-slate-400">১৯ কিস্তি + সাবেক <span class="font-bold text-slate-300">(${capex.bdSharePct}%)</span></div>
-                </div>
-
-                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-emerald-500/40">
-                    <div class="text-[11px] text-emerald-400 font-bold mb-1">সর্বমোট সামগ্রিক পুঁজী</div>
-                    <div class="text-base font-mono font-black text-emerald-300">৳ ${formatAmountWithComma(capex.totalCapExBDT)}</div>
-                    <div class="text-[10px] text-slate-400">১ম কনসোলমেন্ট CapEx (১০০%)</div>
-                </div>
-            </div>
-        `;
-    }
 }
 
 function renderPortDutyTable() {
@@ -466,10 +413,10 @@ function renderPortDutyTable() {
                 </td>
                 <td class="p-3 text-center">
                     <div class="flex items-center justify-center gap-1.5">
-                        <button type="button" onclick="window.editPortDutyEntry('${item.id}')" class="p-1 hover:text-sky-400 text-slate-400 transition-colors" title="সংশোধন করুন">
+                        <button type="button" data-perm="manageNothiEntries" onclick="window.editPortDutyEntry('${item.id}')" class="p-1 hover:text-sky-400 text-slate-400 transition-colors" title="সংশোধন করুন">
                             <i class="fa-solid fa-pen-to-square text-xs"></i>
                         </button>
-                        <button type="button" onclick="window.deletePortDutyEntry('${item.id}')" class="p-1 hover:text-red-400 text-slate-400 transition-colors" title="মুছে ফেলুন">
+                        <button type="button" data-perm="deleteNothiEntries" onclick="window.deletePortDutyEntry('${item.id}')" class="p-1 hover:text-red-400 text-slate-400 transition-colors" title="মুছে ফেলুন">
                             <i class="fa-solid fa-trash text-xs"></i>
                         </button>
                     </div>
@@ -478,12 +425,23 @@ function renderPortDutyTable() {
         `;
     }).join('');
 
+    const isFiltered = filtered.length !== portDutyBillsList.length;
+    const filteredTotal = safeRound(filtered.reduce((acc, b) => safeRound(acc + (Number(b.amount) || 0)), 0));
+    const filteredSubtotalRow = isFiltered ? `
+        <tr class="bg-indigo-950/30 border-t border-indigo-500/40 font-black text-xs text-indigo-200">
+            <td colspan="5" class="p-3 text-right border-r border-slate-800">ফিল্টারকৃত উপ-মোট (${filtered.length} টি কন্টেইনার):</td>
+            <td class="p-3 text-right font-mono text-indigo-300 border-r border-slate-800">৳ ${formatAmountWithComma(filteredTotal)}</td>
+            <td colspan="2" class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] bg-indigo-600/30 text-indigo-200">ফিল্টার</span></td>
+        </tr>
+    ` : '';
+
     tbody.innerHTML = `
         ${rowsHtml}
+        ${filteredSubtotalRow}
 
         <!-- Grand Total Row -->
         <tr class="bg-amber-950/30 border-t-2 border-b-2 border-amber-500 font-black text-xs text-white">
-            <td colspan="5" class="p-3.5 text-right border-r border-slate-800 text-sm">সর্বমোট কন্টেইনার ডিউটি ও পোর্ট বিল (১ হতে ৭ নং কন্টেইনার):</td>
+            <td colspan="5" class="p-3.5 text-right border-r border-slate-800 text-sm">সর্বমোট কন্টেইনার ডিউটি ও পোর্ট বিল (${summary.count} টি কন্টেইনার):</td>
             <td class="p-3.5 text-right font-mono font-black text-amber-400 border-r border-slate-800 text-sm">৳ ${formatAmountWithComma(summary.totalDuty)}</td>
             <td colspan="2" class="p-3.5 text-center"><span class="px-2.5 py-1 rounded text-xs font-black bg-amber-600 text-white shadow-md">সর্বমোট</span></td>
         </tr>
@@ -519,25 +477,21 @@ function renderPortDutyTable() {
     };
 
     window.deletePortDutyEntry = async (id) => {
-        ensureOnline();
+        if (!ensureOnline('কন্টেইনার বিল মুছে ফেলা')) return;
         const pinPassed = await promptSecurityPin();
         if (!pinPassed) return;
 
-        const res = await Swal.fire({
+        const targetBill = portDutyBillsList.find(b => b.id === id) || null;
+        const confirmed = await confirmNothiAction({
             title: 'বিল মুছে ফেলতে চান?',
-            text: 'এই কন্টেইনার বিলটি তালিকা থেকে মুছে ফেলা হবে।',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'হ্যাঁ, মুছুন',
-            cancelButtonText: 'বাতিল',
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#334155'
+            text: `${targetBill?.containerNo || 'এই কন্টেইনার'} বিলটি রিসাইকেল বিনে সংরক্ষণ করে তালিকা থেকে সরানো হবে।`,
+            confirmButtonText: 'হ্যাঁ, মুছুন'
         });
 
-        if (res.isConfirmed) {
+        if (confirmed) {
             try {
-                await DubaiPortDutyDAO.deletePortDutyBill(id);
-                showToast('বিল সফলভাবে মুছে ফেলা হয়েছে', 'success');
+                await DubaiPortDutyDAO.deletePortDutyBill(id, targetBill);
+                showToast('বিল সফলভাবে রিসাইকেল বিনে সরানো হয়েছে', 'success');
             } catch (err) {
                 console.error('Delete port duty error:', err);
                 showToast('মুছে ফেলতে সমস্যা হয়েছে', 'error');
@@ -548,7 +502,7 @@ function renderPortDutyTable() {
 
 async function onSavePortDutySubmit(e) {
     e.preventDefault();
-    ensureOnline();
+    if (!ensureOnline('পোর্ট ও ডিউটি বিল সংরক্ষণ')) return;
 
     const dateVal = document.getElementById('port-input-date').value.trim();
     const contVal = document.getElementById('port-input-cont-no').value.trim();
@@ -562,14 +516,19 @@ async function onSavePortDutySubmit(e) {
         return;
     }
 
+    if (editingBillId) {
+        const pinOk = await promptSecurityPin();
+        if (!pinOk) return;
+    }
+
     const payload = {
         consignmentId: activeConsignment?.id || 'CONSIGNMENT-01',
         date: toDBDate(dateVal),
         containerNo: contVal,
         size: sizeVal || '—',
-        agent: agentVal || 'আরমান ও মিতুল',
+        agent: agentVal || 'অনির্ধারিত',
         description: descVal || 'কন্টেইনার ডিউটি, সিএন্ডএফ ও পোর্ট বিল',
-        amount: amtVal,
+        amount: safeRound(amtVal),
         status: 'চূড়ান্ত পরিশোধিত'
     };
 
