@@ -48,8 +48,81 @@ export function numberToBanglaWords(number) {
 }
 
 /**
- * Live Words Update Helper (With Auto Font Resizer and Global Tooltip)
+ * Live Words Update Helper (With Auto Font Resizer and Lifecycle-Guarded Global Tooltip)
  */
+let activeTooltipInput = null;
+let tooltipHideTimer = null;
+let globalTooltipGuardsBound = false;
+
+export function hideGlobalAmountTooltip() {
+    activeTooltipInput = null;
+    if (tooltipHideTimer) {
+        clearTimeout(tooltipHideTimer);
+        tooltipHideTimer = null;
+    }
+
+    const tooltip = typeof document !== 'undefined' ? document.getElementById('global-amount-tooltip') : null;
+    if (!tooltip) return;
+
+    tooltip.classList.remove('opacity-100', 'scale-100');
+    tooltip.classList.add('opacity-0', 'scale-95');
+    tooltipHideTimer = setTimeout(() => {
+        if (tooltip.classList.contains('opacity-0')) {
+            tooltip.style.display = 'none';
+        }
+        tooltipHideTimer = null;
+    }, 200);
+}
+
+function isInputVisibleForTooltip(inputObj) {
+    if (!inputObj || !inputObj.isConnected || inputObj.disabled || inputObj.readOnly) return false;
+    if (document.activeElement !== inputObj) return false;
+
+    const rect = inputObj.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return false;
+
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    if (rect.bottom <= 0 || rect.top >= viewportHeight || rect.right <= 0 || rect.left >= viewportWidth) {
+        return false;
+    }
+
+    const viewContainer = document.getElementById('view-container');
+    if (viewContainer && viewContainer.contains(inputObj)) {
+        const vcRect = viewContainer.getBoundingClientRect();
+        if (rect.top < vcRect.top || rect.bottom > vcRect.bottom) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function ensureGlobalTooltipGuards() {
+    if (globalTooltipGuardsBound || typeof window === 'undefined' || typeof document === 'undefined') return;
+    globalTooltipGuardsBound = true;
+
+    window.addEventListener('scroll', hideGlobalAmountTooltip, { passive: true, capture: true });
+    window.addEventListener('resize', hideGlobalAmountTooltip, { passive: true });
+    window.addEventListener('blur', hideGlobalAmountTooltip);
+    document.addEventListener('submit', hideGlobalAmountTooltip, { capture: true });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || (e.key === 'Enter' && activeTooltipInput?.closest('.swal2-popup'))) {
+            hideGlobalAmountTooltip();
+        }
+    });
+    document.addEventListener('focusout', (e) => {
+        if (activeTooltipInput && e.target === activeTooltipInput) {
+            hideGlobalAmountTooltip();
+        }
+    });
+    document.addEventListener('pointerdown', (e) => {
+        if (activeTooltipInput && e.target !== activeTooltipInput) {
+            hideGlobalAmountTooltip();
+        }
+    }, { passive: true, capture: true });
+}
+
 export function updateLiveWords(inputObj, displayId) {
     const displayEl = typeof displayId === 'string' ? document.getElementById(displayId) : displayId;
     if (!displayEl) return;
@@ -58,8 +131,8 @@ export function updateLiveWords(inputObj, displayId) {
     const amount = parseAmount(val);
     const words = numberToBanglaWords(amount);
 
-    const tooltip = document.getElementById('global-amount-tooltip');
-    const tooltipText = document.getElementById('global-amount-tooltip-text');
+    const tooltip = typeof document !== 'undefined' ? document.getElementById('global-amount-tooltip') : null;
+    const tooltipText = typeof document !== 'undefined' ? document.getElementById('global-amount-tooltip-text') : null;
 
     if (words) {
         displayEl.innerText = `(${words})`;
@@ -70,43 +143,35 @@ export function updateLiveWords(inputObj, displayId) {
         else if (len > 50) { displayEl.style.fontSize = '10px'; displayEl.style.lineHeight = '1.2'; }
         else { displayEl.style.fontSize = ''; displayEl.style.lineHeight = ''; }
 
-        // Update and show Global Tooltip
-        if (tooltip && tooltipText && inputObj) {
+        ensureGlobalTooltipGuards();
+
+        if (tooltip && tooltipText && isInputVisibleForTooltip(inputObj)) {
+            if (tooltipHideTimer) {
+                clearTimeout(tooltipHideTimer);
+                tooltipHideTimer = null;
+            }
+            activeTooltipInput = inputObj;
             tooltipText.innerText = words;
             const rect = inputObj.getBoundingClientRect();
-            
-            // Absolute position center top
-            tooltip.style.left = `${rect.left + (rect.width / 2)}px`;
-            tooltip.style.top = `${rect.top - 10}px`; 
-            
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+
+            tooltip.style.left = `${Math.max(90, Math.min(viewportWidth - 90, rect.left + (rect.width / 2)))}px`;
+            tooltip.style.top = `${Math.max(48, rect.top - 10)}px`;
             tooltip.style.display = 'flex';
-            
-            // Animate in
+
             requestAnimationFrame(() => {
-                tooltip.classList.remove('opacity-0', 'scale-95');
-                tooltip.classList.add('opacity-100', 'scale-100');
+                if (activeTooltipInput === inputObj) {
+                    tooltip.classList.remove('opacity-0', 'scale-95');
+                    tooltip.classList.add('opacity-100', 'scale-100');
+                }
             });
-            
-            // Attach blur listener to auto-hide
-            if (!inputObj._tooltipBlurListener) {
-                inputObj._tooltipBlurListener = () => {
-                    tooltip.classList.remove('opacity-100', 'scale-100');
-                    tooltip.classList.add('opacity-0', 'scale-95');
-                    setTimeout(() => { if (tooltip.classList.contains('opacity-0')) tooltip.style.display = 'none'; }, 200);
-                };
-                inputObj.addEventListener('blur', inputObj._tooltipBlurListener);
-            }
+        } else {
+            hideGlobalAmountTooltip();
         }
     } else {
         displayEl.innerText = '';
         displayEl.classList.add('hidden');
-        
-        // Hide tooltip
-        if (tooltip) {
-            tooltip.classList.remove('opacity-100', 'scale-100');
-            tooltip.classList.add('opacity-0', 'scale-95');
-            setTimeout(() => { if (tooltip.classList.contains('opacity-0')) tooltip.style.display = 'none'; }, 200);
-        }
+        hideGlobalAmountTooltip();
     }
 }
 
@@ -119,11 +184,6 @@ export function resetLiveWords(displayId) {
         displayEl.innerText = '';
         displayEl.classList.add('hidden');
     }
-    const tooltip = document.getElementById('global-amount-tooltip');
-    if (tooltip) {
-        tooltip.classList.remove('opacity-100', 'scale-100');
-        tooltip.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => { if (tooltip.classList.contains('opacity-0')) tooltip.style.display = 'none'; }, 200);
-    }
+    hideGlobalAmountTooltip();
 }
 

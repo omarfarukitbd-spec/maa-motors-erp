@@ -23,7 +23,7 @@ export async function printZoneTagadaReport(cachedZoneReportData) {
 
     const settings = await SettingsDAO.getAppSettings();
     const reportTitle = zoneName ? `${zoneName} জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার` : 'সকল জোনের ফিল্ড তাগাদা ও আদায় রেজিস্টার';
-    
+
     let totalDue = 0;
     filtered.forEach(c => totalDue = safeRound(totalDue + (Number(c.totalDue) || 0)));
 
@@ -35,10 +35,10 @@ export async function printZoneTagadaReport(cachedZoneReportData) {
     const dayLabel = `${formattedDate} (${getDayOfWeekBangla(todayStr)})`;
     const page1HeaderHtml = `
         ${renderPrintHeader(settings, {
-            title: docTitle,
-            pageLabel: 'প্রিন্ট তারিখ',
-            pageNo: formattedDate
-        })}
+        title: docTitle,
+        pageLabel: 'প্রিন্ট তারিখ',
+        pageNo: formattedDate
+    })}
         <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid #0284c7; border-radius:4px; padding:4px 10px; margin-bottom:8px; font-family:'Anek Bangla','Hind Siliguri',sans-serif; font-size:10px; color:#0f172a;">
             <span><strong>তাগাদা বিবরণ:</strong> ${escapeHTML(reportTitle)}</span>
             <span><strong>তারিখ:</strong> ${dayLabel}</span>

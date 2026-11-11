@@ -22,6 +22,7 @@ import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
 import { initDatePickers } from '../utils/date-logic/date-picker.js';
 import { SettingsDAO } from '../dao.js';
+import { hideGlobalAmountTooltip } from '../utils.js';
 import { isStealthLocked, lockScreen } from '../stealth/stealth-autolock.js'; // BUG-03 Fix
 
 /**
@@ -111,6 +112,7 @@ export function initOnlineStatus() {
  * App Navigation Logic
  */
 export function navigate(view, params = {}) {
+    hideGlobalAmountTooltip();
     if (AppState.currentView === 'dashboard' && view !== 'dashboard') unsubscribeDashboard();
     if (AppState.currentView === 'audit' && view !== 'audit') unsubscribeAuditLogs();
     if (AppState.currentView === 'recycle-bin' && view !== 'recycle-bin') unsubscribeRecycleBinData();

@@ -18,7 +18,7 @@ import { DubaiRemittanceDAO } from './dubai-remittance-dao.js';
 import { 
     formatAmountWithComma, parseAmount, safeRound, getTodayLocalDateString, 
     toDBDate, showToast, promptSecurityPin, getDayOfWeekBangla, formatAppDate,
-    ensureOnline
+    ensureOnline, hideGlobalAmountTooltip
 } from '../utils.js';
 
 let currentAuditId = null;
@@ -38,6 +38,7 @@ export async function renderDubaiProcurement(container) {
     currentRootContainer = container;
 
     window.switchDubaiProcurementView = (view) => {
+        hideGlobalAmountTooltip();
         currentView = view;
         if (view === 'remittance') {
             unsubscribeDubaiAudits();
