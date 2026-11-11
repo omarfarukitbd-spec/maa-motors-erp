@@ -90,6 +90,8 @@ function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary,
     const dubaiBdt = dubaiSummary?.grandTotal?.bdt || 236437459;
     const dubaiAed = dubaiSummary?.grandTotal?.aed || 6907319;
     const totalCapEx = dubaiBdt + summary.grandTotal;
+    const bannerCfg = resolveSectionBannerConfig(consignment, 'bd-expense');
+    const remBannerCfg = resolveSectionBannerConfig(consignment, 'remittance');
 
     const rowsHtml = entries.map((item, idx) => {
         const amtStr = formatAmountWithComma(item.amount);
@@ -112,14 +114,11 @@ function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary,
     return `
         <div class="bd-print-sheet">
             <!-- Mother Header (Official Corporate Design) -->
-            ${(() => {
-                const bannerCfg = resolveSectionBannerConfig(consignment, 'bd-expense');
-                return renderPrintHeader(settings, {
-                    title: bannerCfg.motherTitle,
-                    pageLabel: 'রেজিস্টার খাতা পাতা',
-                    pageNo: bannerCfg.pageNo || '০০০২'
-                });
-            })()}
+            ${renderPrintHeader(settings, {
+                title: bannerCfg.motherTitle,
+                pageLabel: 'রেজিস্টার খাতা পাতা',
+                pageNo: bannerCfg.pageNo || '০০০২'
+            })}
 
             <!-- Customizable Per-Section Banner Bar -->
             ${renderNothiPrintSectionBanner(consignment, 'bd-expense')}
@@ -197,8 +196,8 @@ function generateBDExpensePrintHtml(consignment, entries, summary, dubaiSummary,
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; text-align: center; font-size: 7.5px;">
-                    <div>• দুবাই পার্ট (পাতা ০০০১): <strong>${formatAmountWithComma(dubaiAed)} AED</strong> = <strong class="num-font">৳ ${formatAmountWithComma(dubaiBdt)}</strong></div>
-                    <div>• বাংলাদেশ পার্ট (পাতা ০০০৩): <strong class="num-font">৳ ${grandFormatted}</strong> (${summary.count} কিস্তি + সাবেক)</div>
+                    <div>• দুবাই পার্ট (পাতা ${escapeHTML(remBannerCfg.pageNo || '০০০১')}): <strong>${formatAmountWithComma(dubaiAed)} AED</strong> = <strong class="num-font">৳ ${formatAmountWithComma(dubaiBdt)}</strong></div>
+                    <div>• বাংলাদেশ পার্ট (পাতা ${escapeHTML(bannerCfg.pageNo || '০০০২')}): <strong class="num-font">৳ ${grandFormatted}</strong> (${summary.count} কিস্তি + সাবেক)</div>
                     <div>• সর্বসাকুল্যে ক্যাপিটাল: <strong style="color: #047857;" class="num-font">৳ ${formatAmountWithComma(totalCapEx)}</strong> (১০০%)</div>
                 </div>
             </div>
