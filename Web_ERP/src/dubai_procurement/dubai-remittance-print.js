@@ -133,10 +133,10 @@ function generateRemittancePaginationParts(consignment, entries, summary, settin
 
     const page1HeaderHtml = `
         ${renderPrintHeader(settings, {
-            title: bannerCfg.motherTitle,
-            pageLabel: 'রেজিস্টার খাতা পাতা',
-            pageNo: bannerCfg.pageNo || '০০০১'
-        })}
+        title: bannerCfg.motherTitle,
+        pageLabel: 'রেজিস্টার খাতা পাতা',
+        pageNo: bannerCfg.pageNo || '০০০১'
+    })}
         ${renderNothiPrintSectionBanner(consignment, 'remittance')}
     `;
 

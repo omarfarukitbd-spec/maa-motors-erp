@@ -94,21 +94,21 @@ export async function approveStaff(userId, email, suggestedRole = 'Staff') {
                 deleteNothiEntries: false
             } : {};
 
-            await UserDAO.update(userId, { 
-                status: 'active', 
-                role: formValues.role, 
+            await UserDAO.update(userId, {
+                status: 'active',
+                role: formValues.role,
                 pin: formValues.pin,
                 permissions: defaultPerms
             });
             auditLog('APPROVE', 'Admin', userId, email, { role: formValues.role, pinSet: true });
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${email} সফলভাবে অনুমোদিত হয়েছে!`, showConfirmButton: false, timer: 2000 });
-            
+
             if (formValues.role === 'Staff' || formValues.role === 'Boss') {
                 setTimeout(() => {
                     managePermissions(userId, email, true);
                 }, 2000);
             }
-        } catch(e) { console.error(e); Swal.fire('Error', 'অনুমোদন ব্যর্থ হয়েছে', 'error'); }
+        } catch (e) { console.error(e); Swal.fire('Error', 'অনুমোদন ব্যর্থ হয়েছে', 'error'); }
     }
 }
 
@@ -141,7 +141,7 @@ export async function changeStaffPin(userId, oldPin) {
             await UserDAO.update(userId, { pin: pin });
             auditLog('PIN_CHANGE', 'Admin', userId, '', { targetUser: userId });
             Swal.fire('সফল!', 'পিন আপডেট করা হয়েছে।', 'success');
-        } catch(e) { console.error(e); Swal.fire('Error', 'ব্যর্থ হয়েছেন', 'error'); }
+        } catch (e) { console.error(e); Swal.fire('Error', 'ব্যর্থ হয়েছেন', 'error'); }
     }
 }
 
@@ -152,12 +152,12 @@ export async function revokeStaff(userId) {
     if (!isPinValid) return;
 
     const confirm = await Swal.fire({ title: 'নিশ্চিত?', text: 'এই স্টাফ আর লগইন করতে পারবে না।', icon: 'warning', showCancelButton: true });
-    if(confirm.isConfirmed) {
+    if (confirm.isConfirmed) {
         try {
             await UserDAO.update(userId, { status: 'pending', pin: '' });
             auditLog('REVOKE', 'Admin', userId, '', { action: 'Block/Revoke' });
             Swal.fire('সফল!', 'অ্যাক্সেস বাতিল করা হয়েছে।', 'success');
-        } catch(e) { console.error(e); Swal.fire('Error', 'ব্যর্থ হয়েছেন', 'error'); }
+        } catch (e) { console.error(e); Swal.fire('Error', 'ব্যর্থ হয়েছেন', 'error'); }
     }
 }
 
@@ -189,7 +189,7 @@ export async function deleteUserAccount(docId, email) {
             text: `ইউজার (${email || docId}) ডাটাবেস থেকে সফলভাবে ডিলেট করা হয়েছে।`,
             icon: 'success'
         });
-    } catch(err) {
+    } catch (err) {
         console.error("Failed to delete user account:", err);
         Swal.fire({
             title: 'Error!',

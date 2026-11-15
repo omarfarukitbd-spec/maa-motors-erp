@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Dubai Procurement - Container Port, Customs Duty & C&F Corporate Print Engine
  * Generates an executive A4 printable register voucher for Page 0004 matching MAA MOTORS ERP standards.
  */

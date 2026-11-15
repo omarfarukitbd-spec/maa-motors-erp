@@ -348,8 +348,8 @@ export function updateLiveWaterfall() {
         ['subtotal-1', 'subtotal-2', 'subtotal-ad', 'subtotal-3', 'subtotal-mess', 'val-final-variance'].forEach(id => setTxt(id, 0));
         dynamicHoldings.forEach((_, idx) => setTxt(`dubai-holding-subtotal-${idx}`, 0));
         if (badgeEl) {
-            badgeEl.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-slate-800 text-slate-400 border border-slate-700';
-            badgeEl.textContent = 'হিসাবের অপেক্ষায়';
+            badgeEl.className = 'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5';
+            badgeEl.innerHTML = '<i class="fa-solid fa-clock text-slate-400"></i><span>হিসাবের অপেক্ষায়</span>';
         }
         if (statusDescEl && !statusDescEl.dataset.custom) statusDescEl.value = '(হিসাবের অপেক্ষায়)';
         if (valFinalEl) valFinalEl.className = 'text-slate-400 font-bold';
@@ -382,16 +382,20 @@ export function updateLiveWaterfall() {
             valFinalEl.textContent = vm.variance > 0
                 ? `+${formatAmountWithComma(vm.variance)}`
                 : (vm.variance < 0 ? formatAmountWithComma(vm.variance) : '0');
-            valFinalEl.className = `${isDeficit ? 'text-red-400' : 'text-emerald-400'} font-black`;
+            valFinalEl.className = `${isDeficit ? 'text-red-400' : (isBalanced ? 'text-sky-400' : 'text-emerald-400')} font-black`;
         }
 
         if (badgeEl) {
-            badgeEl.className = `px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black ${
+            badgeEl.className = `px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black flex items-center gap-1.5 shadow-sm ${
                 isDeficit
                     ? 'bg-red-500/20 text-red-400 border border-red-500/40'
                     : (isBalanced ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40')
             }`;
-            badgeEl.textContent = isBalanced ? 'সম্পূর্ণ মিল' : (isDeficit ? 'ক্যাশ ঘাটতি' : 'ক্যাশ বাড়তি');
+            const iconHtml = isDeficit
+                ? '<i class="fa-solid fa-triangle-exclamation text-red-400"></i>'
+                : (isBalanced ? '<i class="fa-solid fa-circle-check text-sky-400"></i>' : '<i class="fa-solid fa-circle-check text-emerald-400"></i>');
+            const badgeText = isBalanced ? 'সম্পূর্ণ মিল' : (isDeficit ? 'ক্যাশ ঘাটতি' : 'ক্যাশ বাড়তি');
+            badgeEl.innerHTML = `${iconHtml}<span>${badgeText}</span>`;
         }
         if (statusDescEl && !statusDescEl.dataset.custom) {
             statusDescEl.value = vm.statusLabel;

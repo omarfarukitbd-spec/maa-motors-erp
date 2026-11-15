@@ -122,15 +122,15 @@ function renderRemittanceView(container) {
         <div class="flex flex-col gap-4 font-bn w-full max-w-6xl mx-auto px-2 sm:px-4 pb-20">
             <!-- Top Unified 2-Tier Workspace Header -->
             ${renderNothiSubBookHeader({
-                activeKey: 'remittance',
-                title: 'টাকা পাঠানোর খাতা (দুবাই রেমিট্যান্স বুক)',
-                subtitle: 'বৈদেশিক রেমিট্যান্স, এক্সচেঞ্জ রেট ও ক্রমপুঞ্জিত তহবিল রেজিস্টার',
-                pageBadge: 'খাতা পাতা: ০০০১',
-                currencyBadge: 'AED & BDT',
-                iconClass: 'fa-solid fa-money-bill-transfer',
-                accentColor: 'emerald',
-                actionButtonsHtml
-            })}
+        activeKey: 'remittance',
+        title: 'টাকা পাঠানোর খাতা (দুবাই রেমিট্যান্স বুক)',
+        subtitle: 'বৈদেশিক রেমিট্যান্স, এক্সচেঞ্জ রেট ও ক্রমপুঞ্জিত তহবিল রেজিস্টার',
+        pageBadge: 'খাতা পাতা: ০০০১',
+        currencyBadge: 'AED & BDT',
+        iconClass: 'fa-solid fa-money-bill-transfer',
+        accentColor: 'emerald',
+        actionButtonsHtml
+    })}
 
             <!-- Per-Section Consignment Selector & Customizable Print Banner -->
             <div id="remittance-banner-slot"></div>

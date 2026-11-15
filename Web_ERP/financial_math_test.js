@@ -218,7 +218,7 @@ function runFinancialMathTests() {
     const theoreticalCash = safeRound(dubaiAuditMock.cumulativeRemittance - dubaiAuditMock.cumulativePurchase - dubaiAuditMock.cumulativeExpense);
     // 120000 - 55000 - 10000 = 55000
     assert.strictEqual(theoreticalCash, 55000, "Dubai net theoretical cash mismatch");
-    const variance = safeRound(totalPhysical - theoreticalCash);
+    const variance = safeRound(theoreticalCash - totalPhysical);
     assert.strictEqual(variance, 0, "Dubai weekly audit must balance to 0 AED");
     passed++;
 
@@ -501,45 +501,44 @@ function runFinancialMathTests() {
     assert.strictEqual(matrixResult.totals.combinedAllBDT, safeRound(6020400 + 25150713), "Matrix combinedAllBDT mismatch");
     passed++;
 
-    // Test 18: Canonical Audit Variance Sign & Legacy Correction + Mess Fund Separation
+    // Test 18: Canonical Audit Variance Sign & Waterfall Alignment + Mess Fund Separation
     const surplusMetrics = capexCalc.computeAuditVarianceMetrics({
         calculatedCashBalance: 10000,
         cashInHand: 4000,
         marketAdvance: 3000,
-        personalHoldings: [{ name: 'Emran', amount: 3000 }],
+        personalHoldings: [{ name: 'Emran', amount: 2000 }],
         messBalance: 500,
-        totalPhysicalAssets: 10500
+        totalPhysicalAssets: 9500
     });
-    assert.strictEqual(surplusMetrics.totalPhysical, 10500, "Surplus physical total mismatch");
+    assert.strictEqual(surplusMetrics.totalPhysical, 9500, "Surplus physical total mismatch");
     assert.strictEqual(surplusMetrics.variance, 500, "Surplus variance must be positive (+500)");
     assert.strictEqual(surplusMetrics.statusKind, 'surplus', "StatusKind must be surplus");
 
-    // Legacy inverted audit doc (varianceAmount stored as +800 even though physical < theoretical)
-    const legacyDeficitAudit = capexCalc.computeAuditVarianceMetrics({
+    // Deficit audit doc (disbursements/holdings exceed theoretical funds)
+    const deficitAudit = capexCalc.computeAuditVarianceMetrics({
         calculatedCashBalance: 10000,
         cashInHand: 5000,
         marketAdvance: 2200,
-        personalHoldings: [{ name: 'Altaf', amount: 1500 }],
-        messBalance: 500,
-        totalPhysicalAssets: 9200,
-        varianceAmount: 800
+        personalHoldings: [{ name: 'Altaf', amount: 3000 }],
+        messBalance: 600,
+        totalPhysicalAssets: 10800
     });
-    assert.strictEqual(legacyDeficitAudit.totalPhysical, 9200, "Legacy audit physical sum mismatch");
-    assert.strictEqual(legacyDeficitAudit.variance, -800, "Canonical recomputed variance must correct inverted legacy sign to -800");
-    assert.strictEqual(legacyDeficitAudit.statusKind, 'deficit', "StatusKind must be deficit");
+    assert.strictEqual(deficitAudit.totalPhysical, 10800, "Deficit audit physical sum mismatch");
+    assert.strictEqual(deficitAudit.variance, -800, "Deficit variance must be -800");
+    assert.strictEqual(deficitAudit.statusKind, 'deficit', "StatusKind must be deficit");
 
     const liqSummary = capexCalc.calculateDubaiLiquiditySummary(liveRemSummary, {
         weekEndDate: '2026-11-05',
         calculatedCashBalance: 10000,
         cashInHand: 5000,
         marketAdvance: 2200,
-        personalHoldings: [{ name: 'Altaf', amount: 1500 }],
-        messBalance: 500,
-        totalPhysicalAssets: 9200
+        personalHoldings: [{ name: 'Altaf', amount: 3000 }],
+        messBalance: 600,
+        totalPhysicalAssets: 10800
     });
-    assert.strictEqual(liqSummary.messBalanceAED, 500, "Liquidity summary must preserve messBalanceAED separately");
-    assert.strictEqual(liqSummary.holdingsTotalAED, 1500, "holdingsTotalAED must sum personalHoldings");
-    assert.strictEqual(liqSummary.totalPhysicalAED, 9200, "Liquidity totalPhysicalAED mismatch");
+    assert.strictEqual(liqSummary.messBalanceAED, 600, "Liquidity summary must preserve messBalanceAED separately");
+    assert.strictEqual(liqSummary.holdingsTotalAED, 3000, "holdingsTotalAED must sum personalHoldings");
+    assert.strictEqual(liqSummary.totalPhysicalAED, 10800, "Liquidity totalPhysicalAED mismatch");
     assert.strictEqual(liqSummary.varianceMetrics.variance, -800, "Liquidity variance must obey canonical sign");
     passed++;
 

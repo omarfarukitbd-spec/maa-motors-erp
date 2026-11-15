@@ -1,4 +1,4 @@
-﻿import Swal from 'sweetalert2';
+import Swal from 'sweetalert2';
 import { UserDAO } from '../dao.js';
 import { auditLog } from '../audit.js';
 import { promptSecurityPin } from '../utils.js';

@@ -315,10 +315,10 @@ export function computeAuditVarianceMetrics(audit = {}) {
 
     const totalPhysical = hasPhysicalField
         ? safeRound(Number(audit.totalPhysicalAssets ?? audit.physicalAssets?.totalPhysical) || 0)
-        : safeRound(theoreticalCash + (Number(audit.varianceAmount ?? audit.variance) || 0));
+        : safeRound(theoreticalCash - (Number(audit.varianceAmount ?? audit.variance) || 0));
 
     const variance = hasPhysicalField
-        ? safeRound(totalPhysical - theoreticalCash)
+        ? safeRound(theoreticalCash - totalPhysical)
         : safeRound(Number(audit.varianceAmount ?? audit.variance) || 0);
 
     const absVariance = safeRound(Math.abs(variance));

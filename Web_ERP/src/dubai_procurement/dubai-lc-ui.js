@@ -144,15 +144,15 @@ function renderLCView(container) {
         <div class="flex flex-col gap-4 font-bn w-full max-w-6xl mx-auto px-2 sm:px-4 pb-20">
             <!-- Top Unified 2-Tier Workspace Header -->
             ${renderNothiSubBookHeader({
-                activeKey: 'lc-bills',
-                title: 'কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার',
-                subtitle: 'কন্টেইনারভিত্তিক আলাদা তারিখের ব্যাংক পেমেন্ট, USD ও ডেলিভারি ট্র্যাকার',
-                pageBadge: 'খাতা পাতা: ০০০৩',
-                currencyBadge: 'USD & BDT',
-                iconClass: 'fa-solid fa-file-contract',
-                accentColor: 'cyan',
-                actionButtonsHtml
-            })}
+        activeKey: 'lc-bills',
+        title: 'কন্টেইনার এলসি ও ব্যাংক খরচ রেজিস্টার',
+        subtitle: 'কন্টেইনারভিত্তিক আলাদা তারিখের ব্যাংক পেমেন্ট, USD ও ডেলিভারি ট্র্যাকার',
+        pageBadge: 'খাতা পাতা: ০০০৩',
+        currencyBadge: 'USD & BDT',
+        iconClass: 'fa-solid fa-file-contract',
+        accentColor: 'cyan',
+        actionButtonsHtml
+    })}
 
             <!-- Per-Section Consignment Selector & Customizable Print Banner -->
             <div id="lc-banner-slot"></div>

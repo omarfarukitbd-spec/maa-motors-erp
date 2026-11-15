@@ -107,8 +107,8 @@ export const DubaiMemoModal = {
         modalMemos.forEach(m => { total = safeRound(total + safeRound(parseAmount(m.amount))); });
 
         const count = modalMemos.length;
-        const memoRangeText = count > 0 
-            ? `মেমো নং: (${modalMemos[0].memoNo}-${modalMemos[count - 1].memoNo}) = ${count}টি` 
+        const memoRangeText = count > 0
+            ? `মেমো নং: (${modalMemos[0].memoNo}-${modalMemos[count - 1].memoNo}) = ${count}টি`
             : '';
 
         if (typeof applyCallback === 'function') {
