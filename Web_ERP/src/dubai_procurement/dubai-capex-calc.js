@@ -281,14 +281,13 @@ export function buildContainerLandedCostMatrix(lcBills = [], portBills = []) {
 }
 
 /**
- * Canonical Audit Variance Engine (Rule 16 backward-compatible):
- *   variance = totalPhysicalAssets - calculatedCashBalance
- *   - variance > 0.01  => Surplus (ক্যাশ বাড়তি)
- *   - variance < -0.01 => Deficit (ক্যাশ ঘাটতি / বাকি)
- *   - |variance| <= 0.01 => Balanced (সম্পূর্ণ মিল)
+ * Canonical Audit Variance Engine (Rule 16 & Waterfall Aligned):
+ *   variance = calculatedCashBalance - totalPhysicalAssets
+ *   - variance > 0.01  => Surplus (ক্যাশ বাড়তি - ফান্ড অবশিষ্ট আছে)
+ *   - variance < -0.01 => Deficit (ক্যাশ ঘাটতি / বাকি - ফান্ড অতিক্রম করে বিতরণ হয়েছে)
+ *   - |variance| <= 0.01 => Balanced (সম্পূর্ণ মিল / সমান)
  *
- * Recalculates from stored physical & theoretical balances so legacy inverted docs
- * display the mathematically truthful sign without requiring DB migration.
+ * Aligned 100% with the live waterfall remaining balance (stepBal).
  *
  * @param {Object} audit
  * @returns {Object}
