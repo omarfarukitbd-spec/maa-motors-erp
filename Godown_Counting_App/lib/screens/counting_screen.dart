@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/counting_provider.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/part_autocomplete_field.dart';
 import 'challan_preview_screen.dart';
 import 'super_admin_hub_screen.dart';
 
@@ -25,10 +26,12 @@ class _CountingScreenState extends State<CountingScreen> {
 
   final TextEditingController _itemNameController =
       TextEditingController(text: 'হাবস');
+  final FocusNode _topFocusNode = FocusNode();
 
   @override
   void dispose() {
     _itemNameController.dispose();
+    _topFocusNode.dispose();
     super.dispose();
   }
 
@@ -134,16 +137,19 @@ class _CountingScreenState extends State<CountingScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  PartAutocompleteField(
                     controller: nameCtrl,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(
-                      labelText: 'অথবা পণ্যের নাম লিখুন',
-                      labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                      hintText: 'যেমন: Axio রিয়ার হাবস',
-                      hintStyle: TextStyle(color: Color(0xFF64748B), fontSize: 11),
-                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0284C7))),
+                    hintText: 'যেমন: Axio রিয়ার হাবস, কার্টিজ...',
+                    labelText: 'অথবা পণ্যের নাম লিখুন (অটো-সাজেশন সহ)',
+                    border: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF0284C7)),
                     ),
+                    onSelected: (selectedItem, detectedUnit) {
+                      setDlgState(() {
+                        nameCtrl.text = selectedItem;
+                        unitVal = detectedUnit;
+                      });
+                    },
                   ),
                   const SizedBox(height: 10),
                   DropdownButton<String>(
@@ -276,22 +282,31 @@ class _CountingScreenState extends State<CountingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Active Item Selection Bar
+            // Active Item Selection Bar with Autocomplete
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               color: const Color(0xFF091124),
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: PartAutocompleteField(
                       controller: _itemNameController,
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'পণ্যের নাম লিখুন (যেমন: Axio হাবস)...',
-                        hintStyle: TextStyle(color: Color(0xFF64748B)),
-                      ),
-                      onChanged: (val) => setState(() => activeItemName = val),
+                      focusNode: _topFocusNode,
+                      hintText: 'পণ্যের নাম লিখুন (যেমন: Axio হাবস)...',
+                      onSelected: (selectedItem, detectedUnit) {
+                        setState(() {
+                          activeItemName = selectedItem;
+                          activeItemUnit = detectedUnit;
+                          currentCount = 0;
+                          historyStack = [0];
+                          historyIndex = 0;
+                        });
+                      },
+                      onChanged: (val) {
+                        setState(() {
+                          activeItemName = val;
+                        });
+                      },
                     ),
                   ),
                   ElevatedButton.icon(

@@ -22,6 +22,26 @@ class CountingProvider with ChangeNotifier {
   Map<String, int> get counts => _counts;
   bool get isLoading => _isLoading;
 
+  List<String> get allPartNames => _catalog.map((p) => p.nameBn).toList();
+
+  List<String> getSuggestions(String query) {
+    if (query.trim().isEmpty) return const [];
+    final q = query.trim().toLowerCase();
+    return _catalog
+        .where((p) => p.nameBn.toLowerCase().contains(q))
+        .map((p) => p.nameBn)
+        .take(15)
+        .toList();
+  }
+
+  String detectUnit(String itemName) {
+    final lower = itemName.toLowerCase();
+    if (lower.contains('ইঞ্জিন') || lower.contains('সেট')) {
+      return 'সেট';
+    }
+    return 'পিস';
+  }
+
   /// Initialize and load catalog + offline draft
   Future<void> initialize() async {
     _isLoading = true;
