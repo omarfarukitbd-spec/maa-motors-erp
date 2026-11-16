@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
 import 'providers/counting_provider.dart';
 import 'screens/counting_screen.dart';
 
@@ -16,11 +17,14 @@ class GodownCountingApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
+          create: (_) => AuthProvider()..init(),
+        ),
+        ChangeNotifierProvider(
           create: (_) => CountingProvider()..initialize(),
         ),
       ],
       child: MaterialApp(
-        title: 'মা মোটরস গোডাউন কাউন্টার',
+        title: 'মা মোটরস গোডাউন কাউন্টার ও চালান',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,

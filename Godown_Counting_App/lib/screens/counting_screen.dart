@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/counting_provider.dart';
+import '../widgets/app_drawer.dart';
 import 'challan_preview_screen.dart';
+import 'super_admin_hub_screen.dart';
 
 class CountingScreen extends StatefulWidget {
   const CountingScreen({super.key});
@@ -20,7 +24,8 @@ class _CountingScreenState extends State<CountingScreen> {
   List<int> historyStack = [0];
   int historyIndex = 0;
 
-  final TextEditingController _itemNameController = TextEditingController(text: 'হাবস');
+  final TextEditingController _itemNameController =
+      TextEditingController(text: 'হাবস');
 
   @override
   void dispose() {
@@ -109,29 +114,46 @@ class _CountingScreenState extends State<CountingScreen> {
           builder: (ctx, setDlgState) {
             return AlertDialog(
               backgroundColor: const Color(0xFF0F172A),
-              title: const Text('নতুন আইটেম সেটআপ', style: TextStyle(color: Colors.white, fontSize: 16)),
+              title: const Text('নতুন আইটেম সেটআপ',
+                  style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text('ক্যাটালগ থেকে দ্রুত বেছে নিন:',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _quickChip('হাবস', 'পিস', nameCtrl, setDlgState, (u) => unitVal = u),
+                      _quickChip('Axio ২০১৪ হাবস', 'পিস', nameCtrl, setDlgState, (u) => unitVal = u),
+                      _quickChip('কার্টিজ', 'পিস', nameCtrl, setDlgState, (u) => unitVal = u),
+                      _quickChip('Axio কার্টিজ', 'পিস', nameCtrl, setDlgState, (u) => unitVal = u),
+                      _quickChip('৯ পিন CVT ইঞ্জিন', 'সেট', nameCtrl, setDlgState, (u) => unitVal = u),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: nameCtrl,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
                     decoration: const InputDecoration(
-                      labelText: 'পণ্যের নাম লিখুন',
-                      labelStyle: TextStyle(color: Color(0xFF94A3B8)),
-                      hintText: 'যেমন: Axio ২০১৪ হাবস, কার্টিজ',
-                      hintStyle: TextStyle(color: Color(0xFF64748B)),
+                      labelText: 'অথবা পণ্যের নাম লিখুন',
+                      labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      hintText: 'যেমন: Axio রিয়ার হাবস',
+                      hintStyle: TextStyle(color: Color(0xFF64748B), fontSize: 11),
                       enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0284C7))),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   DropdownButton<String>(
                     dropdownColor: const Color(0xFF1E293B),
                     value: unitVal,
                     isExpanded: true,
                     items: const [
-                      DropdownMenuItem(value: 'পিস', child: Text('পিস (Pieces)', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'সেট', child: Text('সেট (Set)', style: TextStyle(color: Colors.white))),
+                      DropdownMenuItem(value: 'পিস', child: Text('পিস (Pieces)', style: TextStyle(color: Colors.white, fontSize: 12))),
+                      DropdownMenuItem(value: 'সেট', child: Text('সেট (Set)', style: TextStyle(color: Colors.white, fontSize: 12))),
                     ],
                     onChanged: (val) {
                       if (val != null) setDlgState(() => unitVal = val);
@@ -170,14 +192,58 @@ class _CountingScreenState extends State<CountingScreen> {
     );
   }
 
+  Widget _quickChip(String name, String unit, TextEditingController ctrl,
+      StateSetter setDlgState, Function(String) onUnitChange) {
+    return ActionChip(
+      backgroundColor: const Color(0xFF1E293B),
+      label: Text(name, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10)),
+      onPressed: () {
+        setDlgState(() {
+          ctrl.text = name;
+          onUnitChange(unit);
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: const Color(0xFF0B132B),
+      drawer: const AppDrawer(),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F172A),
-        title: const Text('মা মোটরস • গোডাউন কাউন্টার', style: TextStyle(color: Colors.white, fontSize: 15)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              auth.shopDisplayName,
+              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+            ),
+            Text(
+              auth.hasChallanAccess ? 'অফলাইন লাইসেন্স সক্রিয়' : 'ফ্রি কাউন্টার মোড',
+              style: TextStyle(
+                color: auth.hasChallanAccess ? const Color(0xFF34D399) : const Color(0xFF94A3B8),
+                fontSize: 9.5,
+              ),
+            ),
+          ],
+        ),
         actions: [
+          // Super Admin Quick Hub Button
+          if (auth.isSuperAdmin)
+            IconButton(
+              icon: const Icon(FontAwesomeIcons.crown, color: Color(0xFFFBBF24), size: 16),
+              tooltip: 'সুপার অ্যাডমিন হাব',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SuperAdminHubScreen()),
+                );
+              },
+            ),
           IconButton(
             icon: Icon(
               soundEnabled ? Icons.volume_up : Icons.volume_off,
@@ -193,6 +259,12 @@ class _CountingScreenState extends State<CountingScreen> {
             icon: const Icon(Icons.receipt_long, color: Color(0xFFFFD700)),
             tooltip: 'চালানপত্র দেখুন',
             onPressed: () {
+              if (!auth.hasChallanAccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('চালান প্রিন্ট করতে ড্রয়ার থেকে শপ অ্যাকাউন্টে লগইন করুন!')),
+                );
+                return;
+              }
               final challan = context.read<CountingProvider>().generateChallan();
               Navigator.push(
                 context,
@@ -217,7 +289,7 @@ class _CountingScreenState extends State<CountingScreen> {
                       style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        hintText: 'পণ্যের নাম লিখুন...',
+                        hintText: 'পণ্যের নাম লিখুন (যেমন: Axio হাবস)...',
                         hintStyle: TextStyle(color: Color(0xFF64748B)),
                       ),
                       onChanged: (val) => setState(() => activeItemName = val),
@@ -242,7 +314,8 @@ class _CountingScreenState extends State<CountingScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('মাঝের বড় বৃত্তে ট্যাপ করে গুনুন', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                    const Text('মাঝের বড় বৃত্তে ট্যাপ করে গুনুন • ভুল হলে আনডু করুন',
+                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                     const SizedBox(height: 16),
                     GestureDetector(
                       onTap: _handleCircleTap,
@@ -268,7 +341,8 @@ class _CountingScreenState extends State<CountingScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('কাউন্ট', style: TextStyle(color: Color(0xFFBAE6FD), fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text('কাউন্ট',
+                                style: TextStyle(color: Color(0xFFBAE6FD), fontSize: 12, fontWeight: FontWeight.bold)),
                             Text(
                               '$currentCount',
                               style: const TextStyle(color: Colors.white, fontSize: 58, fontWeight: FontWeight.w900),
@@ -290,7 +364,7 @@ class _CountingScreenState extends State<CountingScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                     // Undo & Redo
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -326,7 +400,8 @@ class _CountingScreenState extends State<CountingScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         icon: const Icon(Icons.check_circle, color: Colors.white),
-                        label: const Text('এই পণ্য গণনা শেষ (OK)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        label: const Text('এই পণ্য গণনা শেষ (OK)',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         onPressed: _handleItemComplete,
                       ),
                     ),
