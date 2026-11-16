@@ -1,0 +1,85 @@
+name: Build & Release Flutter Godown Counting App APK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Godown_Counting_App/**'
+      - '.github/workflows/build-flutter-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter & Environment
+        run: flutter doctor -v
+
+      - name: Scaffold Android Support & Scaffolding
+        working-directory: ./Godown_Counting_App
+        run: |
+          flutter create . --project-name godown_counting_app --org com.maamotors --platforms android
+          flutter pub get
+
+      - name: Build Release APK
+        working-directory: ./Godown_Counting_App
+        run: flutter build apk --release
+
+      - name: Copy & Rename APK for Easy Download
+        run: |
+          mkdir -p release-output
+          cp Godown_Counting_App/build/app/outputs/flutter-apk/app-release.apk release-output/Maa-Motors-Godown-App.apk
+
+      - name: Upload APK as Action Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Maa-Motors-Godown-App-APK
+          path: release-output/Maa-Motors-Godown-App.apk
+          retention-days: 30
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0-godown
+          name: 'মা মোটরস গোডাউন কাউন্টিং মোবাইল অ্যাপ v1.0.0'
+          body: |
+            ## 📱 মা মোটরস গোডাউন পার্টস কাউন্টিং ও চালান মোবাইল অ্যাপ (Android APK)
+
+            ### কী কী সুবিধা রয়েছে:
+            * 🔘 **বড় গোলাকার ট্যালি কাউন্টার:** ট্যাপ করলে ভাইব্রেশন ও সাউন্ড সহ গণনা।
+            * ↩️ **আনডু ও রিডু বোতাম:** ভুল ট্যাপ হলে সাথে সাথে সংশোধন।
+            * 🔊 **ভয়েস ঘোষণা:** পণ্য গোনা শেষ করে OK চাপলে বাংলায় ঘোষণা (যেমন: "হাবস ১৫ পিস")।
+            * 📦 **৬০৯+ দেশীয় পার্টস ক্যাটালগ:** হাবস, কার্টিজ, ইঞ্জিন কুইক-পিক সুবিধা।
+            * 🏢 **মাল্টি-টেন্যান্ট ও শপ ব্যানার:** ১২০০x২৪০ ব্যানার ও নিজস্ব গোডাউনের নাম।
+            * 🔑 **অফলাইন লাইসেন্স:** ১ বার পাসওয়ার্ড দিয়ে লগইন করলে আজীবন ইন্টারনেট ছাড়াই অফলাইনে চলবে।
+            * 👑 **সুপার অ্যাডমিন হাব:** ওমরের জন্য শপ তৈরি, পাসওয়ার্ড জেনারেশন ও নিয়ন্ত্রণ।
+
+            ---
+            ### 📥 ডাউনলোডের নিয়ম:
+            নিচের **`Maa-Motors-Godown-App.apk`** লিংকে ক্লিক করে সরাসরি আপনার অ্যান্ড্রয়েড ফোনে ডাউনলোড করে ইনস্টল করুন!
+          files: release-output/Maa-Motors-Godown-App.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
