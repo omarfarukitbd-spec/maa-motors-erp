@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/counting_provider.dart';
@@ -235,7 +234,7 @@ class _CountingScreenState extends State<CountingScreen> {
           // Super Admin Quick Hub Button
           if (auth.isSuperAdmin)
             IconButton(
-              icon: const Icon(FontAwesomeIcons.crown, color: Color(0xFFFBBF24), size: 16),
+              icon: const Icon(Icons.workspace_premium, color: Color(0xFFFBBF24), size: 18),
               tooltip: 'সুপার অ্যাডমিন হাব',
               onPressed: () {
                 Navigator.push(

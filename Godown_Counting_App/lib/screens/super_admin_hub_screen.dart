@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -40,7 +39,7 @@ class _SuperAdminHubScreenState extends State<SuperAdminHubScreen> {
           children: [
             Row(
               children: [
-                Icon(FontAwesomeIcons.crown, color: Color(0xFFFBBF24), size: 16),
+                Icon(Icons.workspace_premium, color: Color(0xFFFBBF24), size: 18),
                 SizedBox(width: 8),
                 Text(
                   'সুপার অ্যাডমিন হাব • মাস্টার কন্ট্রোল',
@@ -80,7 +79,7 @@ class _SuperAdminHubScreenState extends State<SuperAdminHubScreen> {
 
           // 3. Shop Registry Header
           const Row(
-            mainAxisAlignment: MainAxisAlignment.between,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'অনুমোদিত শপ অ্যাডমিন তালিকা',
@@ -140,7 +139,7 @@ class _SuperAdminHubScreenState extends State<SuperAdminHubScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
-            mainAxisAlignment: MainAxisAlignment.between,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
@@ -298,7 +297,7 @@ class _SuperAdminHubScreenState extends State<SuperAdminHubScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.between,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
