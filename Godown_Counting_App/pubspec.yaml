@@ -1,0 +1,31 @@
+name: godown_counting_app
+description: "Maa Motors ERP - Offline-First Godown Parts Counting & Challan Generation App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
+  provider: ^6.1.2
+  shared_preferences: ^2.2.3
+  pdf: ^3.10.8
+  printing: ^5.13.1
+  google_fonts: ^6.2.1
+  uuid: ^4.4.0
+  font_awesome_flutter: ^10.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/data/parts_catalog.json
