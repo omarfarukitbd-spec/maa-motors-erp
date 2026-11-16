@@ -28,3 +28,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/parts_catalog.json
+    - assets/audio/
