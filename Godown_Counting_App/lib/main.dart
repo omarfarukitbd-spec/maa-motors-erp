@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/counting_provider.dart';
 import 'screens/home_dashboard_screen.dart';
+import 'services/parts_catalog_service.dart';
 import 'utils/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PartsCatalogService().init();
   runApp(const GodownCountingApp());
 }
 

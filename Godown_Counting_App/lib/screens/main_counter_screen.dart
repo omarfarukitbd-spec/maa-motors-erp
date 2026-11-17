@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../providers/counting_provider.dart';
 import '../services/audio_engine_service.dart';
 import '../services/category_classifier.dart';
+import '../services/parts_catalog_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/bangla_tools.dart';
 import '../widgets/godown_top_bar.dart';
@@ -51,6 +52,7 @@ class _MainCounterScreenState extends State<MainCounterScreen>
   void initState() {
     super.initState();
     _mode = widget.initialMode;
+    PartsCatalogService().init();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 350),

@@ -1,6 +1,8 @@
 class PartItem {
   final String id;
   final String nameBn;
+  final String? nameEn;
+  final List<String> aliasesBn;
   final String category;
   final String rootGroup;
   final String defaultUnit;
@@ -10,6 +12,8 @@ class PartItem {
   const PartItem({
     required this.id,
     required this.nameBn,
+    this.nameEn,
+    this.aliasesBn = const [],
     required this.category,
     required this.rootGroup,
     this.defaultUnit = 'পিস',
@@ -21,6 +25,11 @@ class PartItem {
     return PartItem(
       id: json['id'] as String? ?? 'PART-000',
       nameBn: json['nameBn'] as String? ?? '',
+      nameEn: json['nameEn'] as String?,
+      aliasesBn: (json['aliasesBn'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       category: json['category'] as String? ?? 'জেনারেল পার্টস',
       rootGroup: detectedRoot ?? json['rootGroup'] as String? ?? 'অন্যান্য পার্টস',
       defaultUnit: json['defaultUnit'] as String? ?? 'পিস',
@@ -36,6 +45,8 @@ class PartItem {
     return {
       'id': id,
       'nameBn': nameBn,
+      'nameEn': nameEn,
+      'aliasesBn': aliasesBn,
       'category': category,
       'rootGroup': rootGroup,
       'defaultUnit': defaultUnit,

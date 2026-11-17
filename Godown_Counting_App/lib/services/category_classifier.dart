@@ -52,17 +52,23 @@ class CategoryClassifier {
     if (lower.contains('ডিস্ক') || lower.contains('ব্রেক') || lower.contains('ক্যালিবার')) {
       return 'ডিস্ক ও ব্রেক';
     }
-    if (lower.contains('শক') || lower.contains('শকএব') || lower.contains('shock')) {
+    if (lower.contains('শক') || lower.contains('শকএব') || lower.contains('shock') || lower.contains('স্প্রিং')) {
       return 'শকএবজর্ভার';
+    }
+    if (lower.contains('সাসপেনশন') || lower.contains('আর্ম') || lower.contains('বল জয়েন্ট') || lower.contains('লিংক')) {
+      return 'সাসপেনশন';
     }
     if (lower.contains('স্টিয়ারিং') || lower.contains('র‍্যাক') || lower.contains('steering')) {
       return 'স্টিয়ারিং বক্স';
     }
-    if (lower.contains('নজেল') || lower.contains('পাম্প') || lower.contains('pump')) {
+    if (lower.contains('নজেল') || lower.contains('পাম্প') || lower.contains('pump') || lower.contains('ফিল্টার')) {
       return 'ফুয়েল পাম্প ও নজেল';
     }
-    if (lower.contains('কম্প্রেসার') || lower.contains('কুলিং') || lower.contains('এসি')) {
+    if (lower.contains('কম্প্রেসার') || lower.contains('কুলিং') || lower.contains('এসি') || lower.contains('কনডেন্সার')) {
       return 'এসি কম্প্রেসার';
+    }
+    if (lower.contains('রেডিয়েটর') || lower.contains('ফ্যান') || lower.contains('হোসপিপ')) {
+      return 'কুলিং ও রেডিয়েটর';
     }
 
     return 'অন্যান্য স্পেয়ার পার্টস';
@@ -70,11 +76,11 @@ class CategoryClassifier {
 
   /// Get standard unit for root group
   static String getUnitForGroup(String rootGroup) {
-    if (rootGroup == 'হাবস' || rootGroup == 'শকএবজর্ভার') {
-      return 'পিস / সেট';
-    }
-    if (rootGroup == 'ইঞ্জিন' || rootGroup == 'গিয়ার বক্স') {
+    if (rootGroup == 'ইঞ্জিন' || rootGroup == 'গিয়ার বক্স' || rootGroup == 'ব্রেক প্যাড') {
       return 'সেট';
+    }
+    if (rootGroup == 'হাবস' || rootGroup == 'শকএবজর্ভার') {
+      return 'পিস';
     }
     return 'পিস';
   }
