@@ -6,8 +6,11 @@ class ChallanItem {
   final String unit;
   String remarks;
 
+  String get name => partNameBn;
+  String get category => rootGroup;
+
   ChallanItem({
-    required this.partId,
+    this.partId = '',
     required this.partNameBn,
     required this.rootGroup,
     required this.quantity,

@@ -19,11 +19,14 @@ class CountingProvider with ChangeNotifier {
   String destinationFor = 'মুরাদপুর প্রধান শো-রুম';
   String sessionType = 'inward'; // 'inward' = আনলোডিং, 'outward' = লোডিং
 
+  List<ChallanDocument> _sessionHistory = [];
+
   List<PartItem> get catalog => _catalog;
   String get searchQuery => _searchQuery;
   String get selectedCategoryFilter => _selectedCategoryFilter;
   Map<String, int> get counts => _counts;
   bool get isLoading => _isLoading;
+  List<ChallanDocument> get sessionHistory => _sessionHistory;
 
   List<String> get allPartNames => _catalog.map((p) => p.nameBn).toList();
 
@@ -52,6 +55,7 @@ class CountingProvider with ChangeNotifier {
 
     _catalog = await OfflineStorageService.loadEmbeddedCatalog();
     _counts = await OfflineStorageService.getDraftCounts();
+    _sessionHistory = await OfflineStorageService.getAllChallans();
 
     _isLoading = false;
     notifyListeners();
@@ -223,6 +227,42 @@ class CountingProvider with ChangeNotifier {
 
     // Save to local offline history
     await OfflineStorageService.saveChallan(challan);
+    _sessionHistory.insert(0, challan);
+    notifyListeners();
     return challan;
+  }
+
+  /// Add completed challan directly from new UI flow
+  Future<void> addCompletedChallanDirectly({
+    required String challanNo,
+    required String sessionType,
+    required String vehicleNo,
+    required String driverName,
+    required List<ChallanItem> items,
+    required bool isLocked,
+    required String verificationCode,
+    required int revisionNumber,
+  }) async {
+    final now = DateTime.now();
+    final totalPcs = items.fold<int>(0, (sum, i) => sum + i.quantity);
+
+    final doc = ChallanDocument(
+      id: challanNo,
+      challanNo: challanNo,
+      sessionType: sessionType,
+      vehicleNo: vehicleNo,
+      driverName: driverName,
+      date: now,
+      items: items,
+      totalPcs: totalPcs,
+      isLocked: isLocked,
+      verificationCode: verificationCode,
+      revisionNumber: revisionNumber,
+      categorySummaries: [],
+    );
+
+    _sessionHistory.insert(0, doc);
+    notifyListeners();
+    await OfflineStorageService.saveChallan(doc);
   }
 }

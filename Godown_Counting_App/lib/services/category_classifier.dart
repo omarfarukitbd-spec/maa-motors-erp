@@ -1,4 +1,38 @@
+class ClassifiedPart {
+  final String name;
+  final String rootGroup;
+  final String defaultUnit;
+
+  const ClassifiedPart({
+    required this.name,
+    required this.rootGroup,
+    required this.defaultUnit,
+  });
+}
+
 class CategoryClassifier {
+  static const List<ClassifiedPart> defaultParts = [
+    ClassifiedPart(name: 'হাবস', rootGroup: 'হাবস', defaultUnit: 'পিস'),
+    ClassifiedPart(name: 'Axio হাবস', rootGroup: 'হাবস', defaultUnit: 'পিস'),
+    ClassifiedPart(name: 'Fielder হাবস', rootGroup: 'হাবস', defaultUnit: 'পিস'),
+    ClassifiedPart(name: 'কার্টিজ', rootGroup: 'কার্টিজ', defaultUnit: 'পিস'),
+    ClassifiedPart(name: 'Premio কার্টিজ', rootGroup: 'কার্টিজ', defaultUnit: 'পিস'),
+    ClassifiedPart(name: 'ইঞ্জিন', rootGroup: 'ইঞ্জিন', defaultUnit: 'সেট'),
+    ClassifiedPart(name: 'গিয়ারবক্স', rootGroup: 'গিয়ার বক্স', defaultUnit: 'সেট'),
+    ClassifiedPart(name: 'সাসপেনশন আর্ম', rootGroup: 'সাসপেনশন', defaultUnit: 'পিস'),
+    ClassifiedPart(name: 'শক অ্যাবজর্বার', rootGroup: 'শকএবজর্ভার', defaultUnit: 'পিস'),
+    ClassifiedPart(name: 'ব্রেক ডিস্ক', rootGroup: 'ডিস্ক ও ব্রেক', defaultUnit: 'পিস'),
+    ClassifiedPart(name: 'ব্রেক প্যাড', rootGroup: 'ডিস্ক ও ব্রেক', defaultUnit: 'সেট'),
+    ClassifiedPart(name: 'বল জয়েন্ট', rootGroup: 'সাসপেনশন', defaultUnit: 'পিস'),
+  ];
+
+  /// Classify any item into rootGroup and unit
+  static ClassifiedPart classify(String nameBn) {
+    final root = detectRootGroup(nameBn);
+    final unit = getUnitForGroup(root);
+    return ClassifiedPart(name: nameBn, rootGroup: root, defaultUnit: unit);
+  }
+
   /// Detect root product group from Bengali trade name
   static String detectRootGroup(String nameBn) {
     final lower = nameBn.toLowerCase().trim();
@@ -38,6 +72,9 @@ class CategoryClassifier {
   static String getUnitForGroup(String rootGroup) {
     if (rootGroup == 'হাবস' || rootGroup == 'শকএবজর্ভার') {
       return 'পিস / সেট';
+    }
+    if (rootGroup == 'ইঞ্জিন' || rootGroup == 'গিয়ার বক্স') {
+      return 'সেট';
     }
     return 'পিস';
   }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/counting_provider.dart';
-import 'screens/counting_screen.dart';
+import 'screens/home_dashboard_screen.dart';
+import 'utils/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,14 +29,15 @@ class GodownCountingApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF0284C7),
-            brightness: Brightness.dark,
+          colorScheme: const ColorScheme.dark(
+            primary: AppColors.unl,
+            secondary: AppColors.load,
+            surface: AppColors.s1Dark,
           ),
-          scaffoldBackgroundColor: const Color(0xFF0B132B),
+          scaffoldBackgroundColor: AppColors.bgDark,
           fontFamily: 'Hind Siliguri',
         ),
-        home: const CountingScreen(),
+        home: const HomeDashboardScreen(),
       ),
     );
   }
