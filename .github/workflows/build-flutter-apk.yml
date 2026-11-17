@@ -39,7 +39,9 @@ jobs:
       - name: Scaffold Android Support & Scaffolding
         working-directory: ./Godown_Counting_App
         run: |
+          cp pubspec.yaml pubspec.backup.yaml
           flutter create . --project-name godown_counting_app --org com.maamotors --platforms android
+          cp pubspec.backup.yaml pubspec.yaml
           flutter pub get
 
       - name: Build Release APK

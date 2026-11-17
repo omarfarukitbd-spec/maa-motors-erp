@@ -14,3 +14,4 @@ Memo Book Editor/*.pdf
 
 __pycache__/
 *.pyc
+scratch/

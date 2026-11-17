@@ -2,23 +2,27 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tenant_model.dart';
+import 'offline_storage_service.dart';
 
 class AuthLicensingService {
   static const String superAdminEmail = 'omarfarukitbd@gmail.com';
-  static const String _prefKeyOfflineTenant = 'offline_cached_tenant_v1';
-  static const String _prefKeyAllTenants = 'all_registered_tenants_v1';
-  static const String _prefKeyCurrentRole = 'app_current_user_role_v1';
+  static const String _prefKeyOfflineTenant = 'offline_cached_tenant_v2';
+  static const String _prefKeyAllTenants = 'all_registered_tenants_v2';
+  static const String _prefKeyCurrentRole = 'app_current_user_role_v2';
+  static const String _prefKeyAuditLogs = 'godown_audit_logs_v2';
 
-  // In-memory / persistent seed list of shops
+  // Seed default demo shops
   static final List<Tenant> _defaultTenants = [
     Tenant(
       id: 'MM-2026-01',
       shopName: 'মেসার্স মা মোটরস • গোডাউন',
       ownerName: 'ওমর ফারুক',
       phone: '01819-397669',
-      accessPassword: 'maa@2026',
-      licenseKey: 'MM-PREM-9842-8819',
-      licenseStatus: 'active',
+      activationCode: 'MM-7K4X-92QD',
+      licenseKey: 'LIC-MM-8819-9842',
+      licenseState: LicenseState.active,
+      deviceLimit: 5,
+      graceDays: 7,
       aspectRatio: '5:1',
       bannerWidth: 1200,
       bannerHeight: 240,
@@ -31,9 +35,11 @@ class AuthLicensingService {
       shopName: 'রহিম ব্রাদার্স পার্টস গোডাউন',
       ownerName: 'রহিম উল্লাহ',
       phone: '01711-223344',
-      accessPassword: 'rahim@782',
-      licenseKey: 'RB-PREM-4412-1092',
-      licenseStatus: 'active',
+      activationCode: 'RB-4412-1092',
+      licenseKey: 'LIC-RB-1092-4412',
+      licenseState: LicenseState.active,
+      deviceLimit: 3,
+      graceDays: 7,
       aspectRatio: '5:1',
       bannerWidth: 1200,
       bannerHeight: 240,
@@ -48,7 +54,7 @@ class AuthLicensingService {
     return email.trim().toLowerCase() == superAdminEmail.toLowerCase();
   }
 
-  // Load all registered shops from SharedPreferences (or fallback to defaults)
+  // Load all registered shops
   Future<List<Tenant>> getAllTenants() async {
     final prefs = await SharedPreferences.getInstance();
     final rawJson = prefs.getString(_prefKeyAllTenants);
@@ -70,25 +76,37 @@ class AuthLicensingService {
     await prefs.setString(_prefKeyAllTenants, rawJson);
   }
 
-  // Verify shop login with shopId and dedicated secret password
-  Future<Tenant?> verifyShopLogin(String shopId, String password) async {
+  // Verify Activation Code (8-character code, e.g. MM-7K4X-92QD)
+  Future<Tenant?> activateWithCode(String shopId, String activationCode) async {
     final tenants = await getAllTenants();
-    final cleanId = shopId.trim();
-    final cleanPass = password.trim();
+    final cleanId = shopId.trim().toUpperCase();
+    final cleanCode = activationCode.trim().toUpperCase().replaceAll(' ', '');
 
     try {
       final matched = tenants.firstWhere(
         (t) =>
-            t.id.toLowerCase() == cleanId.toLowerCase() &&
-            t.accessPassword == cleanPass,
+            t.id.toUpperCase() == cleanId &&
+            t.activationCode.toUpperCase().replaceAll(' ', '') == cleanCode,
       );
 
-      if (!matched.isActive) {
-        throw Exception('এই শপ অ্যাকাউন্টটি স্থগিত (Suspended) রয়েছে। ওনারের সাথে যোগাযোগ করুন।');
+      // Check clock integrity on device
+      final clockOk = await OfflineStorageService.checkClockIntegrity();
+      if (!clockOk) {
+        matched.isClockTampered = true;
       }
 
-      // Save offline cached license on successful login
+      // Check suspended state
+      if (matched.licenseState == LicenseState.suspended) {
+        throw Exception(
+            'এই শপ অ্যাকাউন্টটি সার্ভার থেকে স্থগিত (Suspended) রয়েছে। ওনারের সাথে যোগাযোগ করুন।');
+      }
+
+      // Generate signed token simulation
+      matched.signedToken = 'SIG-${matched.id}-${DateTime.now().millisecondsSinceEpoch}';
+      matched.lastOnlineSyncAt = DateTime.now();
+
       await saveOfflineLicense(matched);
+      await logAudit('SHOP_ACTIVATION', matched.id, 'ফোন সফলভাবে অ্যাক্টিভেট হয়েছে');
       return matched;
     } catch (e) {
       if (e.toString().contains('স্থগিত')) rethrow;
@@ -104,38 +122,55 @@ class AuthLicensingService {
     await prefs.setString(_prefKeyCurrentRole, UserRole.shopAdmin.name);
   }
 
-  // Load cached offline license
+  // Load cached offline license & evaluate live state
   Future<Tenant?> loadCachedOfflineLicense() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_prefKeyOfflineTenant);
     if (raw == null || raw.isEmpty) return null;
     try {
-      return Tenant.fromJson(jsonDecode(raw));
+      final tenant = Tenant.fromJson(jsonDecode(raw));
+
+      // Re-check anti-tamper clock
+      final clockOk = await OfflineStorageService.checkClockIntegrity();
+      if (!clockOk) {
+        tenant.isClockTampered = true;
+      }
+
+      return tenant;
     } catch (_) {
       return null;
     }
   }
 
-  // Create new shop tenant by Super Admin
+  // Create new shop tenant by Super Admin (Generates 8-char activation code)
   Future<Tenant> createTenant({
     required String shopName,
     required String ownerName,
     required String phone,
+    int deviceLimit = 3,
   }) async {
     final tenants = await getAllTenants();
     final nextNum = tenants.length + 1;
     final id = 'SHP-2026-0$nextNum';
-    final randomPass = 'PASS-${1000 + Random().nextInt(9000)}';
-    final licenseKey = 'LIC-${Random().nextInt(9999)}-${Random().nextInt(9999)}';
+    
+    // Generate 8-char formatted activation code: MM-XXXX-XXXX
+    final chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    final rand = Random();
+    String rPart1 = List.generate(4, (_) => chars[rand.nextInt(chars.length)]).join();
+    String rPart2 = List.generate(4, (_) => chars[rand.nextInt(chars.length)]).join();
+    final activationCode = 'MM-$rPart1-$rPart2';
+    final licenseKey = 'LIC-MM-${rand.nextInt(8999) + 1000}-${rand.nextInt(8999) + 1000}';
 
     final newTenant = Tenant(
       id: id,
       shopName: shopName,
       ownerName: ownerName,
       phone: phone,
-      accessPassword: randomPass,
+      activationCode: activationCode,
       licenseKey: licenseKey,
-      licenseStatus: 'active',
+      licenseState: LicenseState.active,
+      deviceLimit: deviceLimit,
+      graceDays: 7,
       aspectRatio: '5:1',
       bannerWidth: 1200,
       bannerHeight: 240,
@@ -146,7 +181,62 @@ class AuthLicensingService {
 
     tenants.add(newTenant);
     await saveAllTenants(tenants);
+    await logAudit('CREATE_SHOP', id, 'নতুন শপ ও অ্যাক্টিভেশন কোড তৈরি করা হয়েছে');
     return newTenant;
+  }
+
+  // Regenerate activation code for an existing shop
+  Future<String> regenerateActivationCode(String shopId) async {
+    final tenants = await getAllTenants();
+    final index = tenants.indexWhere((t) => t.id == shopId);
+    if (index == -1) throw Exception('দোকান পাওয়া যায়নি');
+
+    final chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    final rand = Random();
+    String rPart1 = List.generate(4, (_) => chars[rand.nextInt(chars.length)]).join();
+    String rPart2 = List.generate(4, (_) => chars[rand.nextInt(chars.length)]).join();
+    final newCode = 'MM-$rPart1-$rPart2';
+
+    tenants[index].activationCode = newCode;
+    await saveAllTenants(tenants);
+    await logAudit('REGEN_CODE', shopId, 'নতুন অ্যাক্টিভেশন কোড জেনারেট: $newCode');
+    return newCode;
+  }
+
+  // Update Device Limit
+  Future<void> updateDeviceLimit(String shopId, int limit) async {
+    final tenants = await getAllTenants();
+    final index = tenants.indexWhere((t) => t.id == shopId);
+    if (index == -1) return;
+
+    tenants[index].deviceLimit = limit;
+    await saveAllTenants(tenants);
+
+    final cached = await loadCachedOfflineLicense();
+    if (cached != null && cached.id == shopId) {
+      cached.deviceLimit = limit;
+      await saveOfflineLicense(cached);
+    }
+
+    await logAudit('UPDATE_DEVICE_LIMIT', shopId, 'ডিভাইস লিমিট আপডেট: $limit টি');
+  }
+
+  // Set explicit license state (active, grace, softLock, suspended)
+  Future<void> setTenantLicenseState(String shopId, LicenseState state) async {
+    final tenants = await getAllTenants();
+    final index = tenants.indexWhere((t) => t.id == shopId);
+    if (index == -1) return;
+
+    tenants[index].licenseState = state;
+    await saveAllTenants(tenants);
+
+    final cached = await loadCachedOfflineLicense();
+    if (cached != null && cached.id == shopId) {
+      cached.licenseState = state;
+      await saveOfflineLicense(cached);
+    }
+
+    await logAudit('SET_LICENSE_STATE', shopId, 'লাইসেন্স স্টেট পরিবর্তন: ${state.name}');
   }
 
   // Toggle Suspend / Active for a shop
@@ -155,16 +245,21 @@ class AuthLicensingService {
     final index = tenants.indexWhere((t) => t.id == shopId);
     if (index == -1) return false;
 
-    tenants[index].licenseStatus =
-        tenants[index].licenseStatus == 'active' ? 'suspended' : 'active';
+    final current = tenants[index].licenseState;
+    final next = current == LicenseState.suspended
+        ? LicenseState.active
+        : LicenseState.suspended;
+    tenants[index].licenseState = next;
 
     await saveAllTenants(tenants);
 
-    // If current offline tenant is this one, update local cache
     final cached = await loadCachedOfflineLicense();
     if (cached != null && cached.id == shopId) {
-      await saveOfflineLicense(tenants[index]);
+      cached.licenseState = next;
+      await saveOfflineLicense(cached);
     }
+
+    await logAudit('TOGGLE_SUSPEND', shopId, 'লাইসেন্স অবস্থা পরিবর্তন: ${next.name}');
     return true;
   }
 
@@ -179,7 +274,36 @@ class AuthLicensingService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_prefKeyOfflineTenant);
     }
+    await logAudit('DELETE_SHOP', shopId, 'শপ ডিলিট করা হয়েছে');
     return true;
+  }
+
+  // Audit Log Recorder
+  Future<void> logAudit(String action, String shopId, String details) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefKeyAuditLogs);
+    List logs = raw != null && raw.isNotEmpty ? jsonDecode(raw) : [];
+    logs.insert(0, {
+      'action': action,
+      'shopId': shopId,
+      'details': details,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    // Keep last 100 logs
+    if (logs.length > 100) logs = logs.sublist(0, 100);
+    await prefs.setString(_prefKeyAuditLogs, jsonEncode(logs));
+  }
+
+  Future<List<Map<String, dynamic>>> getAuditLogs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefKeyAuditLogs);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final List decoded = jsonDecode(raw);
+      return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   // Clear offline license / logout

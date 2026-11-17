@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/tenant_model.dart';
 import '../providers/auth_provider.dart';
 import '../screens/super_admin_hub_screen.dart';
+import '../services/drive_backup_service.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -10,7 +11,6 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
       backgroundColor: const Color(0xFF0F172A),
@@ -41,9 +41,11 @@ class AppDrawer extends StatelessWidget {
                     const SizedBox(height: 12),
                   ],
 
-                  // 4. Shop Admin Features Group (Hidden in Free Mode)
+                  // 4. Shop Admin Features Group
                   if (auth.hasChallanAccess) ...[
                     _buildLicenseStatusCard(context, auth),
+                    const SizedBox(height: 12),
+                    _buildGoogleDriveBackupCard(context),
                     const SizedBox(height: 12),
                     _buildShopNameCard(context, auth),
                     const SizedBox(height: 12),
@@ -65,7 +67,7 @@ class AppDrawer extends StatelessWidget {
               ),
               child: const Center(
                 child: Text(
-                  'গোডাউন কাউন্টিং অ্যাপ • ভার্সন ১.০ (মাল্টি-টেন্যান্ট)',
+                  'গোডাউন কাউন্টিং অ্যাপ • ভার্সন ২.০ (মাল্টি-টেন্যান্ট SaaS)',
                   style: TextStyle(color: Color(0xFF64748B), fontSize: 10),
                 ),
               ),
@@ -283,7 +285,7 @@ class AppDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'আপনি বর্তমানে ফ্রি কাউন্টার মোডে আছেন। নিজস্ব শপ নাম, ১২০০x২৪০ ব্যানার ও স্বয়ংক্রিয় চালান প্রিন্ট করতে শপ অ্যাডমিন পাসওয়ার্ড দিয়ে লগইন করুন।',
+            'আপনি বর্তমানে ফ্রি কাউন্টার মোডে আছেন। ওনার থেকে প্রাপ্ত ৮ অক্ষরের অ্যাক্টিভেশন কোড দিয়ে শপ অ্যাক্টিভেট করুন।',
             style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
           ),
           const SizedBox(height: 10),
@@ -298,10 +300,10 @@ class AppDrawer extends StatelessWidget {
               ),
               icon: const Icon(Icons.key, size: 14),
               label: const Text(
-                'ডেডিকেটেড পাসওয়ার্ড দিয়ে লগইন',
+                'অ্যাক্টিভেশন কোড দিয়ে অ্যাক্টিভেট করুন',
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
               ),
-              onPressed: () => _showShopLoginDialog(context),
+              onPressed: () => _showShopActivationDialog(context),
             ),
           ),
         ],
@@ -310,6 +312,11 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildLicenseStatusCard(BuildContext context, AuthProvider auth) {
+    final tenant = auth.currentTenant;
+    final badgeColor = auth.isSoftLocked
+        ? const Color(0xFF991B1B)
+        : (auth.isInGracePeriod ? const Color(0xFF065F46) : const Color(0xFF064E3B));
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -330,26 +337,82 @@ class AppDrawer extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF064E3B),
+                  color: badgeColor,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFF10B981)),
                 ),
-                child: const Text(
-                  'অফলাইন লাইসেন্স সক্রিয়',
-                  style: TextStyle(color: Color(0xFF34D399), fontSize: 9, fontWeight: FontWeight.bold),
+                child: Text(
+                  tenant?.statusBadgeTextBn ?? 'সচল',
+                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             'শপ আইডি: ${auth.currentShopId}',
             style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
           ),
+          if (tenant != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              'ডিভাইস সীমা: ${tenant.deviceLimit} টি • মেয়াদ: ${tenant.remainingDays} দিন বাকি',
+              style: const TextStyle(color: Colors.white70, fontSize: 9.5),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoogleDriveBackupCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF334155)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Google Drive ব্যাকআপ',
+                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                'appDataFolder',
+                style: TextStyle(color: Color(0xFF34D399), fontSize: 9, fontFamily: 'monospace'),
+              ),
+            ],
+          ),
           const SizedBox(height: 4),
           const Text(
-            '✓ ১ বার অনলাইন ভেরিফিকেশন সম্পন্ন। ইন্টারনেট ছাড়াও অফলাইনে সমস্ত চালান ফিচার আজীবন কাজ করবে।',
-            style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5),
+            'আপনার চালানসমূহ আপনার ব্যক্তিগত Google Drive-এ নিরাপদ থাকে। ওনারের সার্ভারে কোনো ডেটা যায় না।',
+            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF38BDF8),
+              side: const BorderSide(color: Color(0xFF0284C7)),
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+            ),
+            icon: const Icon(Icons.cloud_upload, size: 14),
+            label: const Text('এখনই ড্রাইভ ব্যাকআপ নিন', style: TextStyle(fontSize: 10)),
+            onPressed: () async {
+              final ok = await DriveBackupService.performBackup('user@gmail.com');
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: ok ? const Color(0xFF059669) : Colors.red,
+                    content: Text(ok ? 'Google Drive ব্যাকআপ সফল হয়েছে!' : 'ব্যাকআপ ব্যর্থ হয়েছে'),
+                  ),
+                );
+              }
+            },
           ),
         ],
       ),
@@ -379,14 +442,7 @@ class AppDrawer extends StatelessWidget {
               isDense: true,
               filled: true,
               fillColor: const Color(0xFF0F172A),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFF334155)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFF334155)),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onChanged: (val) => auth.updateShopName(val),
           ),
@@ -425,8 +481,6 @@ class AppDrawer extends StatelessWidget {
             style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
           ),
           const SizedBox(height: 8),
-
-          // 1200 x 240 (5:1) Aspect Ratio Live Preview Box
           AspectRatio(
             aspectRatio: 5 / 1,
             child: Container(
@@ -439,63 +493,13 @@ class AppDrawer extends StatelessWidget {
               ),
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    auth.shopDisplayName.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF38BDF8),
-                      fontWeight: FontWeight.w900,
-                      fontSize: 11,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const Text(
-                    'আমদানি ও পাইকারি যন্ত্রাংশ সরবরাহ • চট্টগ্রাম',
-                    style: TextStyle(color: Colors.white70, fontSize: 8),
-                  ),
-                ],
+              child: Text(
+                auth.shopDisplayName.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.w900, fontSize: 11),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                    side: const BorderSide(color: Color(0xFF475569)),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('সিমুলেশন: ছবি ১২০০ x ২৪০ পিক্সেল (৫:১) প্রিভিউতে প্রদর্শিত হচ্ছে')),
-                    );
-                  },
-                  child: const Text('নতুন ছবি নির্বাচন', style: TextStyle(fontSize: 10)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF059669),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('চালান হেডিং ব্যানার সংরক্ষিত হয়েছে!')),
-                    );
-                  },
-                  child: const Text('সংরক্ষণ (Save)', style: TextStyle(fontSize: 10)),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -521,7 +525,7 @@ class AppDrawer extends StatelessWidget {
                 style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
               ),
               Text(
-                'পাসওয়ার্ডহীন পেয়ারিং',
+                '৬০ সেকেন্ডের মেয়াদ',
                 style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9, fontWeight: FontWeight.bold),
               ),
             ],
@@ -532,20 +536,11 @@ class AppDrawer extends StatelessWidget {
             style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
           ),
           const SizedBox(height: 8),
-
-          // Simulated QR Card
           Center(
             child: Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.qr_code_2,
-                size: 72,
-                color: Colors.black,
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.qr_code_2, size: 72, color: Colors.black),
             ),
           ),
           const SizedBox(height: 8),
@@ -568,9 +563,9 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  void _showShopLoginDialog(BuildContext context) {
+  void _showShopActivationDialog(BuildContext context) {
     final idController = TextEditingController(text: 'MM-2026-01');
-    final passController = TextEditingController(text: 'maa@2026');
+    final codeController = TextEditingController(text: 'MM-7K4X-92QD');
 
     showDialog(
       context: context,
@@ -582,7 +577,7 @@ class AppDrawer extends StatelessWidget {
             Icon(Icons.key, color: Color(0xFF38BDF8), size: 18),
             SizedBox(width: 8),
             Text(
-              'শপ অ্যাডমিন লগইন',
+              'শপ অ্যাক্টিভেশন (৮-অক্ষরের কোড)',
               style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
             ),
           ],
@@ -592,7 +587,7 @@ class AppDrawer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'সুপার অ্যাডমিন থেকে প্রাপ্ত শপ আইডি ও ডেডিকেটেড পাসওয়ার্ড দিন:',
+              'ওনার থেকে প্রাপ্ত শপ আইডি ও অ্যাক্টিভেশন কোড লিখুন:',
               style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
             ),
             const SizedBox(height: 10),
@@ -600,7 +595,7 @@ class AppDrawer extends StatelessWidget {
               controller: idController,
               style: const TextStyle(color: Colors.white, fontSize: 12),
               decoration: InputDecoration(
-                labelText: 'শপ আইডি (Shop ID)',
+                labelText: 'শপ আইডি (যেমন: MM-2026-01)',
                 labelStyle: const TextStyle(color: Colors.white70, fontSize: 11),
                 filled: true,
                 fillColor: const Color(0xFF1E293B),
@@ -609,11 +604,10 @@ class AppDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             TextField(
-              controller: passController,
-              obscureText: true,
-              style: const TextStyle(color: Colors.white, fontSize: 12),
+              controller: codeController,
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace'),
               decoration: InputDecoration(
-                labelText: 'ডেডিকেটেড পাসওয়ার্ড',
+                labelText: 'অ্যাক্টিভেশন কোড (যেমন: MM-7K4X-92QD)',
                 labelStyle: const TextStyle(color: Colors.white70, fontSize: 11),
                 filled: true,
                 fillColor: const Color(0xFF1E293B),
@@ -632,18 +626,18 @@ class AppDrawer extends StatelessWidget {
             onPressed: () async {
               final auth = context.read<AuthProvider>();
               try {
-                final success = await auth.loginShop(
+                final success = await auth.activateShop(
                   idController.text.trim(),
-                  passController.text.trim(),
+                  codeController.text.trim(),
                 );
                 if (success) {
                   Navigator.pop(dialogCtx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('লগইন সফল! অফলাইন লাইসেন্স সক্রিয় হয়েছে।')),
+                    const SnackBar(content: Text('অ্যাক্টিভেশন সফল! অফলাইন লাইসেন্স সক্রিয় হয়েছে।')),
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('ভুল শপ আইডি বা পাসওয়ার্ড!')),
+                    const SnackBar(content: Text('ভুল শপ আইডি বা অ্যাক্টিভেশন কোড!')),
                   );
                 }
               } catch (e) {
@@ -652,7 +646,7 @@ class AppDrawer extends StatelessWidget {
                 );
               }
             },
-            child: const Text('লগইন ও আনলক'),
+            child: const Text('অ্যাক্টিভেট করুন'),
           ),
         ],
       ),

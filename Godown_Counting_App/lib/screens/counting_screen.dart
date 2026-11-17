@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/counting_provider.dart';
+import '../services/audio_engine_service.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/part_autocomplete_field.dart';
 import 'challan_preview_screen.dart';
@@ -16,7 +16,8 @@ class CountingScreen extends StatefulWidget {
 }
 
 class _CountingScreenState extends State<CountingScreen> {
-  bool soundEnabled = true;
+  final AudioEngineService _audio = AudioEngineService();
+
   String activeItemName = 'হাবস';
   String activeItemUnit = 'পিস';
 
@@ -35,14 +36,12 @@ class _CountingScreenState extends State<CountingScreen> {
     super.dispose();
   }
 
-  void _triggerHaptics() {
-    HapticFeedback.lightImpact();
-  }
-
   void _handleCircleTap() {
-    _triggerHaptics();
+    final nextCount = currentCount + 1;
+    _audio.playCountVoice(nextCount);
+
     setState(() {
-      currentCount++;
+      currentCount = nextCount;
       if (historyIndex < historyStack.length - 1) {
         historyStack = historyStack.sublist(0, historyIndex + 1);
       }
@@ -53,7 +52,7 @@ class _CountingScreenState extends State<CountingScreen> {
 
   void _handleUndo() {
     if (historyIndex > 0) {
-      _triggerHaptics();
+      _audio.playUndoSound();
       setState(() {
         historyIndex--;
         currentCount = historyStack[historyIndex];
@@ -63,7 +62,7 @@ class _CountingScreenState extends State<CountingScreen> {
 
   void _handleRedo() {
     if (historyIndex < historyStack.length - 1) {
-      _triggerHaptics();
+      _audio.triggerHaptic();
       setState(() {
         historyIndex++;
         currentCount = historyStack[historyIndex];
@@ -79,7 +78,7 @@ class _CountingScreenState extends State<CountingScreen> {
       return;
     }
 
-    _triggerHaptics();
+    _audio.playCompleteSound();
     final name = activeItemName.trim();
     final qty = currentCount;
     final unit = activeItemUnit;
@@ -228,9 +227,9 @@ class _CountingScreenState extends State<CountingScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
             ),
             Text(
-              auth.hasChallanAccess ? 'অফলাইন লাইসেন্স সক্রিয়' : 'ফ্রি কাউন্টার মোড',
+              auth.currentTenant?.statusBadgeTextBn ?? 'ফ্রি কাউন্টার মোড',
               style: TextStyle(
-                color: auth.hasChallanAccess ? const Color(0xFF34D399) : const Color(0xFF94A3B8),
+                color: auth.isSoftLocked ? const Color(0xFFF87171) : const Color(0xFF34D399),
                 fontSize: 9.5,
               ),
             ),
@@ -251,26 +250,24 @@ class _CountingScreenState extends State<CountingScreen> {
             ),
           IconButton(
             icon: Icon(
-              soundEnabled ? Icons.volume_up : Icons.volume_off,
-              color: soundEnabled ? const Color(0xFF38BDF8) : const Color(0xFFF87171),
+              _audio.isSoundEnabled ? Icons.volume_up : Icons.volume_off,
+              color: _audio.isSoundEnabled ? const Color(0xFF38BDF8) : const Color(0xFFF87171),
             ),
-            tooltip: soundEnabled ? 'সাউন্ড চালু' : 'শুধু ভাইব্রেশন',
+            tooltip: _audio.isSoundEnabled ? 'সাউন্ড চালু' : 'শুধু ভাইব্রেশন',
             onPressed: () {
-              setState(() => soundEnabled = !soundEnabled);
-              _triggerHaptics();
+              setState(() {
+                _audio.toggleSound();
+              });
+              _audio.triggerHaptic();
             },
           ),
           IconButton(
             icon: const Icon(Icons.receipt_long, color: Color(0xFFFFD700)),
             tooltip: 'চালানপত্র দেখুন',
-            onPressed: () {
-              if (!auth.hasChallanAccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('চালান প্রিন্ট করতে ড্রয়ার থেকে শপ অ্যাকাউন্টে লগইন করুন!')),
-                );
-                return;
-              }
-              final challan = context.read<CountingProvider>().generateChallan();
+            onPressed: () async {
+              final countingProv = context.read<CountingProvider>();
+              final challan = await countingProv.generateChallan();
+              if (!mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => ChallanPreviewScreen(challan: challan)),
@@ -282,6 +279,44 @@ class _CountingScreenState extends State<CountingScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Soft-Lock or Grace Warning Banner
+            if (auth.isSoftLocked)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                color: const Color(0xFF7F1D1D),
+                child: const Row(
+                  children: [
+                    Icon(Icons.lock_clock, color: Colors.amber, size: 14),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'সফট-লক মোড: গণনা ও এক্সপোর্ট চালু আছে। নতুন চালান প্রিন্ট বা শেয়ার বন্ধ।',
+                        style: TextStyle(color: Colors.white, fontSize: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (auth.isInGracePeriod)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                color: const Color(0xFF065F46),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.cyanAccent, size: 14),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'গ্রেস পিরিয়ড সচল: মেয়াদ শেষ হলেও গণনা ও চালান প্রিন্ট চলছে।',
+                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // Active Item Selection Bar with Autocomplete
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -322,7 +357,7 @@ class _CountingScreenState extends State<CountingScreen> {
               ),
             ),
 
-            // Big Round Circle Area
+            // Big Round Circle Area (Bottom-Weighted)
             Expanded(
               child: Center(
                 child: Column(

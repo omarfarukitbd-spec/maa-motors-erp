@@ -11,9 +11,12 @@ class CountingProvider with ChangeNotifier {
   Map<String, int> _counts = {};
   bool _isLoading = true;
 
-  // Metadata
+  // Challan Metadata
   String vehicleNo = '';
   String driverName = '';
+  String driverMobile = '';
+  String productOwner = 'মেসার্স মা মোটরস';
+  String destinationFor = 'মুরাদপুর প্রধান শো-রুম';
   String sessionType = 'inward'; // 'inward' = আনলোডিং, 'outward' = লোডিং
 
   List<PartItem> get catalog => _catalog;
@@ -158,18 +161,32 @@ class CountingProvider with ChangeNotifier {
   /// Reset all counts and clear draft
   Future<void> resetAll() async {
     _counts.clear();
+    vehicleNo = '';
+    driverName = '';
+    driverMobile = '';
     notifyListeners();
     await OfflineStorageService.clearDraftCounts();
   }
 
-  /// Generate finalized Challan Document
-  ChallanDocument generateChallan() {
+  /// Generate and store finalized Challan Document
+  Future<ChallanDocument> generateChallan({
+    String devicePrefix = 'A1',
+    String countedByUserName = 'গোডাউন ইনচার্জ',
+  }) async {
     final now = DateTime.now();
     final itemsList = <ChallanItem>[];
 
     for (final entry in _counts.entries) {
       if (entry.value <= 0) continue;
-      final part = _catalog.firstWhere((p) => p.id == entry.key);
+      final part = _catalog.firstWhere(
+        (p) => p.id == entry.key,
+        orElse: () => PartItem(
+          id: entry.key,
+          nameBn: entry.key,
+          category: 'অন্যান্য',
+          rootGroup: CategoryClassifier.detectRootGroup(entry.key),
+        ),
+      );
       itemsList.add(ChallanItem(
         partId: part.id,
         partNameBn: part.nameBn,
@@ -179,16 +196,23 @@ class CountingProvider with ChangeNotifier {
       ));
     }
 
-    return ChallanDocument(
+    final serialNo = await OfflineStorageService.getNextDeviceSerial();
+    final paddedSerial = serialNo.toString().padLeft(5, '0');
+    final formattedNo = '$devicePrefix-$paddedSerial';
+
+    final challan = ChallanDocument(
       id: 'CHLN-${now.millisecondsSinceEpoch}',
-      challanNo: 'CHLN-${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}-${(now.minute * 60 + now.second)}',
+      challanNo: formattedNo,
+      devicePrefix: devicePrefix,
+      deviceSerialNo: serialNo,
       sessionType: sessionType,
       countedByUserId: 'USER-STAFF-01',
-      countedByUserName: 'গোডাউন ইনচার্জ',
-      productOwner: 'মেসার্স মা মোটরস',
-      destinationFor: 'মুরাদপুর প্রধান শো-রুম',
+      countedByUserName: countedByUserName,
+      productOwner: productOwner,
+      destinationFor: destinationFor,
       vehicleNo: vehicleNo.isNotEmpty ? vehicleNo : 'অনির্ধারিত গাড়ি',
       driverName: driverName.isNotEmpty ? driverName : 'অনির্ধারিত চালক',
+      driverMobile: driverMobile,
       gatePassNo: 'GP-${now.millisecondsSinceEpoch.toString().substring(7)}',
       godownLocation: 'গোডাউন-১, মুরাদপুর',
       date: now,
@@ -196,5 +220,9 @@ class CountingProvider with ChangeNotifier {
       categorySummaries: categorySummaries,
       totalPcs: totalPiecesCounted,
     );
+
+    // Save to local offline history
+    await OfflineStorageService.saveChallan(challan);
+    return challan;
   }
 }
