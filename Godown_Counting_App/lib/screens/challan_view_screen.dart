@@ -146,14 +146,21 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
       categorySummaries: [],
     );
 
-    if (actionName == 'print') {
+    if (actionName == 'print_a4') {
       ChallanPdfService.printChallanA4(challanDoc, tenant: auth.currentTenant);
+    } else if (actionName == 'print_pos') {
+      ChallanPdfService.printChallanPos(challanDoc, tenant: auth.currentTenant);
     } else {
       ChallanPdfService.shareChallanPdf(challanDoc, tenant: auth.currentTenant);
     }
 
+    final actionLabel = actionName == 'print_a4'
+        ? 'A4 প্রিন্ট'
+        : actionName == 'print_pos'
+            ? 'POS প্রিন্ট'
+            : 'শেয়ার';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$actionName সম্পন্ন · চালান লক হয়েছে')),
+      SnackBar(content: Text('$actionLabel সম্পন্ন · চালান লক হয়েছে')),
     );
   }
 
@@ -504,7 +511,7 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
                       label: 'A4 প্রিন্ট',
                       icon: Icons.print,
                       isPrimary: false,
-                      onTap: () => _handlePrintOrShare('print', auth),
+                      onTap: () => _handlePrintOrShare('print_a4', auth),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -513,7 +520,7 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
                       label: 'POS প্রিন্ট',
                       icon: Icons.receipt,
                       isPrimary: false,
-                      onTap: () => _handlePrintOrShare('print', auth),
+                      onTap: () => _handlePrintOrShare('print_pos', auth),
                     ),
                   ),
                   const SizedBox(width: 8),

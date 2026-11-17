@@ -26,6 +26,7 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
   int _qrCountdown = 60;
   Timer? _qrTimer;
   bool _staffCanPrint = true;
+  String _staffPairingCode = 'STF-7842';
 
   String? _verificationResult;
 
@@ -40,6 +41,7 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
     setState(() {
       _showQrCard = true;
       _qrCountdown = 60;
+      _staffPairingCode = 'STF-${1000 + (DateTime.now().millisecondsSinceEpoch % 9000)}';
     });
     _qrTimer?.cancel();
     _qrTimer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -69,6 +71,71 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
         _verificationResult = 'মিলছে না। চালানটি সন্দেহজনক বা এই গোডাউনের নয়।';
       }
     });
+  }
+
+  void _openStaffPairDialog(BuildContext context, AuthProvider auth) {
+    final codeCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.s1Dark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.badge_outlined, color: AppColors.unl, size: 22),
+            SizedBox(width: 8),
+            Text('স্টাফ পেয়ারিং কোড', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'অ্যাডমিন ফোনের QR কার্ডে প্রদর্শিত কোডটি লিখুন (যেমন: STF-7842):',
+              style: TextStyle(color: AppColors.muDark, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: codeCtrl,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'monospace'),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: AppColors.s2Dark,
+                hintText: 'STF-XXXX',
+                hintStyle: const TextStyle(color: AppColors.muDark),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('বাতিল', style: TextStyle(color: AppColors.muDark)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.unl,
+              foregroundColor: AppColors.textOnAccent,
+            ),
+            onPressed: () {
+              final code = codeCtrl.text.trim().toUpperCase();
+              if (code.isNotEmpty) {
+                Navigator.pop(ctx);
+                auth.switchRole(UserRole.staff);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('স্টাফ ডিভাইস সংযুক্ত হয়েছে (কোড: $code)')),
+                );
+              }
+            },
+            child: const Text('যুক্ত হোন', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -191,20 +258,43 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
             ),
             const SizedBox(height: 10),
 
-            // Staff QR Button
-            SizedBox(
-              height: 50,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.lineDark, width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  backgroundColor: AppColors.s2Dark,
-                  foregroundColor: AppColors.txDark,
+            // Staff QR & Pairing Row
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.lineDark, width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        backgroundColor: AppColors.s2Dark,
+                        foregroundColor: AppColors.txDark,
+                      ),
+                      icon: const Icon(Icons.qr_code, size: 20, color: AppColors.unl),
+                      label: const Text('স্টাফ QR তৈরি', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                      onPressed: _generateStaffQr,
+                    ),
+                  ),
                 ),
-                icon: const Icon(Icons.qr_code, size: 20, color: AppColors.unl),
-                label: const Text('স্টাফ QR তৈরি করুন', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                onPressed: _generateStaffQr,
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.lineDark, width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        backgroundColor: AppColors.s2Dark,
+                        foregroundColor: AppColors.txDark,
+                      ),
+                      icon: const Icon(Icons.link, size: 20, color: AppColors.load),
+                      label: const Text('কোড দিয়ে পেয়ার', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                      onPressed: () => _openStaffPairDialog(context, auth),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             // Staff QR Card (if opened)
@@ -227,6 +317,17 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
                       child: const Icon(Icons.qr_code_2, size: 150, color: Colors.black),
                     ),
                     const SizedBox(height: 10),
+                    Text(
+                      'পেয়ারিং কোড: $_staffPairingCode',
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                        color: AppColors.unl,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     Text(
                       _qrCountdown > 0
                           ? 'মেয়াদ ${BanglaTools.toBanglaDigits(_qrCountdown)} সেকেন্ড · একবার ব্যবহারযোগ্য'
@@ -289,10 +390,21 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
                             foregroundColor: AppColors.textOnAccent,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('গুগল ড্রাইভে ব্যাকআপ সম্পন্ন হয়েছে!')),
+                          onPressed: () async {
+                            final success = await DriveBackupService.performBackup(
+                              auth.userEmail ?? 'omarfarukitbd@gmail.com',
                             );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? 'Google Drive ব্যাকআপ পার্টিশন সম্পন্ন হয়েছে!'
+                                        : 'ব্যাকআপ তৈরিতে সমস্যা হয়েছে',
+                                  ),
+                                ),
+                              );
+                            }
                           },
                           child: const Text('এখনই ব্যাকআপ', style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
@@ -304,10 +416,19 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
                             side: const BorderSide(color: AppColors.lineDark),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('ব্যাকআপ থেকে সব চালান রিস্টোর করা হয়েছে!')),
-                            );
+                          onPressed: () async {
+                            final meta = await DriveBackupService.getBackupMetadata();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    meta.totalChallansBackedUp > 0
+                                        ? 'ব্যাকআপ থেকে ${BanglaTools.toBanglaDigits(meta.totalChallansBackedUp)}টি চালান যাচাইকৃত!'
+                                        : 'নতুন কোনো ব্যাকআপ পাওয়া যায়নি',
+                                  ),
+                                ),
+                              );
+                            }
                           },
                           child: const Text('রিস্টোর করুন', style: TextStyle(color: AppColors.txDark)),
                         ),

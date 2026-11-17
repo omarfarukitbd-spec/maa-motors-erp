@@ -10,6 +10,8 @@ import 'main_counter_screen.dart';
 import 'challan_history_screen.dart';
 import 'license_backup_screen.dart';
 import 'challan_view_screen.dart';
+import 'super_admin_hub_screen.dart';
+import '../services/auth_licensing_service.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({super.key});
@@ -146,31 +148,116 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Demo Challan Link
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ChallanViewScreen(isDemoSample: true),
+              // Bottom Links: Demo Challan & Super Admin Hub
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ChallanViewScreen(isDemoSample: true),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'নমুনা চালান দেখুন',
+                      style: TextStyle(
+                        color: AppColors.muDark,
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
                       ),
-                    );
-                  },
-                  child: const Text(
-                    'নমুনা চালান দেখুন',
-                    style: TextStyle(
-                      color: AppColors.muDark,
-                      fontSize: 15,
-                      decoration: TextDecoration.underline,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 14),
+                  TextButton.icon(
+                    onPressed: () => _openSuperAdminHub(context, auth),
+                    icon: const Icon(Icons.shield_outlined, color: AppColors.muDark, size: 16),
+                    label: const Text(
+                      'অ্যাডমিন হাব',
+                      style: TextStyle(
+                        color: AppColors.muDark,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _openSuperAdminHub(BuildContext context, AuthProvider auth) {
+    final pinCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.s1Dark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.security, color: AppColors.load, size: 22),
+            SizedBox(width: 8),
+            Text('মাস্টার কন্ট্রোল পিন', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'সুপার অ্যাডমিন হাবে প্রবেশের জন্য ওনার সিকিউরিটি পিন দিন (ডিফল্ট: 7860):',
+              style: TextStyle(color: AppColors.muDark, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: pinCtrl,
+              autofocus: true,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 4),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: AppColors.s2Dark,
+                hintText: 'PIN',
+                hintStyle: const TextStyle(color: AppColors.muDark),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('বাতিল', style: TextStyle(color: AppColors.muDark)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.unl,
+              foregroundColor: AppColors.textOnAccent,
+            ),
+            onPressed: () {
+              if (pinCtrl.text.trim() == '7860') {
+                Navigator.pop(ctx);
+                auth.loginAsSuperAdmin(AuthLicensingService.superAdminEmail);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SuperAdminHubScreen()),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('ভুল পিন! সঠিক ওনার পিন দিন।')),
+                );
+              }
+            },
+            child: const Text('প্রবেশ করুন', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

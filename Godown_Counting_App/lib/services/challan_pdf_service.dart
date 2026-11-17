@@ -251,6 +251,192 @@ class ChallanPdfService {
     );
   }
 
+  /// Generate 80mm Thermal POS Receipt PDF Document bytes
+  static Future<Uint8List> generatePosPdfBytes(
+    ChallanDocument challan, {
+    Tenant? tenant,
+  }) async {
+    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.hindSiliguriRegular();
+    final fontBold = await PdfGoogleFonts.hindSiliguriBold();
+
+    final shopTitle = tenant?.shopName ?? 'মেসার্স মা মোটরস';
+    final isUnloading = challan.sessionType == 'inward';
+    final sessionBadgeText = isUnloading ? 'গাড়ি থেকে আনলোডিং' : 'গাড়িতে মাল তোলা';
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.roll80,
+        margin: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              // Header
+              pw.Text(shopTitle, style: pw.TextStyle(font: fontBold, fontSize: 13), textAlign: pw.TextAlign.center),
+              pw.Text('গোডাউন ডেলিভারি চালান', style: pw.TextStyle(font: font, fontSize: 8), textAlign: pw.TextAlign.center),
+              pw.Container(
+                margin: const pw.EdgeInsets.symmetric(vertical: 4),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: pw.BoxDecoration(
+                  color: isUnloading ? PdfColors.amber800 : PdfColors.teal800,
+                  borderRadius: pw.BorderRadius.circular(3),
+                ),
+                child: pw.Text(sessionBadgeText, style: pw.TextStyle(font: fontBold, fontSize: 7.5, color: PdfColors.white)),
+              ),
+              pw.Text('- - - - - - - - - - - - - - - - - - - - - - - - - - -', style: pw.TextStyle(font: font, fontSize: 7)),
+              pw.SizedBox(height: 2),
+
+              // Metadata
+              pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _posMetaRow('চালান নং:', challan.displayChallanNo, fontBold, font),
+                    _posMetaRow('তারিখ:', _formatDate(challan.date), fontBold, font),
+                    _posMetaRow('গাড়ি নং:', challan.vehicleNo, fontBold, font),
+                    _posMetaRow('ড্রাইভার:', challan.driverName, fontBold, font),
+                    _posMetaRow('পার্টি:', challan.productOwner, fontBold, font),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text('- - - - - - - - - - - - - - - - - - - - - - - - - - -', style: pw.TextStyle(font: font, fontSize: 7)),
+              pw.SizedBox(height: 4),
+
+              // Item Table
+              pw.Table(
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(1),
+                  1: const pw.FlexColumnWidth(4),
+                  2: const pw.FlexColumnWidth(1.8),
+                  3: const pw.FlexColumnWidth(1.2),
+                },
+                children: [
+                  pw.TableRow(
+                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    children: [
+                      _posTh('নং', fontBold),
+                      _posTh('পণ্যের বিবরণ', fontBold, align: pw.TextAlign.left),
+                      _posTh('পরিমাণ', fontBold),
+                      _posTh('একক', fontBold),
+                    ],
+                  ),
+                  ...challan.items.asMap().entries.map((entry) {
+                    final idx = entry.key + 1;
+                    final item = entry.value;
+                    return pw.TableRow(
+                      children: [
+                        _posTd('$idx', font),
+                        _posTd(item.partNameBn, font, align: pw.TextAlign.left),
+                        _posTd('${item.quantity}', fontBold),
+                        _posTd(item.unit, font),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text('- - - - - - - - - - - - - - - - - - - - - - - - - - -', style: pw.TextStyle(font: font, fontSize: 7)),
+              pw.SizedBox(height: 2),
+
+              // Total
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('সর্বমোট পরিমাণ:', style: pw.TextStyle(font: fontBold, fontSize: 9)),
+                  pw.Text('${challan.totalPcs} পিস', style: pw.TextStyle(font: fontBold, fontSize: 10)),
+                ],
+              ),
+              pw.SizedBox(height: 6),
+
+              // Verification Code & QR
+              pw.BarcodeWidget(
+                barcode: pw.Barcode.qrCode(),
+                data: 'CHALLAN:${challan.displayChallanNo}|CODE:${challan.verificationCode}|PCS:${challan.totalPcs}',
+                width: 44,
+                height: 44,
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text('যাচাই কোড: ${challan.verificationCode}', style: pw.TextStyle(font: fontBold, fontSize: 7)),
+              pw.SizedBox(height: 12),
+
+              // Signatures
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  _posSignBox('গণনাকারী', font),
+                  _posSignBox('ড্রাইভার', font),
+                  _posSignBox('ইনচার্জ', font),
+                ],
+              ),
+              pw.SizedBox(height: 6),
+              pw.Text('সহজ গোডাউন কাউন্টিং সিস্টেম', style: pw.TextStyle(font: font, fontSize: 6.5, color: PdfColors.grey600)),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  /// Print Thermal POS Receipt
+  static Future<void> printChallanPos(
+    ChallanDocument challan, {
+    Tenant? tenant,
+  }) async {
+    final pdfBytes = await generatePosPdfBytes(challan, tenant: tenant);
+
+    // Auto-lock challan in storage upon print execution
+    await OfflineStorageService.lockChallan(challan.id);
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdfBytes,
+      name: 'POS-${challan.displayChallanNo}',
+    );
+  }
+
+  static pw.Widget _posMetaRow(String label, String value, pw.Font bold, pw.Font regular) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 0.8),
+      child: pw.Row(
+        children: [
+          pw.Text(label, style: pw.TextStyle(font: bold, fontSize: 7.5)),
+          pw.SizedBox(width: 4),
+          pw.Expanded(
+            child: pw.Text(value, style: pw.TextStyle(font: regular, fontSize: 7.5), maxLines: 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _posTh(String text, pw.Font font, {pw.TextAlign align = pw.TextAlign.center}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 1),
+      child: pw.Text(text, style: pw.TextStyle(font: font, fontSize: 7), textAlign: align),
+    );
+  }
+
+  static pw.Widget _posTd(String text, pw.Font font, {pw.TextAlign align = pw.TextAlign.center}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 1.5, horizontal: 1),
+      child: pw.Text(text, style: pw.TextStyle(font: font, fontSize: 7), textAlign: align),
+    );
+  }
+
+  static pw.Widget _posSignBox(String title, pw.Font font) {
+    return pw.Column(
+      children: [
+        pw.Container(width: 48, height: 0.6, color: PdfColors.black),
+        pw.SizedBox(height: 1),
+        pw.Text(title, style: pw.TextStyle(font: font, fontSize: 6.5)),
+      ],
+    );
+  }
+
   static pw.Widget _metaItem(String label, String value, pw.Font bold, pw.Font regular) {
     return pw.RichText(
       text: pw.TextSpan(
