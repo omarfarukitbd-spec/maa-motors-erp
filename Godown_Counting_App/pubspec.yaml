@@ -30,3 +30,5 @@ flutter:
   assets:
     - assets/data/parts_catalog.json
     - assets/audio/
+    - assets/audio/en/
+    - assets/audio/bn/

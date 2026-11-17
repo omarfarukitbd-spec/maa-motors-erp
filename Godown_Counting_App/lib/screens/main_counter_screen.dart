@@ -129,7 +129,7 @@ class _MainCounterScreenState extends State<MainCounterScreen>
 
   void _handleRedo() {
     if (_redoStack.isEmpty) return;
-    _audio.triggerHaptic();
+    _audio.playRedoSound();
     setState(() {
       _history.add(_count);
       _count = _redoStack.removeLast();

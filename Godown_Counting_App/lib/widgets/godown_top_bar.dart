@@ -82,7 +82,9 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
                     backgroundColor: const Color(0xFF262D34),
                     duration: const Duration(milliseconds: 1400),
                     content: Text(
-                      audioEngine.isSoundEnabled ? 'আওয়াজ চালু' : 'শুধু কম্পন চালু',
+                      audioEngine.isSoundEnabled
+                          ? 'আওয়াজ চালু (ইংরেজি ১-১০০০)'
+                          : 'শুধু কম্পন চালু (নিঃশব্দ)',
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ),
