@@ -115,6 +115,9 @@ class OfflineStorageService {
     }
   }
 
+  /// Alias for getChallanHistory
+  static Future<List<ChallanDocument>> getAllChallans() => getChallanHistory();
+
   static Future<void> saveChallan(ChallanDocument doc) async {
     final history = await getChallanHistory();
     final idx = history.indexWhere((c) => c.id == doc.id);
