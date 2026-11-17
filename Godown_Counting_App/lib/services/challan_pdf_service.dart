@@ -49,7 +49,9 @@ class ChallanPdfService {
                         ),
                       ),
                       pw.Text(
-                        'গোডাউন পার্টস আনলোডিং ও ডেলিভারি অফিসিয়াল চালান',
+                        tenant != null && tenant.phone.isNotEmpty
+                            ? 'প্রো: ${tenant.ownerName} • মোবাইল: ${tenant.phone}'
+                            : 'গোডাউন পার্টস আনলোডিং ও ডেলিভারি অফিসিয়াল চালান',
                         style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey300),
                       ),
                     ],
@@ -274,7 +276,10 @@ class ChallanPdfService {
             children: [
               // Header
               pw.Text(shopTitle, style: pw.TextStyle(font: fontBold, fontSize: 13), textAlign: pw.TextAlign.center),
-              pw.Text('গোডাউন ডেলিভারি চালান', style: pw.TextStyle(font: font, fontSize: 8), textAlign: pw.TextAlign.center),
+              if (tenant != null && tenant.phone.isNotEmpty)
+                pw.Text('প্রো: ${tenant.ownerName} • মোবাইল: ${tenant.phone}', style: pw.TextStyle(font: font, fontSize: 7.5), textAlign: pw.TextAlign.center)
+              else
+                pw.Text('গোডাউন ডেলিভারি চালান', style: pw.TextStyle(font: font, fontSize: 8), textAlign: pw.TextAlign.center),
               pw.Container(
                 margin: const pw.EdgeInsets.symmetric(vertical: 4),
                 padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),

@@ -34,11 +34,16 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
         bottom: false,
         child: Row(
           children: [
-            // Home / Back Icon Button
-            _buildIconButton(
-              icon: isHome ? Icons.home_outlined : Icons.arrow_back_ios_new,
-              tooltip: isHome ? 'হোম' : 'পিছনে যান',
-              onTap: onHomePressed ?? () => Navigator.maybePop(context),
+            // Menu (Drawer) / Back Icon Button
+            Builder(
+              builder: (ctx) => _buildIconButton(
+                icon: isHome ? Icons.menu : Icons.arrow_back_ios_new,
+                tooltip: isHome ? 'মেনু' : 'পিছনে যান',
+                onTap: onHomePressed ??
+                    (isHome
+                        ? () => Scaffold.of(ctx).openDrawer()
+                        : () => Navigator.maybePop(ctx)),
+              ),
             ),
             const SizedBox(width: 10),
 

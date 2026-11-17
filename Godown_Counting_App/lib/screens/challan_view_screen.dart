@@ -248,23 +248,49 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Shop Banner
+                      // Shop Branded Banner Header
                       Container(
                         width: double.infinity,
-                        height: 54,
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.paperBanner,
-                          borderRadius: BorderRadius.circular(2),
+                          color: const Color(0xFF0F172A),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.load, width: 1.5),
                         ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          auth.shopDisplayName,
-                          style: const TextStyle(
-                            color: AppColors.load,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'Hind Siliguri',
-                          ),
+                        child: Column(
+                          children: [
+                            Text(
+                              auth.shopDisplayName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'Hind Siliguri',
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (auth.currentTenant != null) ...[
+                              const SizedBox(height: 2),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (auth.currentTenant!.ownerName.isNotEmpty) ...[
+                                    Text(
+                                      'প্রো: ${auth.currentTenant!.ownerName}',
+                                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Text(
+                                    'মোবাইল: ${auth.currentTenant!.phone}',
+                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                       const SizedBox(height: 10),

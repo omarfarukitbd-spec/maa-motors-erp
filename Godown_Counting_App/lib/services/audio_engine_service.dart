@@ -104,8 +104,12 @@ class AudioEngineService {
     try {
       _ensureInitialized();
       await _player?.stop();
-      await _player?.play(AssetSource('audio/5.mp3'));
-    } catch (_) {}
+      await _player?.play(AssetSource('audio/complete.wav'));
+    } catch (_) {
+      try {
+        SystemSound.play(SystemSoundType.click);
+      } catch (_) {}
+    }
   }
 
   void dispose() {

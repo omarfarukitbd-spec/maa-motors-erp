@@ -6,6 +6,7 @@ import '../services/audio_engine_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/bangla_tools.dart';
 import '../widgets/godown_top_bar.dart';
+import '../widgets/app_drawer.dart';
 import 'main_counter_screen.dart';
 import 'challan_history_screen.dart';
 import 'license_backup_screen.dart';
@@ -37,6 +38,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
     return Scaffold(
       backgroundColor: _isLightMode ? AppColors.bgLight : AppColors.bgDark,
+      drawer: const AppDrawer(),
       appBar: GodownTopBar(
         title: auth.shopDisplayName,
         isHome: true,
