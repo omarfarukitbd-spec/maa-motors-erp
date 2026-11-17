@@ -33,6 +33,16 @@ class AuthProvider with ChangeNotifier {
     return _currentTenant!.canPrintAndShare;
   }
 
+  /// Check if the user has challan access (Shop Admin or permitted Staff)
+  bool get hasChallanAccess {
+    if (_role == UserRole.superAdmin) return true;
+    if (_role == UserRole.shopAdmin) return true;
+    if (_role == UserRole.staff) {
+      return _currentTenant?.canStaffPrintChallan ?? false;
+    }
+    return false;
+  }
+
   /// Check if inside grace period
   bool get isInGracePeriod => _currentTenant?.isInGracePeriod ?? false;
 
