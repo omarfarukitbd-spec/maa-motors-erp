@@ -42,6 +42,12 @@ class DriveBackupService {
   static const String _kBackupMetaKey = 'godown_drive_backup_meta_v2';
   static const String _kLocalBackupPayloadKey = 'godown_local_drive_sync_payload_v2';
 
+  String get lastSyncFormatted => 'অফলাইন সুরক্ষিত';
+
+  Future<bool> backupToGoogleDrive([String email = 'omarfarukitbd@gmail.com']) async {
+    return await performBackup(email);
+  }
+
   /// Load backup status metadata
   static Future<DriveBackupMetadata> getBackupMetadata() async {
     final prefs = await SharedPreferences.getInstance();

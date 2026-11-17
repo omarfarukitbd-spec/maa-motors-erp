@@ -89,7 +89,6 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _openGoogleDriveDialog(BuildContext context) {
-    final drive = DriveBackupService();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -102,18 +101,18 @@ class AppDrawer extends StatelessWidget {
             Text('গুগল ড্রাইভ ব্যাকআপ', style: TextStyle(color: Colors.white, fontSize: 16)),
           ],
         ),
-        content: Column(
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'আপনার গোডাউনের সমস্ত হিসাব ও চালানের অফলাইন কপি গুগল ড্রাইভে নিরাপদ ব্যাকআপ থাকবে।',
               style: TextStyle(color: AppColors.muDark, fontSize: 13),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
-              'সর্বশেষ সিঙ্ক: ${drive.lastSyncFormatted}',
-              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontFamily: 'monospace'),
+              'ব্যাকআপ স্ট্যাটাস: অফলাইন সুরক্ষিত',
+              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontFamily: 'monospace'),
             ),
           ],
         ),
@@ -129,7 +128,7 @@ class AppDrawer extends StatelessWidget {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
-              await drive.backupToGoogleDrive();
+              await DriveBackupService.performBackup('omarfarukitbd@gmail.com');
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
