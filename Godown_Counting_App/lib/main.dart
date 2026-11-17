@@ -27,7 +27,7 @@ class GodownCountingApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'মা মোটরস গোডাউন কাউন্টার ও চালান',
+        title: 'Parts Challan • পার্টস চালান',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,

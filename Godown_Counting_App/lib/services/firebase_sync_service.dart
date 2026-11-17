@@ -4,15 +4,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tenant_model.dart';
 import '../models/challan_model.dart';
 
-/// Independent Firebase Cloud Sync Service for Godown Multi-Tenant SaaS.
+import '../firebase_options.dart';
+
+/// Independent Firebase Cloud Sync Service for Parts Challan Multi-Tenant SaaS.
 /// Operates completely independently from any local ERP database.
-/// Provides resilient offline-first synchronization with zero-downtime fallback.
+/// Configured for Firebase Project: parts-challan
 class FirebaseSyncService {
   static final FirebaseSyncService _instance = FirebaseSyncService._internal();
   factory FirebaseSyncService() => _instance;
   FirebaseSyncService._internal();
 
-  static const String _kCloudProjectName = 'godown-counter-saas';
+  static const String _kCloudProjectName = DefaultFirebaseOptions.projectId;
   static const String _kLastSyncTimestampKey = 'godown_cloud_last_sync_timestamp';
   static const String _kPendingSyncQueueKey = 'godown_cloud_pending_sync_queue';
 

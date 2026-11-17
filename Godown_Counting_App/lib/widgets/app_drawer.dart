@@ -311,7 +311,7 @@ class AppDrawer extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'গোডাউন কাউন্টার SaaS',
+                    'Parts Challan SaaS',
                     style: TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                   Text(
@@ -349,18 +349,16 @@ class AppDrawer extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              color: badgeColor.withOpacity(0.15),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: badgeColor, width: 1.5),
             ),
-            alignment: Alignment.center,
-            child: Icon(
-              auth.isSuperAdmin ? Icons.workspace_premium : Icons.storefront,
-              color: badgeColor,
-              size: 22,
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              'assets/images/app_logo.png',
+              fit: BoxFit.cover,
             ),
           ),
           const SizedBox(width: 12),

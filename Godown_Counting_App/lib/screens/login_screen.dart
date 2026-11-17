@@ -222,29 +222,34 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo / Icon Hero
+              // Logo Hero
               Center(
                 child: Container(
-                  width: 64,
-                  height: 64,
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
-                    color: AppColors.s1Dark,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.unl, width: 2),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
                   ),
-                  child: const Icon(Icons.inventory_2_outlined, color: AppColors.unl, size: 30),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/images/app_logo.png',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
               const Center(
                 child: Text(
-                  'গোডাউন ক্লাউড SaaS প্ল্যাটফর্ম',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                  'Parts Challan',
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
                 ),
               ),
               const Center(
                 child: Text(
-                  'অফলাইন গোডাউন পার্টস কাউন্টিং ও প্রফেশনাল চালান জেনারেটর',
+                  'পার্টস চালান • অটো পার্টস গোডাউন কাউন্টার ও ডিজিটাল চালান',
                   style: TextStyle(color: AppColors.muDark, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),

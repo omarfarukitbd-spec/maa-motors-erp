@@ -1,7 +1,7 @@
 name: godown_counting_app
-description: "Maa Motors ERP - Offline-First Godown Parts Counting & Challan Generation App"
+description: "Parts Challan - Smart Auto Parts Warehouse POS & Challan App"
 publish_to: 'none'
-version: 1.2.0+3
+version: 1.2.0+4
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -28,6 +28,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/images/
     - assets/data/parts_catalog.json
     - assets/audio/
     - assets/audio/en/

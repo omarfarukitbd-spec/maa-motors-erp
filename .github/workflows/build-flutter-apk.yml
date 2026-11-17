@@ -42,6 +42,8 @@ jobs:
           cp pubspec.yaml pubspec.backup.yaml
           flutter create . --project-name godown_counting_app --org com.maamotors --platforms android
           cp pubspec.backup.yaml pubspec.yaml
+          cp google-services.json android/app/google-services.json || true
+          cp -r assets/launcher_icons/* android/app/src/main/res/ || true
           flutter pub get
 
       - name: Build Release APK
@@ -51,13 +53,14 @@ jobs:
       - name: Copy & Rename APK for Easy Download
         run: |
           mkdir -p release-output
+          cp Godown_Counting_App/build/app/outputs/flutter-apk/app-release.apk release-output/Parts-Challan.apk
           cp Godown_Counting_App/build/app/outputs/flutter-apk/app-release.apk release-output/Maa-Motors-Godown-App.apk
 
       - name: Upload APK as Action Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Maa-Motors-Godown-App-APK
-          path: release-output/Maa-Motors-Godown-App.apk
+          name: Parts-Challan-APK
+          path: release-output/Parts-Challan.apk
           retention-days: 30
 
       - name: Update v1.0.0 Release with Latest APK
@@ -65,11 +68,12 @@ jobs:
         if: github.ref == 'refs/heads/main'
         with:
           tag_name: v1.0.0-godown
-          name: 'মা মোটরস গোডাউন কাউন্টিং মোবাইল অ্যাপ (v1.2.0 আপগ্রেড)'
+          name: 'Parts Challan • পার্টস চালান (v1.2.0)'
           body: |
-            ## 📱 গোডাউন কাউন্টিং ও ব্যানার স্টুডিও মোবাইল অ্যাপ v1.2.0
+            ## 📱 Parts Challan • পার্টস চালান মোবাইল অ্যাপ v1.2.0
 
-            ### নতুন সুবিধাসমূহ (v1.2.0):
+            ### 🌟 নতুন লোগো ও সুবিধাসমূহ:
+            * 🎨 **অফিসিয়াল ৩ডি লোগো ও ব্র্যান্ডিং:** Parts Challan অ্যাপ আইকন।
             * 🚪 **আধুনিক ডার্ক নেভিগেশন ড্রয়ার:** টপ বারের মেনু বাটনে ৮টি পূর্ণাঙ্গ মেনু।
             * 🔔 **অডিও বাগ ফিক্স:** গণনা শেষে মিষ্টি সাকসেস চাইম টোন (`complete.wav`)।
             * 🎨 **দোকান হেডিং ও ব্যানার স্টুডিও:** লাইভ WYSIWYG প্রিভিউ সহ নিজস্ব ব্যানার ও কালার ডিজাইন।
@@ -79,8 +83,10 @@ jobs:
 
             ---
             ### 📥 ডাউনলোডের নিয়ম:
-            নিচের **`Maa-Motors-Godown-App.apk`** লিংকে ক্লিক করে আপনার ফোনে ইনস্টল করুন!
-          files: release-output/Maa-Motors-Godown-App.apk
+            নিচের **`Parts-Challan.apk`** বা **`Maa-Motors-Godown-App.apk`** লিংকে ক্লিক করে ফোনে ইনস্টল করুন!
+          files: |
+            release-output/Parts-Challan.apk
+            release-output/Maa-Motors-Godown-App.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -89,16 +95,19 @@ jobs:
         if: github.ref == 'refs/heads/main'
         with:
           tag_name: v1.2.0-godown
-          name: 'গোডাউন কাউন্টার ও শপ ব্যানার স্টুডিও v1.2.0'
+          name: 'Parts Challan (Official Release v1.2.0)'
           body: |
-            ## 📱 গোডাউন কাউন্টার ক্লাউড SaaS v1.2.0 (Official Release)
+            ## 📱 Parts Challan — Smart Warehouse POS & Digital Challan App
 
-            ### কী কী নতুন রয়েছে:
-            * 🚪 আধুনিক ডার্ক নেভিগেশন ড্রয়ার
-            * 🔔 অডিও কমপ্লিশন চাইম টোন
-            * 🎨 দোকান হেডিং ও ব্যানার স্টুডিও (WYSIWYG Live Preview)
-            * 🔑 Google & Apple Sign-In + ৮-ডিজিট লাইসেন্স কোড + মাস্টার পিন
-            * 🖨️ A4 ও ৮০mm ব্লুটুথ থার্মাল POS রসিদে কাস্টম ব্র্যান্ডিং
-          files: release-output/Maa-Motors-Godown-App.apk
+            ### Official Release v1.2.0:
+            * 🌟 New 3D Brand Logo & App Icon
+            * 🚪 Modern Dark Navigation Drawer
+            * 🔔 Completion Chime Audio Tone
+            * 🎨 Shop Heading & Banner Studio (WYSIWYG Live Preview)
+            * 🔑 Google & Apple Sign-In + 8-char Shop Activation Code + Master PIN
+            * 🖨️ A4 & 80mm Bluetooth Thermal POS Receipt Custom Branding
+          files: |
+            release-output/Parts-Challan.apk
+            release-output/Maa-Motors-Godown-App.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
