@@ -67,7 +67,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                'চালান: ${BanglaTools.toBanglaDigits(totalChallans > 0 ? totalChallans : 3)}টি · মোট মাল: ${BanglaTools.toBanglaDigits(totalPcs > 0 ? totalPcs : 420)} পিস',
+                totalChallans > 0
+                    ? 'চালান: ${BanglaTools.toBanglaDigits(totalChallans)}টি · মোট মাল: ${BanglaTools.toBanglaDigits(totalPcs)} পিস'
+                    : 'আজকে এখনো কোনো চালান তৈরি হয়নি',
                 style: const TextStyle(
                   color: AppColors.muDark,
                   fontSize: 14.5,

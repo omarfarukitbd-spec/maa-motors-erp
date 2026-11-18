@@ -36,6 +36,14 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
   bool _isLocked = false;
   String _verificationCode = '';
 
+  String _customerName = '';
+  String _customerAddress = '';
+  String _customerPhone = '';
+  String _vehicleNo = '';
+  String _driverName = '';
+  String _driverMobile = '';
+  String _sealNo = '';
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +57,13 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
       ];
       _challanNo = 'A1-00123';
       _isLocked = false;
+      _customerName = 'আলম ব্রাদার্স অটো পার্টস';
+      _customerAddress = 'ধোলাইখাল, ঢাকা';
+      _customerPhone = '01711-223344';
+      _vehicleNo = 'ঢাকা মেট্রো-ট-১২-৩৪৫৬';
+      _driverName = 'মো: কালাম';
+      _driverMobile = '01819-112233';
+      _sealNo = 'SEAL-78901';
     } else if (widget.existingChallan != null) {
       final ch = widget.existingChallan!;
       _items = ch.items.map((i) {
@@ -63,21 +78,185 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
       _revision = ch.revisionNumber;
       _isLocked = ch.isLocked;
       _verificationCode = ch.verificationCode;
+      _customerName = ch.customerName.isNotEmpty ? ch.customerName : ch.productOwner;
+      _customerAddress = ch.customerAddress.isNotEmpty ? ch.customerAddress : ch.destinationFor;
+      _customerPhone = ch.customerPhone;
+      _vehicleNo = ch.vehicleNo;
+      _driverName = ch.driverName;
+      _driverMobile = ch.driverMobile;
+      _sealNo = ch.sealNo;
     } else {
       _items = widget.sessionItems ?? [];
       _challanNo = 'A1-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
       _isLocked = false;
+      _customerName = '';
+      _customerAddress = '';
+      _customerPhone = '';
+      _vehicleNo = '';
+      _driverName = '';
+      _driverMobile = '';
+      _sealNo = '';
     }
+  }
+
+  void _openEditMetadataDialog({VoidCallback? onSaved}) {
+    final customerNameCtrl = TextEditingController(text: _customerName);
+    final customerAddressCtrl = TextEditingController(text: _customerAddress);
+    final customerPhoneCtrl = TextEditingController(text: _customerPhone);
+    final vehicleCtrl = TextEditingController(text: _vehicleNo);
+    final driverNameCtrl = TextEditingController(text: _driverName);
+    final driverMobileCtrl = TextEditingController(text: _driverMobile);
+    final sealNoCtrl = TextEditingController(text: _sealNo);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 18,
+          right: 18,
+          top: 18,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 18,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.edit_note, color: AppColors.load, size: 24),
+                      SizedBox(width: 8),
+                      Text(
+                        'চালানের বিবরণ ও লজিস্টিকস',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.muDark),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(color: AppColors.lineDark),
+              const SizedBox(height: 6),
+
+              // Section 1: Customer / Consignee
+              const Text(
+                '১. যার মাল নিয়ে যাচ্ছে (গ্রাহক / পার্টি)',
+                style: TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              _buildInputTile(controller: customerNameCtrl, label: 'পার্টি / গ্রাহকের নাম', hint: 'যেমন: মেসার্স আলম ব্রাদার্স', icon: Icons.person_outline),
+              const SizedBox(height: 8),
+              _buildInputTile(controller: customerAddressCtrl, label: 'ঠিকানা / ডেলিভারি পয়েন্ট', hint: 'যেমন: কদমতলী, ঢাকা', icon: Icons.location_on_outlined),
+              const SizedBox(height: 8),
+              _buildInputTile(controller: customerPhoneCtrl, label: 'গ্রাহকের মোবাইল নম্বর', hint: 'যেমন: 01711-XXXXXX', icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+              const SizedBox(height: 14),
+
+              // Section 2: Transport & Logistics
+              const Text(
+                '২. পরিবহন ও সিল নম্বর',
+                style: TextStyle(color: Color(0xFFFBBF24), fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              _buildInputTile(controller: vehicleCtrl, label: 'গাড়ি নম্বর', hint: 'যেমন: চট্ট-মেট্রো ড-১১-৪৮২১', icon: Icons.local_shipping_outlined),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: _buildInputTile(controller: driverNameCtrl, label: 'চালকের নাম', hint: 'যেমন: রহিম উদ্দিন', icon: Icons.badge_outlined)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildInputTile(controller: driverMobileCtrl, label: 'চালকের ফোন', hint: '01819-XXXXXX', icon: Icons.phone_android_outlined, keyboardType: TextInputType.phone)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildInputTile(controller: sealNoCtrl, label: 'সিকিউরিটি সিল নম্বর (Seal No)', hint: 'যেমন: SL-98421 (ঐচ্ছিক)', icon: Icons.lock_outline),
+              const SizedBox(height: 18),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.unl,
+                    foregroundColor: AppColors.textOnAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('তথ্য সংরক্ষণ করুন', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    setState(() {
+                      _customerName = customerNameCtrl.text.trim();
+                      _customerAddress = customerAddressCtrl.text.trim();
+                      _customerPhone = customerPhoneCtrl.text.trim();
+                      _vehicleNo = vehicleCtrl.text.trim();
+                      _driverName = driverNameCtrl.text.trim();
+                      _driverMobile = driverMobileCtrl.text.trim();
+                      _sealNo = sealNoCtrl.text.trim();
+                    });
+                    Navigator.pop(ctx);
+                    if (onSaved != null) onSaved();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputTile({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: const TextStyle(color: Colors.white, fontSize: 13),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFF475569), fontSize: 11),
+        prefixIcon: Icon(icon, color: AppColors.muDark, size: 18),
+        isDense: true,
+        filled: true,
+        fillColor: const Color(0xFF1E293B),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.unl)),
+      ),
+    );
   }
 
   void _lockAndSaveChallan() {
     if (_isLocked) return;
+
+    if (_customerName.isEmpty && _vehicleNo.isEmpty) {
+      _openEditMetadataDialog(onSaved: () => _executeLockAndSave());
+      return;
+    }
+    _executeLockAndSave();
+  }
+
+  void _executeLockAndSave() {
     setState(() {
       _isLocked = true;
       _verificationCode = BanglaTools.generateVerificationCode(_challanNo, _revision, _items);
     });
 
-    // Save to Provider
     final itemModels = _items.map((i) {
       return ChallanItem(
         partNameBn: i.name,
@@ -90,8 +269,13 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
     context.read<CountingProvider>().addCompletedChallanDirectly(
           challanNo: _challanNo,
           sessionType: widget.mode == 'unl' ? 'inward' : 'outward',
-          vehicleNo: 'চট্ট-মেট্রো ড-১১-৪৮২১',
-          driverName: 'রহিম উদ্দিন',
+          vehicleNo: _vehicleNo.isNotEmpty ? _vehicleNo : 'অনির্ধারিত গাড়ি',
+          driverName: _driverName.isNotEmpty ? _driverName : 'অনির্ধারিত চালক',
+          driverMobile: _driverMobile,
+          customerName: _customerName,
+          customerAddress: _customerAddress,
+          customerPhone: _customerPhone,
+          sealNo: _sealNo,
           items: itemModels,
           isLocked: true,
           verificationCode: _verificationCode,
@@ -122,7 +306,7 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
       return;
     }
 
-    _lockAndSaveChallan();
+    _executeLockAndSave();
     _audio.triggerHaptic();
 
     // Call PDF generation
@@ -130,9 +314,15 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
       id: _challanNo,
       challanNo: _challanNo,
       date: DateTime.now(),
-      vehicleNo: 'চট্ট-মেট্রো ড-১১-৪৮২১',
-      driverName: 'রহিম উদ্দিন',
-      driverMobile: '০১৮১৯-XXXXXX',
+      vehicleNo: _vehicleNo.isNotEmpty ? _vehicleNo : 'অনির্ধারিত গাড়ি',
+      driverName: _driverName.isNotEmpty ? _driverName : 'অনির্ধারিত চালক',
+      driverMobile: _driverMobile,
+      customerName: _customerName,
+      customerAddress: _customerAddress,
+      customerPhone: _customerPhone,
+      productOwner: _customerName.isNotEmpty ? _customerName : (auth.currentTenant?.shopName ?? 'মেসার্স মা মোটরস'),
+      destinationFor: _customerAddress.isNotEmpty ? _customerAddress : 'মুরাদপুর প্রধান শো-রুম',
+      sealNo: _sealNo,
       sessionType: widget.mode == 'unl' ? 'inward' : 'outward',
       isLocked: true,
       verificationCode: _verificationCode,
@@ -295,18 +485,55 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
                       ),
                       const SizedBox(height: 10),
 
-                      // Metadata Grid
+                      // Metadata Grid Header with Edit Action
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'চালানের বিবরণ ও পরিবহন:',
+                            style: TextStyle(
+                              color: AppColors.paperText,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (!_isLocked)
+                            InkWell(
+                              onTap: () => _openEditMetadataDialog(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.load.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: AppColors.load, width: 0.8),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.edit, color: AppColors.load, size: 12),
+                                    SizedBox(width: 4),
+                                    Text('তথ্য এডিট', style: TextStyle(color: AppColors.load, fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Column(
                           children: [
                             _metaRow('চালান নং:', '$_challanNo${_revision > 0 ? " (সংশোধিত ${BanglaTools.toBanglaDigits(_revision)})" : ""}', 'তারিখ:', BanglaTools.formatBanglaDate(DateTime.now())),
                             const SizedBox(height: 4),
-                            _metaRow('ধরন:', modeText, 'গাড়ি নং:', 'চট্ট-মেট্রো ড-১১-৪৮২১'),
+                            _metaRow('প্রাপক / পার্টি:', _customerName.isNotEmpty ? _customerName : '(ট্যাপ করে লিখুন)', 'গ্রাহক মোবাইল:', _customerPhone.isNotEmpty ? _customerPhone : '---'),
                             const SizedBox(height: 4),
-                            _metaRow('ড্রাইভার:', 'রহিম উদ্দিন', 'পার্টি:', 'আলম অটো পার্টস'),
+                            _metaRow('ডেলিভারি ঠিকানা:', _customerAddress.isNotEmpty ? _customerAddress : '(ট্যাপ করে লিখুন)', 'ধরন:', modeText),
                             const SizedBox(height: 4),
-                            _metaRow('গোডাউন:', 'মা মোটরস প্রধান গোডাউন', 'গন্তব্য:', 'ঢাকা'),
+                            _metaRow('গাড়ি নম্বর:', _vehicleNo.isNotEmpty ? _vehicleNo : '(ট্যাপ করে লিখুন)', 'চালকের নাম:', _driverName.isNotEmpty ? '$_driverName ${_driverMobile.isNotEmpty ? "($_driverMobile)" : ""}' : '(লিখুন)'),
+                            if (_sealNo.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              _metaRow('সিকিউরিটি সিল:', _sealNo, 'ভেরিফিকেশন:', _verificationCode.isNotEmpty ? _verificationCode : 'লক হলে তৈরি হবে'),
+                            ],
                           ],
                         ),
                       ),

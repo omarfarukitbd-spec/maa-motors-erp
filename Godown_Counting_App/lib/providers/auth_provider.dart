@@ -47,7 +47,7 @@ class AuthProvider with ChangeNotifier {
   bool get isInGracePeriod => _currentTenant?.isInGracePeriod ?? false;
 
   String get shopDisplayName =>
-      _currentTenant?.shopName ?? 'সহজ গোডাউন কাউন্টার';
+      _currentTenant?.shopName ?? 'Parts Challan • পার্টস চালান';
 
   String get currentShopId => _currentTenant?.id ?? 'GUEST-001';
 

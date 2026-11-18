@@ -5,6 +5,7 @@ import '../providers/counting_provider.dart';
 import '../services/audio_engine_service.dart';
 import '../services/category_classifier.dart';
 import '../services/parts_catalog_service.dart';
+import '../services/offline_storage_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/bangla_tools.dart';
 import '../widgets/godown_top_bar.dart';
@@ -60,6 +61,42 @@ class _MainCounterScreenState extends State<MainCounterScreen>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
     );
+    _checkAndRestoreDraft();
+  }
+
+  Future<void> _checkAndRestoreDraft() async {
+    final draft = await OfflineStorageService.getLiveSessionDraft();
+    if (draft != null && draft['items'] != null && mounted) {
+      final list = (draft['items'] as List<dynamic>).map((i) {
+        final m = i as Map<String, dynamic>;
+        return SessionItemData(
+          name: m['name'] ?? '',
+          category: m['category'] ?? 'সাধারণ পার্টস',
+          unit: m['unit'] ?? 'পিস',
+          quantity: m['quantity'] ?? 0,
+        );
+      }).toList();
+      if (list.isNotEmpty) {
+        setState(() {
+          _sessionItems.clear();
+          _sessionItems.addAll(list);
+          if (draft['mode'] != null) {
+            _mode = draft['mode'];
+          }
+        });
+        _showToast('পূর্বের অসমাপ্ত গণনা রিস্টোর করা হয়েছে (${list.length}টি পণ্য)');
+      }
+    }
+  }
+
+  void _saveCurrentDraft() {
+    final list = _sessionItems.map((i) => {
+      'name': i.name,
+      'category': i.category,
+      'unit': i.unit,
+      'quantity': i.quantity,
+    }).toList();
+    OfflineStorageService.saveLiveSessionDraft(_mode, list);
   }
 
   @override
@@ -164,6 +201,7 @@ class _MainCounterScreenState extends State<MainCounterScreen>
       _history.clear();
       _redoStack.clear();
     });
+    _saveCurrentDraft();
   }
 
   void _openSearch() {
@@ -190,6 +228,7 @@ class _MainCounterScreenState extends State<MainCounterScreen>
           _navigateToChallan();
         },
         onCancelSession: () {
+          OfflineStorageService.clearLiveSessionDraft();
           setState(() {
             _sessionItems.clear();
             _activePartName = null;
@@ -206,6 +245,7 @@ class _MainCounterScreenState extends State<MainCounterScreen>
 
   void _navigateToChallan() {
     if (_sessionItems.isEmpty) return;
+    OfflineStorageService.clearLiveSessionDraft();
     Navigator.push(
       context,
       MaterialPageRoute(

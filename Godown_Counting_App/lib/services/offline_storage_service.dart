@@ -61,6 +61,41 @@ class OfflineStorageService {
   }
 
   // ==========================================
+  // 2.1 LIVE SESSION DRAFT CRASH RECOVERY
+  // ==========================================
+  static const String _kLiveSessionDraftKey = 'godown_live_session_draft_v2';
+
+  static Future<void> saveLiveSessionDraft(String mode, List<Map<String, dynamic>> items) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final payload = json.encode({
+        'mode': mode,
+        'items': items,
+        'savedAt': DateTime.now().toIso8601String(),
+      });
+      await prefs.setString(_kLiveSessionDraftKey, payload);
+    } catch (_) {}
+  }
+
+  static Future<Map<String, dynamic>?> getLiveSessionDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kLiveSessionDraftKey);
+      if (raw == null || raw.isEmpty) return null;
+      return json.decode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> clearLiveSessionDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kLiveSessionDraftKey);
+    } catch (_) {}
+  }
+
+  // ==========================================
   // 3. ANTI-TAMPER CLOCK INTEGRITY GUARD
   // ==========================================
   /// Records current timestamp as highest known time

@@ -21,6 +21,33 @@ class ChallanPdfService {
     final sessionBadgeText = isUnloading ? 'গাড়ি থেকে আনলোডিং (Unloading)' : 'গাড়িতে লোডিং (Loading/Delivery)';
     final badgeColor = isUnloading ? PdfColors.amber800 : PdfColors.teal800;
 
+    // Theme color palette matching Shop Banner Studio
+    PdfColor headerColor = PdfColors.blueGrey900;
+    if (tenant != null) {
+      switch (tenant.themeColorIndex) {
+        case 0:
+          headerColor = const PdfColor.fromInt(0xFF0284C7); // Ocean Blue
+          break;
+        case 1:
+          headerColor = const PdfColor.fromInt(0xFF059669); // Emerald Green
+          break;
+        case 2:
+          headerColor = const PdfColor.fromInt(0xFF1E293B); // Slate Black
+          break;
+        case 3:
+          headerColor = const PdfColor.fromInt(0xFF4F46E5); // Royal Indigo
+          break;
+        case 4:
+          headerColor = const PdfColor.fromInt(0xFFD97706); // Amber Gold
+          break;
+      }
+    }
+
+    final partyName = challan.customerName.isNotEmpty ? challan.customerName : challan.productOwner;
+    final partyAddress = challan.customerAddress.isNotEmpty ? challan.customerAddress : challan.destinationFor;
+    final partyPhone = challan.customerPhone.isNotEmpty ? challan.customerPhone : '---';
+    final sealNo = challan.sealNo.isNotEmpty ? challan.sealNo : 'প্রযোজ্য নয়';
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -31,7 +58,7 @@ class ChallanPdfService {
             pw.Container(
               padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: pw.BoxDecoration(
-                color: PdfColors.blueGrey900,
+                color: headerColor,
                 borderRadius: pw.BorderRadius.circular(6),
               ),
               child: pw.Row(
@@ -48,12 +75,22 @@ class ChallanPdfService {
                           color: PdfColors.white,
                         ),
                       ),
-                      pw.Text(
-                        tenant != null && tenant.phone.isNotEmpty
-                            ? 'প্রো: ${tenant.ownerName} • মোবাইল: ${tenant.phone}'
-                            : 'গোডাউন পার্টস আনলোডিং ও ডেলিভারি অফিসিয়াল চালান',
-                        style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey300),
-                      ),
+                      if (tenant != null) ...[
+                        pw.Text(
+                          'প্রো: ${tenant.ownerName} • মোবাইল: ${tenant.phone}${tenant.address.isNotEmpty ? " • ${tenant.address}" : ""}',
+                          style: pw.TextStyle(font: font, fontSize: 8.5, color: PdfColors.grey200),
+                        ),
+                        if (tenant.tagline.isNotEmpty)
+                          pw.Text(
+                            tenant.tagline,
+                            style: pw.TextStyle(font: font, fontSize: 7.5, color: PdfColors.grey300),
+                          ),
+                      ] else ...[
+                        pw.Text(
+                          'গোডাউন পার্টস আনলোডিং ও ডেলিভারি অফিসিয়াল চালান',
+                          style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey300),
+                        ),
+                      ],
                     ],
                   ),
                   pw.Container(
@@ -93,16 +130,25 @@ class ChallanPdfService {
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      _metaItem('গাড়ি নম্বর:', challan.vehicleNo, fontBold, font),
-                      _metaItem('চালকের নাম:', '${challan.driverName} ${challan.driverMobile}', fontBold, font),
-                      _metaItem('মাল মালিক / পার্টি:', challan.productOwner, fontBold, font),
+                      _metaItem('প্রাপক / পার্টি:', partyName, fontBold, font),
+                      _metaItem('ডেলিভারি ঠিকানা:', partyAddress, fontBold, font),
+                      _metaItem('পার্টি মোবাইল:', partyPhone, fontBold, font),
                     ],
                   ),
                   pw.SizedBox(height: 6),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      _metaItem('গন্তব্য স্থান:', challan.destinationFor, fontBold, font),
+                      _metaItem('গাড়ি নম্বর:', challan.vehicleNo, fontBold, font),
+                      _metaItem('চালকের নাম ও ফোন:', '${challan.driverName} ${challan.driverMobile}'.trim(), fontBold, font),
+                      _metaItem('সিকিউরিটি সিল নং:', sealNo, fontBold, font),
+                    ],
+                  ),
+                  pw.SizedBox(height: 6),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      _metaItem('চালানের ধরন:', sessionBadgeText, fontBold, font),
                       _metaItem('গেট পাস নং:', challan.gatePassNo, fontBold, font),
                       _metaItem('গণনাকারী স্টাফ:', challan.countedByUserName, fontBold, font),
                     ],
@@ -300,9 +346,15 @@ class ChallanPdfService {
                   children: [
                     _posMetaRow('চালান নং:', challan.displayChallanNo, fontBold, font),
                     _posMetaRow('তারিখ:', _formatDate(challan.date), fontBold, font),
+                    _posMetaRow('প্রাপক/পার্টি:', challan.customerName.isNotEmpty ? challan.customerName : challan.productOwner, fontBold, font),
+                    if (challan.customerPhone.isNotEmpty)
+                      _posMetaRow('পার্টি ফোন:', challan.customerPhone, fontBold, font),
+                    if (challan.customerAddress.isNotEmpty)
+                      _posMetaRow('ঠিকানা:', challan.customerAddress, fontBold, font),
                     _posMetaRow('গাড়ি নং:', challan.vehicleNo, fontBold, font),
-                    _posMetaRow('ড্রাইভার:', challan.driverName, fontBold, font),
-                    _posMetaRow('পার্টি:', challan.productOwner, fontBold, font),
+                    _posMetaRow('ড্রাইভার:', '${challan.driverName} ${challan.driverMobile}'.trim(), fontBold, font),
+                    if (challan.sealNo.isNotEmpty)
+                      _posMetaRow('সিল নং:', challan.sealNo, fontBold, font),
                   ],
                 ),
               ),

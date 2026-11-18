@@ -19,6 +19,9 @@ class Tenant {
   String shopName;
   String ownerName;
   String phone;
+  String address;
+  String tagline;
+  int themeColorIndex;
   String activationCode; // 8-char code (e.g. MM-7K4X-92QD)
   String licenseKey;
   LicenseState licenseState;
@@ -45,6 +48,9 @@ class Tenant {
     required this.shopName,
     required this.ownerName,
     required this.phone,
+    this.address = 'ধোলাইখাল, ঢাকা',
+    this.tagline = 'জাপানি গাড়ি ও ট্রাকের জেনুইন পার্টস আমদানিকারক ও পাইকারি বিক্রেতা',
+    this.themeColorIndex = 0,
     required this.activationCode,
     required this.licenseKey,
     this.licenseState = LicenseState.active,
@@ -119,6 +125,9 @@ class Tenant {
         'shopName': shopName,
         'ownerName': ownerName,
         'phone': phone,
+        'address': address,
+        'tagline': tagline,
+        'themeColorIndex': themeColorIndex,
         'activationCode': activationCode,
         'licenseKey': licenseKey,
         'licenseState': licenseState.name,
@@ -146,6 +155,9 @@ class Tenant {
         shopName: json['shopName'] ?? '',
         ownerName: json['ownerName'] ?? '',
         phone: json['phone'] ?? '',
+        address: json['address'] ?? 'ধোলাইখাল, ঢাকা',
+        tagline: json['tagline'] ?? 'জাপানি গাড়ি ও ট্রাকের জেনুইন পার্টস আমদানিকারক ও পাইকারি বিক্রেতা',
+        themeColorIndex: json['themeColorIndex'] ?? 0,
         activationCode: json['activationCode'] ?? '',
         licenseKey: json['licenseKey'] ?? '',
         licenseState: _parseLicenseState(json['licenseState']),

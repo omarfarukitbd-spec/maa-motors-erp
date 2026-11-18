@@ -90,6 +90,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create or Update v1.3.0 Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.3.0-godown
+          name: 'Parts Challan (Official Release v1.3.0)'
+          body: |
+            ## 📱 Parts Challan — Smart Warehouse POS & Digital Challan App (v1.3.0)
+
+            ### 🚀 v1.3.0 মেজর আপগ্রেড ও ফিচারসমূহ:
+            * 🚚 **পূর্ণাঙ্গ গ্রাহক ও পরিবহন মেটাডাটা:** চালানে যার মাল নিয়ে যাচ্ছে তার নাম, ঠিকানা, মোবাইল এবং গাড়ি নং, ড্রাইভার নাম ও নম্বর।
+            * 🔒 **সিকিউরিটি সিল নম্বর (Security Seal No):** কন্টেইনার/গাড়ির সিল ট্র্যাকিং সাপোর্ট।
+            * 🧹 **ডেড কোড ক্লিনআপ:** অব্যবহৃত স্ক্রিন ও মডেল সম্পূর্ণ ক্লিন করে পারফরম্যান্স অপ্টিমাইজড।
+            * 🎨 **ব্যানার স্টুডিও থিম পারসিস্টেন্স:** ৫টি ব্র্যান্ড কালার, ঠিকানা ও স্লোগান স্থায়ীভাবে সেভ ও প্রিন্ট রেন্ডারিং।
+            * 💾 **কাউন্টিং সেশন ক্র্যাশ রিকভারি:** প্রতি ক্লিকে অটো-ড্রাফট সেভ, ফোন বন্ধ হলেও ডাটা রিকভারি।
+            * 📊 **ডায়নামিক হোম সামারি:** রিয়েল ডাটা কাউন্টার।
+          files: |
+            release-output/Parts-Challan.apk
+            release-output/Maa-Motors-Godown-App.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create New v1.2.0 Release
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'

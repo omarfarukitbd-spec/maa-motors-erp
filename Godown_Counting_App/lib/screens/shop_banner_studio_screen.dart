@@ -46,11 +46,14 @@ class _ShopBannerStudioScreenState extends State<ShopBannerStudioScreen> {
     final auth = context.read<AuthProvider>();
     final t = auth.currentTenant;
 
+    _selectedColorIndex = (t != null && t.themeColorIndex >= 0 && t.themeColorIndex < _themeColors.length)
+        ? t.themeColorIndex
+        : 0;
     _shopNameCtrl = TextEditingController(text: t?.shopName ?? 'মেসার্স মা মোটরস • গোডাউন');
     _ownerNameCtrl = TextEditingController(text: t?.ownerName ?? 'ওমর ফারুক');
     _phoneCtrl = TextEditingController(text: t?.phone ?? '01819-397669');
-    _addressCtrl = TextEditingController(text: 'ধোলাইখাল, ঢাকা');
-    _taglineCtrl = TextEditingController(text: 'জাপানি গাড়ি ও ট্রাকের জেনুইন পার্টস আমদানিকারক ও পাইকারি বিক্রেতা');
+    _addressCtrl = TextEditingController(text: t?.address ?? 'ধোলাইখাল, ঢাকা');
+    _taglineCtrl = TextEditingController(text: t?.tagline ?? 'জাপানি গাড়ি ও ট্রাকের জেনুইন পার্টস আমদানিকারক ও পাইকারি বিক্রেতা');
     _bannerUrlCtrl = TextEditingController(text: t?.headerBannerUrl ?? '');
   }
 
@@ -86,6 +89,9 @@ class _ShopBannerStudioScreenState extends State<ShopBannerStudioScreen> {
         t.shopName = shopName;
         t.ownerName = _ownerNameCtrl.text.trim();
         t.phone = _phoneCtrl.text.trim();
+        t.address = _addressCtrl.text.trim();
+        t.tagline = _taglineCtrl.text.trim();
+        t.themeColorIndex = _selectedColorIndex;
         t.headerBannerUrl = _bannerUrlCtrl.text.trim().isNotEmpty ? _bannerUrlCtrl.text.trim() : null;
 
         final licensing = AuthLicensingService();

@@ -80,9 +80,13 @@ class ChallanDocument {
   final String countedByUserName;
   final String productOwner; // পণ্যের মালিক (উদা: মেসার্স মা মোটরস)
   final String destinationFor; // কার জন্য যাচ্ছে / গন্তব্য
+  final String customerName; // যার মাল নিয়ে যাচ্ছে (পার্টি/গ্রাহক নাম)
+  final String customerAddress; // গ্রাহক/পার্টির ঠিকানা
+  final String customerPhone; // গ্রাহক/পার্টির মোবাইল নম্বর
   final String vehicleNo;
   final String driverName;
   final String driverMobile;
+  final String sealNo; // কন্টেইনার / গাড়ির সিকিউরিটি সিল নম্বর
   final String gatePassNo;
   final String godownLocation;
   final DateTime date;
@@ -107,9 +111,13 @@ class ChallanDocument {
     this.countedByUserName = 'গোডাউন ইনচার্জ',
     this.productOwner = 'মেসার্স মা মোটরস',
     this.destinationFor = 'মুরাদপুর প্রধান শো-রুম',
+    this.customerName = '',
+    this.customerAddress = '',
+    this.customerPhone = '',
     required this.vehicleNo,
     required this.driverName,
     this.driverMobile = '',
+    this.sealNo = '',
     this.gatePassNo = 'GP-001',
     this.godownLocation = 'প্রধান গোডাউন',
     required this.date,
@@ -144,9 +152,13 @@ class ChallanDocument {
       countedByUserName: countedByUserName,
       productOwner: productOwner,
       destinationFor: destinationFor,
-      vehicleNo: vehicleNo,
-      driverName: driverName,
-      driverMobile: driverMobile,
+      customerName: customerName ?? this.customerName,
+      customerAddress: customerAddress ?? this.customerAddress,
+      customerPhone: customerPhone ?? this.customerPhone,
+      vehicleNo: vehicleNo ?? this.vehicleNo,
+      driverName: driverName ?? this.driverName,
+      driverMobile: driverMobile ?? this.driverMobile,
+      sealNo: sealNo ?? this.sealNo,
       gatePassNo: gatePassNo,
       godownLocation: godownLocation,
       date: date,
@@ -186,9 +198,13 @@ class ChallanDocument {
         'countedByUserName': countedByUserName,
         'productOwner': productOwner,
         'destinationFor': destinationFor,
+        'customerName': customerName,
+        'customerAddress': customerAddress,
+        'customerPhone': customerPhone,
         'vehicleNo': vehicleNo,
         'driverName': driverName,
         'driverMobile': driverMobile,
+        'sealNo': sealNo,
         'gatePassNo': gatePassNo,
         'godownLocation': godownLocation,
         'date': date.toIso8601String(),
@@ -213,9 +229,13 @@ class ChallanDocument {
         countedByUserName: json['countedByUserName'] ?? 'গোডাউন ইনচার্জ',
         productOwner: json['productOwner'] ?? 'মেসার্স মা মোটরস',
         destinationFor: json['destinationFor'] ?? 'মুরাদপুর প্রধান শো-রুম',
+        customerName: json['customerName'] ?? json['productOwner'] ?? '',
+        customerAddress: json['customerAddress'] ?? json['destinationFor'] ?? '',
+        customerPhone: json['customerPhone'] ?? '',
         vehicleNo: json['vehicleNo'] ?? '',
         driverName: json['driverName'] ?? '',
         driverMobile: json['driverMobile'] ?? '',
+        sealNo: json['sealNo'] ?? '',
         gatePassNo: json['gatePassNo'] ?? '',
         godownLocation: json['godownLocation'] ?? '',
         date: json['date'] != null
