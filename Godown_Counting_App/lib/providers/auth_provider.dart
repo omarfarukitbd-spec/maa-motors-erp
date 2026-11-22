@@ -23,33 +23,42 @@ class AuthProvider with ChangeNotifier {
       _role == UserRole.superAdmin ||
       AuthLicensingService.isSuperAdmin(_userEmail);
 
-  /// Check if the user is currently soft-locked
-  bool get isSoftLocked => _currentTenant?.isSoftLocked ?? false;
+  /// Permanent active access for Maa Motors Godown
+  bool get isSoftLocked => false;
+  bool get canPrintAndShareChallan => true;
+  bool get hasChallanAccess => true;
+  bool get isInGracePeriod => false;
 
-  /// Check if printing or sharing challans is permitted
-  bool get canPrintAndShareChallan {
-    if (_role == UserRole.superAdmin) return true;
-    if (_currentTenant == null) return false;
-    return _currentTenant!.canPrintAndShare;
-  }
+  String _currentStaffName = 'মোঃ এমরান';
+  String _currentStaffId = '১৯২৫';
+  String _currentStaffRole = 'গোডাউন ইনচার্জ';
 
-  /// Check if the user has challan access (Shop Admin or permitted Staff)
-  bool get hasChallanAccess {
-    if (_role == UserRole.superAdmin) return true;
-    if (_role == UserRole.shopAdmin) return true;
-    if (_role == UserRole.staff) {
-      return _currentTenant?.canStaffPrintChallan ?? false;
+  String get currentStaffName => _currentStaffName;
+  String get currentStaffId => _currentStaffId;
+  String get currentStaffRole => _currentStaffRole;
+
+  String get shopDisplayName =>
+      _currentTenant?.shopName ?? 'মেসার্স মা মোটরস • গোডাউন';
+
+  String get currentShopId => _currentTenant?.id ?? 'MM-2026-01';
+
+  bool loginWithStaffPin(String pin) {
+    final verified = AuthLicensingService.verifyStaffPin(pin);
+    if (verified != null) {
+      _currentStaffName = verified['name'] ?? 'মোঃ এমরান';
+      _currentStaffId = verified['id'] ?? '১৯২৫';
+      _currentStaffRole = verified['role'] ?? 'গোডাউন ইনচার্জ';
+      if (verified['id'] == '7860') {
+        _role = UserRole.superAdmin;
+        _userEmail = AuthLicensingService.superAdminEmail;
+      } else {
+        _role = UserRole.shopAdmin;
+      }
+      notifyListeners();
+      return true;
     }
     return false;
   }
-
-  /// Check if inside grace period
-  bool get isInGracePeriod => _currentTenant?.isInGracePeriod ?? false;
-
-  String get shopDisplayName =>
-      _currentTenant?.shopName ?? 'Parts Challan • পার্টস চালান';
-
-  String get currentShopId => _currentTenant?.id ?? 'GUEST-001';
 
   Future<void> init() async {
     _isLoading = true;

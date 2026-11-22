@@ -266,6 +266,31 @@ service cloud.firestore {
         getPerms().get('editLedger', false) == true
       );
     }
+
+    // Godown Gate-Pass & Delivery Challans Collection (Unloading/Loading Mobile & Web Challans)
+    match /godown_challans/{challanId} {
+      allow get, list: if isAuthenticated();
+      allow create, update: if (
+        (isAuthenticated() && (
+          isAdmin() || 
+          (!isBoss() && (
+            getPerms().get('manageLedger', false) == true || 
+            getPerms().get('manageCustomers', false) == true || 
+            getPerms().get('editLedger', false) == true
+          ))
+        )) ||
+        (
+          request.resource.data.keys().hasAll(['challanNo', 'totalPcs', 'sessionType']) &&
+          request.resource.data.challanNo is string &&
+          request.resource.data.challanNo.size() <= 100 &&
+          request.resource.data.totalPcs is number &&
+          request.resource.data.totalPcs >= 0 &&
+          request.resource.data.sessionType is string &&
+          request.resource.data.sessionType in ['inward', 'outward']
+        )
+      );
+      allow delete: if isAdmin();
+    }
   }
 }
 

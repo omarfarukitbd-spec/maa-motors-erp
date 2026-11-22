@@ -27,13 +27,13 @@ class GodownCountingApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Parts Challan • পার্টস চালান',
+        title: 'মেসার্স মা মোটরস • গোডাউন চালান',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: const ColorScheme.dark(
-            primary: AppColors.unl,
-            secondary: AppColors.load,
+            primary: AppColors.load,
+            secondary: AppColors.unl,
             surface: AppColors.s1Dark,
           ),
           scaffoldBackgroundColor: AppColors.bgDark,

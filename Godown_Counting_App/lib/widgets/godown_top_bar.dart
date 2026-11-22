@@ -49,17 +49,44 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
 
             // Title
             Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: isLightMode ? AppColors.txLight : AppColors.txDark,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Hind Siliguri',
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: isHome
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'মেসার্স মা মোটরস',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'Hind Siliguri',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'গোডাউন-১ • মুরাদপুর, চট্টগ্রাম',
+                          style: TextStyle(
+                            color: isLightMode ? AppColors.load : const Color(0xFF34D399),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Hind Siliguri',
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      title,
+                      style: TextStyle(
+                        color: isLightMode ? AppColors.txLight : AppColors.txDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Hind Siliguri',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
             ),
 
             // Theme Toggle Button

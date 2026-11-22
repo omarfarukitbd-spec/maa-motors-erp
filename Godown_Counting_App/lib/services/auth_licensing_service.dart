@@ -11,43 +11,41 @@ class AuthLicensingService {
   static const String _prefKeyCurrentRole = 'app_current_user_role_v2';
   static const String _prefKeyAuditLogs = 'godown_audit_logs_v2';
 
-  // Seed default demo shops
+  // Seed default Maa Motors ERP Godown Company
   static final List<Tenant> _defaultTenants = [
     Tenant(
       id: 'MM-2026-01',
       shopName: 'মেসার্স মা মোটরস • গোডাউন',
       ownerName: 'ওমর ফারুক',
       phone: '01819-397669',
-      activationCode: 'MM-7K4X-92QD',
-      licenseKey: 'LIC-MM-8819-9842',
+      address: 'গোডাউন-১, রেলগেট সংলগ্ন, মুরাদপুর, চট্টগ্রাম',
+      tagline: 'জাপানি গাড়ি ও ট্রাকের জেনুইন পার্টস আমদানিকারক ও পাইকারি বিক্রেতা',
+      activationCode: 'MM-MAA-2026',
+      licenseKey: 'LIC-MAA-MOTORS-ERP',
       licenseState: LicenseState.active,
-      deviceLimit: 5,
-      graceDays: 7,
+      deviceLimit: 10,
+      graceDays: 30,
       aspectRatio: '5:1',
       bannerWidth: 1200,
       bannerHeight: 240,
       canStaffPrintChallan: true,
-      challanCount: 92,
-      staffCount: 4,
-    ),
-    Tenant(
-      id: 'SHP-2026-02',
-      shopName: 'রহিম ব্রাদার্স পার্টস গোডাউন',
-      ownerName: 'রহিম উল্লাহ',
-      phone: '01711-223344',
-      activationCode: 'RB-4412-1092',
-      licenseKey: 'LIC-RB-1092-4412',
-      licenseState: LicenseState.active,
-      deviceLimit: 3,
-      graceDays: 7,
-      aspectRatio: '5:1',
-      bannerWidth: 1200,
-      bannerHeight: 240,
-      canStaffPrintChallan: true,
-      challanCount: 36,
-      staffCount: 2,
+      challanCount: 100,
+      staffCount: 5,
     ),
   ];
+
+  /// Verify Staff PIN for Maa Motors Godown
+  static Map<String, String>? verifyStaffPin(String pin) {
+    final cleanPin = pin.trim();
+    if (cleanPin == '1925') {
+      return {'id': '1925', 'name': 'মোঃ এমরান', 'role': 'গোডাউন ইনচার্জ'};
+    } else if (cleanPin == '1234') {
+      return {'id': '1234', 'name': 'আলতাফ', 'role': 'সহকারী ইনচার্জ'};
+    } else if (cleanPin == '7860') {
+      return {'id': '7860', 'name': 'ওমর ফারুক', 'role': 'ওনার / সুপার অ্যাডমিন'};
+    }
+    return null;
+  }
 
   static bool isSuperAdmin(String? email) {
     if (email == null) return false;

@@ -18,6 +18,7 @@ import { renderDubaiProcurement, unsubscribeDubaiAudits } from '../dubai_procure
 import { renderPartsCatalog, unsubscribePartsCatalog, initPartsCatalogCache } from '../parts_catalog/index.js';
 import { renderContainerSettlement, unsubscribeContainerSettlement } from '../container_settlement/index.js';
 import { renderPayroll } from '../payroll/index.js';
+import { renderGodownChallansUI, unsubscribeGodownChallans } from '../godown_challans/index.js';
 import { AppState } from '../state.js';
 import { firebase } from '../firebase-config.js';
 import { initDatePickers } from '../utils/date-logic/date-picker.js';
@@ -120,6 +121,7 @@ export function navigate(view, params = {}) {
     if (AppState.currentView === 'dubai-procurement' && view !== 'dubai-procurement') unsubscribeDubaiAudits();
     if (AppState.currentView === 'parts-catalog' && view !== 'parts-catalog') unsubscribePartsCatalog();
     if (AppState.currentView === 'container-settlement' && view !== 'container-settlement') unsubscribeContainerSettlement();
+    if (AppState.currentView === 'godown-challans' && view !== 'godown-challans') unsubscribeGodownChallans();
 
     AppState.currentView = view;
     const sidebar = document.getElementById('app-sidebar');
@@ -156,6 +158,8 @@ export function navigate(view, params = {}) {
         case 'godown_register': renderMemoSearch(container, { ...params, tab: 'register' }); break;
         case 'godown-contacts':
         case 'godown_contacts': renderMemoSearch(container, { ...params, tab: 'contacts' }); break;
+        case 'godown-challans':
+        case 'godown_challans': renderGodownChallansUI(container, params); break;
         case 'treasury': renderTreasury(container, params); break;
         case 'recycle-bin': renderRecycleBin(container); break;
         case 'dubai-procurement': renderDubaiProcurement(container, params); break;

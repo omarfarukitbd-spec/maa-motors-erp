@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import '../models/challan_model.dart';
 import '../models/tenant_model.dart';
 import 'offline_storage_service.dart';
+import 'firebase_sync_service.dart';
 
 class ChallanPdfService {
   /// Generate A4 PDF Document bytes
@@ -16,32 +17,11 @@ class ChallanPdfService {
     final font = await PdfGoogleFonts.hindSiliguriRegular();
     final fontBold = await PdfGoogleFonts.hindSiliguriBold();
 
-    final shopTitle = tenant?.shopName ?? 'মেসার্স মা মোটরস • গোডাউন ডেলিভারি চালান';
+    const shopTitle = 'মেসার্স মা মোটরস';
     final isUnloading = challan.sessionType == 'inward';
-    final sessionBadgeText = isUnloading ? 'গাড়ি থেকে আনলোডিং (Unloading)' : 'গাড়িতে লোডিং (Loading/Delivery)';
-    final badgeColor = isUnloading ? PdfColors.amber800 : PdfColors.teal800;
-
-    // Theme color palette matching Shop Banner Studio
-    PdfColor headerColor = PdfColors.blueGrey900;
-    if (tenant != null) {
-      switch (tenant.themeColorIndex) {
-        case 0:
-          headerColor = const PdfColor.fromInt(0xFF0284C7); // Ocean Blue
-          break;
-        case 1:
-          headerColor = const PdfColor.fromInt(0xFF059669); // Emerald Green
-          break;
-        case 2:
-          headerColor = const PdfColor.fromInt(0xFF1E293B); // Slate Black
-          break;
-        case 3:
-          headerColor = const PdfColor.fromInt(0xFF4F46E5); // Royal Indigo
-          break;
-        case 4:
-          headerColor = const PdfColor.fromInt(0xFFD97706); // Amber Gold
-          break;
-      }
-    }
+    final sessionBadgeText = isUnloading ? 'গাড়ি থেকে আনলোডিং (Unloading Gate-Pass)' : 'গাড়িতে ডেলিভারি (Delivery Gate-Pass)';
+    final badgeColor = isUnloading ? const PdfColor.fromInt(0xFF0284C7) : const PdfColor.fromInt(0xFF059669);
+    const headerColor = PdfColor.fromInt(0xFF0F172A); // Maa Motors Corporate Slate
 
     final partyName = challan.customerName.isNotEmpty ? challan.customerName : challan.productOwner;
     final partyAddress = challan.customerAddress.isNotEmpty ? challan.customerAddress : challan.destinationFor;
@@ -56,7 +36,7 @@ class ChallanPdfService {
           return [
             // Header Banner / Shop Title
             pw.Container(
-              padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              padding: const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 14),
               decoration: pw.BoxDecoration(
                 color: headerColor,
                 borderRadius: pw.BorderRadius.circular(6),
@@ -71,37 +51,30 @@ class ChallanPdfService {
                         shopTitle,
                         style: pw.TextStyle(
                           font: fontBold,
-                          fontSize: 16,
+                          fontSize: 18,
                           color: PdfColors.white,
                         ),
                       ),
-                      if (tenant != null) ...[
-                        pw.Text(
-                          'প্রো: ${tenant.ownerName} • মোবাইল: ${tenant.phone}${tenant.address.isNotEmpty ? " • ${tenant.address}" : ""}',
-                          style: pw.TextStyle(font: font, fontSize: 8.5, color: PdfColors.grey200),
-                        ),
-                        if (tenant.tagline.isNotEmpty)
-                          pw.Text(
-                            tenant.tagline,
-                            style: pw.TextStyle(font: font, fontSize: 7.5, color: PdfColors.grey300),
-                          ),
-                      ] else ...[
-                        pw.Text(
-                          'গোডাউন পার্টস আনলোডিং ও ডেলিভারি অফিসিয়াল চালান',
-                          style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey300),
-                        ),
-                      ],
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        'প্রোপ্রাইটর: মোঃ ওমর ফারুক • মোবাইল: ০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪',
+                        style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey200),
+                      ),
+                      pw.Text(
+                        'গোডাউন-১, রেলগেট সংলগ্ন, মুরাদপুর, চট্টগ্রাম',
+                        style: pw.TextStyle(font: font, fontSize: 8.5, color: PdfColors.grey300),
+                      ),
                     ],
                   ),
                   pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: pw.BoxDecoration(
                       color: badgeColor,
                       borderRadius: pw.BorderRadius.circular(4),
                     ),
                     child: pw.Text(
                       sessionBadgeText,
-                      style: pw.TextStyle(font: fontBold, fontSize: 9, color: PdfColors.white),
+                      style: pw.TextStyle(font: fontBold, fontSize: 9.5, color: PdfColors.white),
                     ),
                   ),
                 ],
@@ -242,9 +215,9 @@ class ChallanPdfService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                _signatureBox('গণনাকারী স্টাফের স্বাক্ষর', challan.countedByUserName, font),
-                _signatureBox('গাড়ি চালকের স্বাক্ষর / টিপসই', challan.driverName, font),
-                _signatureBox('গোডাউন ইনচার্জের স্বাক্ষর', 'অনুমোদিত', font),
+                _signatureBox('কাউন্টার কর্মীর স্বাক্ষর', challan.countedByUserName.isNotEmpty ? challan.countedByUserName : 'মা মোটরস কর্মী', font),
+                _signatureBox('মাল প্রাপক / ড্রাইভারের স্বাক্ষর', challan.driverName.isNotEmpty ? '${challan.driverName} (ড্রাইভার)' : 'ড্রাইভারের সই ও তারিখ', font),
+                _signatureBox('গোডাউন ইনচার্জের স্বাক্ষর', 'মোঃ এমরান (ইনচার্জ)', font),
               ],
             ),
             pw.SizedBox(height: 20),
@@ -255,7 +228,7 @@ class ChallanPdfService {
               children: [
                 pw.Text('চালান প্রস্তুতের সময়: ${_formatDate(challan.date)}',
                     style: pw.TextStyle(font: font, fontSize: 8, color: PdfColors.grey600)),
-                pw.Text('সহজ গোডাউন কাউন্টিং সিস্টেম • Powered by Maa Motors ERP',
+                pw.Text('মা মোটরস গোডাউন-১ (মুরাদপুর, চট্টগ্রাম) • ERP Sync',
                     style: pw.TextStyle(font: font, fontSize: 8, color: PdfColors.grey600)),
               ],
             ),
@@ -276,6 +249,8 @@ class ChallanPdfService {
 
     // Auto-lock challan in storage upon print execution
     await OfflineStorageService.lockChallan(challan.id);
+    // Background cloud sync to Maa Motors ERP Firestore
+    FirebaseSyncService().backupChallanToCloud(challan, tenant: tenant);
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdfBytes,
@@ -292,6 +267,8 @@ class ChallanPdfService {
 
     // Auto-lock challan in storage upon share
     await OfflineStorageService.lockChallan(challan.id);
+    // Background cloud sync to Maa Motors ERP Firestore
+    FirebaseSyncService().backupChallanToCloud(challan, tenant: tenant);
 
     await Printing.sharePdf(
       bytes: pdfBytes,
@@ -308,9 +285,7 @@ class ChallanPdfService {
     final font = await PdfGoogleFonts.hindSiliguriRegular();
     final fontBold = await PdfGoogleFonts.hindSiliguriBold();
 
-    final shopTitle = tenant?.shopName ?? 'মেসার্স মা মোটরস';
     final isUnloading = challan.sessionType == 'inward';
-    final sessionBadgeText = isUnloading ? 'গাড়ি থেকে আনলোডিং' : 'গাড়িতে মাল তোলা';
 
     pdf.addPage(
       pw.Page(
@@ -321,19 +296,20 @@ class ChallanPdfService {
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
               // Header
-              pw.Text(shopTitle, style: pw.TextStyle(font: fontBold, fontSize: 13), textAlign: pw.TextAlign.center),
-              if (tenant != null && tenant.phone.isNotEmpty)
-                pw.Text('প্রো: ${tenant.ownerName} • মোবাইল: ${tenant.phone}', style: pw.TextStyle(font: font, fontSize: 7.5), textAlign: pw.TextAlign.center)
-              else
-                pw.Text('গোডাউন ডেলিভারি চালান', style: pw.TextStyle(font: font, fontSize: 8), textAlign: pw.TextAlign.center),
+              pw.Text('মেসার্স মা মোটরস', style: pw.TextStyle(font: fontBold, fontSize: 13), textAlign: pw.TextAlign.center),
+              pw.Text('প্রো: মোঃ ওমর ফারুক • ০১8১৯-৩৯৭৬৬৯', style: pw.TextStyle(font: font, fontSize: 7.5), textAlign: pw.TextAlign.center),
+              pw.Text('গোডাউন-১, রেলগেট সংলগ্ন, মুরাদপুর, চট্টগ্রাম', style: pw.TextStyle(font: font, fontSize: 7), textAlign: pw.TextAlign.center),
               pw.Container(
                 margin: const pw.EdgeInsets.symmetric(vertical: 4),
                 padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: pw.BoxDecoration(
-                  color: isUnloading ? PdfColors.amber800 : PdfColors.teal800,
+                  color: isUnloading ? const PdfColor.fromInt(0xFF0284C7) : const PdfColor.fromInt(0xFF059669),
                   borderRadius: pw.BorderRadius.circular(3),
                 ),
-                child: pw.Text(sessionBadgeText, style: pw.TextStyle(font: fontBold, fontSize: 7.5, color: PdfColors.white)),
+                child: pw.Text(
+                  isUnloading ? '[ আনলোডিং চালান / খালাস ]' : '[ ডেলিভারি চালান / গেটপাস ]',
+                  style: pw.TextStyle(font: fontBold, fontSize: 7.5, color: PdfColors.white),
+                ),
               ),
               pw.Text('- - - - - - - - - - - - - - - - - - - - - - - - - - -', style: pw.TextStyle(font: font, fontSize: 7)),
               pw.SizedBox(height: 2),
@@ -423,13 +399,13 @@ class ChallanPdfService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  _posSignBox('গণনাকারী', font),
+                  _posSignBox('কাউন্টার কর্মী', font),
                   _posSignBox('ড্রাইভার', font),
-                  _posSignBox('ইনচার্জ', font),
+                  _posSignBox('মোঃ এমরান (ইনচার্জ)', font),
                 ],
               ),
               pw.SizedBox(height: 6),
-              pw.Text('সহজ গোডাউন কাউন্টিং সিস্টেম', style: pw.TextStyle(font: font, fontSize: 6.5, color: PdfColors.grey600)),
+              pw.Text('মেসার্স মা মোটরস • গোডাউন-১, মুরাদপুর, চট্টগ্রাম', style: pw.TextStyle(font: font, fontSize: 6.5, color: PdfColors.grey600)),
             ],
           );
         },
@@ -448,6 +424,8 @@ class ChallanPdfService {
 
     // Auto-lock challan in storage upon print execution
     await OfflineStorageService.lockChallan(challan.id);
+    // Background cloud sync to Maa Motors ERP Firestore
+    FirebaseSyncService().backupChallanToCloud(challan, tenant: tenant);
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdfBytes,

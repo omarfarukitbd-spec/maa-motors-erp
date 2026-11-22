@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/counting_provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/bangla_tools.dart';
@@ -20,7 +19,6 @@ class _ChallanHistoryScreenState extends State<ChallanHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
     final counting = context.watch<CountingProvider>();
     final history = counting.sessionHistory;
 

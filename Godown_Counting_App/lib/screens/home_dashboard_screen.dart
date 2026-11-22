@@ -9,10 +9,8 @@ import '../widgets/godown_top_bar.dart';
 import '../widgets/app_drawer.dart';
 import 'main_counter_screen.dart';
 import 'challan_history_screen.dart';
-import 'license_backup_screen.dart';
-import 'challan_view_screen.dart';
-import 'super_admin_hub_screen.dart';
-import '../services/auth_licensing_service.dart';
+import 'login_screen.dart';
+import '../services/customer_directory_service.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({super.key});
@@ -76,6 +74,60 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(height: 10),
+
+              // Active Logged In Staff Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _isLightMode ? AppColors.s1Light : AppColors.s1Dark,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: _isLightMode ? AppColors.lineLight : const Color(0xFF334155),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.badge_outlined, color: AppColors.load, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'কর্মরত: ${auth.currentStaffName} (${auth.currentStaffRole})',
+                        style: TextStyle(
+                          color: _isLightMode ? AppColors.txLight : Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Hind Siliguri',
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.load.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'পরিবর্তন',
+                          style: TextStyle(
+                            color: AppColors.load,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const Spacer(),
 
               // 1. Unloading Hero Card (গাড়ি থেকে নামানো)
@@ -136,59 +188,41 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildSecondaryButton(
-                      label: 'লাইসেন্স ও ব্যাকআপ',
-                      icon: Icons.verified_user_outlined,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LicenseBackupScreen(),
-                          ),
-                        );
-                      },
+                      label: 'কাস্টমার তালিকা',
+                      icon: Icons.contact_phone_outlined,
+                      onTap: () => _openCustomerDirectoryDialog(context),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 14),
 
-              // Bottom Links: Demo Challan & Super Admin Hub
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ChallanViewScreen(isDemoSample: true),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'নমুনা চালান দেখুন',
+              // Bottom Brand Banner
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF091124),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF1E293B)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.warehouse_outlined, color: Color(0xFF34D399), size: 16),
+                    SizedBox(width: 8),
+                    Text(
+                      'মেসার্স মা মোটরস • গোডাউন-১, মুরাদপুর • ০১8১৯-৩৯৭৬৬৯',
                       style: TextStyle(
-                        color: AppColors.muDark,
-                        fontSize: 14,
-                        decoration: TextDecoration.underline,
+                        color: Color(0xFF94A3B8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  TextButton.icon(
-                    onPressed: () => _openSuperAdminHub(context, auth),
-                    icon: const Icon(Icons.shield_outlined, color: AppColors.muDark, size: 16),
-                    label: const Text(
-                      'অ্যাডমিন হাব',
-                      style: TextStyle(
-                        color: AppColors.muDark,
-                        fontSize: 13.5,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
             ],
           ),
         ),
@@ -196,72 +230,107 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     );
   }
 
-  void _openSuperAdminHub(BuildContext context, AuthProvider auth) {
-    final pinCtrl = TextEditingController();
-    showDialog(
+  void _openCustomerDirectoryDialog(BuildContext context) async {
+    final customers = await CustomerDirectoryService().getAllCustomers();
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.s1Dark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.security, color: AppColors.load, size: 22),
-            SizedBox(width: 8),
-            Text('মাস্টার কন্ট্রোল পিন', style: TextStyle(color: Colors.white, fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'সুপার অ্যাডমিন হাবে প্রবেশের জন্য ওনার সিকিউরিটি পিন দিন (ডিফল্ট: 7860):',
-              style: TextStyle(color: AppColors.muDark, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: pinCtrl,
-              autofocus: true,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 4),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: AppColors.s2Dark,
-                hintText: 'PIN',
-                hintStyle: const TextStyle(color: AppColors.muDark),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        maxChildSize: 0.9,
+        minChildSize: 0.4,
+        expand: false,
+        builder: (_, scrollCtrl) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-            ),
-          ],
+              const Row(
+                children: [
+                  Icon(Icons.contact_phone, color: AppColors.load, size: 22),
+                  SizedBox(width: 8),
+                  Text(
+                    'মা মোটরস কাস্টমার ও শোরুম ডিরেক্টরি',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'গোডাউনের চালানে নিয়মিত ব্যবহৃত কাস্টমার, শোরুম ও তাদের নিয়মিত গাড়ির তালিকা',
+                style: TextStyle(color: AppColors.muDark, fontSize: 12),
+              ),
+              const Divider(color: AppColors.lineDark, height: 20),
+              Expanded(
+                child: ListView.separated(
+                  controller: scrollCtrl,
+                  itemCount: customers.length,
+                  separatorBuilder: (_, __) => const Divider(color: AppColors.lineDark, height: 12),
+                  itemBuilder: (context, idx) {
+                    final c = customers[idx];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.storefront, color: AppColors.load, size: 20),
+                      ),
+                      title: Text(
+                        c.name,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (c.phone.isNotEmpty)
+                            Text('ফোন: ${c.phone}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                          if (c.address.isNotEmpty)
+                            Text('ঠিকানা: ${c.address}', style: const TextStyle(color: AppColors.muDark, fontSize: 11.5)),
+                          if (c.vehicleNo.isNotEmpty)
+                            Text('নিয়মিত গাড়ি: ${c.vehicleNo}', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5)),
+                        ],
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.phone, color: AppColors.load, size: 20),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('কল করুন: ${c.phone} (${c.name})')),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('বাতিল', style: TextStyle(color: AppColors.muDark)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.unl,
-              foregroundColor: AppColors.textOnAccent,
-            ),
-            onPressed: () {
-              if (pinCtrl.text.trim() == '7860') {
-                Navigator.pop(ctx);
-                auth.loginAsSuperAdmin(AuthLicensingService.superAdminEmail);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SuperAdminHubScreen()),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('ভুল পিন! সঠিক ওনার পিন দিন।')),
-                );
-              }
-            },
-            child: const Text('প্রবেশ করুন', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }

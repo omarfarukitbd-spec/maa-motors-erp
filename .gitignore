@@ -16,3 +16,10 @@ __pycache__/
 *.pyc
 scratch/
 *.apk
+
+# Flutter artifacts
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/android/local.properties
+**/build/

@@ -9,6 +9,8 @@ import '../utils/bangla_tools.dart';
 import '../widgets/godown_top_bar.dart';
 import '../widgets/session_summary_sheet.dart';
 import '../services/audio_engine_service.dart';
+import '../services/customer_directory_service.dart';
+import '../services/firebase_sync_service.dart';
 
 class ChallanViewScreen extends StatefulWidget {
   final String mode; // 'unl' or 'load'
@@ -150,9 +152,44 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
               const SizedBox(height: 6),
 
               // Section 1: Customer / Consignee
-              const Text(
-                '১. যার মাল নিয়ে যাচ্ছে (গ্রাহক / পার্টি)',
-                style: TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '১. যার মাল নিয়ে যাচ্ছে (গ্রাহক / পার্টি)',
+                    style: TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'মা মোটরস ডিরেক্টরি',
+                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+
+              // Quick Suggestions for Maa Motors Customers
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: CustomerDirectoryService.defaultMaaCustomers.take(4).map((c) {
+                  return ActionChip(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    backgroundColor: const Color(0xFF1E293B),
+                    side: const BorderSide(color: Color(0xFF38BDF8), width: 0.8),
+                    label: Text(
+                      c.name,
+                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10.5, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      customerNameCtrl.text = c.name;
+                      customerPhoneCtrl.text = c.phone;
+                      customerAddressCtrl.text = c.address;
+                      if (c.vehicleNo.isNotEmpty) vehicleCtrl.text = c.vehicleNo;
+                      if (c.driverName.isNotEmpty) driverNameCtrl.text = c.driverName;
+                      if (c.driverMobile.isNotEmpty) driverMobileCtrl.text = c.driverMobile;
+                    },
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 8),
               _buildInputTile(controller: customerNameCtrl, label: 'পার্টি / গ্রাহকের নাম', hint: 'যেমন: মেসার্স আলম ব্রাদার্স', icon: Icons.person_outline),
@@ -266,6 +303,27 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
       );
     }).toList();
 
+    final completedDoc = ChallanDocument(
+      id: _challanNo,
+      challanNo: _challanNo,
+      sessionType: widget.mode == 'unl' ? 'inward' : 'outward',
+      vehicleNo: _vehicleNo.isNotEmpty ? _vehicleNo : 'অনির্ধারিত গাড়ি',
+      driverName: _driverName.isNotEmpty ? _driverName : 'অনির্ধারিত চালক',
+      driverMobile: _driverMobile,
+      customerName: _customerName,
+      customerAddress: _customerAddress,
+      customerPhone: _customerPhone,
+      productOwner: _customerName.isNotEmpty ? _customerName : 'মেসার্স মা মোটরস',
+      destinationFor: _customerAddress.isNotEmpty ? _customerAddress : 'মুরাদপুর প্রধান শো-রুম',
+      sealNo: _sealNo,
+      date: DateTime.now(),
+      items: itemModels,
+      totalPcs: _items.fold<int>(0, (sum, i) => sum + i.quantity),
+      isLocked: true,
+      verificationCode: _verificationCode,
+      revisionNumber: _revision,
+    );
+
     context.read<CountingProvider>().addCompletedChallanDirectly(
           challanNo: _challanNo,
           sessionType: widget.mode == 'unl' ? 'inward' : 'outward',
@@ -281,6 +339,21 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
           verificationCode: _verificationCode,
           revisionNumber: _revision,
         );
+
+    // Sync to Maa Motors ERP Firestore Cloud
+    FirebaseSyncService().backupChallanToCloud(completedDoc);
+
+    // Save customer to local directory cache if entered
+    if (_customerName.isNotEmpty) {
+      CustomerDirectoryService().addCustomer(CustomerEntry(
+        name: _customerName,
+        phone: _customerPhone,
+        address: _customerAddress,
+        vehicleNo: _vehicleNo,
+        driverName: _driverName,
+        driverMobile: _driverMobile,
+      ));
+    }
   }
 
   void _createNewRevision() {
@@ -306,7 +379,7 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
       return;
     }
 
-    _executeLockAndSave();
+    _lockAndSaveChallan();
     _audio.triggerHaptic();
 
     // Call PDF generation
@@ -438,48 +511,55 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Shop Branded Banner Header
+                      // Shop Branded Banner Header (M/S MAA MOTORS)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                         decoration: BoxDecoration(
                           color: const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AppColors.load, width: 1.5),
                         ),
                         child: Column(
                           children: [
-                            Text(
-                              auth.shopDisplayName,
-                              style: const TextStyle(
+                            const Text(
+                              'মেসার্স মা মোটরস',
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 18,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: 'Hind Siliguri',
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            if (auth.currentTenant != null) ...[
-                              const SizedBox(height: 2),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (auth.currentTenant!.ownerName.isNotEmpty) ...[
-                                    Text(
-                                      'প্রো: ${auth.currentTenant!.ownerName}',
-                                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
-                                    const SizedBox(width: 8),
-                                  ],
-                                  Text(
-                                    'মোবাইল: ${auth.currentTenant!.phone}',
-                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
+                            const SizedBox(height: 2),
+                            const Text(
+                              'প্রোপ্রাইটর: মোঃ ওমর ফারুক • মোবাইল: ০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪',
+                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                            const Text(
+                              'গোডাউন-১, রেলগেট সংলগ্ন, মুরাদপুর, চট্টগ্রাম',
+                              style: TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: (isUnloading ? AppColors.unl : AppColors.load).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: (isUnloading ? AppColors.unl : AppColors.load).withOpacity(0.4)),
                               ),
-                            ],
+                              child: Text(
+                                isUnloading ? 'গাড়ি থেকে আনলোডিং চালান (খালাস)' : 'গাড়িতে ডেলিভারি চালান (গেটপাস)',
+                                style: TextStyle(
+                                  color: isUnloading ? AppColors.unl : AppColors.load,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -693,13 +773,13 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // 3 Institutional Signatures
+                      // 3 Institutional Signatures (MAA MOTORS)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildSignBox('মাল গণনাকারী'),
-                          _buildSignBox('ড্রাইভার (টিপসই)'),
-                          _buildSignBox('রিসিভার / ইনচার্জ'),
+                          _buildSignBox('কাউন্টার কর্মী\n(${auth.currentStaffName})'),
+                          _buildSignBox('মাল প্রাপক / ড্রাইভার\n(স্বাক্ষর ও তারিখ)'),
+                          _buildSignBox('মোঃ এমরান (ইনচার্জ)\nগোডাউন-১, মা মোটরস'),
                         ],
                       ),
                       const SizedBox(height: 16),

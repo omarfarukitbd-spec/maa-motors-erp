@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/tenant_model.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_licensing_service.dart';
 import '../services/firebase_sync_service.dart';

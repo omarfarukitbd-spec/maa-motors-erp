@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/counting_provider.dart';
 import '../services/audio_engine_service.dart';
 import '../services/category_classifier.dart';
 import '../services/parts_catalog_service.dart';
