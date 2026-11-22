@@ -11,6 +11,7 @@ import '../widgets/session_summary_sheet.dart';
 import '../services/audio_engine_service.dart';
 import '../services/customer_directory_service.dart';
 import '../services/firebase_sync_service.dart';
+import '../services/whatsapp_memo_service.dart';
 
 class ChallanViewScreen extends StatefulWidget {
   final String mode; // 'unl' or 'load'
@@ -368,22 +369,8 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
     );
   }
 
-  void _handlePrintOrShare(String actionName, AuthProvider auth) {
-    if (auth.isSoftLocked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: AppColors.dng,
-          content: Text('সফট-লক মোডে প্রিন্ট ও শেয়ার স্থগিত আছে। লাইসেন্স নবায়ন করুন।'),
-        ),
-      );
-      return;
-    }
-
-    _lockAndSaveChallan();
-    _audio.triggerHaptic();
-
-    // Call PDF generation
-    final challanDoc = ChallanDocument(
+  ChallanDocument _buildCurrentChallanDoc(AuthProvider auth) {
+    return ChallanDocument(
       id: _challanNo,
       challanNo: _challanNo,
       date: DateTime.now(),
@@ -408,20 +395,52 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
           )).toList(),
       categorySummaries: [],
     );
+  }
+
+  void _openShareOptionsSheet(AuthProvider auth) {
+    _lockAndSaveChallan();
+    _audio.triggerHaptic();
+
+    final doc = _buildCurrentChallanDoc(auth);
+    WhatsappMemoService.showShareOptionsSheet(
+      context,
+      challan: doc,
+      staffName: auth.currentStaffName,
+      onSharePdf: () => ChallanPdfService.shareChallanPdf(doc, tenant: auth.currentTenant),
+      onPrintA4: () => ChallanPdfService.printChallanA4(doc, tenant: auth.currentTenant),
+      onPrintPos: () => ChallanPdfService.printChallanPos(doc, tenant: auth.currentTenant),
+    );
+  }
+
+  void _handlePrintOrShare(String actionName, AuthProvider auth) {
+    if (auth.isSoftLocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.dng,
+          content: Text('সফট-লক মোডে প্রিন্ট ও শেয়ার স্থগিত আছে। লাইসেন্স নবায়ন করুন।'),
+        ),
+      );
+      return;
+    }
+
+    if (actionName == 'share') {
+      _openShareOptionsSheet(auth);
+      return;
+    }
+
+    _lockAndSaveChallan();
+    _audio.triggerHaptic();
+
+    // Call PDF generation
+    final challanDoc = _buildCurrentChallanDoc(auth);
 
     if (actionName == 'print_a4') {
       ChallanPdfService.printChallanA4(challanDoc, tenant: auth.currentTenant);
     } else if (actionName == 'print_pos') {
       ChallanPdfService.printChallanPos(challanDoc, tenant: auth.currentTenant);
-    } else {
-      ChallanPdfService.shareChallanPdf(challanDoc, tenant: auth.currentTenant);
     }
 
-    final actionLabel = actionName == 'print_a4'
-        ? 'A4 প্রিন্ট'
-        : actionName == 'print_pos'
-            ? 'POS প্রিন্ট'
-            : 'শেয়ার';
+    final actionLabel = actionName == 'print_a4' ? 'A4 প্রিন্ট' : 'POS প্রিন্ট';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('$actionLabel সম্পন্ন · চালান লক হয়েছে')),
     );

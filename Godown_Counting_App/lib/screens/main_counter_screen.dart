@@ -271,29 +271,39 @@ class _MainCounterScreenState extends State<MainCounterScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Soft-Lock / Grace Banner if applicable
-            if (auth.isSoftLocked)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                color: const Color(0xFF7F1D1D),
-                child: const Text(
-                  'প্রিন্ট ও শেয়ার বন্ধ আছে। গণনা, ইতিহাস ও এক্সপোর্ট চলবে।',
-                  style: TextStyle(color: Colors.white, fontSize: 11.5),
-                  textAlign: TextAlign.center,
-                ),
-              )
-            else if (auth.isInGracePeriod)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                color: const Color(0xFFB45309),
-                child: const Text(
-                  'লাইসেন্সের মেয়াদ শেষ। গ্রেসের আরও ৭ দিন বাকি, সব চলছে।',
-                  style: TextStyle(color: Colors.white, fontSize: 11.5),
-                  textAlign: TextAlign.center,
-                ),
+            // Active Session Mode Banner
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              color: _modeColor.withOpacity(0.12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _mode == 'unl' ? Icons.archive_outlined : Icons.unarchive_outlined,
+                        color: _modeColor,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _mode == 'unl' ? 'মোড: গাড়ি থেকে আনলোডিং (খালাস)' : 'মোড: গাড়িতে লোডিং (ডেলিভারি)',
+                        style: TextStyle(
+                          color: _modeColor,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'কর্মী: ${auth.currentStaffName}',
+                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
+            ),
 
             // 1. Search Bar
             Padding(

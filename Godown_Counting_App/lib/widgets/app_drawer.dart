@@ -6,11 +6,9 @@ import '../screens/home_dashboard_screen.dart';
 import '../screens/main_counter_screen.dart';
 import '../screens/challan_history_screen.dart';
 import '../screens/login_screen.dart';
+import '../screens/license_backup_screen.dart';
 import '../screens/super_admin_hub_screen.dart';
-import '../services/drive_backup_service.dart';
-import '../services/firebase_sync_service.dart';
 import '../utils/app_colors.dart';
-
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
@@ -87,161 +85,6 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  void _openErpCloudSyncDialog(BuildContext context) {
-    final sync = FirebaseSyncService();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.s1Dark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.cloud_sync, color: AppColors.unl, size: 22),
-            SizedBox(width: 8),
-            Text('মা মোটরস ইআরপি ক্লাউড সিঙ্ক', style: TextStyle(color: Colors.white, fontSize: 15)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'গোডাউন অ্যাপের প্রতিটি খালাস ও ডেলিভারি চালান সরাসরি মা মোটরস মূল ইআরপি ডাটাবেজে (maa-motors-erp) সিঙ্ক হয়।',
-              style: TextStyle(color: AppColors.muDark, fontSize: 12.5),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.s2Dark,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        sync.isOnline ? Icons.check_circle : Icons.wifi_off,
-                        color: sync.isOnline ? AppColors.load : AppColors.dng,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        sync.isOnline ? 'ক্লাউড নেটওয়ার্ক সচল' : 'অফলাইন মোড',
-                        style: TextStyle(
-                          color: sync.isOnline ? AppColors.load : AppColors.dng,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'অপেক্ষমাণ চালান (Queue): ${sync.pendingCount} টি',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  if (sync.lastSyncTime != null)
-                    Text(
-                      'সর্বশেষ সফল সিঙ্ক: ${sync.lastSyncTime!.hour}:${sync.lastSyncTime!.minute.toString().padLeft(2, '0')}',
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('বন্ধ করুন', style: TextStyle(color: AppColors.muDark)),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.unl,
-              foregroundColor: AppColors.textOnAccent,
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final pushed = await sync.syncPendingQueue();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: AppColors.load,
-                    content: Text(pushed > 0
-                        ? '$pushed টি অপেক্ষমাণ চালান সফলভাবে ইআরপিতে সিঙ্ক হয়েছে!'
-                        : 'সকল চালান ক্লাউডে সম্পূর্ণ আপডেট রয়েছে।'),
-                  ),
-                );
-              }
-            },
-            icon: const Icon(Icons.sync, size: 16),
-            label: const Text('এখনই সিঙ্ক করুন'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _openGoogleDriveDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.s1Dark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.cloud_upload_outlined, color: AppColors.unl, size: 22),
-            SizedBox(width: 8),
-            Text('গুগল ড্রাইভ ব্যাকআপ', style: TextStyle(color: Colors.white, fontSize: 16)),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'আপনার গোডাউনের সমস্ত হিসাব ও চালানের অফলাইন কপি গুগল ড্রাইভ ক্লাউডে নিরাপদ সংরক্ষিত থাকে।',
-              style: TextStyle(color: AppColors.muDark, fontSize: 13),
-            ),
-            SizedBox(height: 12),
-            Text(
-              'ব্যাকআপ ড্রাইভ: office.maamotors@gmail.com',
-              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontFamily: 'monospace'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('বন্ধ করুন', style: TextStyle(color: AppColors.muDark)),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.unl,
-              foregroundColor: AppColors.textOnAccent,
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await DriveBackupService.performBackup('office.maamotors@gmail.com');
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: AppColors.load,
-                    content: Text('গুগল ড্রাইভ ক্লাউড ব্যাকআপ সফলভাবে সম্পন্ন!'),
-                  ),
-                );
-              }
-            },
-            icon: const Icon(Icons.sync, size: 16),
-            label: const Text('ব্যাকআপ নিন'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -308,17 +151,20 @@ class AppDrawer extends StatelessWidget {
 
                   const Divider(color: AppColors.lineDark, height: 18),
 
-                  // 4. ERP Cloud Sync Hub
+                  // 4. ERP Cloud Sync & Backup Hub
                   _buildNavItem(
                     context: context,
                     icon: Icons.cloud_sync_outlined,
-                    title: 'মা মোটরস ইআরপি সিঙ্ক',
-                    subtitle: 'শোরুম ও অফিসের সাথে সরাসরি সিঙ্ক',
+                    title: 'ক্লাউড সিঙ্ক ও ব্যাকআপ হাব',
+                    subtitle: 'ইআরপি ডাটাবেজ, ড্রাইভ ব্যাকআপ ও যাচাই',
                     iconColor: AppColors.load,
                     badgeText: 'সচল',
                     onTap: () {
                       Navigator.pop(context);
-                      _openErpCloudSyncDialog(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LicenseBackupScreen()),
+                      );
                     },
                   ),
 
@@ -338,21 +184,9 @@ class AppDrawer extends StatelessWidget {
                     },
                   ),
 
-                  // 6. Google Drive Backup
-                  _buildNavItem(
-                    context: context,
-                    icon: Icons.cloud_upload_outlined,
-                    title: 'গুগল ড্রাইভ ব্যাকআপ',
-                    subtitle: 'অফলাইন চালানের ব্যাকআপ কপি',
-                    onTap: () {
-                      Navigator.pop(context);
-                      _openGoogleDriveDialog(context);
-                    },
-                  ),
-
                   const Divider(color: AppColors.lineDark, height: 18),
 
-                  // 7. Super Admin Hub (PIN Protected: 7860)
+                  // 6. Super Admin Hub (PIN Protected: 7860)
                   _buildNavItem(
                     context: context,
                     icon: Icons.shield_outlined,

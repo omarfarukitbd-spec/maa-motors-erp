@@ -242,13 +242,13 @@ class _PartSearchOverlayState extends State<PartSearchOverlay> {
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppColors.unl.withOpacity(0.08),
+                                color: AppColors.load.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.unl.withOpacity(0.3), width: 1.2),
+                                border: Border.all(color: AppColors.load, width: 1.5),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.add_circle, color: AppColors.unl, size: 22),
+                                  const Icon(Icons.add_circle, color: AppColors.load, size: 24),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
@@ -257,20 +257,20 @@ class _PartSearchOverlayState extends State<PartSearchOverlay> {
                                         Text(
                                           'নতুন পার্টস হিসেবে যোগ করুন: “$query”',
                                           style: const TextStyle(
-                                            color: AppColors.unl,
+                                            color: Colors.white,
                                             fontSize: 14.5,
                                             fontWeight: FontWeight.w700,
                                             fontFamily: 'Hind Siliguri',
                                           ),
                                         ),
-                                        const Text(
-                                          'স্বয়ংক্রিয় ক্যাটাগরি ও একক নির্ধারণ সহ অফলাইনে সংরক্ষিত হবে',
-                                          style: TextStyle(color: AppColors.muDark, fontSize: 11.5),
+                                        Text(
+                                          'ক্যাটাগরি: ${CategoryClassifier.classify(query).rootGroup} • একক: ${CategoryClassifier.classify(query).defaultUnit} (অফলাইনে সংরক্ষিত হবে)',
+                                          style: const TextStyle(color: Color(0xFF34D399), fontSize: 11.5),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  const Icon(Icons.arrow_forward_ios, color: AppColors.unl, size: 14),
+                                  const Icon(Icons.arrow_forward_ios, color: AppColors.load, size: 14),
                                 ],
                               ),
                             ),

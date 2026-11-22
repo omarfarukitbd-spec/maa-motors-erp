@@ -1,14 +1,15 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/tenant_model.dart';
+import '../models/challan_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/counting_provider.dart';
+import '../services/audio_engine_service.dart';
 import '../services/drive_backup_service.dart';
+import '../services/firebase_sync_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/bangla_tools.dart';
 import '../widgets/godown_top_bar.dart';
-import '../services/audio_engine_service.dart';
+import 'login_screen.dart';
 
 class LicenseBackupScreen extends StatefulWidget {
   const LicenseBackupScreen({super.key});
@@ -19,145 +20,133 @@ class LicenseBackupScreen extends StatefulWidget {
 
 class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
   final AudioEngineService _audio = AudioEngineService();
-  final DriveBackupService _driveBackup = DriveBackupService();
   final TextEditingController _verifyCtrl = TextEditingController();
+  final FirebaseSyncService _syncService = FirebaseSyncService();
 
-  bool _showQrCard = false;
-  int _qrCountdown = 60;
-  Timer? _qrTimer;
-  bool _staffCanPrint = true;
-  String _staffPairingCode = 'STF-7842';
-
+  bool _isSyncing = false;
+  bool _isBackingUp = false;
   String? _verificationResult;
+  bool _verificationSuccess = false;
 
   @override
   void dispose() {
-    _qrTimer?.cancel();
     _verifyCtrl.dispose();
     super.dispose();
   }
 
-  void _generateStaffQr() {
-    setState(() {
-      _showQrCard = true;
-      _qrCountdown = 60;
-      _staffPairingCode = 'STF-${1000 + (DateTime.now().millisecondsSinceEpoch % 9000)}';
-    });
-    _qrTimer?.cancel();
-    _qrTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_qrCountdown > 1) {
-        setState(() => _qrCountdown--);
-      } else {
-        t.cancel();
-        setState(() => _qrCountdown = 0);
+  Future<void> _handleErpSync() async {
+    setState(() => _isSyncing = true);
+    _audio.triggerHaptic();
+
+    try {
+      final pushedCount = await _syncService.syncPendingQueue();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.load,
+            content: Row(
+              children: [
+                const Icon(Icons.cloud_done, color: AppColors.textOnAccent, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    pushedCount > 0
+                        ? '$pushedCount টি অপেক্ষমাণ চালান সফলভাবে ইআরপিতে সিঙ্ক হয়েছে!'
+                        : 'সকল চালান ক্লাউড ইআরপিতে সম্পূর্ণ আপডেট রয়েছে।',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.dng,
+            content: Text('সিঙ্ক ব্যর্থ হয়েছে: $e'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
+  }
+
+  Future<void> _handleDriveBackup(AuthProvider auth) async {
+    setState(() => _isBackingUp = true);
+    _audio.triggerHaptic();
+
+    try {
+      final targetEmail = auth.userEmail ?? 'office.maamotors@gmail.com';
+      final ok = await DriveBackupService.performBackup(targetEmail);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: ok ? AppColors.load : AppColors.dng,
+            content: Row(
+              children: [
+                Icon(ok ? Icons.check_circle : Icons.error, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  ok
+                      ? 'গুগল ড্রাইভ ক্লাউড ব্যাকআপ সফলভাবে সম্পন্ন!'
+                      : 'ব্যাকআপ তৈরিতে সমস্যা হয়েছে। সংযোগ পরীক্ষা করুন।',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: AppColors.dng, content: Text('ব্যাকআপ ত্রুটি: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBackingUp = false);
+    }
   }
 
   void _verifyChallanCode(CountingProvider counting) {
     final code = _verifyCtrl.text.trim().toUpperCase();
     if (code.isEmpty) return;
 
-    final matched = counting.sessionHistory.cast<dynamic>().firstWhere(
-          (c) => c.verificationCode == code,
+    _audio.triggerHaptic();
+    final matched = counting.sessionHistory.cast<ChallanDocument?>().firstWhere(
+          (c) => c != null && c.verificationCode.toUpperCase() == code,
           orElse: () => null,
         );
 
     setState(() {
       if (matched != null) {
+        _verificationSuccess = true;
+        final revText = matched.revisionNumber > 0
+            ? ' (সংশোধিত ${BanglaTools.toBanglaDigits(matched.revisionNumber)})'
+            : '';
+        final party = matched.customerName.isNotEmpty ? matched.customerName : matched.productOwner;
         _verificationResult =
-            'আসল চালান: ${matched.displayChallanNo}${matched.revisionNumber > 0 ? " (সংশোধিত ${BanglaTools.toBanglaDigits(matched.revisionNumber)})" : ""}';
+            'আসল চালান প্রমাণিত: নং ${matched.displayChallanNo}$revText\nপার্টি: $party • গাড়ি: ${matched.vehicleNo}\nতারিখ: ${BanglaTools.formatBanglaDate(matched.date)} • মোট: ${BanglaTools.toBanglaDigits(matched.totalPcs)} পিস';
       } else {
-        _verificationResult = 'মিলছে না। চালানটি সন্দেহজনক বা এই গোডাউনের নয়।';
+        _verificationSuccess = false;
+        _verificationResult = 'যাচাই কোড মিলেনি। চালানটি সন্দেহজনক বা গোডাউন-১ থেকে ইস্যু করা নয়।';
       }
     });
-  }
-
-  void _openStaffPairDialog(BuildContext context, AuthProvider auth) {
-    final codeCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.s1Dark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.badge_outlined, color: AppColors.unl, size: 22),
-            SizedBox(width: 8),
-            Text('স্টাফ পেয়ারিং কোড', style: TextStyle(color: Colors.white, fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'অ্যাডমিন ফোনের QR কার্ডে প্রদর্শিত কোডটি লিখুন (যেমন: STF-7842):',
-              style: TextStyle(color: AppColors.muDark, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: codeCtrl,
-              autofocus: true,
-              textCapitalization: TextCapitalization.characters,
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'monospace'),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: AppColors.s2Dark,
-                hintText: 'STF-XXXX',
-                hintStyle: const TextStyle(color: AppColors.muDark),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('বাতিল', style: TextStyle(color: AppColors.muDark)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.unl,
-              foregroundColor: AppColors.textOnAccent,
-            ),
-            onPressed: () {
-              final code = codeCtrl.text.trim().toUpperCase();
-              if (code.isNotEmpty) {
-                Navigator.pop(ctx);
-                auth.switchRole(UserRole.staff);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('স্টাফ ডিভাইস সংযুক্ত হয়েছে (কোড: $code)')),
-                );
-              }
-            },
-            child: const Text('যুক্ত হোন', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final counting = context.watch<CountingProvider>();
-    final tenant = auth.currentTenant;
-
-    Color licColor = AppColors.unl;
-    String licText = 'সচল';
-    if (auth.isSoftLocked) {
-      licColor = AppColors.dng;
-      licText = 'সফট-লক';
-    } else if (auth.isInGracePeriod) {
-      licColor = AppColors.load;
-      licText = 'গ্রেস';
-    }
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: GodownTopBar(
-        title: 'লাইসেন্স ও ব্যাকআপ',
+        title: 'ক্লাউড ও ব্যাকআপ হাব',
         audioEngine: _audio,
         onSoundToggled: () => setState(() {}),
       ),
@@ -165,21 +154,13 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            // 1. License Card
-            const Text(
-              'লাইসেন্স',
-              style: TextStyle(
-                color: AppColors.txDark,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
+            // 1. ERP Cloud Sync Card
+            _buildSectionHeader('মা মোটরস মূল ইআরপি ক্লাউড সিঙ্ক', Icons.cloud_sync, const Color(0xFF38BDF8)),
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.s1Dark,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.lineDark),
               ),
               child: Column(
@@ -188,184 +169,88 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('অবস্থা', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      Row(
+                        children: [
+                          Icon(
+                            _syncService.isOnline ? Icons.wifi : Icons.wifi_off,
+                            color: _syncService.isOnline ? AppColors.load : AppColors.dng,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _syncService.isOnline ? 'ইআরপি ক্লাউড কানেক্টেড' : 'অফলাইন মোড',
+                            style: TextStyle(
+                              color: _syncService.isOnline ? AppColors.load : AppColors.dng,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: licColor,
-                          borderRadius: BorderRadius.circular(20),
+                          color: const Color(0xFF0F172A),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF334155)),
                         ),
-                        child: Text(
-                          licText,
-                          style: const TextStyle(color: AppColors.textOnAccent, fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
+                        child: const Text('maa-motors-erp', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontFamily: 'monospace')),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    'মেয়াদ: ১২ ডিসেম্বর ২০২৬ · ডিভাইস: ১/${BanglaTools.toBanglaDigits(tenant?.deviceLimit ?? 3)}',
-                    style: const TextStyle(color: AppColors.muDark, fontSize: 13),
+                    'গোডাউনের সকল খালাস ও ডেলিভারি চালান সরাসরি মা মোটরস মূল ডাটাবেজের `godown_challans` টেবিলে সংরক্ষিত হয়।',
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
                   ),
                   const SizedBox(height: 10),
-                  // Segmented switch
                   Row(
                     children: [
-                      _segBtn('সচল', !auth.isSoftLocked && !auth.isInGracePeriod, () {
-                        if (tenant != null) auth.setTenantLicenseState(tenant.id, LicenseState.active);
-                      }),
-                      const SizedBox(width: 6),
-                      _segBtn('গ্রেস', auth.isInGracePeriod, () {
-                        if (tenant != null) auth.setTenantLicenseState(tenant.id, LicenseState.grace);
-                      }),
-                      const SizedBox(width: 6),
-                      _segBtn('সফট-লক', auth.isSoftLocked, () {
-                        if (tenant != null) auth.setTenantLicenseState(tenant.id, LicenseState.softLock);
-                      }),
+                      Expanded(
+                        child: Text(
+                          'অপেক্ষমাণ কিউ: ${BanglaTools.toBanglaDigits(_syncService.pendingCount)} টি চালান',
+                          style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 12.5, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      if (_syncService.lastSyncTime != null)
+                        Text(
+                          'সর্বশেষ সিঙ্ক: ${_syncService.lastSyncTime!.hour}:${_syncService.lastSyncTime!.minute.toString().padLeft(2, '0')}',
+                          style: const TextStyle(color: AppColors.muDark, fontSize: 11),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  const Text('ডেমোর জন্য অবস্থা বদলে দেখতে পারেন', style: TextStyle(color: AppColors.muDark, fontSize: 11.5)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.unl,
+                        foregroundColor: AppColors.textOnAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: _isSyncing
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.sync, size: 18),
+                      label: Text(
+                        _isSyncing ? 'সিঙ্ক হচ্ছে...' : 'এখনই ইআরপিতে সিঙ্ক করুন',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      ),
+                      onPressed: _isSyncing ? null : _handleErpSync,
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
 
-            // 2. Devices & Staff
-            const Text(
-              'ডিভাইস ও স্টাফ',
-              style: TextStyle(
-                color: AppColors.txDark,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
+            // 2. Google Drive Backup Card
+            _buildSectionHeader('গুগল ড্রাইভ ব্যাকআপ পার্টিশন', Icons.cloud_upload_outlined, const Color(0xFF22C55E)),
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.s1Dark,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.lineDark),
-              ),
-              child: Column(
-                children: [
-                  _deviceRow('এই ফোন (অ্যাডমিন)', 'কোড A1', 'এই ফোন'),
-                  const Divider(color: AppColors.lineDark, height: 16),
-                  _deviceRow('স্টাফ ফোন ১', 'কোড S1', 'সক্রিয়'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // Staff QR & Pairing Row
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.lineDark, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        backgroundColor: AppColors.s2Dark,
-                        foregroundColor: AppColors.txDark,
-                      ),
-                      icon: const Icon(Icons.qr_code, size: 20, color: AppColors.unl),
-                      label: const Text('স্টাফ QR তৈরি', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
-                      onPressed: _generateStaffQr,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.lineDark, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        backgroundColor: AppColors.s2Dark,
-                        foregroundColor: AppColors.txDark,
-                      ),
-                      icon: const Icon(Icons.link, size: 20, color: AppColors.load),
-                      label: const Text('কোড দিয়ে পেয়ার', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
-                      onPressed: () => _openStaffPairDialog(context, auth),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Staff QR Card (if opened)
-            if (_showQrCard) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.s1Dark,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.unl),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 170,
-                      height: 170,
-                      color: Colors.white,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.qr_code_2, size: 150, color: Colors.black),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'পেয়ারিং কোড: $_staffPairingCode',
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                        color: AppColors.unl,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _qrCountdown > 0
-                          ? 'মেয়াদ ${BanglaTools.toBanglaDigits(_qrCountdown)} সেকেন্ড · একবার ব্যবহারযোগ্য'
-                          : 'মেয়াদ শেষ। নতুন QR তৈরি করুন',
-                      style: TextStyle(
-                        color: _qrCountdown > 0 ? AppColors.unl : AppColors.dng,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('চালান প্রিন্টের অনুমতি', style: TextStyle(color: Colors.white, fontSize: 13.5)),
-                      value: _staffCanPrint,
-                      onChanged: (val) => setState(() => _staffCanPrint = val ?? true),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-
-            // 3. Backup Card
-            const Text(
-              'গুগল ড্রাইভ ব্যাকআপ',
-              style: TextStyle(
-                color: AppColors.txDark,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.s1Dark,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.lineDark),
               ),
               child: Column(
@@ -373,64 +258,58 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.cloud_done, color: AppColors.unl, size: 20),
+                      Icon(Icons.shield_outlined, color: Color(0xFF22C55E), size: 18),
                       SizedBox(width: 8),
-                      Text('Google Drive ব্যাকআপ চালু', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text('অফলাইন এনক্রিপ্টেড ব্যাকআপ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  const Text('ডেটা আপনার Google Drive-এর লুকানো ফোল্ডারে সুরক্ষিত থাকে।', style: TextStyle(color: AppColors.muDark, fontSize: 12)),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'ড্রাইভ ব্যাকআপ অ্যাকাউন্ট: office.maamotors@gmail.com\nফোন নষ্ট বা হারিয়ে গেলেও সমস্ত চালান অক্ষত পুনরুদ্ধার করা যাবে।',
+                    style: TextStyle(color: AppColors.muDark, fontSize: 11.5),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.unl,
-                            foregroundColor: AppColors.textOnAccent,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            backgroundColor: const Color(0xFF16A34A),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          onPressed: () async {
-                            final success = await DriveBackupService.performBackup(
-                              auth.userEmail ?? 'omarfarukitbd@gmail.com',
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    success
-                                        ? 'Google Drive ব্যাকআপ পার্টিশন সম্পন্ন হয়েছে!'
-                                        : 'ব্যাকআপ তৈরিতে সমস্যা হয়েছে',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          child: const Text('এখনই ব্যাকআপ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          icon: _isBackingUp
+                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Icon(Icons.cloud_upload, size: 16),
+                          label: const Text('ড্রাইভ ব্যাকআপ নিন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          onPressed: _isBackingUp ? null : () => _handleDriveBackup(auth),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: OutlinedButton(
+                        child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.lineDark),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            foregroundColor: AppColors.txDark,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
+                          icon: const Icon(Icons.restore, size: 16),
+                          label: const Text('যাচাই / রিস্টোর', style: TextStyle(fontSize: 12)),
                           onPressed: () async {
                             final meta = await DriveBackupService.getBackupMetadata();
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
+                                  backgroundColor: AppColors.load,
                                   content: Text(
                                     meta.totalChallansBackedUp > 0
-                                        ? 'ব্যাকআপ থেকে ${BanglaTools.toBanglaDigits(meta.totalChallansBackedUp)}টি চালান যাচাইকৃত!'
-                                        : 'নতুন কোনো ব্যাকআপ পাওয়া যায়নি',
+                                        ? 'ড্রাইভ ব্যাকআপে ${BanglaTools.toBanglaDigits(meta.totalChallansBackedUp)}টি চালান যাচাইকৃত!'
+                                        : 'নতুন কোনো ক্লাউড ব্যাকআপ পাওয়া যায়নি।',
                                   ),
                                 ),
                               );
                             }
                           },
-                          child: const Text('রিস্টোর করুন', style: TextStyle(color: AppColors.txDark)),
                         ),
                       ),
                     ],
@@ -440,117 +319,167 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 4. Challan Verification Card
-            const Text(
-              'চালান যাচাই',
-              style: TextStyle(
-                color: AppColors.txDark,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
+            // 3. Authorized Staff Roster Card
+            _buildSectionHeader('গোডাউন-১ অনুমোদিত কর্মী ও শিফট', Icons.badge_outlined, const Color(0xFFFBBF24)),
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.s1Dark,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.lineDark),
               ),
               child: Column(
                 children: [
-                  TextField(
-                    controller: _verifyCtrl,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
-                    decoration: InputDecoration(
-                      hintText: 'যাচাই কোড লিখুন (যেমন: 7K4X92)',
-                      hintStyle: const TextStyle(color: AppColors.muDark, fontSize: 13),
-                      filled: true,
-                      fillColor: AppColors.s2Dark,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      isDense: true,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                  _staffTile('মোঃ এমরান', 'গোডাউন ইনচার্জ • পিন: ১৯২৫', auth.currentStaffName.contains('এমরান')),
+                  const Divider(color: AppColors.lineDark, height: 14),
+                  _staffTile('আলতাফ হোসেন', 'কাউন্টার কর্মী • পিন: ১২৩৪', auth.currentStaffName.contains('আলতাফ')),
+                  const Divider(color: AppColors.lineDark, height: 14),
+                  _staffTile('মোঃ ওমর ফারুক', 'প্রোপ্রাইটর / মালিক • পিন: ৭৮৬০', auth.currentStaffName.contains('ফারুক')),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.unl,
-                        foregroundColor: AppColors.textOnAccent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF38BDF8)),
+                        foregroundColor: const Color(0xFF38BDF8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      onPressed: () => _verifyChallanCode(counting),
-                      child: const Text('যাচাই করুন', style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.swap_horiz, size: 18),
+                      label: const Text('কর্মী পরিবর্তন ও লগইন', style: TextStyle(fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                      },
                     ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 4. Challan Verification Card
+            _buildSectionHeader('আসল চালান সত্যতা যাচাই', Icons.verified_user_outlined, const Color(0xFFA855F7)),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.s1Dark,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.lineDark),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'প্রিন্ট করা রসিদ বা স্লিপের সিকিউরিটি ভেরিফিকেশন কোড লিখুন:',
+                    style: TextStyle(color: AppColors.muDark, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _verifyCtrl,
+                          textCapitalization: TextCapitalization.characters,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'monospace'),
+                          decoration: InputDecoration(
+                            hintText: 'যেমন: 7K4X92',
+                            hintStyle: const TextStyle(color: AppColors.muDark, fontSize: 12),
+                            filled: true,
+                            fillColor: AppColors.s2Dark,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFA855F7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () => _verifyChallanCode(counting),
+                        child: const Text('যাচাই', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
                   if (_verificationResult != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _verificationResult!,
-                      style: TextStyle(
-                        color: _verificationResult!.contains('আসল') ? AppColors.unl : AppColors.dng,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: _verificationSuccess ? const Color(0xFF064E3B) : const Color(0xFF7F1D1D),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: _verificationSuccess ? AppColors.load : AppColors.dng),
+                      ),
+                      child: Text(
+                        _verificationResult!,
+                        style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.4, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _segBtn(String label, bool isSelected, VoidCallback onTap) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          height: 42,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.unl : AppColors.s2Dark,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isSelected ? AppColors.unl : AppColors.lineDark),
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6, left: 2),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            title,
+            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.bold),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? AppColors.textOnAccent : AppColors.txDark,
-              fontSize: 13.5,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _deviceRow(String name, String sub, String tag) {
+  Widget _staffTile(String name, String role, bool isActive) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(name, style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w600)),
-            Text(sub, style: const TextStyle(color: AppColors.muDark, fontSize: 12)),
+            Text(name, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text(role, style: const TextStyle(color: AppColors.muDark, fontSize: 11.5)),
           ],
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-          decoration: BoxDecoration(
-            color: AppColors.s2Dark,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.lineDark),
+        if (isActive)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.load.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppColors.load),
+            ),
+            child: const Text('বর্তমান শিফট', style: TextStyle(color: AppColors.load, fontSize: 11, fontWeight: FontWeight.bold)),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.s2Dark,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text('স্ট্যান্ডবাই', style: TextStyle(color: AppColors.muDark, fontSize: 10.5)),
           ),
-          child: Text(tag, style: const TextStyle(color: AppColors.unl, fontSize: 11.5, fontWeight: FontWeight.bold)),
-        ),
       ],
     );
   }
