@@ -8,7 +8,7 @@ import 'offline_storage_service.dart';
 import 'firebase_sync_service.dart';
 
 class ChallanPdfService {
-  /// Generate A4 PDF Document bytes matching Web ERP Mother Print Header
+  /// Generate A4 PDF Document bytes matching Web ERP Mother Print Header & Layout
   static Future<Uint8List> generateA4PdfBytes(
     ChallanDocument challan, {
     Tenant? tenant,
@@ -32,13 +32,13 @@ class ChallanPdfService {
 
     final isUnloading = challan.sessionType == 'inward';
     final sessionBadgeText = isUnloading
-        ? 'গাড়ি থেকে আনলোডিং (Unloading Gate-Pass)'
-        : 'গাড়িতে ডেলিভারি (Delivery Gate-Pass)';
+        ? 'গাড়ি থেকে আনলোডিং চালান (খালাস)'
+        : 'গাড়িতে ডেলিভারি চালান (গেটপাস)';
 
     final partyName =
-        challan.customerName.isNotEmpty ? challan.customerName : challan.productOwner;
+        challan.customerName.isNotEmpty ? challan.customerName : (challan.productOwner.isNotEmpty ? challan.productOwner : 'মেসার্স মা মোটরস শোরুম');
     final partyAddress =
-        challan.customerAddress.isNotEmpty ? challan.customerAddress : challan.destinationFor;
+        challan.customerAddress.isNotEmpty ? challan.customerAddress : (challan.destinationFor.isNotEmpty ? challan.destinationFor : 'মুরাদপুর, চট্টগ্রাম');
     final partyPhone =
         challan.customerPhone.isNotEmpty ? challan.customerPhone : '---';
     final sealNo = challan.sealNo.isNotEmpty ? challan.sealNo : 'প্রযোজ্য নয়';
@@ -58,64 +58,111 @@ class ChallanPdfService {
               fontHindRegular: fontHindRegular,
               logoImage: logoImage,
             ),
-            pw.SizedBox(height: 6),
+            pw.SizedBox(height: 5),
 
-            // 2. Metadata Grid (Unified Bengali Typography)
+            // 2. Status & Sub-Header Strip (Web ERP Style)
             pw.Container(
-              padding: const pw.EdgeInsets.all(8),
+              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
               decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
+                color: const PdfColor.fromInt(0xFFF8FAFC),
+                border: pw.Border.all(color: const PdfColor.fromInt(0xFFCBD5E1), width: 0.8),
                 borderRadius: pw.BorderRadius.circular(4),
               ),
-              child: pw.Column(
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      _metaItem('চালান নং:', challan.displayChallanNo, fontHindBold, fontHindRegular),
-                      _metaItem('তারিখ ও সময়:', _formatDate(challan.date), fontHindBold, fontHindRegular),
-                      _metaItem('ভেরিফিকেশন কোড:', challan.verificationCode, fontHindBold, fontHindRegular),
-                    ],
-                  ),
-                  pw.SizedBox(height: 5),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      _metaItem('প্রাপক / পার্টি:', partyName, fontHindBold, fontHindRegular),
-                      _metaItem('ডেলিভারি ঠিকানা:', partyAddress, fontHindBold, fontHindRegular),
-                      _metaItem('পার্টি মোবাইল:', partyPhone, fontHindBold, fontHindRegular),
-                    ],
-                  ),
-                  pw.SizedBox(height: 5),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      _metaItem('গাড়ি নম্বর:', challan.vehicleNo, fontHindBold, fontHindRegular),
-                      _metaItem('চালকের নাম ও ফোন:', '${challan.driverName} ${challan.driverMobile}'.trim(), fontHindBold, fontHindRegular),
-                      _metaItem('সিকিউরিটি সিল নং:', sealNo, fontHindBold, fontHindRegular),
-                    ],
-                  ),
-                  pw.SizedBox(height: 5),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      _metaItem('চালানের ধরন:', sessionBadgeText, fontHindBold, fontHindRegular),
-                      _metaItem('গেট পাস নং:', challan.gatePassNo, fontHindBold, fontHindRegular),
-                      _metaItem('গোডাউন কাউন্টার:', 'মুরাদপুর গোডাউন-১', fontHindBold, fontHindRegular),
-                    ],
-                  ),
+                  pw.Text('চালানের ধরন: $sessionBadgeText',
+                      style: pw.TextStyle(font: fontHindBold, fontSize: 8.5, color: const PdfColor.fromInt(0xFF0F172A))),
+                  pw.Text('তারিখ: ${_formatDate(challan.date)}',
+                      style: pw.TextStyle(font: fontHindBold, fontSize: 8.5, color: const PdfColor.fromInt(0xFF0F172A))),
+                  pw.Text('ভেরিফিকেশন: ${challan.verificationCode}',
+                      style: pw.TextStyle(font: fontHindBold, fontSize: 8.5, color: const PdfColor.fromInt(0xFF0284C7))),
                 ],
               ),
             ),
+            pw.SizedBox(height: 6),
+
+            // 3. Two-Column Structured Metadata Cards (Web ERP Standard)
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Left Card: Customer & Delivery Details
+                pw.Expanded(
+                  child: pw.Container(
+                    padding: const pw.EdgeInsets.all(8),
+                    decoration: pw.BoxDecoration(
+                      color: const PdfColor.fromInt(0xFFF8FAFC),
+                      borderRadius: pw.BorderRadius.circular(6),
+                      border: pw.Border.all(color: const PdfColor.fromInt(0xFFE2E8F0), width: 0.8),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Container(
+                          padding: const pw.EdgeInsets.only(bottom: 2),
+                          margin: const pw.EdgeInsets.only(bottom: 4),
+                          decoration: const pw.BoxDecoration(
+                            border: pw.Border(bottom: pw.BorderSide(color: PdfColor.fromInt(0xFF0284C7), width: 1.5)),
+                          ),
+                          child: pw.Text('প্রাপক ও ডেলিভারির তথ্য (PARTY DETAILS)',
+                              style: pw.TextStyle(font: fontHindBold, fontSize: 7.8, color: const PdfColor.fromInt(0xFF0284C7))),
+                        ),
+                        pw.Text(partyName,
+                            style: pw.TextStyle(font: fontHindBold, fontSize: 10.5, color: const PdfColor.fromInt(0xFF0F172A))),
+                        pw.SizedBox(height: 2),
+                        pw.Text('মোবাইল: $partyPhone',
+                            style: pw.TextStyle(font: fontHindRegular, fontSize: 8.5, color: const PdfColor.fromInt(0xFF475569))),
+                        pw.Text('ঠিকানা: $partyAddress',
+                            style: pw.TextStyle(font: fontHindRegular, fontSize: 8, color: const PdfColor.fromInt(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+                pw.SizedBox(width: 8),
+
+                // Right Card: Vehicle & Gatepass Details
+                pw.Expanded(
+                  child: pw.Container(
+                    padding: const pw.EdgeInsets.all(8),
+                    decoration: pw.BoxDecoration(
+                      color: const PdfColor.fromInt(0xFFF8FAFC),
+                      borderRadius: pw.BorderRadius.circular(6),
+                      border: pw.Border.all(color: const PdfColor.fromInt(0xFFE2E8F0), width: 0.8),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Container(
+                          padding: const pw.EdgeInsets.only(bottom: 2),
+                          margin: const pw.EdgeInsets.only(bottom: 4),
+                          decoration: const pw.BoxDecoration(
+                            border: pw.Border(bottom: pw.BorderSide(color: PdfColor.fromInt(0xFF0369A1), width: 1.5)),
+                          ),
+                          child: pw.Text('পরিবহন ও গেটপাস তথ্য (GATE-PASS DETAILS)',
+                              style: pw.TextStyle(font: fontHindBold, fontSize: 7.8, color: const PdfColor.fromInt(0xFF0369A1))),
+                        ),
+                        pw.Text(challan.vehicleNo.isNotEmpty ? challan.vehicleNo : '---',
+                            style: pw.TextStyle(font: fontHindBold, fontSize: 10.5, color: const PdfColor.fromInt(0xFF0F172A))),
+                        pw.SizedBox(height: 2),
+                        pw.Text('চালক: ${challan.driverName} ${challan.driverMobile}'.trim(),
+                            style: pw.TextStyle(font: fontHindRegular, fontSize: 8.5, color: const PdfColor.fromInt(0xFF475569))),
+                        pw.Text('সিকিউরিটি সিল: $sealNo • গেটপাস নং: ${challan.gatePassNo}',
+                            style: pw.TextStyle(font: fontHindRegular, fontSize: 8, color: const PdfColor.fromInt(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
             pw.SizedBox(height: 8),
 
-            // 3. Category Summary Roll-up Box
+            // 4. Category Summary Roll-up Box (if present)
             if (challan.categorySummaries.isNotEmpty) ...[
               pw.Container(
                 padding: const pw.EdgeInsets.all(6),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+                  color: const PdfColor.fromInt(0xFFF1F5F9),
+                  border: pw.Border.all(color: const PdfColor.fromInt(0xFFCBD5E1), width: 0.6),
                   borderRadius: pw.BorderRadius.circular(4),
                 ),
                 child: pw.Column(
@@ -123,7 +170,7 @@ class ChallanPdfService {
                   children: [
                     pw.Text(
                       'গ্রুপ ভিত্তিক মোট সারসংক্ষেপ (Category Roll-up):',
-                      style: pw.TextStyle(font: fontHindBold, fontSize: 9.5, color: PdfColors.blueGrey800),
+                      style: pw.TextStyle(font: fontHindBold, fontSize: 9, color: const PdfColor.fromInt(0xFF1E293B)),
                     ),
                     pw.SizedBox(height: 3),
                     pw.Wrap(
@@ -142,31 +189,35 @@ class ChallanPdfService {
               pw.SizedBox(height: 8),
             ],
 
-            // 4. Items Table (with Hind Siliguri Crisp Data Rows)
+            // 5. Items Table (Web ERP Master Style with Navy Header & Zebra Striping)
             pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+              border: pw.TableBorder.all(color: const PdfColor.fromInt(0xFFCBD5E1), width: 0.6),
               columnWidths: const {
                 0: pw.FixedColumnWidth(26),
                 1: pw.FlexColumnWidth(3.2),
                 2: pw.FlexColumnWidth(1.6),
-                3: pw.FixedColumnWidth(48),
-                4: pw.FixedColumnWidth(40),
+                3: pw.FixedColumnWidth(52),
+                4: pw.FixedColumnWidth(42),
               },
               children: [
                 pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.blueGrey100),
+                  decoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0F172A)),
                   children: [
-                    _th('নং', fontHindBold),
-                    _th('পণ্যের বিবরণ / পার্টসের নাম', fontHindBold),
-                    _th('ক্যাটাগরি গ্রুপ', fontHindBold),
-                    _th('পরিমাণ', fontHindBold),
-                    _th('একক', fontHindBold),
+                    _th('নং', fontHindBold, textColor: PdfColors.white),
+                    _th('পণ্যের বিবরণ / পার্টসের নাম', fontHindBold, textColor: PdfColors.white, align: pw.TextAlign.left),
+                    _th('ক্যাটাগরি গ্রুপ', fontHindBold, textColor: PdfColors.white, align: pw.TextAlign.left),
+                    _th('পরিমাণ', fontHindBold, textColor: PdfColors.white),
+                    _th('একক', fontHindBold, textColor: PdfColors.white),
                   ],
                 ),
                 ...challan.items.asMap().entries.map((entry) {
                   final idx = entry.key + 1;
                   final item = entry.value;
+                  final isEven = idx % 2 == 0;
                   return pw.TableRow(
+                    decoration: pw.BoxDecoration(
+                      color: isEven ? const PdfColor.fromInt(0xFFF8FAFC) : PdfColors.white,
+                    ),
                     children: [
                       _td('$idx', fontHindRegular, align: pw.TextAlign.center),
                       _td(item.partNameBn, fontHindRegular),
@@ -178,20 +229,20 @@ class ChallanPdfService {
                 }),
                 // Total Row
                 pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                  decoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFF1F5F9)),
                   children: [
                     _td('', fontHindRegular),
-                    _td('সর্বমোট গণনা করা হয়েছে:', fontHindBold),
+                    _td('সর্বমোট গণনা সম্পন্ন:', fontHindBold),
                     _td('${challan.items.length} টি পদ', fontHindBold),
                     _td('${challan.totalPcs}', fontHindBold, align: pw.TextAlign.center),
-                    _td('পিস/সেট', fontHindBold, align: pw.TextAlign.center),
+                    _td('পিস', fontHindBold, align: pw.TextAlign.center),
                   ],
                 ),
               ],
             ),
             pw.SizedBox(height: 24),
 
-            // 5. 3 Institutional Signatures (Institutional Verification)
+            // 6. 3 Institutional Signatures (MAA MOTORS Corporate Verification)
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -202,7 +253,7 @@ class ChallanPdfService {
             ),
             pw.SizedBox(height: 16),
 
-            // 6. Institutional Footer
+            // 7. Institutional Footer
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -578,7 +629,7 @@ class ChallanPdfService {
                   children: [
                     _posMetaRow('চালান নং:', challan.displayChallanNo, fontHindBold, fontHind),
                     _posMetaRow('তারিখ:', _formatDate(challan.date), fontHindBold, fontHind),
-                    _posMetaRow('প্রাপক/পার্টি:', challan.customerName.isNotEmpty ? challan.customerName : challan.productOwner, fontHindBold, fontHind),
+                    _posMetaRow('প্রাপক/পার্টি:', challan.customerName.isNotEmpty ? challan.customerName : (challan.productOwner.isNotEmpty ? challan.productOwner : 'মেসার্স মা মোটরস শোরুম'), fontHindBold, fontHind),
                     if (challan.customerPhone.isNotEmpty)
                       _posMetaRow('পার্টি ফোন:', challan.customerPhone, fontHindBold, fontHind),
                     if (challan.customerAddress.isNotEmpty)
@@ -702,19 +753,6 @@ class ChallanPdfService {
 
   // --- Helper Widgets ---
 
-  static pw.Widget _metaItem(String label, String value, pw.Font fontBold, pw.Font fontRegular) {
-    return pw.Expanded(
-      child: pw.Row(
-        children: [
-          pw.Text('$label ', style: pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.blueGrey900)),
-          pw.Expanded(
-            child: pw.Text(value, style: pw.TextStyle(font: fontRegular, fontSize: 8.5, color: PdfColors.black), maxLines: 1),
-          ),
-        ],
-      ),
-    );
-  }
-
   static pw.Widget _posMetaRow(String label, String value, pw.Font fontBold, pw.Font fontRegular) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 1),
@@ -733,11 +771,11 @@ class ChallanPdfService {
     );
   }
 
-  static pw.Widget _th(String title, pw.Font font) {
+  static pw.Widget _th(String title, pw.Font font, {PdfColor textColor = PdfColors.black, pw.TextAlign align = pw.TextAlign.center}) {
     return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-      alignment: pw.Alignment.center,
-      child: pw.Text(title, style: pw.TextStyle(font: font, fontSize: 8.5, color: PdfColors.black)),
+      padding: const pw.EdgeInsets.symmetric(vertical: 4.5, horizontal: 4),
+      alignment: align == pw.TextAlign.center ? pw.Alignment.center : pw.Alignment.centerLeft,
+      child: pw.Text(title, style: pw.TextStyle(font: font, fontSize: 8.5, color: textColor)),
     );
   }
 

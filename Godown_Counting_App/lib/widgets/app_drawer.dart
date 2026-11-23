@@ -16,10 +16,12 @@ class AppDrawer extends StatelessWidget {
     final customers = await CustomerDirectoryService().getAllCustomers();
     if (!context.mounted) return;
 
+    final isLight = Theme.of(context).brightness == Brightness.light;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: isLight ? Colors.white : const Color(0xFF0F172A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -39,60 +41,103 @@ class AppDrawer extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: isLight ? const Color(0xFFCBD5E1) : Colors.white24,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.contact_phone_rounded, color: Color(0xFF38BDF8), size: 22),
-                  SizedBox(width: 8),
+                  const Icon(Icons.contact_phone_rounded, color: AppColors.load, size: 22),
+                  const SizedBox(width: 8),
                   Text(
-                    'মা মোটরস কাস্টমার ও পরিবহন ডিরেক্টরি',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    'মা মোটরস কাস্টমার ও পরিবহন তালিকা',
+                    style: TextStyle(
+                      color: isLight ? const Color(0xFF0F172A) : Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Hind Siliguri',
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
+              Text(
+                'গোডাউনে মাল খালাস ও ডেলিভারির নিয়মিত পার্টি ও গাড়ি নম্বর',
+                style: TextStyle(
+                  color: isLight ? const Color(0xFF64748B) : AppColors.muDark,
+                  fontSize: 12,
+                ),
+              ),
+              Divider(color: isLight ? const Color(0xFFE2E8F0) : AppColors.lineDark, height: 20),
               Expanded(
                 child: ListView.separated(
                   controller: scrollCtrl,
                   itemCount: customers.length,
-                  separatorBuilder: (_, __) => const Divider(color: Color(0xFF1E293B)),
-                  itemBuilder: (_, idx) {
+                  separatorBuilder: (_, __) => Divider(
+                    color: isLight ? const Color(0xFFF1F5F9) : AppColors.lineDark,
+                    height: 12,
+                  ),
+                  itemBuilder: (context, idx) {
                     final c = customers[idx];
-                    return Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
-                        borderRadius: BorderRadius.circular(10),
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: isLight ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isLight ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.storefront_rounded, color: AppColors.load, size: 20),
                       ),
-                      child: Column(
+                      title: Text(
+                        c.name,
+                        style: TextStyle(
+                          color: isLight ? const Color(0xFF0F172A) : Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(c.name, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                              Text(c.phone, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontFamily: 'monospace')),
-                            ],
-                          ),
-                          if (c.address.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(c.address, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-                          ],
-                          if (c.vehicleNo.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.local_shipping_outlined, color: AppColors.load, size: 14),
-                                const SizedBox(width: 4),
-                                Text('গাড়ি: ${c.vehicleNo} ${c.driverName.isNotEmpty ? "(${c.driverName})" : ""}', style: const TextStyle(color: AppColors.load, fontSize: 11)),
-                              ],
-                            ),
-                          ],
+                          if (c.phone.isNotEmpty)
+                            Text('ফোন: ${c.phone}',
+                                style: TextStyle(
+                                  color: isLight ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                                  fontSize: 12,
+                                )),
+                          if (c.address.isNotEmpty)
+                            Text('ঠিকানা: ${c.address}',
+                                style: TextStyle(
+                                  color: isLight ? const Color(0xFF64748B) : AppColors.muDark,
+                                  fontSize: 11.5,
+                                )),
+                          if (c.vehicleNo.isNotEmpty)
+                            Text('গাড়ি নং: ${c.vehicleNo}',
+                                style: const TextStyle(
+                                  color: Color(0xFF0284C7),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                )),
                         ],
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.phone_forwarded_rounded, color: AppColors.load, size: 20),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: c.phone));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFF0F172A),
+                              content: Text('নম্বর কপি হয়েছে: ${c.phone} (${c.name})'),
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
@@ -108,30 +153,31 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final isLight = Theme.of(context).brightness == Brightness.light;
 
     return Drawer(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: isLight ? const Color(0xFFFFFFFF) : const Color(0xFF0F172A),
       child: SafeArea(
         child: Column(
           children: [
             // 1. Elegant Corporate Header
-            _buildDrawerHeader(context, auth),
+            _buildDrawerHeader(context, auth, isLight),
 
-            // 2. Scrollable Clean Categorized Menu
+            // 2. Scrollable Clean Single-Line Menu (No Subtitles)
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 children: [
                   // --- SECTION 1: WAREHOUSE OPERATIONS ---
-                  _buildSectionLabel('ওয়্যারহাউজ অপারেশন (দৈনন্দিন কাজ)'),
+                  _buildSectionLabel('ওয়্যারহাউজ অপারেশন (দৈনন্দিন কাজ)', isLight),
 
                   // Home Dashboard
                   _buildNavItem(
                     context: context,
                     icon: Icons.dashboard_rounded,
                     title: 'হোম ড্যাশবোর্ড',
-                    subtitle: 'আজকের হিসাব ও চালানের সারাংশ',
-                    iconColor: const Color(0xFF38BDF8),
+                    iconColor: const Color(0xFF0284C7),
+                    isLight: isLight,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushAndRemoveUntil(
@@ -147,8 +193,8 @@ class AppDrawer extends StatelessWidget {
                     context: context,
                     icon: Icons.archive_rounded,
                     title: 'গাড়ি থেকে আনলোডিং (খালাস)',
-                    subtitle: 'কন্টেইনার বা ট্রাক থেকে মাল গোডাউনে নিন',
-                    iconColor: AppColors.unl,
+                    iconColor: const Color(0xFF0D9488),
+                    isLight: isLight,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -163,8 +209,8 @@ class AppDrawer extends StatelessWidget {
                     context: context,
                     icon: Icons.unarchive_rounded,
                     title: 'গাড়িতে ডেলিভারি (গেটপাস)',
-                    subtitle: 'গুনে ডেলিভারি দিন ও সরাসরি গেটপাস করুন',
-                    iconColor: AppColors.load,
+                    iconColor: const Color(0xFFD97706),
+                    isLight: isLight,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -179,8 +225,8 @@ class AppDrawer extends StatelessWidget {
                     context: context,
                     icon: Icons.receipt_long_rounded,
                     title: 'চালান ইতিহাস ও সার্চ',
-                    subtitle: 'সকল আনলোডিং ও ডেলিভারি চালান ও স্লিপ',
-                    iconColor: const Color(0xFF60A5FA),
+                    iconColor: const Color(0xFF2563EB),
+                    isLight: isLight,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -190,20 +236,20 @@ class AppDrawer extends StatelessWidget {
                     },
                   ),
 
-                  const SizedBox(height: 12),
-                  const Divider(color: Color(0xFF1E293B), height: 1),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
+                  Divider(color: isLight ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B), height: 1),
+                  const SizedBox(height: 10),
 
                   // --- SECTION 2: LOGISTICS & DATA ---
-                  _buildSectionLabel('লজিস্টিকস ও ডাটা সিঙ্ক'),
+                  _buildSectionLabel('লজিস্টিকস ও ডাটা সিঙ্ক', isLight),
 
                   // Customer Directory
                   _buildNavItem(
                     context: context,
                     icon: Icons.contact_phone_rounded,
                     title: 'কাস্টমার ও পরিবহন তালিকা',
-                    subtitle: 'নিয়মিত পার্টি, গাড়ি নম্বর ও চালকের ফোন',
-                    iconColor: const Color(0xFF34D399),
+                    iconColor: const Color(0xFF059669),
+                    isLight: isLight,
                     onTap: () {
                       Navigator.pop(context);
                       _openCustomerDirectoryDialog(context);
@@ -215,9 +261,9 @@ class AppDrawer extends StatelessWidget {
                     context: context,
                     icon: Icons.cloud_sync_rounded,
                     title: 'ক্লাউড সিঙ্ক ও ব্যাকআপ হাব',
-                    subtitle: 'মা মোটরস ইআরপি ও গুগল ড্রাইভ ব্যাকআপ',
-                    iconColor: const Color(0xFFA78BFA),
+                    iconColor: const Color(0xFF7C3AED),
                     badgeText: 'সচল',
+                    isLight: isLight,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -230,26 +276,37 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-            // 3. Emergency / Owner Contact Card
-            _buildContactAdminCard(context),
+            // 3. Institutional Support Card
+            _buildContactAdminCard(context, isLight),
 
             // 4. Institutional Footer
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              decoration: const BoxDecoration(
-                color: Color(0xFF091124),
-                border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+              decoration: BoxDecoration(
+                color: isLight ? const Color(0xFFF8FAFC) : const Color(0xFF091124),
+                border: Border(
+                  top: BorderSide(
+                    color: isLight ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                  ),
+                ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'MAA MOTORS ERP • GODOWN-1',
-                    style: TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: isLight ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     'মুরাদপুর, চট্টগ্রাম',
-                    style: TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                    style: TextStyle(
+                      color: isLight ? const Color(0xFF64748B) : const Color(0xFF64748B),
+                      fontSize: 10,
+                    ),
                   ),
                 ],
               ),
@@ -260,13 +317,13 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionLabel(String label) {
+  Widget _buildSectionLabel(String label, bool isLight) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Color(0xFF64748B),
+        style: TextStyle(
+          color: isLight ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
           fontSize: 11,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
@@ -275,42 +332,50 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerHeader(BuildContext context, AuthProvider auth) {
+  Widget _buildDrawerHeader(BuildContext context, AuthProvider auth, bool isLight) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
-        color: Color(0xFF091124),
-        border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF024EA2),
+            Color(0xFF0056B8),
+            Color(0xFF002D72),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              // Corporate Automotive Warehouse Vector Emblem (No third-party logo)
+              // Corporate Automotive Warehouse Vector Emblem
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0284C7), Color(0xFF059669)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF38BDF8), width: 1.5),
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0284C7).withOpacity(0.3),
-                      blurRadius: 8,
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.warehouse_rounded,
-                  color: Colors.white,
-                  size: 26,
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  'assets/images/shop_official_logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.warehouse_rounded,
+                    color: Color(0xFF024EA2),
+                    size: 26,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -323,7 +388,7 @@ class AppDrawer extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFFFFDF00),
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
                         fontFamily: 'Hind Siliguri',
@@ -333,7 +398,7 @@ class AppDrawer extends StatelessWidget {
                     Text(
                       'গোডাউন-১ • মুরাদপুর, চট্টগ্রাম',
                       style: TextStyle(
-                        color: Color(0xFF38BDF8),
+                        color: Colors.white,
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -342,20 +407,20 @@ class AppDrawer extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Colors.white60, size: 20),
+                icon: const Icon(Icons.close, color: Colors.white, size: 20),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
           ),
           const SizedBox(height: 12),
 
-          // Active Staff Shift Info Pill
+          // Active Staff Info Pill
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
+              color: Colors.black.withOpacity(0.25),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF334155)),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -372,7 +437,7 @@ class AppDrawer extends StatelessWidget {
                   child: Text(
                     'দায়িত্বে: ${auth.currentStaffName} (${auth.currentStaffRole})',
                     style: const TextStyle(
-                      color: Color(0xFFE2E8F0),
+                      color: Colors.white,
                       fontSize: 11.5,
                       fontWeight: FontWeight.bold,
                     ),
@@ -383,7 +448,7 @@ class AppDrawer extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.15),
+                    color: const Color(0xFF10B981).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
@@ -399,104 +464,115 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
+  /// Clean Single-Line Nav Item (No Subtitles)
   Widget _buildNavItem({
     required BuildContext context,
     required IconData icon,
     required String title,
-    required String subtitle,
     required VoidCallback onTap,
+    required bool isLight,
     Color iconColor = AppColors.load,
     String? badgeText,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withOpacity(0.4),
+        color: isLight ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B).withOpacity(0.4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(
+          color: isLight ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+        ),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        dense: true,
         leading: Container(
-          width: 38,
-          height: 38,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             color: iconColor.withOpacity(0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: iconColor, size: 20),
         ),
-        title: Row(
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isLight ? const Color(0xFF0F172A) : Colors.white,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Hind Siliguri',
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Hind Siliguri',
-                ),
-              ),
-            ),
             if (badgeText != null) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.2),
+                  color: const Color(0xFF10B981).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: const Color(0xFF10B981), width: 0.8),
                 ),
                 child: Text(
                   badgeText,
                   style: const TextStyle(
-                    color: Color(0xFF34D399),
+                    color: Color(0xFF059669),
                     fontSize: 9.5,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
             ],
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isLight ? const Color(0xFF94A3B8) : Colors.white24,
+              size: 18,
+            ),
           ],
         ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 18),
         onTap: onTap,
       ),
     );
   }
 
-  Widget _buildContactAdminCard(BuildContext context) {
+  Widget _buildContactAdminCard(BuildContext context, bool isLight) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF091124),
+        color: isLight ? const Color(0xFFF8FAFC) : const Color(0xFF091124),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(
+          color: isLight ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.support_agent_rounded, color: Color(0xFFFBBF24), size: 18),
-              SizedBox(width: 8),
+              const Icon(Icons.support_agent_rounded, color: Color(0xFFD97706), size: 18),
+              const SizedBox(width: 8),
               Text(
                 'মা মোটরস অফিস সহায়তা',
-                style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: isLight ? const Color(0xFF0F172A) : Colors.white,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'অফিস: ০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪',
-            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+            style: TextStyle(
+              color: isLight ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+              fontSize: 11,
+            ),
           ),
           const SizedBox(height: 8),
           Row(
@@ -513,11 +589,20 @@ class AppDrawer extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: isLight ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFF475569)),
+                      border: Border.all(
+                        color: isLight ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                      ),
                     ),
-                    child: const Text('নম্বর কপি', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'নম্বর কপি',
+                      style: TextStyle(
+                        color: isLight ? const Color(0xFF0F172A) : Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -527,11 +612,16 @@ class AppDrawer extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withOpacity(0.2),
+                    color: const Color(0xFF0284C7).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: const Color(0xFF0284C7)),
                   ),
-                  child: const Text('সরাসরি কল', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold)),
+                  child: const Text('সরাসরি কল',
+                      style: TextStyle(
+                        color: Color(0xFF0284C7),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      )),
                 ),
               ),
             ],

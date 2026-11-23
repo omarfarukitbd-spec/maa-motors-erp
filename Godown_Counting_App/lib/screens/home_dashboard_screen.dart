@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/counting_provider.dart';
+import '../providers/theme_provider.dart';
 import '../services/audio_engine_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/bangla_tools.dart';
@@ -20,12 +21,13 @@ class HomeDashboardScreen extends StatefulWidget {
 
 class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   final AudioEngineService _audio = AudioEngineService();
-  bool _isLightMode = false;
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final counting = context.watch<CountingProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
+    final isLightMode = themeProvider.isLightMode;
 
     final totalChallans = counting.sessionHistory.length;
     final totalPcs = counting.sessionHistory.fold<int>(
@@ -34,16 +36,14 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     );
 
     return Scaffold(
-      backgroundColor: _isLightMode ? AppColors.bgLight : AppColors.bgDark,
+      backgroundColor: isLightMode ? AppColors.bgLight : AppColors.bgDark,
       drawer: const AppDrawer(),
       appBar: GodownTopBar(
         title: auth.shopDisplayName,
         isHome: true,
-        isLightMode: _isLightMode,
+        isLightMode: isLightMode,
         audioEngine: _audio,
-        onThemeToggle: () {
-          setState(() => _isLightMode = !_isLightMode);
-        },
+        onThemeToggle: () => themeProvider.toggleTheme(),
         onSoundToggled: () => setState(() {}),
       ),
       body: SafeArea(
@@ -56,7 +56,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               Text(
                 'আজকের হিসাব',
                 style: TextStyle(
-                  color: _isLightMode ? AppColors.txLight : AppColors.txDark,
+                  color: isLightMode ? AppColors.txLight : AppColors.txDark,
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
                   fontFamily: 'Hind Siliguri',
@@ -130,6 +130,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                           ),
                         );
                       },
+                      isLightMode: isLightMode,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -138,36 +139,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                       label: 'কাস্টমার তালিকা',
                       icon: Icons.contact_phone_outlined,
                       onTap: () => _openCustomerDirectoryDialog(context),
+                      isLightMode: isLightMode,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 14),
-
-              // Bottom Brand Banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF091124),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF1E293B)),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.warehouse_outlined, color: Color(0xFF34D399), size: 16),
-                    SizedBox(width: 8),
-                    Text(
-                      'মেসার্স মা মোটরস • গোডাউন-১, মুরাদপুর • ০১8১৯-৩৯৭৬৬৯',
-                      style: TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
               ),
               const SizedBox(height: 6),
             ],
@@ -346,6 +321,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     required String label,
     required IconData icon,
     required VoidCallback onTap,
+    required bool isLightMode,
   }) {
     return InkWell(
       onTap: onTap,
@@ -354,22 +330,22 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: _isLightMode ? AppColors.s1Light : AppColors.s1Dark,
+          color: isLightMode ? AppColors.s1Light : AppColors.s1Dark,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: _isLightMode ? AppColors.lineLight : AppColors.lineDark,
+            color: isLightMode ? AppColors.lineLight : AppColors.lineDark,
             width: 1.5,
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: _isLightMode ? AppColors.txLight : AppColors.txDark),
+            Icon(icon, size: 18, color: isLightMode ? AppColors.txLight : AppColors.txDark),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: _isLightMode ? AppColors.txLight : AppColors.txDark,
+                color: isLightMode ? AppColors.txLight : AppColors.txDark,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Hind Siliguri',

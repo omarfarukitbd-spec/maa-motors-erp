@@ -25,7 +25,7 @@ class AppColors {
 
   // Paper Challan Sheet Colors
   static const Color paperBg = Colors.white;
-  static const Color paperBanner = Color(0xFF2A323A);
-  static const Color paperText = Color(0xFF14181C);
-  static const Color paperBorder = Color(0xFFD5DBE0);
+  static const Color paperBanner = Color(0xFF0F172A); // Web ERP Deep Slate Navy
+  static const Color paperText = Color(0xFF0F172A);
+  static const Color paperBorder = Color(0xFFCBD5E1);
 }

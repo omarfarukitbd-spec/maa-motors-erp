@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/challan_model.dart';
 import '../providers/auth_provider.dart';
@@ -530,152 +531,57 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Shop Branded Banner Header (M/S MAA MOTORS)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.load, width: 1.5),
-                        ),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'মেসার্স মা মোটরস',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                fontFamily: 'Hind Siliguri',
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              'প্রোপাইটর: মোহাম্মদ এমরান (Mohammed Amran) • মোবাইল: ০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪',
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5, fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
-                            ),
-                            const Text(
-                              'গোডাউন-১, রেলগেট সংলগ্ন, মুরাদপুর, চট্টগ্রাম',
-                              style: TextStyle(color: Color(0xFF64748B), fontSize: 10),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: (isUnloading ? AppColors.unl : AppColors.load).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: (isUnloading ? AppColors.unl : AppColors.load).withOpacity(0.4)),
-                              ),
-                              child: Text(
-                                isUnloading ? 'গাড়ি থেকে আনলোডিং চালান (খালাস)' : 'গাড়িতে ডেলিভারি চালান (গেটপাস)',
-                                style: TextStyle(
-                                  color: isUnloading ? AppColors.unl : AppColors.load,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Official Web ERP Mother Print Header (Challan Edition)
+                      _buildInAppMotherHeader(isUnloading),
+                      const SizedBox(height: 8),
+
+                      // Two-Column Structured Metadata Cards (Web ERP Standard)
+                      _buildInAppMetadataCards(isUnloading, modeText),
                       const SizedBox(height: 10),
 
-                      // Metadata Grid Header with Edit Action
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'চালানের বিবরণ ও পরিবহন:',
-                            style: TextStyle(
-                              color: AppColors.paperText,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                            ),
+                      // Category Summary Rollup Box (Web ERP Style)
+                      if (catRollups.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            border: Border.all(color: const Color(0xFFCBD5E1), width: 0.8),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          if (!_isLocked)
-                            InkWell(
-                              onTap: () => _openEditMetadataDialog(),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppColors.load.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: AppColors.load, width: 0.8),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(Icons.edit, color: AppColors.load, size: 12),
-                                    SizedBox(width: 4),
-                                    Text('তথ্য এডিট', style: TextStyle(color: AppColors.load, fontSize: 11, fontWeight: FontWeight.bold)),
-                                  ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'গ্রুপ ভিত্তিক মোট সারসংক্ষেপ (Category Roll-up):',
+                                style: GoogleFonts.hindSiliguri(
+                                  color: const Color(0xFF1E293B),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Column(
-                          children: [
-                            _metaRow('চালান নং:', '$_challanNo${_revision > 0 ? " (সংশোধিত ${BanglaTools.toBanglaDigits(_revision)})" : ""}', 'তারিখ:', BanglaTools.formatBanglaDate(DateTime.now())),
-                            const SizedBox(height: 4),
-                            _metaRow('প্রাপক / পার্টি:', _customerName.isNotEmpty ? _customerName : '(ট্যাপ করে লিখুন)', 'গ্রাহক মোবাইল:', _customerPhone.isNotEmpty ? _customerPhone : '---'),
-                            const SizedBox(height: 4),
-                            _metaRow('ডেলিভারি ঠিকানা:', _customerAddress.isNotEmpty ? _customerAddress : '(ট্যাপ করে লিখুন)', 'ধরন:', modeText),
-                            const SizedBox(height: 4),
-                            _metaRow('গাড়ি নম্বর:', _vehicleNo.isNotEmpty ? _vehicleNo : '(ট্যাপ করে লিখুন)', 'চালকের নাম:', _driverName.isNotEmpty ? '$_driverName ${_driverMobile.isNotEmpty ? "($_driverMobile)" : ""}' : '(লিখুন)'),
-                            if (_sealNo.isNotEmpty) ...[
                               const SizedBox(height: 4),
-                              _metaRow('সিকিউরিটি সিল:', _sealNo, 'ভেরিফিকেশন:', _verificationCode.isNotEmpty ? _verificationCode : 'লক হলে তৈরি হবে'),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Category Summary Rollup Box
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.paperText, width: 1.5),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'সারসংক্ষেপ (ক্যাটাগরি অনুযায়ী):',
-                              style: TextStyle(
-                                color: AppColors.paperText,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 4,
+                                children: catRollups.entries.map((entry) {
+                                  final parts = entry.key.split('|');
+                                  final cat = parts[0];
+                                  final u = parts[1];
+                                  return Text(
+                                    '• $cat: ${BanglaTools.toBanglaDigits(entry.value)} $u',
+                                    style: GoogleFonts.hindSiliguri(
+                                      color: const Color(0xFF334155),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Wrap(
-                              spacing: 12,
-                              runSpacing: 4,
-                              children: catRollups.entries.map((entry) {
-                                final parts = entry.key.split('|');
-                                final cat = parts[0];
-                                final u = parts[1];
-                                return Text(
-                                  '$cat: ${BanglaTools.toBanglaDigits(entry.value)} $u',
-                                  style: const TextStyle(
-                                    color: AppColors.paperText,
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                      ],
                       const SizedBox(height: 12),
 
                       // Detailed Table
@@ -893,30 +799,351 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
     );
   }
 
-  Widget _metaRow(String l1, String v1, String l2, String v2) {
-    return Row(
-      children: [
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+  Widget _buildInAppMotherHeader(bool isUnloading) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF024EA2), Color(0xFF002D72)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF024EA2).withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Circular Logo
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(2),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/shop_official_logo.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.storefront_rounded, color: Color(0xFF024EA2), size: 26),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(width: 1.2, height: 44, color: Colors.white24),
+              const SizedBox(width: 8),
+              // Center Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'মেসার্স মা মোটরস ',
+                            style: GoogleFonts.anekBangla(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFFFDF00),
+                            ),
+                          ),
+                          TextSpan(
+                            text: "(M/S. MAA-MOTOR'S)",
+                            style: GoogleFonts.anekBangla(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'জাতীয় জাপানি কার ও মাইক্রোবাসের রিকন্ডিশন ইঞ্জিন ও পার্টস বিক্রয় করা হয়।',
+                        style: GoogleFonts.anekBangla(
+                          fontSize: 8.2,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF001A70),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE11D48),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            'প্রোপাইটর:',
+                            style: GoogleFonts.anekBangla(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'মোহাম্মদ এমরান (Mohammed Amran)',
+                          style: GoogleFonts.anekBangla(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Japanese Brand Vectors & Right Pill Badge "চালান" with Red Border
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFEF4444), width: 1.8),
+                    ),
+                    child: Text(
+                      'চালান',
+                      style: GoogleFonts.anekBangla(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF001A70),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFDF00),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'চালান নং: $_challanNo${_revision > 0 ? " (সংশোধিত ${BanglaTools.toBanglaDigits(_revision)})" : ""}',
+                      style: GoogleFonts.hindSiliguri(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Bottom Ribbon Contact Strip
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Colors.white, Color(0xFFE0F2FE), Colors.white],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF7DD3FC), width: 0.8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextSpan(text: '$l1 ', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.paperText)),
-                TextSpan(text: v1, style: const TextStyle(color: AppColors.paperText)),
+                Text(
+                  'গোডাউন-১, রেলগেট সংলগ্ন, মুরাদপুর, চট্টগ্রাম',
+                  style: GoogleFonts.hindSiliguri(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                Text(
+                  '০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪',
+                  style: GoogleFonts.hindSiliguri(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0284C7),
+                  ),
+                ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInAppMetadataCards(bool isUnloading, String modeText) {
+    return Column(
+      children: [
+        // Status & Sub-Header Strip
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 0.8),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'চালানের ধরন: $modeText',
+                style: GoogleFonts.hindSiliguri(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+              ),
+              Text(
+                'তারিখ: ${BanglaTools.formatBanglaDate(DateTime.now())}',
+                style: GoogleFonts.hindSiliguri(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+              ),
+              Row(
+                children: [
+                  if (!_isLocked)
+                    InkWell(
+                      onTap: _openEditMetadataDialog,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.load.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.load, width: 0.8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit, color: AppColors.load, size: 11),
+                            const SizedBox(width: 3),
+                            Text('এডিট', style: GoogleFonts.hindSiliguri(color: AppColors.load, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (_verificationCode.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      'ভেরিফিকেশন: $_verificationCode',
+                      style: GoogleFonts.hindSiliguri(fontSize: 9.5, fontWeight: FontWeight.bold, color: const Color(0xFF0284C7)),
+                    ),
+                  ],
+                ],
+              ),
+            ],
           ),
         ),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-              children: [
-                TextSpan(text: '$l2 ', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.paperText)),
-                TextSpan(text: v2, style: const TextStyle(color: AppColors.paperText)),
-              ],
+        const SizedBox(height: 6),
+
+        // Two-Column Structured Metadata Cards
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left Card: Customer Details
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      margin: const EdgeInsets.only(bottom: 4),
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
+                      ),
+                      child: Text(
+                        'প্রাপক ও ডেলিভারির তথ্য (PARTY DETAILS)',
+                        style: GoogleFonts.hindSiliguri(fontSize: 8.5, fontWeight: FontWeight.bold, color: const Color(0xFF0284C7)),
+                      ),
+                    ),
+                    Text(
+                      _customerName.isNotEmpty ? _customerName : 'কাস্টমার নির্দিষ্ট নেই',
+                      style: GoogleFonts.hindSiliguri(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'মোবাইল: ${_customerPhone.isNotEmpty ? _customerPhone : '---'}',
+                      style: GoogleFonts.hindSiliguri(fontSize: 10, color: const Color(0xFF475569)),
+                    ),
+                    Text(
+                      'ঠিকানা: ${_customerAddress.isNotEmpty ? _customerAddress : 'মুরাদপুর, চট্টগ্রাম'}',
+                      style: GoogleFonts.hindSiliguri(fontSize: 9.5, color: const Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 6),
+
+            // Right Card: Vehicle & Gate-Pass Details
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      margin: const EdgeInsets.only(bottom: 4),
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Color(0xFF0369A1), width: 1.5)),
+                      ),
+                      child: Text(
+                        'পরিবহন ও গেটপাস তথ্য (GATE-PASS DETAILS)',
+                        style: GoogleFonts.hindSiliguri(fontSize: 8.5, fontWeight: FontWeight.bold, color: const Color(0xFF0369A1)),
+                      ),
+                    ),
+                    Text(
+                      _vehicleNo.isNotEmpty ? _vehicleNo : '---',
+                      style: GoogleFonts.hindSiliguri(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'চালক: ${_driverName.isNotEmpty ? _driverName : "---"} ${_driverMobile.isNotEmpty ? "($_driverMobile)" : ""}',
+                      style: GoogleFonts.hindSiliguri(fontSize: 10, color: const Color(0xFF475569)),
+                    ),
+                    Text(
+                      'সিকিউরিটি সিল: ${_sealNo.isNotEmpty ? _sealNo : "লক হলে প্রযোজ্য"}',
+                      style: GoogleFonts.hindSiliguri(fontSize: 9.5, color: const Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
