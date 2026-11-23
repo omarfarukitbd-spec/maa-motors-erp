@@ -10,6 +10,7 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isLightMode;
   final AudioEngineService audioEngine;
   final VoidCallback onSoundToggled;
+  final Widget? actionWidget;
 
   const GodownTopBar({
     super.key,
@@ -20,6 +21,7 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.isLightMode = false,
     required this.audioEngine,
     required this.onSoundToggled,
+    this.actionWidget,
   });
 
   @override
@@ -27,6 +29,9 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final titleColor = isLightMode ? const Color(0xFF0F172A) : Colors.white;
+    final subColor = isLightMode ? const Color(0xFF0284C7) : const Color(0xFF38BDF8);
+
     return Container(
       color: isLightMode ? AppColors.bgLight : AppColors.bgDark,
       padding: const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 8),
@@ -54,10 +59,10 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'মেসার্স মা মোটরস',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: titleColor,
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
                             fontFamily: 'Hind Siliguri',
@@ -68,7 +73,7 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
                         Text(
                           'গোডাউন-১ • মুরাদপুর, চট্টগ্রাম',
                           style: TextStyle(
-                            color: isLightMode ? AppColors.load : const Color(0xFF34D399),
+                            color: subColor,
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
                             fontFamily: 'Hind Siliguri',
@@ -80,14 +85,20 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
                       title,
                       style: TextStyle(
                         color: isLightMode ? AppColors.txLight : AppColors.txDark,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 17.5,
+                        fontWeight: FontWeight.w800,
                         fontFamily: 'Hind Siliguri',
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
             ),
+
+            // Optional Custom Action Widget (e.g. Create Challan Pill Button)
+            if (actionWidget != null) ...[
+              actionWidget!,
+              const SizedBox(width: 8),
+            ],
 
             // Theme Toggle Button
             if (onThemeToggle != null) ...[
@@ -104,14 +115,14 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
               icon: audioEngine.isSoundEnabled ? Icons.volume_up_outlined : Icons.volume_off_outlined,
               tooltip: audioEngine.isSoundEnabled ? 'আওয়াজ চালু' : 'শুধু কম্পন',
               iconColor: audioEngine.isSoundEnabled
-                  ? (isLightMode ? AppColors.txLight : AppColors.unl)
+                  ? (isLightMode ? const Color(0xFF0F172A) : AppColors.unl)
                   : AppColors.dng,
               onTap: () {
                 audioEngine.toggleSound();
                 onSoundToggled();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: const Color(0xFF262D34),
+                    backgroundColor: const Color(0xFF1E293B),
                     duration: const Duration(milliseconds: 1400),
                     content: Text(
                       audioEngine.isSoundEnabled
@@ -136,11 +147,11 @@ class GodownTopBar extends StatelessWidget implements PreferredSizeWidget {
     Color? iconColor,
   }) {
     return Container(
-      width: 46,
-      height: 46,
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
         color: isLightMode ? AppColors.s1Light : AppColors.s1Dark,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isLightMode ? AppColors.lineLight : AppColors.lineDark,
           width: 1.5,

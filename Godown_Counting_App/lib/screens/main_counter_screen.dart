@@ -227,30 +227,100 @@ class _MainCounterScreenState extends State<MainCounterScreen>
           _navigateToChallan();
         },
         onCancelSession: () {
-          OfflineStorageService.clearLiveSessionDraft();
-          setState(() {
-            _sessionItems.clear();
-            _activePartName = null;
-            _count = 0;
-            _history.clear();
-            _redoStack.clear();
-          });
-          _showToast('গণনা বাতিল হয়েছে');
-          Navigator.pop(context); // Return to S1 Home
+          _confirmCancelSession();
         },
       ),
     );
   }
 
+  void _confirmCancelSession() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.dng, size: 22),
+            SizedBox(width: 8),
+            Text(
+              'গণনা বাতিল করবেন?',
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: const Text(
+          'চলমান তালিকার সমস্ত পণ্য মুছে ফেলা হবে। আপনি কি নিশ্চিত?',
+          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('না', style: TextStyle(color: Color(0xFF94A3B8))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.dng,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              OfflineStorageService.clearLiveSessionDraft();
+              setState(() {
+                _sessionItems.clear();
+                _activePartName = null;
+                _count = 0;
+                _history.clear();
+                _redoStack.clear();
+              });
+              _showToast('গণনা রিসেট করা হয়েছে');
+            },
+            child: const Text('হ্যাঁ, বাতিল করুন'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _navigateToChallan() {
-    if (_sessionItems.isEmpty) return;
+    // Smart Auto-Commit: If there is an active item being counted, commit it automatically!
+    if (_activePartName != null && _count > 0) {
+      final name = _activePartName!;
+      final cat = _activeCategory ?? 'সাধারণ পার্টস';
+      final unit = _activeUnit;
+      final qty = _count;
+
+      final existingIndex =
+          _sessionItems.indexWhere((i) => i.name == name && i.unit == unit);
+      if (existingIndex >= 0) {
+        _sessionItems[existingIndex].quantity += qty;
+      } else {
+        _sessionItems.add(SessionItemData(
+          name: name,
+          category: cat,
+          unit: unit,
+          quantity: qty,
+        ));
+      }
+      _activePartName = null;
+      _count = 0;
+      _history.clear();
+      _redoStack.clear();
+      _audio.playCompleteSound();
+    }
+
+    if (_sessionItems.isEmpty) {
+      _showToast('চালান তৈরি করার জন্য অন্তত একটি পণ্য গণনা করুন');
+      return;
+    }
+
     OfflineStorageService.clearLiveSessionDraft();
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ChallanViewScreen(
           mode: _mode,
-          sessionItems: _sessionItems,
+          sessionItems: List.from(_sessionItems),
         ),
       ),
     );
@@ -261,12 +331,48 @@ class _MainCounterScreenState extends State<MainCounterScreen>
     final auth = context.watch<AuthProvider>();
     final totalPcs = _sessionItems.fold<int>(0, (sum, i) => sum + i.quantity);
 
+    final hasPendingOrActive =
+        _sessionItems.isNotEmpty || (_activePartName != null && _count > 0);
+    final totalDisplayItems =
+        _sessionItems.length + (_activePartName != null && _count > 0 ? 1 : 0);
+    final totalDisplayPcs =
+        totalPcs + (_activePartName != null && _count > 0 ? _count : 0);
+
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: GodownTopBar(
         title: auth.shopDisplayName,
         audioEngine: _audio,
         onSoundToggled: () => setState(() {}),
+        actionWidget: hasPendingOrActive
+            ? InkWell(
+                onTap: _navigateToChallan,
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF059669),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF34D399)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.receipt_long, color: Colors.white, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        'চালান ($totalDisplayItems)',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : null,
       ),
       body: SafeArea(
         child: Column(
@@ -282,13 +388,17 @@ class _MainCounterScreenState extends State<MainCounterScreen>
                   Row(
                     children: [
                       Icon(
-                        _mode == 'unl' ? Icons.archive_outlined : Icons.unarchive_outlined,
+                        _mode == 'unl'
+                            ? Icons.archive_outlined
+                            : Icons.unarchive_outlined,
                         color: _modeColor,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        _mode == 'unl' ? 'মোড: গাড়ি থেকে আনলোডিং (খালাস)' : 'মোড: গাড়িতে লোডিং (ডেলিভারি)',
+                        _mode == 'unl'
+                            ? 'মোড: গাড়ি থেকে আনলোডিং (খালাস)'
+                            : 'মোড: গাড়িতে লোডিং (ডেলিভারি)',
                         style: TextStyle(
                           color: _modeColor,
                           fontSize: 12.5,
@@ -299,7 +409,11 @@ class _MainCounterScreenState extends State<MainCounterScreen>
                   ),
                   Text(
                     'কর্মী: ${auth.currentStaffName}',
-                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -356,7 +470,9 @@ class _MainCounterScreenState extends State<MainCounterScreen>
                     label: Text(
                       name,
                       style: TextStyle(
-                        color: isSelected ? AppColors.textOnAccent : AppColors.txDark,
+                        color: isSelected
+                            ? AppColors.textOnAccent
+                            : AppColors.txDark,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -379,7 +495,9 @@ class _MainCounterScreenState extends State<MainCounterScreen>
                   Text(
                     _activePartName ?? 'পণ্য বেছে নিন',
                     style: TextStyle(
-                      color: _activePartName != null ? AppColors.txDark : AppColors.muDark,
+                      color: _activePartName != null
+                          ? AppColors.txDark
+                          : AppColors.muDark,
                       fontSize: 19,
                       fontWeight: FontWeight.w700,
                       fontFamily: 'Hind Siliguri',
@@ -395,7 +513,8 @@ class _MainCounterScreenState extends State<MainCounterScreen>
                       },
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 3),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: _modeColor, width: 1.5),
@@ -510,67 +629,134 @@ class _MainCounterScreenState extends State<MainCounterScreen>
             ),
             const Spacer(),
 
-            // 8. Session Summary Bar
+            // 8. Session Summary Bar (clickable to inspect items or delete)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: InkWell(
-                onTap: _openSessionSheet,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.s1Dark,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.lineDark, width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.list_alt, color: AppColors.muDark, size: 20),
-                      const SizedBox(width: 10),
-                      Text(
-                        '${BanglaTools.toBanglaDigits(_sessionItems.length)}টি পণ্য · মোট ${BanglaTools.toBanglaDigits(totalPcs)}',
-                        style: const TextStyle(
-                          color: AppColors.txDark,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: _sessionItems.isNotEmpty ? _openSessionSheet : null,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.s1Dark,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.lineDark),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.inventory_2_outlined, color: AppColors.load, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'তালিকায়: ${BanglaTools.toBanglaDigits(_sessionItems.length)} পদ • ${BanglaTools.toBanglaDigits(totalPcs)} পিস',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (_sessionItems.isNotEmpty)
+                              const Icon(Icons.visibility_outlined, color: AppColors.muDark, size: 18),
+                          ],
                         ),
                       ),
-                      const Spacer(),
-                      const Icon(Icons.keyboard_arrow_up, color: AppColors.muDark, size: 20),
-                    ],
+                    ),
                   ),
-                ),
+                  if (_sessionItems.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: _confirmCancelSession,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 44,
+                        width: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.4)),
+                        ),
+                        child: const Icon(Icons.delete_sweep_outlined, color: Color(0xFFEF4444), size: 20),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             const SizedBox(height: 10),
 
-            // 9. Giant OK Button
+            // 9. Bottom Actions: OK Button & Prominent Direct Challan Button
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 64,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _modeColor,
-                    foregroundColor: AppColors.textOnAccent,
-                    disabledBackgroundColor: AppColors.s2Dark,
-                    disabledForegroundColor: AppColors.muDark,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+              child: Column(
+                children: [
+                  // Row A: Add current item (+OK) if active item is chosen and counted
+                  if (_activePartName != null && _count > 0) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _modeColor,
+                          foregroundColor: AppColors.textOnAccent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.add_task, size: 20),
+                        label: Text(
+                          '${_activePartName!} +${BanglaTools.toBanglaDigits(_count)} $_activeUnit তালিকায় যোগ (OK)',
+                          style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onPressed: _handleCompleteItem,
+                      ),
                     ),
-                    elevation: 0,
+                    const SizedBox(height: 8),
+                  ],
+
+                  // Row B: Direct Create Challan Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: hasPendingOrActive
+                            ? const Color(0xFF059669) // Emerald Green
+                            : AppColors.s2Dark,
+                        foregroundColor: hasPendingOrActive
+                            ? Colors.white
+                            : AppColors.muDark,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: hasPendingOrActive
+                                ? const Color(0xFF34D399)
+                                : AppColors.lineDark,
+                            width: 1.5,
+                          ),
+                        ),
+                        elevation: hasPendingOrActive ? 4 : 0,
+                      ),
+                      icon: const Icon(Icons.receipt_long, size: 24),
+                      label: Text(
+                        hasPendingOrActive
+                            ? 'চালান তৈরি ও প্রিন্ট করুন (${BanglaTools.toBanglaDigits(totalDisplayItems)}টি পদ • ${BanglaTools.toBanglaDigits(totalDisplayPcs)} পিস)'
+                            : 'চালান তৈরি (আগে পণ্য বাছুন ও গুনুন)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: hasPendingOrActive ? Colors.white : AppColors.muDark,
+                        ),
+                      ),
+                      onPressed: hasPendingOrActive ? _navigateToChallan : null,
+                    ),
                   ),
-                  icon: const Icon(Icons.check, size: 24),
-                  label: const Text(
-                    'এই পণ্য গণনা সম্পন্ন (OK)',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-                  ),
-                  onPressed: (_activePartName != null && _count > 0)
-                      ? _handleCompleteItem
-                      : null,
-                ),
+                ],
               ),
             ),
           ],
