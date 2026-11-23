@@ -9,7 +9,6 @@ import '../services/firebase_sync_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/bangla_tools.dart';
 import '../widgets/godown_top_bar.dart';
-import 'login_screen.dart';
 
 class LicenseBackupScreen extends StatefulWidget {
   const LicenseBackupScreen({super.key});
@@ -319,47 +318,7 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 3. Authorized Staff Roster Card
-            _buildSectionHeader('গোডাউন-১ অনুমোদিত কর্মী ও শিফট', Icons.badge_outlined, const Color(0xFFFBBF24)),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.s1Dark,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.lineDark),
-              ),
-              child: Column(
-                children: [
-                  _staffTile('মোঃ এমরান', 'গোডাউন ইনচার্জ • পিন: ১৯২৫', auth.currentStaffName.contains('এমরান')),
-                  const Divider(color: AppColors.lineDark, height: 14),
-                  _staffTile('আলতাফ হোসেন', 'কাউন্টার কর্মী • পিন: ১২৩৪', auth.currentStaffName.contains('আলতাফ')),
-                  const Divider(color: AppColors.lineDark, height: 14),
-                  _staffTile('মোঃ ওমর ফারুক', 'প্রোপ্রাইটর / মালিক • পিন: ৭৮৬০', auth.currentStaffName.contains('ফারুক')),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF38BDF8)),
-                        foregroundColor: const Color(0xFF38BDF8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(Icons.swap_horiz, size: 18),
-                      label: const Text('কর্মী পরিবর্তন ও লগইন', style: TextStyle(fontWeight: FontWeight.bold)),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 4. Challan Verification Card
+            // 3. Challan Verification Card
             _buildSectionHeader('আসল চালান সত্যতা যাচাই', Icons.verified_user_outlined, const Color(0xFFA855F7)),
             Container(
               padding: const EdgeInsets.all(14),
@@ -446,41 +405,6 @@ class _LicenseBackupScreenState extends State<LicenseBackupScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _staffTile(String name, String role, bool isActive) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 2),
-            Text(role, style: const TextStyle(color: AppColors.muDark, fontSize: 11.5)),
-          ],
-        ),
-        if (isActive)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppColors.load.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.load),
-            ),
-            child: const Text('বর্তমান শিফট', style: TextStyle(color: AppColors.load, fontSize: 11, fontWeight: FontWeight.bold)),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppColors.s2Dark,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text('স্ট্যান্ডবাই', style: TextStyle(color: AppColors.muDark, fontSize: 10.5)),
-          ),
-      ],
     );
   }
 }

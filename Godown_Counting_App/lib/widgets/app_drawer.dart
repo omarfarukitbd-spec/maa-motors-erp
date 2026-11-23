@@ -5,7 +5,6 @@ import '../providers/auth_provider.dart';
 import '../screens/home_dashboard_screen.dart';
 import '../screens/main_counter_screen.dart';
 import '../screens/challan_history_screen.dart';
-import '../screens/login_screen.dart';
 import '../screens/license_backup_screen.dart';
 import '../services/customer_directory_service.dart';
 import '../utils/app_colors.dart';
@@ -227,22 +226,6 @@ class AppDrawer extends StatelessWidget {
                       );
                     },
                   ),
-
-                  // Staff Switcher & Shift Portal
-                  _buildNavItem(
-                    context: context,
-                    icon: Icons.badge_rounded,
-                    title: 'কর্মী পরিবর্তন ও লগইন',
-                    subtitle: 'ইনচার্জ মোঃ এমরান / আলতাফ / ওমর ফারুক',
-                    iconColor: const Color(0xFFFBBF24),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                    },
-                  ),
                 ],
               ),
             ),
@@ -387,7 +370,7 @@ class AppDrawer extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'কর্মরত: ${auth.currentStaffName} (${auth.currentStaffRole})',
+                    'দায়িত্বে: ${auth.currentStaffName} (${auth.currentStaffRole})',
                     style: const TextStyle(
                       color: Color(0xFFE2E8F0),
                       fontSize: 11.5,
@@ -397,24 +380,15 @@ class AppDrawer extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                InkWell(
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0284C7).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'পরিবর্তন',
-                      style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10.5, fontWeight: FontWeight.bold),
-                    ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'সক্রিয়',
+                    style: TextStyle(color: Color(0xFF34D399), fontSize: 10.5, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -514,14 +488,14 @@ class AppDrawer extends StatelessWidget {
               Icon(Icons.support_agent_rounded, color: Color(0xFFFBBF24), size: 18),
               SizedBox(width: 8),
               Text(
-                'গোডাউন-১ জরুরি সহায়তা',
+                'মা মোটরস অফিস সহায়তা',
                 style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 4),
           const Text(
-            'প্রোপ্রাইটর: মোঃ ওমর ফারুক • 01819-397669',
+            'অফিস: ০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪',
             style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
           ),
           const SizedBox(height: 8),
@@ -532,7 +506,7 @@ class AppDrawer extends StatelessWidget {
                   onTap: () {
                     Clipboard.setData(const ClipboardData(text: '01819397669'));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('ওমর ফারুকের নম্বর কপি হয়েছে (01819-397669)')),
+                      const SnackBar(content: Text('অফিস নম্বর কপি হয়েছে (01819-397669)')),
                     );
                   },
                   child: Container(

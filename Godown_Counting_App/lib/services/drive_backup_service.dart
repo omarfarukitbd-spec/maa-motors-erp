@@ -44,7 +44,7 @@ class DriveBackupService {
 
   String get lastSyncFormatted => 'অফলাইন সুরক্ষিত';
 
-  Future<bool> backupToGoogleDrive([String email = 'omarfarukitbd@gmail.com']) async {
+  Future<bool> backupToGoogleDrive([String email = 'office.maamotors@gmail.com']) async {
     return await performBackup(email);
   }
 

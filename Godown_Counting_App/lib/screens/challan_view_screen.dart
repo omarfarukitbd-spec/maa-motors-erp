@@ -553,7 +553,7 @@ class _ChallanViewScreenState extends State<ChallanViewScreen> {
                             ),
                             const SizedBox(height: 2),
                             const Text(
-                              'প্রোপ্রাইটর: মোঃ ওমর ফারুক • মোবাইল: ০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪',
+                              'প্রোপাইটর: মোহাম্মদ এমরান (Mohammed Amran) • মোবাইল: ০১৮১৯-৩৯৭৬৬৯, ০১৮১৫-৭০৭৯৩৪',
                               style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5, fontWeight: FontWeight.bold),
                               textAlign: TextAlign.center,
                             ),

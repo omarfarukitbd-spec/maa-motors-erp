@@ -68,7 +68,7 @@ class Tenant {
     this.lastOnlineSyncAt,
     this.isClockTampered = false,
     DateTime? createdAt,
-    this.createdBy = 'omarfarukitbd@gmail.com',
+    this.createdBy = 'office.maamotors@gmail.com',
   })  : activatedAt = activatedAt ?? DateTime.now(),
         expiresAt = expiresAt ?? DateTime.now().add(const Duration(days: 30)),
         createdAt = createdAt ?? DateTime.now();
@@ -183,7 +183,7 @@ class Tenant {
         createdAt: json['createdAt'] != null
             ? DateTime.tryParse(json['createdAt'])
             : null,
-        createdBy: json['createdBy'] ?? 'omarfarukitbd@gmail.com',
+        createdBy: json['createdBy'] ?? 'office.maamotors@gmail.com',
       );
 
   static LicenseState _parseLicenseState(dynamic val) {

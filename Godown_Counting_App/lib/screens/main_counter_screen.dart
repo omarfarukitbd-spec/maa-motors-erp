@@ -32,8 +32,8 @@ class _MainCounterScreenState extends State<MainCounterScreen>
   String _activeUnit = 'পিস';
 
   int _count = 0;
-  List<int> _history = [];
-  List<int> _redoStack = [];
+  final List<int> _history = [];
+  final List<int> _redoStack = [];
 
   final List<SessionItemData> _sessionItems = [];
 

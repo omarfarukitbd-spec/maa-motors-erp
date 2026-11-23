@@ -9,7 +9,6 @@ import '../widgets/godown_top_bar.dart';
 import '../widgets/app_drawer.dart';
 import 'main_counter_screen.dart';
 import 'challan_history_screen.dart';
-import 'login_screen.dart';
 import '../services/customer_directory_service.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
@@ -76,58 +75,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Active Logged In Staff Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: _isLightMode ? AppColors.s1Light : AppColors.s1Dark,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: _isLightMode ? AppColors.lineLight : const Color(0xFF334155),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.badge_outlined, color: AppColors.load, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'কর্মরত: ${auth.currentStaffName} (${auth.currentStaffRole})',
-                        style: TextStyle(
-                          color: _isLightMode ? AppColors.txLight : Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Hind Siliguri',
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.load.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'পরিবর্তন',
-                          style: TextStyle(
-                            color: AppColors.load,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const Spacer(),
 
               // 1. Unloading Hero Card (গাড়ি থেকে নামানো)
